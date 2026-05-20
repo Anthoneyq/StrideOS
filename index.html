@@ -69,10 +69,16 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .auth-panel{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;margin-bottom:.75rem}
 .auth-status{font-family:'JetBrains Mono',monospace;font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem}
 .auth-copy{font-family:'JetBrains Mono',monospace;font-size:.6875rem;line-height:1.45;color:var(--dim);margin-bottom:.625rem;word-break:break-word}
+.auth-note{font-family:'JetBrains Mono',monospace;font-size:.625rem;line-height:1.5;color:var(--text-3);margin:.5rem 0 0}
+.auth-feedback{font-family:'JetBrains Mono',monospace;font-size:.625rem;line-height:1.5;border:1px solid var(--border);border-radius:.375rem;padding:.5rem .625rem;margin-top:.625rem}
+.auth-feedback.info{color:var(--text-2);background:rgba(255,255,255,.03)}
+.auth-feedback.ok{color:var(--green);background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)}
+.auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
 .auth-input{width:100%;background:#050505;border:1px solid var(--border-s);border-radius:.375rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.75rem;padding:.55rem .625rem;margin-bottom:.5rem}
 .auth-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent-line)}
 .auth-actions{display:grid;gap:.5rem}
 .auth-actions .btn{width:100%;padding:.55rem .625rem;font-size:.625rem}
+.auth-actions .btn[disabled]{opacity:.65;cursor:wait}
 .chip{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;cursor:pointer;transition:border-color .15s}
 .chip:hover,.chip:focus-visible{border-color:var(--text);outline:none}
 .chip-lbl{font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:.375rem}
@@ -594,6 +600,7 @@ const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 let sbClient = null;
 let sbUser = null;
 let sbCoachReady = false;
+let authUiState = { type: '', message: '', sending: false };
 
 function hasSupabaseConfig(){
   return Boolean(STRIDE_SUPABASE_CONFIG.url && STRIDE_SUPABASE_CONFIG.anonKey);
@@ -607,6 +614,21 @@ function localSnapshot(){
   return JSON.parse(JSON.stringify(DB || newDB()));
 }
 
+function setAuthFeedback(type, message, sending){
+  authUiState = {
+    type: type || '',
+    message: message || '',
+    sending: Boolean(sending)
+  };
+  renderAuthPanel();
+}
+
+function authFeedbackHtml(){
+  if(!authUiState.message) return '';
+  const cls = authUiState.type || 'info';
+  return `<div class="auth-feedback ${cls}">${esc(authUiState.message)}</div>`;
+}
+
 function renderAuthPanel(){
   const el = document.getElementById('authPanel');
   if(!el) return;
@@ -615,6 +637,7 @@ function renderAuthPanel(){
     el.innerHTML = `
       <div class="auth-status">Local Mode</div>
       <div class="auth-copy">Add Supabase URL and anon key in stride-config.js to enable account sync.</div>
+      ${authFeedbackHtml()}
     `;
     return;
   }
@@ -623,6 +646,7 @@ function renderAuthPanel(){
     el.innerHTML = `
       <div class="auth-status">Sync Offline</div>
       <div class="auth-copy">Supabase client did not load. Local calculator still works.</div>
+      ${authFeedbackHtml()}
     `;
     return;
   }
@@ -635,6 +659,7 @@ function renderAuthPanel(){
         <button class="btn btn-primary" onclick="syncLocalToSupabase()">Sync Local Data</button>
         <button class="btn" onclick="signOutSupabase()">Sign Out</button>
       </div>
+      ${authFeedbackHtml()}
     `;
     return;
   }
@@ -644,8 +669,10 @@ function renderAuthPanel(){
     <div class="auth-copy">Send yourself a magic link, then sync this roster to Supabase.</div>
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <div class="auth-actions">
-      <button class="btn btn-primary" onclick="sendMagicLink()">Send Magic Link</button>
+      <button class="btn btn-primary" onclick="sendMagicLink()" ${authUiState.sending ? 'disabled' : ''}>${authUiState.sending ? 'Sending...' : 'Send Magic Link'}</button>
     </div>
+    <p class="auth-note">For real coach onboarding, Supabase needs a production SMTP provider. The built-in mailer is rate-limited and not meant for full public rollout.</p>
+    ${authFeedbackHtml()}
   `;
 }
 
@@ -675,6 +702,7 @@ async function initSupabase(){
   }catch(err){
     console.warn('Supabase init failed', err);
     toast('Supabase sync unavailable');
+    setAuthFeedback('err', 'Supabase auth could not initialize in this browser session.', false);
     renderAuthPanel();
   }
 }
@@ -684,6 +712,7 @@ async function sendMagicLink(){
   const emailEl = document.getElementById('authEmail');
   const email = emailEl ? emailEl.value.trim() : '';
   if(!email) return toast('Enter your email first');
+  setAuthFeedback('info', 'Contacting Supabase and requesting your magic link...', true);
 
   const { error } = await sbClient.auth.signInWithOtp({
     email,
@@ -691,8 +720,15 @@ async function sendMagicLink(){
   });
   if(error){
     console.error(error);
+    const msg = String(error.message || 'Magic link failed');
+    if(msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('rate limit')){
+      setAuthFeedback('err', 'Supabase is rate-limiting email sends right now. Wait a bit, then try again.', false);
+    } else {
+      setAuthFeedback('err', msg, false);
+    }
     return toast(error.message || 'Magic link failed');
   }
+  setAuthFeedback('ok', `Magic link requested for ${email}. Check inbox and spam. If coaches still do not receive emails, configure production SMTP in Supabase Auth.`, false);
   toast('Magic link sent');
 }
 
@@ -701,6 +737,7 @@ async function signOutSupabase(){
   await sbClient.auth.signOut();
   sbUser = null;
   sbCoachReady = false;
+  setAuthFeedback('info', 'Signed out. You can request another magic link anytime.', false);
   renderAuthPanel();
   toast('Signed out');
 }
