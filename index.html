@@ -636,7 +636,7 @@ function renderAuthPanel(){
   if(!hasSupabaseConfig()){
     el.innerHTML = `
       <div class="auth-status">Local Mode</div>
-      <div class="auth-copy">Add Supabase URL and anon key in stride-config.js to enable account sync.</div>
+      <div class="auth-copy">Cloud account sync is waiting for app configuration.</div>
       ${authFeedbackHtml()}
     `;
     return;
@@ -645,7 +645,7 @@ function renderAuthPanel(){
   if(!sbClient){
     el.innerHTML = `
       <div class="auth-status">Sync Offline</div>
-      <div class="auth-copy">Supabase client did not load. Local calculator still works.</div>
+      <div class="auth-copy">Cloud account services did not load. Local calculator still works.</div>
       ${authFeedbackHtml()}
     `;
     return;
@@ -666,12 +666,12 @@ function renderAuthPanel(){
 
   el.innerHTML = `
     <div class="auth-status">Coach Account</div>
-    <div class="auth-copy">Send yourself a magic link, then sync this roster to Supabase.</div>
+    <div class="auth-copy">Sign in to your STRIDE OS account and keep your roster synced across devices.</div>
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <div class="auth-actions">
       <button class="btn btn-primary" onclick="sendMagicLink()" ${authUiState.sending ? 'disabled' : ''}>${authUiState.sending ? 'Sending...' : 'Send Magic Link'}</button>
     </div>
-    <p class="auth-note">For real coach onboarding, Supabase needs a production SMTP provider. The built-in mailer is rate-limited and not meant for full public rollout.</p>
+    <p class="auth-note">Coaches sign in to STRIDE OS. Cloud auth and storage run behind the scenes.</p>
     ${authFeedbackHtml()}
   `;
 }
@@ -702,17 +702,17 @@ async function initSupabase(){
   }catch(err){
     console.warn('Supabase init failed', err);
     toast('Supabase sync unavailable');
-    setAuthFeedback('err', 'Supabase auth could not initialize in this browser session.', false);
+    setAuthFeedback('err', 'Account services could not initialize in this browser session.', false);
     renderAuthPanel();
   }
 }
 
 async function sendMagicLink(){
-  if(!sbClient) return toast('Supabase is not configured yet');
+  if(!sbClient) return toast('Account services are not configured yet');
   const emailEl = document.getElementById('authEmail');
   const email = emailEl ? emailEl.value.trim() : '';
   if(!email) return toast('Enter your email first');
-  setAuthFeedback('info', 'Contacting Supabase and requesting your magic link...', true);
+  setAuthFeedback('info', 'Requesting your STRIDE OS sign-in link...', true);
 
   const { error } = await sbClient.auth.signInWithOtp({
     email,
@@ -722,13 +722,13 @@ async function sendMagicLink(){
     console.error(error);
     const msg = String(error.message || 'Magic link failed');
     if(msg.toLowerCase().includes('security purposes') || msg.toLowerCase().includes('rate limit')){
-      setAuthFeedback('err', 'Supabase is rate-limiting email sends right now. Wait a bit, then try again.', false);
+      setAuthFeedback('err', 'Email sign-in is being rate-limited right now. Wait a bit, then try again.', false);
     } else {
       setAuthFeedback('err', msg, false);
     }
     return toast(error.message || 'Magic link failed');
   }
-  setAuthFeedback('ok', `Magic link requested for ${email}. Check inbox and spam. If coaches still do not receive emails, configure production SMTP in Supabase Auth.`, false);
+  setAuthFeedback('ok', `Sign-in link requested for ${email}. Check inbox and spam for your STRIDE OS email.`, false);
   toast('Magic link sent');
 }
 
@@ -763,7 +763,7 @@ async function ensureCoachProfile(){
 
 async function syncLocalToSupabase(){
   if(!sbClient || !sbUser) return toast('Sign in before syncing');
-  if(!confirm('Sync this local roster to your STRIDE OS Supabase account? This records Terms and Privacy acceptance for your coach profile.')) return;
+  if(!confirm('Sync this local roster to your STRIDE OS account? This records Terms and Privacy acceptance for your coach profile.')) return;
 
   try{
     await ensureCoachProfile();
