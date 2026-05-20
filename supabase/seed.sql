@@ -1,0 +1,25 @@
+-- Optional local seed data for Supabase CLI development.
+-- Event distances are inserted by the initial migration, so production can run with
+-- an empty seed file until validation CSVs are ready to import.
+
+-- Example validation corpus load once CSVs exist:
+-- copy public.validation_corpus (
+--   athlete_name,
+--   school_or_country,
+--   age_group,
+--   grade,
+--   classification,
+--   division,
+--   event,
+--   time_mark,
+--   time_sec,
+--   place,
+--   sex,
+--   meet_level,
+--   meet_name,
+--   meet_year,
+--   data_source,
+--   reliability
+-- )
+-- from '/absolute/path/to/validation_corpus.csv'
+-- with (format csv, header true);
