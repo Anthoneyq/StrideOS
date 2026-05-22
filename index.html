@@ -1392,7 +1392,8 @@ function fmtPace(spkm){ return fmtMile(spkm); }
 function goTo(id,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn[data-s]').forEach(b=>b.removeAttribute('aria-current'));
-  document.getElementById(id).classList.add('active');
+  const sectionEl = document.getElementById(id);
+  if(sectionEl) sectionEl.classList.add('active');
   const match=btn||document.querySelector(`.nav-btn[data-s="${id}"]`);
   if(match) match.setAttribute('aria-current','page');
   currentScreen = id;
@@ -1404,7 +1405,14 @@ function goTo(id,btn){
   if(id==='predict')  renderPredict();
   if(id==='methodology') renderMethodology();
   if(id==='edit')     fillForm();
-  window.scrollTo({top:0,behavior:'smooth'});
+  // Scroll the destination section into view rather than just the top of
+  // the page — on mobile, the sidebar sits above main content, so
+  // scrollTo({top:0}) leaves the form below the fold.
+  if(sectionEl){
+    sectionEl.scrollIntoView({behavior:'smooth', block:'start'});
+  } else {
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
 }
 
 // ── EMPTY STATE ──
@@ -4410,6 +4418,18 @@ function startNewAthlete(){
   updateChip();
   goTo('edit',null);
   toast('Add a new athlete');
+  // After the screen transitions and scrolls into view, focus the name
+  // field. On mobile this also pops up the keyboard so the coach can
+  // start typing immediately without having to scroll-and-tap.
+  setTimeout(() => {
+    const nameInput = document.getElementById('fName');
+    if(nameInput){
+      try{ nameInput.focus({preventScroll: true}); }
+      catch(e){ nameInput.focus(); }
+      // Ensure the form is visible even if the focus didn't scroll on iOS.
+      nameInput.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }, 350);
 }
 
 // ── DELETE ATHLETE ──
