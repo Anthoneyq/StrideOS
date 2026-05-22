@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="./stride-config.js"></script>
 <style>
 :root {
@@ -92,6 +95,23 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .tier-banner-text strong{color:var(--text);font-weight:600}
 .tier-banner-cta{flex-shrink:0;padding:.5rem .9rem;font-size:.6875rem}
 @media(max-width:700px){.tier-banner{flex-direction:column;align-items:stretch;text-align:center;margin:1rem 1rem 0}.tier-banner-cta{width:100%}}
+/* Bulk import dropzone */
+.import-dropzone{border:2px dashed var(--border);border-radius:.75rem;padding:3rem 1.5rem;text-align:center;background:var(--bg-el);transition:border-color .15s,background .15s;cursor:pointer}
+.import-dropzone:hover,.import-dropzone.drag-over{border-color:var(--accent);background:var(--accent-soft)}
+.import-dropzone-icon{font-family:'JetBrains Mono',monospace;font-size:2.5rem;color:var(--text-3);margin-bottom:.5rem}
+.import-dropzone h3{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:400;margin-bottom:.5rem;color:var(--text)}
+.import-dropzone p{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-3);line-height:1.55;margin-bottom:.75rem}
+.import-dropzone .file-types{font-size:.625rem;letter-spacing:.125rem;text-transform:uppercase;color:var(--text-4)}
+.import-mapping{display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1rem;margin:1rem 0}
+.import-mapping label{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-2);display:flex;flex-direction:column;gap:.25rem}
+.import-mapping label .field-name{font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem}
+.import-mapping select{background:#050505;border:1px solid var(--border-s);border-radius:.375rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.75rem;padding:.5rem .625rem}
+.import-preview-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:.6875rem}
+.import-preview-table th,.import-preview-table td{padding:.5rem .625rem;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+.import-preview-table th{font-size:.5625rem;letter-spacing:.0625rem;text-transform:uppercase;color:var(--text-4);font-weight:600;background:var(--bg-el)}
+.import-preview-table tr.invalid td{color:var(--red);background:rgba(239,68,68,.04)}
+.import-error{color:var(--red);font-family:'JetBrains Mono',monospace;font-size:.6875rem;padding:.625rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:.375rem;margin:.5rem 0}
+@media(max-width:700px){.import-mapping{grid-template-columns:1fr}}
 .chip{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;cursor:pointer;transition:border-color .15s}
 .chip:hover,.chip:focus-visible{border-color:var(--text);outline:none}
 .chip-lbl{font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:.375rem}
@@ -303,6 +323,7 @@ input.err,select.err{border-color:var(--red)}
         <ul class="nav-list" aria-labelledby="lbl-ws" role="list">
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span>Basic Calculator</button></li>
           <li><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
+          <li><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
           <li><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
           <li><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
@@ -343,10 +364,22 @@ input.err,select.err{border-color:var(--red)}
       <header class="screen-header">
         <div><p class="eyebrow">Coach Workspace</p><h1 class="screen-title" id="ro-h">Athlete <em>Roster</em></h1></div>
         <div class="btn-row">
+          <button class="btn" onclick="goTo('import',null)">↥ Import</button>
           <button class="btn btn-primary" onclick="startNewAthlete()">+ New Athlete</button>
         </div>
       </header>
       <div id="ro-body"></div>
+    </section>
+
+    <!-- BULK IMPORT (Pro feature) -->
+    <section id="import" class="screen" aria-labelledby="im-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Pro Feature &middot; CSV / XLSX</p><h1 class="screen-title" id="im-h">Import <em>Roster</em></h1></div>
+        <div class="btn-row">
+          <button class="btn" onclick="goTo('roster',null)">← Back to Roster</button>
+        </div>
+      </header>
+      <div id="im-body"></div>
     </section>
 
     <!-- MULTI-EVENT ANALYSIS -->
@@ -1405,6 +1438,7 @@ function goTo(id,btn){
   if(id==='predict')  renderPredict();
   if(id==='methodology') renderMethodology();
   if(id==='edit')     fillForm();
+  if(id==='import')   renderImport();
   // Scroll the destination section into view rather than just the top of
   // the page — on mobile, the sidebar sits above main content, so
   // scrollTo({top:0}) leaves the form below the fold.
@@ -3493,6 +3527,430 @@ function buildPredictiveRaceTable(){
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
       <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}, cross-validated against population data spanning ages 12–95. Cross-domain predictions are shown but flagged exploratory.
     </p>`;
+}
+
+// ── BULK ATHLETE IMPORT (CSV / XLSX) ──
+// Pro-only. Drag-drop a Google Sheets / Excel roster export, map columns,
+// preview rows, bulk-insert into the coach's roster.
+//
+// Two-stage UI:
+//   1. dropzone (idle): drag a file or click to browse
+//   2. mapping: preview + column dropdowns + import button
+
+let importState = {
+  stage: 'idle', // 'idle' | 'parsing' | 'mapping' | 'importing'
+  fileName: '',
+  headers: [],
+  rows: [],
+  mapping: {},
+  error: '',
+  importedCount: 0,
+  failedRows: []
+};
+
+// Schema of athlete fields the coach can map their columns to.
+const IMPORT_FIELDS = [
+  { key: 'name',         label: 'Athlete Name',  required: true,  hints: ['name','athlete','full name','first name','first','firstname','last name','last','student','runner'] },
+  { key: 'age',          label: 'Age',           required: false, hints: ['age','years','yrs old'] },
+  { key: 'sex',          label: 'Sex',           required: false, hints: ['sex','gender','m/f','boys/girls'] },
+  { key: 'grade',        label: 'Grade',         required: false, hints: ['grade','class','year','year in school','yr'] },
+  { key: 'primaryEvent', label: 'Primary Event', required: false, hints: ['event','primary event','best event','specialty','main event','distance','race'] },
+  { key: 'raceTime',     label: 'PR Time',       required: false, hints: ['time','pr','personal record','best time','pr time','best','mark','result'] },
+  { key: 'raceDate',     label: 'PR Date',       required: false, hints: ['date','race date','pr date','last race','when','meet date'] },
+  { key: 'mileage',      label: 'Weekly Miles',  required: false, hints: ['mileage','miles','weekly','volume','weekly miles','weekly mileage'] },
+];
+
+function renderImport(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+
+  // Pro / trial gate
+  if(!hasProAccess()){
+    el.innerHTML = `
+      <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
+        <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Bulk roster import</h2>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:32rem;margin:0 auto 1.5rem">Drag a CSV or XLSX file (Google Sheets export, Excel, etc.) and bring your whole roster in with column mapping and validation. Upgrade to unlock.</p>
+        <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
+      </div>`;
+    return;
+  }
+
+  switch(importState.stage){
+    case 'idle':      return renderImportDropzone();
+    case 'parsing':   return renderImportParsing();
+    case 'mapping':   return renderImportMapping();
+    case 'importing': return renderImportProgress();
+    case 'done':      return renderImportDone();
+    default:          return renderImportDropzone();
+  }
+}
+
+function renderImportDropzone(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="import-dropzone" id="importDropzone"
+         tabindex="0"
+         onclick="document.getElementById('importFileInput').click()"
+         onkeydown="if(event.key==='Enter'||event.key===' '){document.getElementById('importFileInput').click()}">
+      <div class="import-dropzone-icon" aria-hidden="true">↥</div>
+      <h3>Drop your roster file here</h3>
+      <p>Drag a CSV or XLSX file into this box, or click anywhere to choose one.</p>
+      <p class="file-types">Accepted: .csv &middot; .xlsx &middot; .xls &middot; .tsv</p>
+      <input id="importFileInput" type="file" accept=".csv,.xlsx,.xls,.tsv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             style="display:none" onchange="handleImportFiles(event)">
+    </div>
+    ${importState.error ? `<div class="import-error">${esc(importState.error)}</div>` : ''}
+    <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;margin-top:1.5rem">
+      <summary style="padding:1rem 1.25rem;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.125rem;color:var(--text-2);text-transform:uppercase">Tips for clean imports</summary>
+      <div style="padding:0 1.25rem 1.25rem;font-size:.8125rem;color:var(--text-2);line-height:1.7">
+        <p style="margin-bottom:.5rem"><strong style="color:var(--text)">Headers in row 1.</strong> One row per athlete after that.</p>
+        <p style="margin-bottom:.5rem"><strong style="color:var(--text)">Common columns we auto-detect:</strong> Name, Age, Sex, Grade, Event, PR Time, PR Date, Mileage. We'll show you the mapping and you can override before import.</p>
+        <p style="margin-bottom:.5rem"><strong style="color:var(--text)">From Google Sheets:</strong> File → Download → Comma Separated Values (.csv).</p>
+        <p><strong style="color:var(--text)">From Excel:</strong> Save As → CSV UTF-8 or use the .xlsx file directly.</p>
+      </div>
+    </details>
+  `;
+
+  const dz = document.getElementById('importDropzone');
+  if(dz){
+    ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.add('drag-over');
+    }));
+    ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove('drag-over');
+    }));
+    dz.addEventListener('drop', e => {
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]){
+        handleImportFile(e.dataTransfer.files[0]);
+      }
+    });
+  }
+}
+
+function renderImportParsing(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="info-box">Parsing <strong>${esc(importState.fileName)}</strong>...</div>`;
+}
+
+function handleImportFiles(event){
+  const file = event.target.files && event.target.files[0];
+  if(file) handleImportFile(file);
+}
+
+async function handleImportFile(file){
+  importState = { ...importState, stage: 'parsing', fileName: file.name, error: '' };
+  renderImport();
+  try{
+    const name = (file.name || '').toLowerCase();
+    let result;
+    if(name.endsWith('.xlsx') || name.endsWith('.xls')){
+      result = await parseImportXLSX(file);
+    } else {
+      // CSV / TSV / unknown — Papa.parse handles delimiters auto-detect
+      result = await parseImportCSV(file);
+    }
+    if(!result || !result.headers || result.headers.length === 0){
+      throw new Error('File has no readable headers. Make sure row 1 contains column names.');
+    }
+    if(!result.rows || result.rows.length === 0){
+      throw new Error('File has headers but no data rows.');
+    }
+    importState = {
+      ...importState,
+      stage: 'mapping',
+      headers: result.headers,
+      rows: result.rows,
+      mapping: autoDetectColumns(result.headers),
+      error: ''
+    };
+    renderImport();
+  }catch(err){
+    console.error('Import parse failed', err);
+    importState = {
+      ...importState,
+      stage: 'idle',
+      error: err.message || 'Could not read that file. Try saving as CSV and uploading again.'
+    };
+    renderImport();
+  }
+}
+
+function parseImportCSV(file){
+  return new Promise((resolve, reject) => {
+    if(typeof Papa === 'undefined') return reject(new Error('CSV parser failed to load. Hard-refresh and try again.'));
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      transformHeader: h => (h || '').trim(),
+      complete: results => {
+        if(!results || !results.meta || !results.meta.fields) return reject(new Error('No columns detected.'));
+        resolve({ headers: results.meta.fields, rows: results.data || [] });
+      },
+      error: err => reject(err)
+    });
+  });
+}
+
+async function parseImportXLSX(file){
+  if(typeof XLSX === 'undefined') throw new Error('Excel parser failed to load. Hard-refresh and try again.');
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  const sheetName = wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  if(!sheet) throw new Error('Spreadsheet has no sheets.');
+  const json = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+  if(json.length === 0) return { headers: [], rows: [] };
+  const headers = Object.keys(json[0]);
+  return { headers, rows: json };
+}
+
+function autoDetectColumns(headers){
+  const mapping = {};
+  const normalized = headers.map(h => (h || '').toLowerCase().trim());
+  IMPORT_FIELDS.forEach(field => {
+    let matchIdx = -1;
+    // Exact-match hints first
+    for(const hint of field.hints){
+      const idx = normalized.indexOf(hint.toLowerCase());
+      if(idx >= 0){ matchIdx = idx; break; }
+    }
+    // Substring fallback
+    if(matchIdx < 0){
+      for(const hint of field.hints){
+        const idx = normalized.findIndex(h => h.includes(hint.toLowerCase()));
+        if(idx >= 0){ matchIdx = idx; break; }
+      }
+    }
+    if(matchIdx >= 0) mapping[field.key] = headers[matchIdx];
+  });
+  return mapping;
+}
+
+function renderImportMapping(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  const headers = importState.headers;
+  const rows = importState.rows;
+  const mapping = importState.mapping;
+
+  const headerOptions = ['<option value="">— skip —</option>']
+    .concat(headers.map(h => `<option value="${esc(h)}" ${'' /* selected handled below */}>${esc(h)}</option>`))
+    .join('');
+
+  const mappingHtml = IMPORT_FIELDS.map(field => {
+    const current = mapping[field.key] || '';
+    const opts = ['<option value="">— skip —</option>']
+      .concat(headers.map(h => `<option value="${esc(h)}" ${h===current?'selected':''}>${esc(h)}</option>`))
+      .join('');
+    return `
+      <label>
+        <span class="field-name">${esc(field.label)}${field.required ? ' *' : ''}</span>
+        <select onchange="setImportMapping('${field.key}', this.value)">${opts}</select>
+      </label>`;
+  }).join('');
+
+  // Preview table — first 5 rows, mapped values
+  const previewHeaders = IMPORT_FIELDS.filter(f => mapping[f.key]).map(f => f.label);
+  const previewRows = rows.slice(0, 5).map(row => {
+    const cells = IMPORT_FIELDS.filter(f => mapping[f.key]).map(f => esc(String(row[mapping[f.key]] ?? '').trim() || '—'));
+    const hasName = !!(row[mapping.name] && String(row[mapping.name]).trim());
+    return `<tr class="${hasName ? '' : 'invalid'}"><td style="color:var(--text-4);width:2rem">${cells.length ? '' : '—'}</td>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+  }).join('');
+
+  const validCount = rows.filter(r => r[mapping.name] && String(r[mapping.name]).trim()).length;
+  const invalidCount = rows.length - validCount;
+
+  el.innerHTML = `
+    <div class="info-box">
+      <strong>${esc(importState.fileName)}</strong> &middot; ${rows.length} row${rows.length===1?'':'s'} detected${invalidCount > 0 ? ` &middot; <span style="color:var(--red)">${invalidCount} row${invalidCount===1?'':'s'} missing an athlete name (will be skipped)</span>` : ''}
+    </div>
+    <div class="card">
+      <p class="card-title"><span>Match Your Columns</span></p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);line-height:1.55;margin-bottom:1rem">
+        We auto-detected the columns below. Change any of them if a column should map to a different field. Required fields are marked with *.
+      </p>
+      <div class="import-mapping">${mappingHtml}</div>
+    </div>
+    ${previewHeaders.length ? `
+      <div class="card">
+        <p class="card-title"><span>Preview (first 5 rows)</span></p>
+        <div style="overflow-x:auto">
+          <table class="import-preview-table">
+            <thead><tr><th></th>${previewHeaders.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+            <tbody>${previewRows}</tbody>
+          </table>
+        </div>
+      </div>` : ''}
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem">
+      <div>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text)">Ready to import <strong>${validCount}</strong> athlete${validCount===1?'':'s'}</p>
+        ${!mapping.name ? '<p style="font-family:\'JetBrains Mono\',monospace;font-size:.6875rem;color:var(--red);margin-top:.25rem">Pick an Athlete Name column to enable import.</p>' : ''}
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="resetImport()">Choose a different file</button>
+        <button class="btn btn-primary" ${!mapping.name || validCount === 0 ? 'disabled' : ''} onclick="applyImport()">Import ${validCount} athlete${validCount===1?'':'s'}</button>
+      </div>
+    </div>`;
+}
+
+function setImportMapping(fieldKey, headerName){
+  importState.mapping = { ...importState.mapping, [fieldKey]: headerName };
+  renderImport();
+}
+
+function resetImport(){
+  importState = { stage: 'idle', fileName: '', headers: [], rows: [], mapping: {}, error: '', importedCount: 0, failedRows: [] };
+  renderImport();
+}
+
+function renderImportProgress(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  el.innerHTML = `<div class="info-box">Importing ${importState.importedCount} of ${importState.rows.length} athletes...</div>`;
+}
+
+function renderImportDone(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="card" style="text-align:center;padding:2rem">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--green);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Import complete</p>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.5rem">Added ${importState.importedCount} athlete${importState.importedCount===1?'':'s'}</h2>
+      ${importState.failedRows.length > 0 ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--yellow);margin-bottom:1rem">${importState.failedRows.length} row${importState.failedRows.length===1?'':'s'} skipped (missing name or invalid data)</p>` : ''}
+      <div class="btn-row" style="justify-content:center;margin-top:1rem">
+        <button class="btn" onclick="resetImport()">Import another file</button>
+        <button class="btn btn-primary" onclick="goTo('roster',null)">View Roster →</button>
+      </div>
+    </div>`;
+}
+
+// Normalise a sex value from the spreadsheet ("M"/"Male"/"Boy"/"Girls" etc.)
+function _normSex(v){
+  if(!v) return '';
+  const s = String(v).trim().toUpperCase();
+  if(s === 'M' || s.startsWith('MALE') || s.startsWith('BOY')) return 'M';
+  if(s === 'F' || s.startsWith('FEMALE') || s.startsWith('GIRL') || s.startsWith('WOMAN')) return 'F';
+  return '';
+}
+
+// Best-effort parse of a primary-event string into a known race distance.
+// Falls back to leaving the raw string in primaryEvent so the coach can
+// fix it in the edit form later.
+function _normEvent(v){
+  if(!v) return { primaryEvent: '', raceDistance: '', raceDistanceM: null };
+  const s = String(v).trim();
+  const norm = s.toLowerCase().replace(/\s+/g,'').replace('meters','m').replace('meter','m').replace('mile','mi');
+  const map = {
+    '100m':100, '200m':200, '400m':400,
+    '800m':800, '1500m':1500, '1600m':1600,
+    '1mi':1609, '1mile':1609, 'mile':1609,
+    '3000m':3000, '3200m':3200, '2mi':3218, '2mile':3218,
+    '5k':5000, '5000m':5000,
+    '8k':8000, '10k':10000, '10000m':10000,
+    'halfmarathon':21097, 'half':21097, 'hm':21097,
+    'marathon':42195
+  };
+  const distM = map[norm];
+  if(distM){
+    const label = distM >= 1000 && distM < 5000 ? `${distM}m`
+      : distM === 5000 ? '5K'
+      : distM === 8000 ? '8K'
+      : distM === 10000 ? '10K'
+      : distM === 21097 ? 'Half Marathon'
+      : distM === 42195 ? 'Marathon'
+      : `${distM}m`;
+    return { primaryEvent: label, raceDistance: label, raceDistanceM: distM };
+  }
+  return { primaryEvent: s, raceDistance: '', raceDistanceM: null };
+}
+
+function _normDate(v){
+  if(!v) return '';
+  const s = String(v).trim();
+  // Try YYYY-MM-DD first
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  // Try MM/DD/YYYY or M/D/YY
+  const us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(us){
+    const yyyy = us[3].length === 2 ? '20' + us[3] : us[3];
+    return `${yyyy}-${us[1].padStart(2,'0')}-${us[2].padStart(2,'0')}`;
+  }
+  // Let Date try
+  const d = new Date(s);
+  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  return '';
+}
+
+async function applyImport(){
+  if(!importState.mapping.name){
+    toast('Pick an Athlete Name column first');
+    return;
+  }
+
+  importState = { ...importState, stage: 'importing', importedCount: 0, failedRows: [] };
+  renderImport();
+
+  const m = importState.mapping;
+  const total = importState.rows.length;
+  const failed = [];
+  let imported = 0;
+
+  for(let i = 0; i < total; i++){
+    const row = importState.rows[i];
+    const name = String(row[m.name] || '').trim();
+    if(!name){ failed.push({ index: i, reason: 'no name' }); continue; }
+
+    const evt = _normEvent(m.primaryEvent ? row[m.primaryEvent] : '');
+    const athlete = {
+      id: 'a_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8) + '_' + i,
+      name,
+      age: m.age ? (parseInt(String(row[m.age]).trim(), 10) || '') : '',
+      sex: m.sex ? _normSex(row[m.sex]) : '',
+      grade: m.grade ? String(row[m.grade] || '').trim() : '',
+      primaryEvent: evt.primaryEvent,
+      secondaryEvents: [],
+      trainingAge: 0,
+      weeklyMileage: m.mileage ? (parseFloat(String(row[m.mileage]).trim()) || null) : null,
+      raceDistance: evt.raceDistance,
+      raceDistanceM: evt.raceDistanceM,
+      raceTime: m.raceTime ? String(row[m.raceTime] || '').trim() : '',
+      raceDate: m.raceDate ? _normDate(row[m.raceDate]) : '',
+      raceLocation: '',
+      raceStartTime: '',
+      raceWeather: null,
+      additionalPRs: {},
+      guardrail: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    DB.athletes.push(athlete);
+    imported++;
+
+    // Push to Supabase if signed in. Don't await every one — fire and forget
+    // so a slow connection doesn't stall the loop. Failures are logged.
+    if(typeof syncAthleteToSupabase === 'function'){
+      try{ syncAthleteToSupabase(athlete); }catch(e){ console.warn('athlete sync error', e); }
+    }
+
+    importState.importedCount = imported;
+    if(i % 5 === 0) renderImport(); // throttled progress updates
+  }
+
+  saveDB(DB);
+  if(DB.athletes.length > 0 && !DB.activeAthleteId) DB.activeAthleteId = DB.athletes[0].id;
+  refreshActiveAthlete();
+  updateChip();
+
+  importState = { ...importState, stage: 'done', importedCount: imported, failedRows: failed };
+  renderImport();
+  toast(`Imported ${imported} athlete${imported===1?'':'s'}`);
 }
 
 // "Upgrade to unlock" placeholder shown to free-tier users where the predictive
