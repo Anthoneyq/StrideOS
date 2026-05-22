@@ -993,6 +993,31 @@ async function loadSubscription(){
     console.warn('loadSubscription failed', err);
   }
   renderTierBanner();
+  // The screen may have rendered before this Supabase round-trip finished,
+  // in which case any Pro-gated section (Predictive Race Times, etc.) was
+  // baked in as the locked placeholder. Re-render the active screen now
+  // that we know the real tier so those sections flip to their unlocked
+  // variant for trial/pro coaches.
+  refreshCurrentScreen();
+}
+
+// Re-run the renderer for whatever screen is currently active. Used after
+// async state (subscription, remote athletes) lands so any tier-gated
+// content swaps between locked/unlocked variants without a navigation.
+function refreshCurrentScreen(){
+  try{
+    switch(currentScreen){
+      case 'roster':      renderRoster();      break;
+      case 'overview':    renderOverview();    break;
+      case 'profile':     renderProfile();     break;
+      case 'paces':       renderPaces();       break;
+      case 'multievent':  renderMultiEvent();  break;
+      case 'predict':     renderPredict();     break;
+      case 'methodology': renderMethodology(); break;
+    }
+  }catch(err){
+    console.warn('refreshCurrentScreen failed', err);
+  }
 }
 
 // Public helper — call anywhere we need to gate a Pro feature.
