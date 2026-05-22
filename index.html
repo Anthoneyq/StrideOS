@@ -86,6 +86,12 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .auth-secondary{display:flex;justify-content:center;gap:.5rem;margin-top:.625rem;font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3)}
 .auth-secondary a{color:var(--text-2);text-decoration:none;cursor:pointer}
 .auth-secondary a:hover{color:var(--accent);text-decoration:underline}
+.tier-banner{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:.5rem;padding:.75rem 1rem;margin:1.25rem 1.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)}
+.tier-banner-trial{border-color:rgba(255,69,0,.3)}
+.tier-banner-free{border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.06)}
+.tier-banner-text strong{color:var(--text);font-weight:600}
+.tier-banner-cta{flex-shrink:0;padding:.5rem .9rem;font-size:.6875rem}
+@media(max-width:700px){.tier-banner{flex-direction:column;align-items:stretch;text-align:center;margin:1rem 1rem 0}.tier-banner-cta{width:100%}}
 .chip{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;cursor:pointer;transition:border-color .15s}
 .chip:hover,.chip:focus-visible{border-color:var(--text);outline:none}
 .chip-lbl{font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:.375rem}
@@ -328,6 +334,9 @@ input.err,select.err{border-color:var(--red)}
   </aside>
 
   <main id="mainContent" tabindex="-1">
+
+    <!-- TIER BANNER (trial countdown / free-plan upgrade CTA) -->
+    <div id="tierBanner" aria-live="polite"></div>
 
     <!-- ROSTER -->
     <section id="roster" class="screen" aria-labelledby="ro-h">
@@ -607,6 +616,17 @@ const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 let sbClient = null;
 let sbUser = null;
 let sbCoachReady = false;
+// Subscription state, populated from the my_subscription view after sign-in.
+// Defaults to "no access" until we've actually read it.
+let sbSubscription = {
+  tier: null,
+  trialEndsAt: null,
+  status: null,
+  interval: null,
+  hasProAccess: false,
+  trialSecondsRemaining: null
+};
+const FREE_ATHLETE_LIMIT = 3;
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
 
 function setAuthMode(mode){
@@ -728,6 +748,7 @@ async function initSupabase(){
       renderAuthPanel();
       if(sbUser){
         await ensureCoachProfileSilent();
+        await loadSubscription();
         await loadRemoteAthletes();
       }
     });
@@ -906,6 +927,107 @@ async function ensureCoachProfileSilent(){
   }catch(err){
     console.warn('ensureCoachProfile failed (silent)', err);
   }
+}
+
+// Subscription state loader. Reads from the my_subscription view in
+// Supabase, which already enforces auth.uid() so we always get the
+// current signed-in coach's own state.
+async function loadSubscription(){
+  if(!sbClient || !sbUser){
+    sbSubscription = {
+      tier: null, trialEndsAt: null, status: null, interval: null,
+      hasProAccess: false, trialSecondsRemaining: null
+    };
+    return;
+  }
+  try{
+    const { data, error } = await sbClient
+      .from('my_subscription')
+      .select('*')
+      .maybeSingle();
+    if(error) throw error;
+    if(data){
+      sbSubscription = {
+        tier: data.subscription_tier,
+        trialEndsAt: data.trial_ends_at,
+        status: data.subscription_status,
+        interval: data.plan_interval,
+        hasProAccess: Boolean(data.has_pro_access),
+        trialSecondsRemaining: data.trial_seconds_remaining
+      };
+    }
+  }catch(err){
+    console.warn('loadSubscription failed', err);
+  }
+  renderTierBanner();
+}
+
+// Public helper — call anywhere we need to gate a Pro feature.
+function hasProAccess(){
+  return Boolean(sbSubscription && sbSubscription.hasProAccess);
+}
+
+function trialDaysRemaining(){
+  if(!sbSubscription || sbSubscription.trialSecondsRemaining == null) return null;
+  return Math.max(0, Math.ceil(sbSubscription.trialSecondsRemaining / 86400));
+}
+
+// Render the top-of-app tier banner: trial countdown, free-tier upgrade CTA,
+// or nothing for Pro coaches.
+function renderTierBanner(){
+  const host = document.getElementById('tierBanner');
+  if(!host) return;
+  if(!sbSubscription || !sbSubscription.tier){
+    host.innerHTML = '';
+    return;
+  }
+  const tier = sbSubscription.tier;
+  if(tier === 'pro'){
+    host.innerHTML = '';
+    return;
+  }
+  if(tier === 'trial'){
+    const days = trialDaysRemaining();
+    const label = days === 0 ? 'last day' : (days === 1 ? '1 day left' : `${days} days left`);
+    host.innerHTML = `
+      <div class="tier-banner tier-banner-trial">
+        <div class="tier-banner-text">
+          <strong>Pro trial</strong> &middot; ${label} of full STRIDE OS access.
+        </div>
+        <button class="btn btn-primary tier-banner-cta" onclick="showUpgradeModal()">Upgrade to Pro</button>
+      </div>
+    `;
+    return;
+  }
+  // tier === 'free'
+  const hiddenCount = Math.max(0, (DB.athletes || []).length - FREE_ATHLETE_LIMIT);
+  const hiddenMsg = hiddenCount > 0
+    ? ` ${hiddenCount} athlete${hiddenCount===1?'':'s'} hidden — upgrade to restore.`
+    : '';
+  host.innerHTML = `
+    <div class="tier-banner tier-banner-free">
+      <div class="tier-banner-text">
+        <strong>Free plan</strong> &middot; calculator + up to ${FREE_ATHLETE_LIMIT} athletes.${hiddenMsg}
+      </div>
+      <button class="btn btn-primary tier-banner-cta" onclick="showUpgradeModal()">Upgrade to Pro</button>
+    </div>
+  `;
+}
+
+// Placeholder until Phase C wires Stripe Checkout.
+function showUpgradeModal(){
+  const monthly = '$19/month';
+  const annual = '$167/year (save 27%)';
+  alert(`STRIDE OS Pro\n\n${monthly}\n${annual}\n\n• Unlimited athletes\n• Race predictions & forecasts\n• Performance curve / longitudinal tracking\n• Event fit analysis\n• Environmental corrections\n• All future Phase 3 features\n\nPayment checkout coming next.`);
+}
+
+// Filter a list of athletes to what the current tier is allowed to see.
+// Free tier sees the first FREE_ATHLETE_LIMIT athletes (by created order);
+// the rest stay safely in the DB and reappear on upgrade.
+function athletesForCurrentTier(){
+  const list = (DB && DB.athletes) ? DB.athletes : [];
+  if(hasProAccess()) return list;
+  return list.slice(0, FREE_ATHLETE_LIMIT);
 }
 
 async function syncLocalToSupabase(){
@@ -3524,7 +3646,11 @@ function renderMethodology(){
 // ══════════════════════════════════════
 function renderRoster(){
   const el = document.getElementById('ro-body');
-  if(DB.athletes.length === 0){
+  const visible = athletesForCurrentTier();
+  const totalCount = (DB.athletes || []).length;
+  const hiddenCount = totalCount - visible.length;
+
+  if(totalCount === 0){
     el.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon" aria-hidden="true">+</div>
@@ -3535,9 +3661,9 @@ function renderRoster(){
     return;
   }
 
-  // Group by event family
+  // Group by event family — only the visible ones for the current tier.
   const grouped = {};
-  DB.athletes.forEach(a => {
+  visible.forEach(a => {
     const grp = getEventGroup(a.primaryEvent);
     grouped[grp] = grouped[grp] || [];
     grouped[grp].push(a);
@@ -3552,11 +3678,22 @@ function renderRoster(){
       </div>
     </div>`).join('');
 
+  const hiddenBanner = hiddenCount > 0 ? `
+    <div class="card" style="border-color:var(--accent-line);background:var(--accent-soft)">
+      <p class="card-title"><span>${hiddenCount} athlete${hiddenCount===1?'':'s'} hidden by Free plan</span></p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin:.5rem 0 .875rem">
+        You have ${totalCount} athletes on file. The free plan shows the first ${FREE_ATHLETE_LIMIT}. Your other ${hiddenCount===1?'athlete is':'athletes are'} safely stored and will reappear when you upgrade.
+      </p>
+      <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
+    </div>
+  ` : '';
+
   el.innerHTML = `
     <div class="info-box">
-      <strong>${DB.athletes.length} athlete${DB.athletes.length>1?'s':''} in roster.</strong> Click an athlete card to make them active across all screens. The <strong style="color:var(--accent)">+ New Athlete</strong> button adds without replacing anyone.
+      <strong>${visible.length} athlete${visible.length>1?'s':''} in roster.</strong> Click an athlete card to make them active across all screens. The <strong style="color:var(--accent)">+ New Athlete</strong> button adds without replacing anyone.
     </div>
-    ${grpHtml}`;
+    ${grpHtml}
+    ${hiddenBanner}`;
 }
 
 function athleteCard(a){
@@ -4259,6 +4396,13 @@ function saveAthlete(){
 
 // ── NEW ATHLETE (adds to roster, doesn't wipe) ──
 function startNewAthlete(){
+  // Free tier is capped at FREE_ATHLETE_LIMIT athletes. Trial and Pro coaches
+  // bypass this — only block free-tier users.
+  if(!hasProAccess() && (DB.athletes || []).length >= FREE_ATHLETE_LIMIT){
+    toast(`Free plan limit reached (${FREE_ATHLETE_LIMIT} athletes)`);
+    showUpgradeModal();
+    return;
+  }
   DB.activeAthleteId = null;
   saveDB(DB);
   refreshActiveAthlete();
