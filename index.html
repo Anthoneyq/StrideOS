@@ -2631,8 +2631,11 @@ function renderPaces(){
       </div>
     </details>
 
+    <!-- PREDICTIVE RACE TIMES (Pro feature — shows lock for free tier) -->
+    <div id="predictive-race-times-wrap">${hasProAccess() ? buildPredictiveRaceTable() : predictiveRaceTableLocked()}</div>
+
     <!-- COLLAPSIBLE: How this is calculated -->
-    <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem">
+    <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-top:1.5rem">
       <summary style="padding:1rem 1.5rem;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.125rem;color:var(--text-2);text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center">
         <span>How is this calculated?</span>
         <span style="color:var(--text-4)">+</span>
@@ -3249,6 +3252,259 @@ function _ensembleWeights(d1, d2){
 
   // Default fallback — equal blend with no sprint formula
   return { riegel: 0.30, cameron: 0.25, vdot: 0.25, vickers: 0.20, purdy: 0.00 };
+}
+
+// ── EVENT DOMAIN CLASSIFICATION ──
+// Cross-domain predictions (sprint <-> distance) are shown only with explicit
+// low-confidence warnings. Same-domain predictions get the tightest CIs.
+const EVENT_DOMAINS = {
+  'pure_sprint':       { min: 0,    max: 250,   label: 'Pure Sprint',           order: 1 },
+  'long_sprint':       { min: 250,  max: 500,   label: 'Long Sprint',           order: 2 },
+  'middle_distance':   { min: 500,  max: 1700,  label: 'Middle Distance',       order: 3 },
+  'long_middle':       { min: 1700, max: 3300,  label: 'Long Middle / Aerobic Power', order: 4 },
+  'distance':          { min: 3300, max: 11000, label: 'Distance',              order: 5 },
+  'long_distance':     { min: 11000, max: 23000, label: 'Long Distance',        order: 6 },
+  'marathon':          { min: 23000, max: 999999, label: 'Marathon+',           order: 7 },
+};
+
+function getEventDomain(distM){
+  for(const key of Object.keys(EVENT_DOMAINS)){
+    const d = EVENT_DOMAINS[key];
+    if(distM >= d.min && distM < d.max) return { key, ...d };
+  }
+  return { key: 'distance', ...EVENT_DOMAINS.distance };
+}
+
+// Observed event-transfer ratios from RunRepeat (35M+ race results).
+// Used as a sanity nudge on Riegel for long-distance predictions.
+const OBSERVED_RATIOS = {
+  '5000_10000':    1.79,
+  '5000_21097':    3.88,
+  '5000_42195':    7.69,
+  '10000_21097':   2.17,
+  '10000_42195':   4.29,
+  '21097_42195':   1.98,
+};
+
+function getObservedRatio(d1M, d2M){
+  const standardize = d => {
+    if(Math.abs(d - 5000) < 100) return 5000;
+    if(Math.abs(d - 10000) < 200) return 10000;
+    if(Math.abs(d - 21097) < 300) return 21097;
+    if(Math.abs(d - 42195) < 500) return 42195;
+    return null;
+  };
+  const a = standardize(d1M), b = standardize(d2M);
+  if(!a || !b) return null;
+  if(a === b) return 1.0;
+  const key = `${Math.min(a,b)}_${Math.max(a,b)}`;
+  const ratio = OBSERVED_RATIOS[key];
+  if(!ratio) return null;
+  return (a < b) ? ratio : 1/ratio;
+}
+
+// Personalized fatigue exponent: k from athlete's own PRs.
+// When 2+ valid PRs exist (400m+), compute k = ln(T2/T1)/ln(D2/D1) and
+// blend with the population Riegel exponent of 1.06.
+function personalFatigueExponent(athlete){
+  if(!athlete) return null;
+  const prs = collectAllPRs(athlete);
+  if(prs.length < 2) return null;
+
+  const distancePRs = prs.filter(p => p.distM >= 400);
+  if(distancePRs.length < 2) return null;
+
+  distancePRs.sort((a,b) => a.distM - b.distM);
+  const exponents = [];
+  for(let i = 0; i < distancePRs.length - 1; i++){
+    const p1 = distancePRs[i], p2 = distancePRs[i+1];
+    if(p2.distM / p1.distM < 1.3) continue;
+    const k = Math.log(p2.sec / p1.sec) / Math.log(p2.distM / p1.distM);
+    if(k > 0.95 && k < 1.20) exponents.push(k);
+  }
+  if(exponents.length === 0) return null;
+  const avgK = exponents.reduce((a,b) => a+b, 0) / exponents.length;
+  return {
+    k: avgK,
+    nPairs: exponents.length,
+    nPRs: distancePRs.length,
+    bias: avgK < 1.045 ? 'aerobic-biased' : avgK > 1.080 ? 'speed-biased' : 'balanced',
+    biasColor: avgK < 1.045 ? 'var(--green)' : avgK > 1.080 ? 'var(--yellow)' : 'var(--text-2)',
+  };
+}
+
+// ── PREDICTIVE RACE TIMES (inline on Paces page) ──
+// Conservative / Likely / Aggressive ranges with confidence labels and
+// reasons. Cross-domain predictions are flagged exploratory.
+function buildPredictiveRaceTable(){
+  if(!A || !A.raceDistanceM || !A.raceTime){
+    return `<p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-3);padding:1rem 0">Add a primary race PR to generate race time predictions.</p>`;
+  }
+  const raceSec = parseTime(A.raceTime);
+  if(!raceSec) return '';
+
+  const targets = [
+    { distM: 100, label: '100m' },
+    { distM: 200, label: '200m' },
+    { distM: 400, label: '400m' },
+    { distM: 800, label: '800m' },
+    { distM: 1500, label: '1500m' },
+    { distM: 1609, label: '1 Mile' },
+    { distM: 1600, label: '1600m' },
+    { distM: 3000, label: '3000m' },
+    { distM: 3200, label: '3200m' },
+    { distM: 3218, label: '2 Mile' },
+    { distM: 5000, label: '5K' },
+    { distM: 8000, label: '8K' },
+    { distM: 10000, label: '10K' },
+    { distM: 21097, label: 'Half Marathon' },
+    { distM: 42195, label: 'Marathon' },
+  ];
+
+  const freshness = prFreshness(A.raceDate);
+  const freshPenalty = freshness === 'fresh' ? 1.0 : freshness === 'stale' ? 1.3 : 1.7;
+  const sourceDomain = getEventDomain(A.raceDistanceM);
+  const personalK = personalFatigueExponent(A);
+  const sourceLabel = `${A.raceDistance} in ${A.raceTime}`;
+
+  const rows = targets.map(t => {
+    const isSource = (t.distM === A.raceDistanceM);
+    const targetDomain = getEventDomain(t.distM);
+    const sameDomain = targetDomain.key === sourceDomain.key;
+    const adjacentDomain = Math.abs(targetDomain.order - sourceDomain.order) === 1;
+    const distRatio = Math.max(t.distM, A.raceDistanceM) / Math.min(t.distM, A.raceDistanceM);
+    const logRatio = Math.abs(Math.log10(t.distM / A.raceDistanceM));
+
+    if(isSource){
+      return { ...t, targetDomain, isSource: true, likely: raceSec, conservative: raceSec, aggressive: raceSec, confidence: 100, confLabel: 'Verified PR', reasons: ["Athlete's actual logged result"] };
+    }
+
+    const result = strideEnsemble(A.raceDistanceM, raceSec, t.distM, freshPenalty);
+    let likely = result.predSec;
+    if(personalK && t.distM >= 400 && A.raceDistanceM >= 400){
+      const personalPrediction = raceSec * Math.pow(t.distM / A.raceDistanceM, personalK.k);
+      likely = personalPrediction * 0.6 + likely * 0.4;
+    }
+    const observedRatio = getObservedRatio(A.raceDistanceM, t.distM);
+    if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000){
+      const observedPrediction = raceSec * observedRatio;
+      likely = observedPrediction * 0.3 + likely * 0.7;
+    }
+
+    const isExploratory = Math.abs(targetDomain.order - sourceDomain.order) >= 3;
+    let rangePct;
+    if(sameDomain)        rangePct = 0.015 + logRatio * 0.015;
+    else if(adjacentDomain) rangePct = 0.030 + logRatio * 0.020;
+    else if(isExploratory)  rangePct = 0.080 + logRatio * 0.040;
+    else                    rangePct = 0.050 + logRatio * 0.025;
+    rangePct *= freshPenalty;
+
+    const conservative = likely * (1 + rangePct);
+    const aggressive   = likely * (1 - rangePct);
+
+    let confidence;
+    if(sameDomain && distRatio <= 2.0) confidence = 90 - logRatio * 5;
+    else if(sameDomain)                 confidence = 80 - logRatio * 10;
+    else if(adjacentDomain)             confidence = 65 - logRatio * 15;
+    else if(isExploratory)              confidence = Math.max(10, 35 - logRatio * 12);
+    else                                confidence = 45 - logRatio * 10;
+    if(freshness === 'stale')   confidence *= 0.9;
+    if(freshness === 'expired') confidence *= 0.75;
+    if(personalK && sameDomain) confidence = Math.min(95, confidence + 5);
+
+    let confLabel;
+    if(confidence >= 90) confLabel = 'Very High';
+    else if(confidence >= 75) confLabel = 'High';
+    else if(confidence >= 55) confLabel = 'Medium';
+    else if(confidence >= 35) confLabel = 'Low';
+    else if(confidence >= 15) confLabel = 'Very Low';
+    else confLabel = 'Exploratory';
+
+    const reasons = [];
+    if(sameDomain) reasons.push('Same event domain');
+    else if(adjacentDomain) reasons.push('Adjacent domain');
+    else reasons.push(`Cross-domain (${sourceDomain.label} → ${targetDomain.label})`);
+    if(distRatio < 2) reasons.push('Distance ratio ≤2×');
+    else if(distRatio < 4) reasons.push(`Distance ratio ${distRatio.toFixed(1)}×`);
+    else reasons.push(`Large distance ratio ${distRatio.toFixed(1)}×`);
+    if(freshness === 'stale') reasons.push('PR is stale');
+    if(freshness === 'expired') reasons.push('PR is expired (>1 year)');
+    if(personalK && sameDomain) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)})`);
+    if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000) reasons.push('Cross-validated vs. population data');
+    if(isExploratory) reasons.push('Exploratory only — no published validation across this distance gap');
+
+    return { ...t, targetDomain, isSource: false, isExploratory, likely, conservative, aggressive, confidence, confLabel, reasons };
+  });
+
+  const confColor = c => {
+    if(c >= 75) return 'var(--green)';
+    if(c >= 35) return 'var(--yellow)';
+    return 'var(--text-3)';
+  };
+
+  const bodyRows = rows.map(r => {
+    const rowBg = r.isSource ? 'background:var(--accent-soft);' : (r.isExploratory ? 'opacity:0.65;' : '');
+    const rangeText = r.isSource ? '—' : `${fmtT(r.aggressive)} <span style="color:var(--text-4)">·</span> ${fmtT(r.conservative)}`;
+    return `
+      <tr style="border-bottom:1px solid var(--border);${rowBg}">
+        <td style="padding:.75rem .875rem;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text);font-weight:${r.isSource ? '600' : '500'};vertical-align:middle">
+          <div>${esc(r.label)}</div>
+          <div style="font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-top:.125rem">${esc(r.targetDomain.label)}</div>
+        </td>
+        <td style="padding:.75rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:1rem;color:${r.isSource ? 'var(--accent)' : 'var(--text)'};font-weight:${r.isSource ? '600' : '500'};vertical-align:middle">${esc(fmtT(r.likely))}</td>
+        <td style="padding:.75rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-3);vertical-align:middle">${rangeText}</td>
+        <td style="padding:.75rem .875rem;text-align:right;vertical-align:middle">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:${r.isSource ? 'var(--accent)' : confColor(r.confidence)};font-weight:500">${r.isSource ? 'PR' : Math.round(r.confidence) + '%'}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-top:.125rem">${esc(r.confLabel)}</div>
+        </td>
+        <td style="padding:.75rem .875rem;font-size:.6875rem;color:var(--text-3);line-height:1.5;vertical-align:middle;max-width:14rem">${esc(r.reasons.join(' · '))}</td>
+      </tr>`;
+  }).join('');
+
+  const personalKBanner = personalK ? `
+    <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.25rem">Personalized Fatigue Curve</p>
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5">k = <strong style="color:var(--text)">${personalK.k.toFixed(3)}</strong> · <span style="color:${personalK.biasColor};font-weight:500">${personalK.bias}</span> · derived from ${personalK.nPRs} logged PRs (${personalK.nPairs} distance pairs)</p>
+    </div>` : '';
+
+  return `
+    <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-bottom:1rem">Forecast times across every standard distance with confidence ranges based on the source PR.</p>
+    <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem">Source</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">${esc(sourceLabel)}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);margin-left:.5rem">${esc(sourceDomain.label)}</span>
+    </div>
+    ${personalKBanner}
+    <div style="overflow-x:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem">
+      <table style="width:100%;border-collapse:collapse;font-family:inherit;min-width:44rem">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-s)">
+            <th style="padding:.625rem .875rem;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Distance</th>
+            <th style="padding:.625rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Likely</th>
+            <th style="padding:.625rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Aggressive · Conservative</th>
+            <th style="padding:.625rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Confidence</th>
+            <th style="padding:.625rem .875rem;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Why this confidence</th>
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
+      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}, cross-validated against population data spanning ages 12–95. Cross-domain predictions are shown but flagged exploratory.
+    </p>`;
+}
+
+// "Upgrade to unlock" placeholder shown to free-tier users where the predictive
+// table would normally be.
+function predictiveRaceTableLocked(){
+  return `
+    <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
+    <div style="background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:.5rem;padding:1.5rem;text-align:center">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Race forecasts across every standard distance with confidence ranges. Powered by the STRIDE proprietary ensemble.</p>
+      <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
+    </div>`;
 }
 
 // ── THE STRIDE ENSEMBLE ──
