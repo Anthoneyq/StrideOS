@@ -694,11 +694,17 @@ async function initSupabase(){
       sbUser = session ? session.user : null;
       sbCoachReady = false;
       renderAuthPanel();
-      if(sbUser) await loadRemoteAthletes();
+      if(sbUser){
+        await ensureCoachProfileSilent();
+        await loadRemoteAthletes();
+      }
     });
 
     renderAuthPanel();
-    if(sbUser) await loadRemoteAthletes();
+    if(sbUser){
+      await ensureCoachProfileSilent();
+      await loadRemoteAthletes();
+    }
   }catch(err){
     console.warn('Supabase init failed', err);
     toast('Supabase sync unavailable');
@@ -733,13 +739,25 @@ async function sendMagicLink(){
 }
 
 async function signOutSupabase(){
-  if(!sbClient) return;
-  await sbClient.auth.signOut();
-  sbUser = null;
-  sbCoachReady = false;
-  setAuthFeedback('info', 'Signed out. You can request another magic link anytime.', false);
-  renderAuthPanel();
-  toast('Signed out');
+  if(!sbClient){
+    setAuthFeedback('err', 'Account services are not available in this session.', false);
+    return toast('Account services unavailable');
+  }
+
+  try{
+    const { error } = await sbClient.auth.signOut();
+    if(error) throw error;
+    sbUser = null;
+    sbCoachReady = false;
+    setAuthFeedback('info', 'Signed out. You can request another magic link anytime.', false);
+    toast('Signed out');
+  }catch(err){
+    console.error(err);
+    setAuthFeedback('err', err.message || 'Sign out failed. Try again.', false);
+    toast(err.message || 'Sign out failed');
+  }finally{
+    renderAuthPanel();
+  }
 }
 
 async function ensureCoachProfile(){
@@ -759,6 +777,17 @@ async function ensureCoachProfile(){
 
   if(error) throw error;
   sbCoachReady = true;
+}
+
+// Silent variant for use on auto-login flows. We don't want a transient
+// network blip on session restore to throw and block athlete loading —
+// individual writes will still surface errors through their own paths.
+async function ensureCoachProfileSilent(){
+  try{
+    await ensureCoachProfile();
+  }catch(err){
+    console.warn('ensureCoachProfile failed (silent)', err);
+  }
 }
 
 async function syncLocalToSupabase(){
