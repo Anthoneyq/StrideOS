@@ -79,6 +79,13 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .auth-actions{display:grid;gap:.5rem}
 .auth-actions .btn{width:100%;padding:.55rem .625rem;font-size:.625rem}
 .auth-actions .btn[disabled]{opacity:.65;cursor:wait}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;margin-bottom:.625rem;border:1px solid var(--border-s);border-radius:.375rem;padding:.1875rem;background:#050505}
+.auth-tab{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.0625rem;text-transform:uppercase;padding:.4375rem .25rem;border:none;border-radius:.25rem;background:transparent;color:var(--text-3);cursor:pointer}
+.auth-tab.active{background:var(--bg-el);color:var(--text)}
+.auth-tab:not(.active):hover{color:var(--text-2)}
+.auth-secondary{display:flex;justify-content:center;gap:.5rem;margin-top:.625rem;font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3)}
+.auth-secondary a{color:var(--text-2);text-decoration:none;cursor:pointer}
+.auth-secondary a:hover{color:var(--accent);text-decoration:underline}
 .chip{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;cursor:pointer;transition:border-color .15s}
 .chip:hover,.chip:focus-visible{border-color:var(--text);outline:none}
 .chip-lbl{font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:.375rem}
@@ -600,7 +607,12 @@ const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 let sbClient = null;
 let sbUser = null;
 let sbCoachReady = false;
-let authUiState = { type: '', message: '', sending: false };
+let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
+
+function setAuthMode(mode){
+  authUiState = { ...authUiState, mode: mode === 'signup' ? 'signup' : 'signin', message: '', type: '' };
+  renderAuthPanel();
+}
 
 function hasSupabaseConfig(){
   return Boolean(STRIDE_SUPABASE_CONFIG.url && STRIDE_SUPABASE_CONFIG.anonKey);
@@ -664,14 +676,34 @@ function renderAuthPanel(){
     return;
   }
 
+  const isSignup = authUiState.mode === 'signup';
+  const busy = authUiState.sending;
+  const tabs = `
+    <div class="auth-tabs" role="tablist">
+      <button class="auth-tab ${isSignup ? '' : 'active'}" onclick="setAuthMode('signin')" role="tab" aria-selected="${!isSignup}">Sign In</button>
+      <button class="auth-tab ${isSignup ? 'active' : ''}" onclick="setAuthMode('signup')" role="tab" aria-selected="${isSignup}">Create Account</button>
+    </div>
+  `;
+  const passwordAutocomplete = isSignup ? 'new-password' : 'current-password';
+  const passwordPlaceholder = isSignup ? 'Choose a password (6+ characters)' : 'Password';
+  const primaryLabel = isSignup
+    ? (busy ? 'Creating...' : 'Create Account')
+    : (busy ? 'Signing in...' : 'Sign In');
+  const primaryHandler = isSignup ? 'signUpWithPassword()' : 'signInWithPassword()';
+  const secondary = isSignup
+    ? `<span>Already have an account?</span> <a onclick="setAuthMode('signin')">Sign in</a>`
+    : `<a onclick="sendMagicLink()">Email me a magic link</a> <span>&middot;</span> <a onclick="forgotPassword()">Forgot password?</a>`;
+
   el.innerHTML = `
     <div class="auth-status">Coach Account</div>
     <div class="auth-copy">Sign in to your STRIDE OS account and keep your roster synced across devices.</div>
+    ${tabs}
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
+    <input class="auth-input" id="authPassword" type="password" autocomplete="${passwordAutocomplete}" placeholder="${passwordPlaceholder}">
     <div class="auth-actions">
-      <button class="btn btn-primary" onclick="sendMagicLink()" ${authUiState.sending ? 'disabled' : ''}>${authUiState.sending ? 'Sending...' : 'Send Magic Link'}</button>
+      <button class="btn btn-primary" onclick="${primaryHandler}" ${busy ? 'disabled' : ''}>${primaryLabel}</button>
     </div>
-    <p class="auth-note">Coaches sign in to STRIDE OS. Cloud auth and storage run behind the scenes.</p>
+    <div class="auth-secondary">${secondary}</div>
     ${authFeedbackHtml()}
   `;
 }
@@ -736,6 +768,92 @@ async function sendMagicLink(){
   }
   setAuthFeedback('ok', `Sign-in link requested for ${email}. Check inbox and spam for your STRIDE OS email.`, false);
   toast('Magic link sent');
+}
+
+function getAuthInputs(){
+  const emailEl = document.getElementById('authEmail');
+  const passwordEl = document.getElementById('authPassword');
+  return {
+    email: emailEl ? emailEl.value.trim() : '',
+    password: passwordEl ? passwordEl.value : ''
+  };
+}
+
+async function signInWithPassword(){
+  if(!sbClient) return toast('Account services are not configured yet');
+  const { email, password } = getAuthInputs();
+  if(!email) return toast('Enter your email first');
+  if(!password){
+    setAuthFeedback('info', 'No password? Use "Email me a magic link" below to sign in without one.', false);
+    return;
+  }
+  setAuthFeedback('info', 'Signing in...', true);
+  const { error } = await sbClient.auth.signInWithPassword({ email, password });
+  if(error){
+    console.error(error);
+    const msg = String(error.message || 'Sign-in failed');
+    if(msg.toLowerCase().includes('email not confirmed')){
+      setAuthFeedback('err', 'Confirm your email first — check inbox (and spam) for the STRIDE OS confirmation link.', false);
+    } else if(msg.toLowerCase().includes('invalid login')){
+      setAuthFeedback('err', 'Email or password is incorrect. Try again or request a magic link.', false);
+    } else {
+      setAuthFeedback('err', msg, false);
+    }
+    return toast(error.message || 'Sign-in failed');
+  }
+  setAuthFeedback('ok', 'Signed in.', false);
+  toast('Signed in');
+}
+
+async function signUpWithPassword(){
+  if(!sbClient) return toast('Account services are not configured yet');
+  const { email, password } = getAuthInputs();
+  if(!email) return toast('Enter your email first');
+  if(!password || password.length < 6){
+    setAuthFeedback('err', 'Choose a password with at least 6 characters.', false);
+    return;
+  }
+  setAuthFeedback('info', 'Creating your STRIDE OS account...', true);
+  const { data, error } = await sbClient.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: supabaseRedirectUrl() }
+  });
+  if(error){
+    console.error(error);
+    const msg = String(error.message || 'Sign-up failed');
+    if(msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('user already')){
+      setAuthFeedback('err', 'An account with this email already exists. Sign in or use "Forgot password?".', false);
+    } else {
+      setAuthFeedback('err', msg, false);
+    }
+    return toast(error.message || 'Sign-up failed');
+  }
+  // Supabase returns a user but no session when email confirmation is required.
+  if(data && data.session){
+    setAuthFeedback('ok', 'Account created and signed in.', false);
+    toast('Account created');
+  } else {
+    setAuthFeedback('ok', `Check ${email} for a confirmation link to finish creating your account.`, false);
+    toast('Confirmation email sent');
+  }
+}
+
+async function forgotPassword(){
+  if(!sbClient) return toast('Account services are not configured yet');
+  const { email } = getAuthInputs();
+  if(!email) return toast('Enter your email first');
+  setAuthFeedback('info', 'Sending password reset email...', true);
+  const { error } = await sbClient.auth.resetPasswordForEmail(email, {
+    redirectTo: supabaseRedirectUrl()
+  });
+  if(error){
+    console.error(error);
+    setAuthFeedback('err', error.message || 'Reset failed', false);
+    return toast(error.message || 'Reset failed');
+  }
+  setAuthFeedback('ok', `Password reset link sent to ${email}. Check inbox and spam.`, false);
+  toast('Reset email sent');
 }
 
 async function signOutSupabase(){
