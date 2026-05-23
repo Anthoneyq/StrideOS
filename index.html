@@ -1179,8 +1179,38 @@ function renderWorkouts(){
   // Lazy-load if the cache is empty or for a different athlete.
   if(workoutCache.athleteId !== A.id){
     loadWorkouts(A.id).then(() => renderWorkouts());
+    if(A.supabaseId && stravaCache.athleteId !== A.supabaseId){
+      loadStravaStatus(A.supabaseId).then(() => renderWorkouts());
+    }
     el.innerHTML = `<div class="info-box">Loading ${esc(A.name)}'s training log...</div>`;
     return;
+  }
+
+  // Strava status bar (only when integration is configured AND the
+  // athlete has a Supabase row).
+  let stravaBar = '';
+  if(A.supabaseId && stravaConfigured()){
+    if(stravaCache.connected){
+      const lastSynced = stravaCache.lastSynced
+        ? new Date(stravaCache.lastSynced).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
+        : '—';
+      stravaBar = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;background:rgba(252,76,2,.08);border:1px solid rgba(252,76,2,.3);border-radius:.5rem;padding:.625rem 1rem;margin-bottom:1rem;flex-wrap:wrap">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem">
+            <strong style="color:#fc4c02">Strava connected</strong>
+            <span style="color:var(--text-3);margin-left:.5rem">last synced ${esc(lastSynced)}</span>
+          </div>
+          <button class="btn" style="font-size:.6875rem;padding:.3125rem .75rem" onclick="stravaSyncNow('${esc(A.supabaseId)}')">Sync Now</button>
+        </div>`;
+    } else {
+      stravaBar = `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;padding:.625rem 1rem;margin-bottom:1rem;flex-wrap:wrap">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
+            Auto-import workouts from <strong style="color:#fc4c02">Strava</strong>
+          </div>
+          <button class="btn btn-primary" style="font-size:.6875rem;padding:.3125rem .75rem;background:#fc4c02;border-color:#fc4c02" onclick="startStravaConnect('${esc(A.supabaseId)}')">Connect Strava</button>
+        </div>`;
+    }
   }
 
   const items = workoutCache.items;
@@ -1229,6 +1259,7 @@ function renderWorkouts(){
   }).join('');
 
   el.innerHTML = `
+    ${stravaBar}
     <div class="info-box">
       Logging for <strong>${esc(A.name)}</strong>. ${items.length} workout${items.length===1?'':'s'} on record.
     </div>
@@ -1462,6 +1493,115 @@ async function deleteWorkout(id){
   }catch(err){
     console.error('deleteWorkout failed', err);
     toast(err.message || 'Delete failed');
+  }
+}
+
+// ─────────────────────────────────────────────
+// STRAVA INTEGRATION (Phase 3)
+// ─────────────────────────────────────────────
+// Strava OAuth is a redirect-based flow. The Connect button sends the
+// athlete to Strava's authorize page with our client_id + a state
+// parameter that's the athlete's Supabase UUID. Strava sends them
+// back to our strava-oauth-callback Edge Function with ?code=, which
+// exchanges + stores tokens and triggers an initial activity sync.
+
+let stravaCache = { athleteId: null, connected: false, lastSynced: null };
+
+function stravaConfigured(){
+  return Boolean(window.STRIDE_STRAVA && window.STRIDE_STRAVA.clientId);
+}
+
+async function loadStravaStatus(athleteSupabaseId){
+  if(!sbClient || !sbUser || !athleteSupabaseId){
+    stravaCache = { athleteId: null, connected: false, lastSynced: null };
+    return;
+  }
+  try{
+    const { data } = await sbClient
+      .from('athlete_strava')
+      .select('athlete_id, last_synced_at')
+      .eq('athlete_id', athleteSupabaseId)
+      .maybeSingle();
+    stravaCache = {
+      athleteId: athleteSupabaseId,
+      connected: !!data,
+      lastSynced: data ? data.last_synced_at : null
+    };
+  }catch(err){
+    console.warn('loadStravaStatus failed', err);
+  }
+}
+
+function startStravaConnect(athleteSupabaseId){
+  if(!stravaConfigured()){
+    toast('Strava is not configured yet — ask the admin to set STRIDE_STRAVA.clientId');
+    return;
+  }
+  if(!athleteSupabaseId){
+    toast('Athlete must be saved to the cloud first');
+    return;
+  }
+  const cfg = window.STRIDE_STRAVA;
+  const url = `https://www.strava.com/oauth/authorize` +
+    `?client_id=${encodeURIComponent(cfg.clientId)}` +
+    `&redirect_uri=${encodeURIComponent(cfg.redirectUri)}` +
+    `&response_type=code` +
+    `&approval_prompt=auto` +
+    `&scope=${encodeURIComponent(cfg.scope)}` +
+    `&state=${encodeURIComponent(athleteSupabaseId)}`;
+  window.location.href = url;
+}
+
+async function stravaSyncNow(athleteSupabaseId){
+  if(!sbClient || !sbUser || !athleteSupabaseId) return;
+  toast('Syncing Strava activities...');
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    const token = session ? session.access_token : null;
+    if(!token) throw new Error('Not signed in');
+    const res = await fetch(`${STRIDE_SUPABASE_CONFIG.url}/functions/v1/strava-sync-activities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': STRIDE_SUPABASE_CONFIG.anonKey
+      },
+      body: JSON.stringify({ athlete_id: athleteSupabaseId })
+    });
+    if(!res.ok){
+      const errBody = await res.text();
+      throw new Error(errBody || `Sync failed (${res.status})`);
+    }
+    const data = await res.json();
+    toast(`Imported ${data.imported || 0} activities`);
+    await loadStravaStatus(athleteSupabaseId);
+    await loadWorkouts(A.id);
+    renderWorkouts();
+  }catch(err){
+    console.error('stravaSyncNow failed', err);
+    toast(err.message || 'Sync failed');
+  }
+}
+
+// On page load, if URL has ?strava=connected we just came back from
+// the OAuth callback. Show a toast and refresh status.
+async function handleStravaReturn(){
+  const params = new URLSearchParams(window.location.search);
+  const stravaState = params.get('strava');
+  if(!stravaState) return;
+  history.replaceState(null, '', window.location.pathname);
+  if(stravaState === 'connected'){
+    toast('Strava connected — your activities will appear shortly.');
+    // Reload the active athlete's Strava state + workouts.
+    if(A && A.supabaseId){
+      await loadStravaStatus(A.supabaseId);
+      await loadWorkouts(A.id);
+      refreshCurrentScreen();
+    }
+  } else if(stravaState === 'denied'){
+    toast('Strava connection cancelled.');
+  } else {
+    toast(`Strava error: ${stravaState}`);
   }
 }
 
@@ -5993,10 +6133,12 @@ window.addEventListener('load',()=>{
   updateChip();
   initSupabase().then(() => {
     // After Supabase boots, check if the URL signals a return from
-    // Stripe (?upgrade=success) or an athlete invite acceptance
-    // (?athlete_invite=<uuid>).
+    // Stripe (?upgrade=success), an athlete invite acceptance
+    // (?athlete_invite=<uuid>), or a Strava OAuth callback
+    // (?strava=connected|denied|<error>).
     handlePostCheckoutReturn();
     handleAthleteInviteReturn();
+    handleStravaReturn();
   });
 });
 </script>
