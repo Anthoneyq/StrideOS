@@ -89,12 +89,38 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .auth-secondary{display:flex;justify-content:center;gap:.5rem;margin-top:.625rem;font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3)}
 .auth-secondary a{color:var(--text-2);text-decoration:none;cursor:pointer}
 .auth-secondary a:hover{color:var(--accent);text-decoration:underline}
+.auth-tier-badge{display:inline-block;margin-left:.5rem;padding:.0625rem .375rem;border-radius:.1875rem;font-family:'JetBrains Mono',monospace;font-size:.5rem;letter-spacing:.0625rem;border:1px solid var(--border)}
+.auth-tier-trial{color:var(--accent);border-color:rgba(255,69,0,.4)}
+.auth-tier-free{color:var(--text-3)}
+.auth-tier-pro{color:var(--green,#4ade80);border-color:rgba(74,222,128,.4)}
 .tier-banner{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:.5rem;padding:.75rem 1rem;margin:1.25rem 1.5rem 0;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)}
 .tier-banner-trial{border-color:rgba(255,69,0,.3)}
 .tier-banner-free{border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.06)}
 .tier-banner-text strong{color:var(--text);font-weight:600}
 .tier-banner-cta{flex-shrink:0;padding:.5rem .9rem;font-size:.6875rem}
 @media(max-width:700px){.tier-banner{flex-direction:column;align-items:stretch;text-align:center;margin:1rem 1rem 0}.tier-banner-cta{width:100%}}
+.upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+.upgrade-modal{position:relative;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:42rem;width:100%;padding:2rem 2rem 1.75rem;color:var(--text);font-family:inherit}
+.upgrade-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;padding:.25rem .5rem;border-radius:.25rem}
+.upgrade-close:hover{color:var(--text);background:var(--bg-card)}
+.upgrade-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.375rem}
+.upgrade-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:300;letter-spacing:-.0625rem;margin-bottom:.5rem}
+.upgrade-title em{color:var(--accent);font-style:normal}
+.upgrade-sub{font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--dim);margin-bottom:1.5rem}
+.upgrade-plans{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
+.upgrade-plan{position:relative;background:#050505;border:1px solid var(--border-s);border-radius:.625rem;padding:1.25rem 1rem 1rem;color:var(--text);text-align:left;cursor:pointer;transition:all .15s;font-family:inherit}
+.upgrade-plan:hover{border-color:var(--accent);background:var(--bg-card)}
+.upgrade-plan:disabled{opacity:.6;cursor:wait}
+.upgrade-plan-best{border-color:var(--accent);background:var(--accent-soft)}
+.upgrade-plan-badge{position:absolute;top:-.5rem;left:1rem;background:var(--accent);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.5625rem;letter-spacing:.0625rem;text-transform:uppercase;padding:.1875rem .5rem;border-radius:.25rem}
+.upgrade-plan-label{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
+.upgrade-plan-price{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;letter-spacing:-.0625rem;line-height:1}
+.upgrade-plan-price span{font-size:.875rem;color:var(--dim);margin-left:.125rem}
+.upgrade-plan-note{font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);margin-top:.625rem;line-height:1.5}
+.upgrade-perks{font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.7;color:var(--text-2);padding-left:1.25rem;margin-bottom:1.25rem}
+.upgrade-perks li{margin-bottom:.25rem}
+.upgrade-foot{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-align:center}
+@media(max-width:600px){.upgrade-modal{padding:1.5rem 1.25rem 1.25rem}.upgrade-plans{grid-template-columns:1fr}.upgrade-title{font-size:1.625rem}}
 /* Bulk import dropzone */
 .import-dropzone{border:2px dashed var(--border);border-radius:.75rem;padding:3rem 1.5rem;text-align:center;background:var(--bg-el);transition:border-color .15s,background .15s;cursor:pointer}
 .import-dropzone:hover,.import-dropzone.drag-over{border-color:var(--accent);background:var(--accent-soft)}
@@ -717,11 +743,19 @@ function renderAuthPanel(){
   }
 
   if(sbUser){
+    const tier = sbSubscription && sbSubscription.tier;
+    const isPro = tier === 'pro';
+    const tierBadge = tier
+      ? `<span class="auth-tier-badge auth-tier-${esc(tier)}">${esc(tier.toUpperCase())}</span>`
+      : '';
+    const manageBtn = isPro
+      ? `<button class="btn" onclick="openCustomerPortal()">Manage Subscription</button>`
+      : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
     el.innerHTML = `
-      <div class="auth-status">Signed In</div>
+      <div class="auth-status">Signed In ${tierBadge}</div>
       <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
       <div class="auth-actions">
-        <button class="btn btn-primary" onclick="syncLocalToSupabase()">Sync Local Data</button>
+        ${manageBtn}
         <button class="btn" onclick="signOutSupabase()">Sign Out</button>
       </div>
       ${authFeedbackHtml()}
@@ -993,6 +1027,9 @@ async function loadSubscription(){
     console.warn('loadSubscription failed', err);
   }
   renderTierBanner();
+  // Also refresh the auth panel — Pro coaches need to see the
+  // "Manage Subscription" button, not the "Upgrade to Pro" button.
+  renderAuthPanel();
   // The screen may have rendered before this Supabase round-trip finished,
   // in which case any Pro-gated section (Predictive Race Times, etc.) was
   // baked in as the locked placeholder. Re-render the active screen now
@@ -1072,11 +1109,149 @@ function renderTierBanner(){
   `;
 }
 
-// Placeholder until Phase C wires Stripe Checkout.
+// Pricing card — shown inside the upgrade modal.
 function showUpgradeModal(){
-  const monthly = '$19/month';
-  const annual = '$167/year (save 27%)';
-  alert(`STRIDE OS Pro\n\n${monthly}\n${annual}\n\n• Unlimited athletes\n• Race predictions & forecasts\n• Performance curve / longitudinal tracking\n• Event fit analysis\n• Environmental corrections\n• All future Phase 3 features\n\nPayment checkout coming next.`);
+  if(!sbUser){
+    setAuthFeedback('info', 'Sign in or create an account first, then upgrade.', false);
+    return;
+  }
+  closeUpgradeModal(); // remove any stale overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'upgradeOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeUpgradeModal(); };
+  overlay.innerHTML = `
+    <div class="upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+      <button class="upgrade-close" aria-label="Close" onclick="closeUpgradeModal()">×</button>
+      <p class="upgrade-eyebrow">Upgrade</p>
+      <h2 class="upgrade-title" id="upTitle">STRIDE OS <em>Pro</em></h2>
+      <p class="upgrade-sub">Unlimited athletes + every premium feature. Cancel anytime from the Stripe portal.</p>
+
+      <div class="upgrade-plans">
+        <button class="upgrade-plan" onclick="startCheckout('monthly')" id="planMonthlyBtn">
+          <div class="upgrade-plan-label">Monthly</div>
+          <div class="upgrade-plan-price">$19<span>/mo</span></div>
+          <div class="upgrade-plan-note">Billed monthly. Cancel anytime.</div>
+        </button>
+        <button class="upgrade-plan upgrade-plan-best" onclick="startCheckout('annual')" id="planAnnualBtn">
+          <div class="upgrade-plan-badge">Best value · save 27%</div>
+          <div class="upgrade-plan-label">Annual</div>
+          <div class="upgrade-plan-price">$167<span>/yr</span></div>
+          <div class="upgrade-plan-note">~$13.92/mo billed yearly.</div>
+        </button>
+      </div>
+
+      <ul class="upgrade-perks">
+        <li>Unlimited athletes</li>
+        <li>Race predictions across every distance, with confidence ranges</li>
+        <li>Longitudinal performance curve &amp; year-over-year trends</li>
+        <li>Event fit analysis, environmental corrections, Speed Reserve Ratio</li>
+        <li>Bulk roster import from CSV / Excel</li>
+        <li>All future Phase 3 features (Athlete Profile Engine, etc.)</li>
+      </ul>
+
+      <p class="upgrade-foot">Have a promo code? Add it on the Stripe checkout page.</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function closeUpgradeModal(){
+  const el = document.getElementById('upgradeOverlay');
+  if(el) el.remove();
+}
+
+// Kicks off Stripe Checkout for the chosen plan.
+async function startCheckout(plan){
+  if(plan !== 'monthly' && plan !== 'annual') return;
+  if(!sbClient || !sbUser){
+    toast('Sign in first');
+    return;
+  }
+  const btn = document.getElementById(plan === 'monthly' ? 'planMonthlyBtn' : 'planAnnualBtn');
+  const prev = btn ? btn.innerHTML : null;
+  if(btn){ btn.disabled = true; btn.innerHTML = '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    const token = session ? session.access_token : null;
+    if(!token) throw new Error('Not signed in');
+    const res = await fetch(`${STRIDE_SUPABASE_CONFIG.url}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': STRIDE_SUPABASE_CONFIG.anonKey
+      },
+      body: JSON.stringify({ plan })
+    });
+    if(!res.ok){
+      const errBody = await res.text();
+      throw new Error(errBody || `Checkout failed (${res.status})`);
+    }
+    const data = await res.json();
+    if(!data.url) throw new Error('No checkout URL returned');
+    window.location.href = data.url;
+  }catch(err){
+    console.error('startCheckout failed', err);
+    toast(err.message || 'Could not start checkout');
+    if(btn){ btn.disabled = false; if(prev !== null) btn.innerHTML = prev; }
+  }
+}
+
+// Opens the Stripe Customer Portal (manage subscription, change plan, cancel).
+async function openCustomerPortal(){
+  if(!sbClient || !sbUser){
+    toast('Sign in first');
+    return;
+  }
+  try{
+    const { data: { session } } = await sbClient.auth.getSession();
+    const token = session ? session.access_token : null;
+    if(!token) throw new Error('Not signed in');
+    const res = await fetch(`${STRIDE_SUPABASE_CONFIG.url}/functions/v1/create-portal-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': STRIDE_SUPABASE_CONFIG.anonKey
+      },
+      body: JSON.stringify({})
+    });
+    if(!res.ok){
+      const errBody = await res.text();
+      throw new Error(errBody || `Portal failed (${res.status})`);
+    }
+    const data = await res.json();
+    if(!data.url) throw new Error('No portal URL returned');
+    window.location.href = data.url;
+  }catch(err){
+    console.error('openCustomerPortal failed', err);
+    toast(err.message || 'Could not open subscription portal');
+  }
+}
+
+// On page load, check if we just came back from a successful Stripe Checkout
+// (success_url includes ?upgrade=success). If so, show a confirmation toast
+// and re-load subscription state to pick up the new tier.
+async function handlePostCheckoutReturn(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('upgrade') === 'success'){
+    toast('Welcome to Pro! Loading your subscription…');
+    // Strip the query so refreshes don't re-trigger.
+    history.replaceState(null, '', window.location.pathname);
+    // The webhook may take a second or two to land — poll twice.
+    setTimeout(async () => {
+      await loadSubscription();
+      refreshCurrentScreen();
+    }, 1500);
+    setTimeout(async () => {
+      await loadSubscription();
+      refreshCurrentScreen();
+    }, 4000);
+  } else if(params.get('upgrade') === 'cancelled'){
+    toast('Checkout cancelled. No charge was made.');
+    history.replaceState(null, '', window.location.pathname);
+  }
 }
 
 // Filter a list of athletes to what the current tier is allowed to see.
@@ -5238,7 +5413,10 @@ window.addEventListener('load',()=>{
   // This is the home screen — value before signup.
   goTo('paces', null);
   updateChip();
-  initSupabase();
+  initSupabase().then(() => {
+    // After Supabase boots, check if the URL signals a return from Stripe.
+    handlePostCheckoutReturn();
+  });
 });
 </script>
 </body>
