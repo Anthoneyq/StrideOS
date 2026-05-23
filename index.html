@@ -351,6 +351,7 @@ input.err,select.err{border-color:var(--red)}
           <li><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
+          <li><button class="nav-btn" data-s="workouts" onclick="goTo('workouts',this)"><span class="nav-icon" aria-hidden="true">⊞</span>Training Log</button></li>
           <li><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
           <li><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
           <li><button class="nav-btn" data-s="profile"  onclick="goTo('profile',this)"><span class="nav-icon" aria-hidden="true">◑</span>Event Profile</button></li>
@@ -426,6 +427,17 @@ input.err,select.err{border-color:var(--red)}
         </div>
       </header>
       <div id="ov-body"></div>
+    </section>
+
+    <!-- TRAINING LOG -->
+    <section id="workouts" class="screen" aria-labelledby="wk-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Per-athlete training history</p><h1 class="screen-title" id="wk-h">Training <em>Log</em></h1></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="openWorkoutForm()">+ Log Workout</button>
+        </div>
+      </header>
+      <div id="wk-body"></div>
     </section>
 
     <!-- EVENT PROFILE -->
@@ -1050,10 +1062,398 @@ function refreshCurrentScreen(){
       case 'paces':       renderPaces();       break;
       case 'multievent':  renderMultiEvent();  break;
       case 'predict':     renderPredict();     break;
+      case 'workouts':    renderWorkouts();    break;
       case 'methodology': renderMethodology(); break;
     }
   }catch(err){
     console.warn('refreshCurrentScreen failed', err);
+  }
+}
+
+// ─────────────────────────────────────────────
+// TRAINING LOG (Phase 1)
+// ─────────────────────────────────────────────
+// Workouts are stored in Supabase. We cache the current athlete's list
+// in memory to avoid re-fetching on every screen render.
+let workoutCache = { athleteId: null, items: [] };
+
+const WORKOUT_TYPES = [
+  { value: 'easy',              label: 'Easy',              zonePct: 65,  zoneLabel: 'Easy 65%' },
+  { value: 'long',              label: 'Long Run',          zonePct: 70,  zoneLabel: 'Long ~70%' },
+  { value: 'steady',            label: 'Steady',            zonePct: 80,  zoneLabel: 'Steady 80%' },
+  { value: 'tempo',             label: 'Tempo',             zonePct: 88,  zoneLabel: 'Tempo 88%' },
+  { value: 'threshold',         label: 'Threshold',         zonePct: 93,  zoneLabel: 'Threshold 93%' },
+  { value: 'critical_velocity', label: 'Critical Velocity', zonePct: 96,  zoneLabel: 'CV 96%' },
+  { value: 'race_pace',         label: 'Race Pace',         zonePct: 100, zoneLabel: 'Race 100%' },
+  { value: 'vo2',               label: 'VO2 Max',           zonePct: 105, zoneLabel: 'VO2 105%' },
+  { value: 'speed',             label: 'Speed',             zonePct: 112, zoneLabel: 'Speed 112%' },
+  { value: 'sprint',            label: 'Sprint / Strides',  zonePct: 118, zoneLabel: 'Sprint 118%' },
+  { value: 'recovery',          label: 'Recovery',          zonePct: 55,  zoneLabel: 'Recovery 55%' },
+  { value: 'race',              label: 'Race',              zonePct: 100, zoneLabel: 'Race' },
+  { value: 'cross_training',    label: 'Cross Training',    zonePct: null, zoneLabel: 'Cross' },
+  { value: 'strength',          label: 'Strength',          zonePct: null, zoneLabel: 'Strength' },
+  { value: 'rest',              label: 'Rest Day',          zonePct: null, zoneLabel: 'Rest' },
+  { value: 'other',             label: 'Other',             zonePct: null, zoneLabel: 'Other' },
+];
+
+function workoutTypeLabel(value){
+  const t = WORKOUT_TYPES.find(w => w.value === value);
+  return t ? t.label : value;
+}
+
+function fmtDuration(sec){
+  if(!sec && sec !== 0) return '—';
+  sec = Math.round(sec);
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec%60;
+  if(h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function fmtDistance(m){
+  if(!m && m !== 0) return '—';
+  if(m >= 1000) return `${(m/1000).toFixed(2)} km`;
+  return `${Math.round(m)} m`;
+}
+
+function fmtPaceFromTotals(distM, durSec){
+  if(!distM || !durSec) return '—';
+  const secPerKm = durSec / (distM/1000);
+  const m = Math.floor(secPerKm/60);
+  const s = Math.round(secPerKm % 60);
+  return `${m}:${s.toString().padStart(2,'0')}/km`;
+}
+
+async function loadWorkouts(athleteId){
+  if(!sbClient || !sbUser){
+    workoutCache = { athleteId, items: [] };
+    return;
+  }
+  try{
+    const { data, error } = await sbClient
+      .from('workouts')
+      .select('*')
+      .eq('athlete_id', athleteId)
+      .is('deleted_at', null)
+      .order('workout_date', { ascending: false })
+      .order('created_at', { ascending: false });
+    if(error) throw error;
+    workoutCache = { athleteId, items: data || [] };
+  }catch(err){
+    console.warn('loadWorkouts failed', err);
+    workoutCache = { athleteId, items: [] };
+  }
+}
+
+function renderWorkouts(){
+  const el = document.getElementById('wk-body');
+  if(!el) return;
+
+  if(!A){
+    el.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-title">No athlete selected</p>
+        <p class="empty-sub">Pick an athlete from the roster to view their training log.</p>
+        <button class="btn btn-primary" onclick="goTo('roster',null)">Go to Roster</button>
+      </div>`;
+    return;
+  }
+  if(!sbUser){
+    el.innerHTML = `
+      <div class="empty-state">
+        <p class="empty-title">Sign in to use the training log</p>
+        <p class="empty-sub">Workouts sync to your STRIDE OS account. Sign in to log and view them.</p>
+      </div>`;
+    return;
+  }
+
+  // Lazy-load if the cache is empty or for a different athlete.
+  if(workoutCache.athleteId !== A.id){
+    loadWorkouts(A.id).then(() => renderWorkouts());
+    el.innerHTML = `<div class="info-box">Loading ${esc(A.name)}'s training log...</div>`;
+    return;
+  }
+
+  const items = workoutCache.items;
+  if(items.length === 0){
+    el.innerHTML = `
+      <div class="info-box">
+        Logging workouts for <strong>${esc(A.name)}</strong>. The <strong style="color:var(--accent)">+ Log Workout</strong> button captures one session at a time. Phase 2 will let athletes log their own.
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">⊞</div>
+        <p class="empty-title">No workouts yet</p>
+        <p class="empty-sub">Log ${esc(A.name)}'s first training session to start building their history.</p>
+        <button class="btn btn-primary" onclick="openWorkoutForm()">+ Log First Workout</button>
+      </div>`;
+    return;
+  }
+
+  // Group by week (Mon-Sun) for a clearer timeline.
+  const groups = {};
+  items.forEach(w => {
+    const d = new Date(w.workout_date);
+    const day = d.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day; // Monday as week start
+    const monday = new Date(d);
+    monday.setUTCDate(d.getUTCDate() + diff);
+    const key = monday.toISOString().slice(0,10);
+    (groups[key] = groups[key] || []).push(w);
+  });
+  const weekKeys = Object.keys(groups).sort().reverse();
+
+  const weekHtml = weekKeys.map(wk => {
+    const ws = new Date(wk);
+    const we = new Date(wk); we.setUTCDate(ws.getUTCDate()+6);
+    const label = `Week of ${ws.toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'})}`;
+    const weekTotal = groups[wk].reduce((s,w) => s + (w.total_distance_m || 0), 0);
+    return `
+      <div class="card">
+        <p class="card-title">
+          <span>${esc(label)}</span>
+          <span class="card-accent">${groups[wk].length} session${groups[wk].length===1?'':'s'} · ${fmtDistance(weekTotal)}</span>
+        </p>
+        <div style="display:grid;gap:.75rem">
+          ${groups[wk].map(w => workoutCard(w)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="info-box">
+      Logging for <strong>${esc(A.name)}</strong>. ${items.length} workout${items.length===1?'':'s'} on record.
+    </div>
+    ${weekHtml}`;
+}
+
+function workoutCard(w){
+  const t = WORKOUT_TYPES.find(x => x.value === w.workout_type);
+  const typeLabel = t ? t.label : w.workout_type;
+  const date = new Date(w.workout_date).toLocaleDateString('en-US',{
+    weekday:'short', month:'short', day:'numeric', timeZone:'UTC'
+  });
+
+  const sourceBadge = w.source === 'strava'
+    ? '<span style="background:#fc4c02;color:#fff;padding:.0625rem .375rem;border-radius:.1875rem;font-family:\'JetBrains Mono\',monospace;font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">STRAVA</span>'
+    : w.source === 'athlete_entry'
+      ? '<span style="background:var(--bg-el);color:var(--accent);border:1px solid var(--accent-line);padding:.0625rem .375rem;border-radius:.1875rem;font-family:\'JetBrains Mono\',monospace;font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">ATHLETE</span>'
+      : '';
+
+  const rpeBadge = w.perceived_effort
+    ? `<span style="color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:.6875rem;margin-left:.5rem">RPE ${w.perceived_effort}/10</span>`
+    : '';
+
+  return `
+    <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem">
+        <div>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase">${esc(date)}${sourceBadge}</p>
+          <p style="font-family:'Fraunces',serif;font-size:1.125rem;margin-top:.125rem">${esc(typeLabel)}${rpeBadge}</p>
+        </div>
+        <div style="display:flex;gap:.375rem">
+          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem" onclick="openWorkoutForm('${esc(w.id)}')">Edit</button>
+          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem;color:var(--red,#ef4444)" onclick="deleteWorkout('${esc(w.id)}')">Delete</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
+        <div><span style="color:var(--text-4)">Distance</span><br>${fmtDistance(w.total_distance_m)}</div>
+        <div><span style="color:var(--text-4)">Duration</span><br>${fmtDuration(w.total_duration_sec)}</div>
+        <div><span style="color:var(--text-4)">Avg Pace</span><br>${fmtPaceFromTotals(w.total_distance_m, w.total_duration_sec)}</div>
+        ${w.avg_hr_bpm ? `<div><span style="color:var(--text-4)">Avg HR</span><br>${w.avg_hr_bpm} bpm</div>` : ''}
+      </div>
+      ${w.coach_notes ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.625rem;line-height:1.55;border-left:2px solid var(--accent);padding-left:.625rem">${esc(w.coach_notes)}</p>` : ''}
+    </div>`;
+}
+
+// ── WORKOUT FORM (modal) ──
+function openWorkoutForm(workoutId){
+  if(!A){
+    toast('Pick an athlete first');
+    return;
+  }
+  const existing = workoutId ? workoutCache.items.find(w => w.id === workoutId) : null;
+  closeWorkoutForm();
+  const today = new Date().toISOString().slice(0,10);
+  const overlay = document.createElement('div');
+  overlay.id = 'workoutFormOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeWorkoutForm(); };
+  overlay.innerHTML = `
+    <div class="upgrade-modal" style="max-width:36rem">
+      <button class="upgrade-close" aria-label="Close" onclick="closeWorkoutForm()">×</button>
+      <p class="upgrade-eyebrow">${existing ? 'Edit' : 'Log'} Workout</p>
+      <h2 class="upgrade-title" style="font-size:1.5rem">${esc(A.name)} · <em>${existing ? 'Edit' : 'New'}</em></h2>
+      <form id="workoutForm" style="display:grid;gap:.75rem;margin-top:1rem" onsubmit="return false">
+        <input type="hidden" id="wfId" value="${esc(existing ? existing.id : '')}">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <label style="display:flex;flex-direction:column;gap:.25rem">
+            <span class="auth-status">Date</span>
+            <input type="date" id="wfDate" class="auth-input" required value="${esc(existing ? existing.workout_date : today)}">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:.25rem">
+            <span class="auth-status">Type</span>
+            <select id="wfType" class="auth-input" required>
+              ${WORKOUT_TYPES.map(t => `<option value="${t.value}" ${existing && existing.workout_type === t.value ? 'selected' : ''}>${esc(t.label)}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+
+        <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem">
+          <summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.0625rem;color:var(--text-3);text-transform:uppercase">Prescription (optional)</summary>
+          <div style="display:grid;gap:.5rem;margin-top:.625rem">
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Prescribed distance (meters)</span>
+              <input type="number" id="wfPrescribedDist" class="auth-input" min="0" step="100" value="${existing && existing.prescribed_distance_m ? existing.prescribed_distance_m : ''}">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Coach notes</span>
+              <textarea id="wfPrescribedNotes" class="auth-input" rows="2">${esc(existing ? existing.prescribed_notes || '' : '')}</textarea>
+            </label>
+          </div>
+        </details>
+
+        <div style="border-top:1px solid var(--border);padding-top:.75rem">
+          <p class="auth-status" style="margin-bottom:.5rem">What Happened</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Total distance (m)</span>
+              <input type="number" id="wfTotalDist" class="auth-input" min="0" step="50" value="${existing && existing.total_distance_m ? existing.total_distance_m : ''}">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Duration (mm:ss)</span>
+              <input type="text" id="wfDuration" class="auth-input" placeholder="e.g. 32:14" value="${existing && existing.total_duration_sec ? fmtDuration(existing.total_duration_sec) : ''}">
+            </label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.5rem">
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Avg HR</span>
+              <input type="number" id="wfAvgHr" class="auth-input" min="40" max="220" placeholder="bpm" value="${existing && existing.avg_hr_bpm ? existing.avg_hr_bpm : ''}">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">Max HR</span>
+              <input type="number" id="wfMaxHr" class="auth-input" min="40" max="240" placeholder="bpm" value="${existing && existing.max_hr_bpm ? existing.max_hr_bpm : ''}">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:.25rem">
+              <span class="auth-status">RPE (1–10)</span>
+              <input type="number" id="wfRpe" class="auth-input" min="1" max="10" placeholder="effort" value="${existing && existing.perceived_effort ? existing.perceived_effort : ''}">
+            </label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:.25rem;margin-top:.5rem">
+            <span class="auth-status">Coach notes (what to remember)</span>
+            <textarea id="wfCoachNotes" class="auth-input" rows="2" placeholder="How they ran, any tweaks for next time…">${esc(existing ? existing.coach_notes || '' : '')}</textarea>
+          </label>
+        </div>
+
+        <div class="auth-actions" style="margin-top:.75rem;grid-template-columns:1fr 1fr">
+          <button type="button" class="btn" onclick="closeWorkoutForm()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveWorkout()">${existing ? 'Save Changes' : 'Log Workout'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function closeWorkoutForm(){
+  const el = document.getElementById('workoutFormOverlay');
+  if(el) el.remove();
+}
+
+function parseDurationToSec(s){
+  if(!s) return null;
+  s = String(s).trim();
+  if(!s) return null;
+  const parts = s.split(':').map(p => parseFloat(p));
+  if(parts.some(isNaN)) return null;
+  if(parts.length === 1) return parts[0];
+  if(parts.length === 2) return parts[0]*60 + parts[1];
+  if(parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+  return null;
+}
+
+async function saveWorkout(){
+  if(!sbClient || !sbUser) return toast('Sign in first');
+  if(!A) return toast('Pick an athlete first');
+
+  const v = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  };
+  const num = (id) => {
+    const s = v(id);
+    if(!s) return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const workoutType = v('wfType');
+  const type = WORKOUT_TYPES.find(t => t.value === workoutType);
+  const totalDistM = num('wfTotalDist');
+  const totalDurSec = parseDurationToSec(v('wfDuration'));
+
+  // We need to find the athlete's UUID in Supabase (not the local A.id which
+  // may be a client-side id). Use the existing athlete row from cache.
+  let supabaseAthleteId = A.id;
+  // If A.id looks like a UUID, assume it's the Supabase id. Otherwise, look up.
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(A.id)){
+    try{
+      const { data } = await sbClient.from('athletes').select('id').eq('client_ref', A.id).maybeSingle();
+      if(data) supabaseAthleteId = data.id;
+    }catch(e){ /* fall back to A.id */ }
+  }
+
+  const row = {
+    athlete_id: supabaseAthleteId,
+    coach_id: sbUser.id,
+    workout_date: v('wfDate'),
+    workout_type: workoutType,
+    prescribed_distance_m: num('wfPrescribedDist'),
+    prescribed_zone_label: type ? type.zoneLabel : null,
+    prescribed_notes: v('wfPrescribedNotes') || null,
+    total_distance_m: totalDistM,
+    total_duration_sec: totalDurSec,
+    avg_pace_sec_per_km: (totalDistM && totalDurSec) ? (totalDurSec / (totalDistM/1000)) : null,
+    avg_hr_bpm: num('wfAvgHr'),
+    max_hr_bpm: num('wfMaxHr'),
+    perceived_effort: num('wfRpe'),
+    coach_notes: v('wfCoachNotes') || null,
+    source: 'coach_entry'
+  };
+
+  const existingId = v('wfId');
+  try{
+    if(existingId){
+      const { error } = await sbClient.from('workouts').update(row).eq('id', existingId);
+      if(error) throw error;
+      toast('Workout updated');
+    } else {
+      const { error } = await sbClient.from('workouts').insert(row);
+      if(error) throw error;
+      toast('Workout logged');
+    }
+    closeWorkoutForm();
+    await loadWorkouts(A.id);
+    renderWorkouts();
+  }catch(err){
+    console.error('saveWorkout failed', err);
+    toast(err.message || 'Could not save workout');
+  }
+}
+
+async function deleteWorkout(id){
+  if(!sbClient || !sbUser) return;
+  if(!confirm('Delete this workout? This cannot be undone.')) return;
+  try{
+    const { error } = await sbClient.from('workouts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+    if(error) throw error;
+    toast('Workout deleted');
+    workoutCache.items = workoutCache.items.filter(w => w.id !== id);
+    renderWorkouts();
+  }catch(err){
+    console.error('deleteWorkout failed', err);
+    toast(err.message || 'Delete failed');
   }
 }
 
@@ -1636,6 +2036,7 @@ function goTo(id,btn){
   if(id==='paces')    renderPaces();
   if(id==='multievent') renderMultiEvent();
   if(id==='predict')  renderPredict();
+  if(id==='workouts') renderWorkouts();
   if(id==='methodology') renderMethodology();
   if(id==='edit')     fillForm();
   if(id==='import')   renderImport();
