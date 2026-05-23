@@ -1925,15 +1925,16 @@ function freshnessLabel(state, raceDateISO){
 // These map a percentage of race PR pace to coaching language.
 // Does not use Daniels E/M/T/I/R labels (which would imply Daniels math).
 const STRIDE_ZONES = [
-  { pct: 75,  label: 'Recovery',   desc: 'Active recovery between hard sessions. Conversational, almost easy. Used the day after a hard workout.' },
-  { pct: 80,  label: 'Easy',       desc: 'Aerobic base building. Conversational, sustainable. Bulk of weekly mileage lives here.' },
-  { pct: 85,  label: 'Steady',     desc: 'Long-run middle miles. Aerobic engine work. You can still talk but it requires breath.' },
-  { pct: 90,  label: 'Tempo',      desc: 'Sub-threshold sustained effort. Tempo runs, long fartleks. Comfortably hard.' },
-  { pct: 95,  label: 'Threshold',  desc: 'Just under race pace. Cruise intervals, longer reps with short rest. Race-supportive endurance.' },
-  { pct: 100, label: 'Race Pace',  desc: 'Goal race pace exactly. Race-specific endurance reps for the target event.' },
-  { pct: 105, label: 'Fast Reps',  desc: 'Slightly faster than race pace. Builds finishing speed and race reserve. Short reps with rest.' },
-  { pct: 110, label: 'Speed',      desc: 'Speed development. Short reps faster than race pace. Sharpening neuromuscular system.' },
-  { pct: 115, label: 'Sprint',     desc: 'Pure speed and economy work. Strides, short sprints, max velocity exposure. Full recovery between reps.' },
+  { pct: 55,  label: 'Recovery',          desc: 'Active recovery between hard sessions. Almost a walk-jog. Used the day after a hard workout.' },
+  { pct: 65,  label: 'Easy',              desc: 'True easy mileage. Fully conversational, low heart rate. Bulk of weekly volume lives here.' },
+  { pct: 80,  label: 'Steady',            desc: 'Long-run middle miles. Aerobic engine work. You can still talk but it requires breath.' },
+  { pct: 88,  label: 'Tempo',             desc: 'Sub-threshold sustained effort. 4–8 mile tempo runs, cruise miles. Comfortably hard.' },
+  { pct: 93,  label: 'Threshold',         desc: 'Lactate threshold. Mile/2K repeats with short rest. The "engine of distance running" pace.' },
+  { pct: 96,  label: 'Critical Velocity', desc: '~10K race pace. A touch faster than threshold, slightly slower than 5K. The Norwegian LT2 zone.' },
+  { pct: 100, label: 'Race Pace',         desc: 'Goal race pace exactly. Race-specific endurance reps for the target event.' },
+  { pct: 105, label: 'VO2 Max',           desc: '~3K race pace. Hard intervals (400–1200m) to push aerobic ceiling. Maximal aerobic power.' },
+  { pct: 112, label: 'Speed',             desc: 'Mile / 800m race pace. Short reps faster than race pace. Sharpening neuromuscular system.' },
+  { pct: 118, label: 'Sprint',            desc: 'Pure speed and economy. Strides (100–200m), max velocity. Full recovery between reps.' },
 ];
 
 // Back-compat alias so existing code doesn't break mid-refactor
@@ -1950,29 +1951,32 @@ const CANOVA_ZONES = STRIDE_ZONES;
 // is the proprietary STRIDE percentage system, not Daniels VDOT math.
 // Each zone shows a percentage range that the table renders at the midpoint.
 const STRIDE_COACH_SPLITS = [
-  { label: 'Easy',       pct: 80,  range: '78–82%',
-    desc: 'Recovery and aerobic base mileage.',
+  { label: 'Easy',              pct: 65,  range: '60–70%',
+    desc: 'True easy aerobic mileage. Fully conversational, low HR.',
     reps: [1609, 3000, 5000, 8000, 10000] },
-  { label: 'Steady',     pct: 87,  range: '85–88%',
-    desc: 'Long-run pace and steady aerobic effort.',
+  { label: 'Steady',            pct: 80,  range: '76–83%',
+    desc: 'Steady-state long-run pace. Aerobic engine work.',
     reps: [1609, 3000, 5000, 8000] },
-  { label: 'Tempo',      pct: 92,  range: '90–95%',
-    desc: 'Sub-threshold sustained work and cruise intervals.',
+  { label: 'Tempo',             pct: 88,  range: '85–90%',
+    desc: 'Tempo / cruise interval pace. 4–8 mile sustained effort.',
     reps: [1609, 1000, 1200, 800, 600] },
-  { label: 'Threshold',  pct: 95,  range: '92–97%',
-    desc: 'Threshold work. Race-supportive endurance.',
+  { label: 'Threshold',         pct: 93,  range: '91–95%',
+    desc: 'Lactate threshold. Norwegian LT1-style mile/2K repeats.',
     reps: [1609, 1000, 1200, 800, 600] },
-  { label: 'Race Pace',  pct: 100, range: '100%',
-    desc: 'Goal race pace exactly.',
+  { label: 'Critical Velocity', pct: 96,  range: '95–97%',
+    desc: 'Just slower than 5K (~10K race pace). LT2 zone.',
+    reps: [1000, 1200, 800, 600] },
+  { label: 'Race Pace',         pct: 100, range: '100%',
+    desc: 'Goal race pace exactly. Race-specific endurance.',
     reps: [400, 600, 800, 1000, 1200] },
-  { label: 'Fast Reps',  pct: 103, range: '100–105%',
-    desc: 'Slightly faster than race pace. Race-supportive speed.',
+  { label: 'VO2 Max',           pct: 105, range: '103–108%',
+    desc: '~3K race pace. Aerobic-ceiling intervals (400–1200m).',
     reps: [400, 600, 800, 1000] },
-  { label: 'Speed',      pct: 110, range: '108–115%',
-    desc: 'Short reps faster than race pace. Speed development.',
+  { label: 'Speed',             pct: 112, range: '110–115%',
+    desc: 'Mile / 800m race pace. Short, fast reps for sharpening.',
     reps: [200, 300, 400, 600] },
-  { label: 'Sprint',     pct: 115, range: '115%+',
-    desc: 'Pure speed and economy. Strides and max velocity.',
+  { label: 'Sprint',            pct: 118, range: '115–125%',
+    desc: 'Pure speed and economy. Strides (100–200m) at max velocity.',
     reps: [100, 150, 200, 300] },
 ];
 
@@ -2758,14 +2762,15 @@ function renderPaces(){
       <div style="display:flex;gap:.375rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
         <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;margin-right:.5rem;align-self:center">Presets</span>
         ${[
-          [80, 'Easy'],
-          [85, 'Long'],
-          [90, 'Threshold'],
-          [95, 'Sub-Race'],
+          [65,  'Easy'],
+          [80,  'Steady'],
+          [88,  'Tempo'],
+          [93,  'Threshold'],
+          [96,  'CV'],
           [100, 'Race'],
-          [105, 'Quick'],
-          [110, 'Speed'],
-          [115, 'Sharp']
+          [105, 'VO2'],
+          [112, 'Speed'],
+          [118, 'Sprint']
         ].map(([p,lbl])=>`<button class="preset-btn" data-pct="${p}" onclick="setPct(${p})" style="background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.4rem .75rem;border-radius:999px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.6875rem;transition:all .15s">${p}% <span style="color:var(--text-4);margin-left:.25rem">${esc(lbl)}</span></button>`).join('')}
       </div>
     </div>
