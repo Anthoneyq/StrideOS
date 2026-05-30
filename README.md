@@ -37,7 +37,7 @@ StrideOS/
 ├── INDEX.md                   ← knowledge-domain map (taxonomy + maintenance rules)
 ├── AGENTS.md                  ← instructions for AI agents working in this repo
 ├── working_context.md         ← current project state (stub)
-├── index.html                 ← the application (single file, ~4,500 lines)
+├── index.html                 ← the application (single file, ~6,180 lines)
 ├── stride-config.js           ← publishable Supabase/Strava/billing config
 ├── fix-vercel.sh              ← deploy helper
 ├── Stripe_Setup_SOP.md        ← billing setup runbook
