@@ -1,0 +1,149 @@
+athlete_name,age_group,age,event,time_mark,place,meet_name,meet_level,meet_year,sex,country
+Charles Jackson,M35,37,100m,10.91,1,World Masters Athletics Championships,International,2024,M,USA
+Antoine Echols,M40,42,100m,10.85,1,World Masters Athletics Championships,International,2024,M,USA
+Jochen Gippert,M45,47,100m,10.98,1,World Masters Athletics Championships,International,2024,M,GBR
+Garth Robinson,M50,52,100m,11.23,1,World Masters Athletics Championships,International,2024,M,USA
+Arif Husain,M55,57,100m,11.70,1,World Masters Athletics Championships,International,2024,M,USA
+Francois Boda,M60,62,100m,12.08,1,World Masters Athletics Championships,International,2024,M,USA
+John Wright,M65,67,100m,12.43,1,World Masters Athletics Championships,International,2024,M,USA
+Ron Stevens,M70,72,100m,12.83,1,World Masters Athletics Championships,International,2024,M,USA
+Yoshio Aiba,M75,77,100m,14.21,1,World Masters Athletics Championships,International,2024,M,JPN
+Karl Schmid,M80,82,100m,14.88,1,World Masters Athletics Championships,International,2024,M,GER
+Friedhelm Adorf,M85,87,100m,16.50,1,World Masters Athletics Championships,International,2024,M,GER
+Radnaa Tseren,M90,92,100m,17.51,1,World Masters Athletics Championships,International,2024,M,MGL
+Konstantinos Chatziemmanouil,M95,97,100m,24.73,1,World Masters Athletics Championships,International,2024,M,GRE
+Shaker Salim,M35,37,200m,21.70,1,World Masters Athletics Championships,International,2024,M,KSA
+Rondrick Parker,M40,42,200m,22.33,1,World Masters Athletics Championships,International,2024,M,USA
+Jochen Gippert,M45,47,200m,22.26,1,World Masters Athletics Championships,International,2024,M,GER
+Mike Coogan,M50,52,200m,23.04,1,World Masters Athletics Championships,International,2024,M,GBR
+Darren Scott,M55,57,200m,23.63,1,World Masters Athletics Championships,International,2024,M,GBR
+Francois Boda,M60,62,200m,24.26,1,World Masters Athletics Championships,International,2024,M,USA
+John Wright,M65,67,200m,25.61,1,World Masters Athletics Championships,International,2024,M,GBR
+Thomas Jones,M70,72,200m,27.01,1,World Masters Athletics Championships,International,2024,M,USA
+Livio Bugiardini,M75,77,200m,29.64,1,World Masters Athletics Championships,International,2024,M,ITA
+Friedhelm Adorf,M80,82,200m,30.52,1,World Masters Athletics Championships,International,2024,M,GER
+David Chantrill,M85,87,200m,36.57,1,World Masters Athletics Championships,International,2024,M,AUS
+Radnaa Tseren,M90,92,200m,37.24,1,World Masters Athletics Championships,International,2024,M,MGL
+Konstantinos Chatziemmanouil,M95,97,200m,57.12,1,World Masters Athletics Championships,International,2024,M,GRE
+Yousef Masrahi,M35,37,400m,47.59,1,World Masters Athletics Championships,International,2024,M,KSA
+Jakub Adamczyk,M40,42,400m,49.28,1,World Masters Athletics Championships,International,2024,M,POL
+Diego Martin Silvera,M45,47,400m,51.89,1,World Masters Athletics Championships,International,2024,M,ARG
+Ian Weakley,M50,52,400m,52.81,1,World Masters Athletics Championships,International,2024,M,USA
+Timothy Munnings,M55,57,400m,53.05,1,World Masters Athletics Championships,International,2024,M,BAH
+Roland Groger,M60,62,400m,53.93,1,World Masters Athletics Championships,International,2024,M,GER
+John Wright,M65,67,400m,56.22,1,World Masters Athletics Championships,International,2024,M,GBR
+Ian Broadhurst,M70,72,400m,1:04.13,1,World Masters Athletics Championships,International,2024,M,GBR
+Livio Bugiardini,M75,77,400m,1:06.59,1,World Masters Athletics Championships,International,2024,M,ITA
+John MacDermott,M80,82,400m,1:15.02,1,World Masters Athletics Championships,International,2024,M,IRL
+David Chantril,M85,87,400m,1:36.42,1,World Masters Athletics Championships,International,2024,M,AUS
+Radnaa Tseren,M90,92,400m,1:29.72,1,World Masters Athletics Championships,International,2024,M,MGL
+Konstantinos Chatziemmanouil,M95,97,400m,2:32.33,1,World Masters Athletics Championships,International,2024,M,GRE
+Mohammad Shaween,M35,37,800m,1:49.90,1,World Masters Athletics Championships,International,2024,M,KSA
+Pablo Munoz Caballero,M40,42,800m,1:59.87,1,World Masters Athletics Championships,International,2024,M,ESP
+Diego Martin Silvera,M45,47,800m,1:58.65,1,World Masters Athletics Championships,International,2024,M,ARG
+Brian Tullis,M50,52,800m,1:57.98,1,World Masters Athletics Championships,International,2024,M,USA
+Mark Symes,M55,57,800m,2:05.38,1,World Masters Athletics Championships,International,2024,M,GBR
+Andrew Ridley,M60,62,800m,2:09.67,1,World Masters Athletics Championships,International,2024,M,GBR
+Paul Forbes,M65,67,800m,2:19.12,1,World Masters Athletics Championships,International,2024,M,GBR
+Warren Schmelzer,M70,72,800m,2:24.49,1,World Masters Athletics Championships,International,2024,M,RSA
+Nolan Shaheed,M75,77,800m,2:39.57,1,World Masters Athletics Championships,International,2024,M,USA
+Jean-Louis Esnault,M80,82,800m,3:03.42,1,World Masters Athletics Championships,International,2024,M,FRA
+Willi Klaus,M85,87,800m,3:54.21,1,World Masters Athletics Championships,International,2024,M,GER
+Radnaa Tseren,M90,92,800m,3:43.15,1,World Masters Athletics Championships,International,2024,M,MGL
+Konstantinos Chatziemmanouil,M95,97,800m,5:46.82,1,World Masters Athletics Championships,International,2024,M,GRE
+Mohammad Shaween,M35,37,1500m,3:51.08,1,World Masters Athletics Championships,International,2024,M,KSA
+Martin Ohman,M40,42,1500m,4:05.22,1,World Masters Athletics Championships,International,2024,M,SWE
+Kojo Kyereme,M45,47,1500m,4:10.71,1,World Masters Athletics Championships,International,2024,M,GBR
+Antonio Franco Raimondez,M50,52,1500m,4:11.94,1,World Masters Athletics Championships,International,2024,M,ESP
+Mark Symes,M55,57,1500m,4:17.45,1,World Masters Athletics Championships,International,2024,M,GBR
+Andrew Ridley,M60,62,1500m,4:24.23,1,World Masters Athletics Championships,International,2024,M,GBR
+Daniel King,M65,67,1500m,4:49.47,1,World Masters Athletics Championships,International,2024,M,USA
+Peteris Arents,M70,72,1500m,5:18.61,1,World Masters Athletics Championships,International,2024,M,LAT
+Nolan Shaheed,M75,77,1500m,5:47.84,1,World Masters Athletics Championships,International,2024,M,USA
+Jean-Louis Esnault,M80,82,1500m,6:42.64,1,World Masters Athletics Championships,International,2024,M,FRA
+Hansjoerg Kuppardt,M85,87,1500m,8:02.78,1,World Masters Athletics Championships,International,2024,M,GER
+Radnaa Tseren,M90,92,1500m,8:07.23,1,World Masters Athletics Championships,International,2024,M,MGL
+Mark Husted,M35,37,5000m,15:03.67,1,World Masters Athletics Championships,International,2024,M,USA
+Juan Luis Barrios Nieves,M40,42,5000m,14:29.44,1,World Masters Athletics Championships,International,2024,M,MEX
+Mustafa Mohamed,M45,47,5000m,14:41.30,1,World Masters Athletics Championships,International,2024,M,SWE
+Francis Kipkoech Bowen,M50,52,5000m,15:51.38,1,World Masters Athletics Championships,International,2024,M,KEN
+Peter van der Velden,M55,57,5000m,16:20.48,1,World Masters Athletics Championships,International,2024,M,NED
+Andrew Leach,M60,62,5000m,16:59.67,1,World Masters Athletics Championships,International,2024,M,GBR
+Alex Stienstra,M65,67,5000m,17:27.40,1,World Masters Athletics Championships,International,2024,M,NED
+Victor Kiessel,M70,72,5000m,19:05.34,1,World Masters Athletics Championships,International,2024,M,LUX
+Bartholomeus Schalkwijk,M75,77,5000m,20:39.34,1,World Masters Athletics Championships,International,2024,M,NED
+Peter Giles,M80,82,5000m,23:58.07,1,World Masters Athletics Championships,International,2024,M,GBR
+Fokke Kramer,M85,87,5000m,24:24.94,1,World Masters Athletics Championships,International,2024,M,GER
+Colben Keith Sime,M90,92,5000m,42:49.68,1,World Masters Athletics Championships,International,2024,M,USA
+Paula Suchowiecka,W35,37,100m,11.86,1,World Masters Athletics Championships,International,2024,F,CAN
+Easter Grant,W40,42,100m,12.19,1,World Masters Athletics Championships,International,2024,F,USA
+Cynthia McNamee,W45,47,100m,12.59,1,World Masters Athletics Championships,International,2024,F,USA
+Monique Perry,W50,52,100m,12.90,1,World Masters Athletics Championships,International,2024,F,AUS
+Julie Brims,W55,57,100m,12.96,1,World Masters Athletics Championships,International,2024,F,AUS
+Nicole Alexis,W60,62,100m,13.68,1,World Masters Athletics Championships,International,2024,F,FRA
+Wendy Alexis,W65,67,100m,14.46,1,World Masters Athletics Championships,International,2024,F,CAN
+Karla Joan Del Grande,W70,72,100m,14.70,1,World Masters Athletics Championships,International,2024,F,CAN
+Moira West,W75,77,100m,16.04,1,World Masters Athletics Championships,International,2024,F,GBR
+Kathy Bergen,W80,82,100m,17.97,1,World Masters Athletics Championships,International,2024,F,USA
+Sumiko Yamakawa Imoto,W85,87,100m,19.68,1,World Masters Athletics Championships,International,2024,F,JPN
+Betts Stroh,W90,92,100m,29.87,1,World Masters Athletics Championships,International,2024,F,USA
+Paula Suchowiecka,W35,37,200m,24.47,1,World Masters Athletics Championships,International,2024,F,CAN
+Easter Grant,W40,42,200m,24.65,1,World Masters Athletics Championships,International,2024,F,USA
+Cynthia McNamee,W45,47,200m,26.08,1,World Masters Athletics Championships,International,2024,F,USA
+Janelle Delaney,W50,52,200m,26.36,1,World Masters Athletics Championships,International,2024,F,AUS
+Julie Brims,W55,57,200m,26.89,1,World Masters Athletics Championships,International,2024,F,AUS
+Nicole Alexis,W60,62,200m,28.96,1,World Masters Athletics Championships,International,2024,F,FRA
+Elizabeth Deak,W65,67,200m,30.38,1,World Masters Athletics Championships,International,2024,F,USA
+Sara Montecinos,W70,72,200m,30.79,1,World Masters Athletics Championships,International,2024,F,CHI
+Moira West,W75,77,200m,34.23,1,World Masters Athletics Championships,International,2024,F,GBR
+Barbro Boback,W80,82,200m,36.86,1,World Masters Athletics Championships,International,2024,F,SWE
+Kathleen Stewart,W85,87,200m,41.83,1,World Masters Athletics Championships,International,2024,F,GBR
+Emma Maria Mazzenga,W90,92,200m,52.08,1,World Masters Athletics Championships,International,2024,F,ITA
+Sonja Keil,W35,37,400m,55.49,1,World Masters Athletics Championships,International,2024,F,GER
+Christina Trucks,W40,42,400m,56.61,1,World Masters Athletics Championships,International,2024,F,USA
+Annette Quaid,W45,47,400m,58.73,1,World Masters Athletics Championships,International,2024,F,IRL
+Janelle Delaney,W50,52,400m,1:00.75,1,World Masters Athletics Championships,International,2024,F,AUS
+Esther Colas Roman,W55,57,400m,1:02.17,1,World Masters Athletics Championships,International,2024,F,ESP
+Sue McDonald,W60,62,400m,1:03.77,1,World Masters Athletics Championships,International,2024,F,USA
+Elizabeth Deak,W65,67,400m,1:09.98,1,World Masters Athletics Championships,International,2024,F,USA
+Sara Montecinos,W70,72,400m,1:10.62,1,World Masters Athletics Championships,International,2024,F,CHI
+Michelle Peroni,W75,77,400m,1:24.45,1,World Masters Athletics Championships,International,2024,F,FRA
+Riet Jonkers-Slegers,W80,82,400m,1:31.85,1,World Masters Athletics Championships,International,2024,F,NED
+Kathleen Stewart,W85,87,400m,1:39.24,1,World Masters Athletics Championships,International,2024,F,GBR
+Lynne Hurrel,W90,92,400m,2:26.00,1,World Masters Athletics Championships,International,2024,F,USA
+Anna Connor,W35,37,800m,2:08.32,1,World Masters Athletics Championships,International,2024,F,USA
+Aneta Lemiesz,W40,42,800m,2:12.61,1,World Masters Athletics Championships,International,2024,F,POL
+Katja Blunden,W45,47,800m,2:15.78,1,World Masters Athletics Championships,International,2024,F,FIN
+Evette Cordy,W50,52,800m,2:25.84,1,World Masters Athletics Championships,International,2024,F,AUS
+Marili Munnik,W55,57,800m,2:31.05,1,World Masters Athletics Championships,International,2024,F,RSA
+Sue McDonald,W60,62,800m,2:25.42,1,World Masters Athletics Championships,International,2024,F,USA
+Karen Brooks,W65,67,800m,2:43.54,1,World Masters Athletics Championships,International,2024,F,GBR
+Sarah Roberts,W70,72,800m,2:59.90,1,World Masters Athletics Championships,International,2024,F,GBR
+Jeannie Rice,W75,77,800m,3:09.52,1,World Masters Athletics Championships,International,2024,F,USA
+Riet Jonkers-Slegers,W80,82,800m,3:50.83,1,World Masters Athletics Championships,International,2024,F,NED
+Edilia Camargo Villarreal,W85,87,800m,7:44.41,1,World Masters Athletics Championships,International,2024,F,PAN
+Lynne Hurrell,W90,92,800m,5:16.16,1,World Masters Athletics Championships,International,2024,F,USA
+Anna Connor,W35,37,1500m,5:02.68,1,World Masters Athletics Championships,International,2024,F,USA
+Fiona Kehoe,W40,42,1500m,4:38.50,1,World Masters Athletics Championships,International,2024,F,USA
+Annika Karolina Faager,W45,47,1500m,4:55.32,1,World Masters Athletics Championships,International,2024,F,SWE
+Lizzy Immesoete,W50,52,1500m,4:53.84,1,World Masters Athletics Championships,International,2024,F,BEL
+Michelle Rohl,W55,57,1500m,4:55.87,1,World Masters Athletics Championships,International,2024,F,USA
+Anne Gilshinan,W60,62,1500m,4:59.45,1,World Masters Athletics Championships,International,2024,F,IRL
+Karen Brooks,W65,67,1500m,5:35.82,1,World Masters Athletics Championships,International,2024,F,GBR
+Sarah Roberts,W70,72,1500m,5:59.76,1,World Masters Athletics Championships,International,2024,F,GBR
+Jeannie Rice,W75,77,1500m,6:28.39,1,World Masters Athletics Championships,International,2024,F,USA
+Alice Broksoe,W80,82,1500m,8:16.52,1,World Masters Athletics Championships,International,2024,F,DEN
+Sandra Michalak,W35,37,5000m,17:13.17,1,World Masters Athletics Championships,International,2024,F,POL
+Ellie Stevens,W40,42,5000m,16:54.14,1,World Masters Athletics Championships,International,2024,F,GBR
+Rosaline David,W45,47,5000m,16:56.79,1,World Masters Athletics Championships,International,2024,F,KEN
+Carla Primo,W50,52,5000m,17:57.44,1,World Masters Athletics Championships,International,2024,F,ITA
+Michelle Rohl,W55,57,5000m,18:30.78,1,World Masters Athletics Championships,International,2024,F,USA
+Kristine Clark,W60,62,5000m,19:28.50,1,World Masters Athletics Championships,International,2024,F,USA
+Synove Brox,W65,67,5000m,20:17.99,1,World Masters Athletics Championships,International,2024,F,NOR
+Sarah Roberts,W70,72,5000m,20:58.33,1,World Masters Athletics Championships,International,2024,F,GBR
+Jeannie Rice,W75,77,5000m,22:46.86,1,World Masters Athletics Championships,International,2024,F,USA
+Hannele Kivisto,W80,82,5000m,30:57.15,1,World Masters Athletics Championships,International,2024,F,FIN
+Joyce Hodges-Hite,W85,87,5000m,52:34.10,1,World Masters Athletics Championships,International,2024,F,USA
+Todd Straka,M55,57,1500m,4:45.25,,USATF Masters Outdoor Championships,National,2024,M,USA
+Marianne Martino,W70,72,5000m Race Walk,33:49.40,,USATF Masters Outdoor Championships,National,2024,F,USA
+Jesse Mayes,M65,67,800m,2:44.91,,USATF Masters Outdoor Championships,National,2024,M,USA

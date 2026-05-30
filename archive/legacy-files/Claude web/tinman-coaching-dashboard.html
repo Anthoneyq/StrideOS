@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinman Coaching Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #ff6b35;
+            --accent: #004e89;
+            --light: #f7f7f7;
+            --dark: #1a1a1a;
+            --muted: #999;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            font-weight: 700;
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 1.1em;
+            padding: 16px 24px;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.95em;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            background: rgba(30, 30, 50, 0.8);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 24px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            margin: 20px 0 12px 0;
+            color: #e0e0e0;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #e0e0e0;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 6px;
+            padding: 12px;
+            color: #e0e0e0;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            background: rgba(255, 107, 53, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.2);
+        }
+
+        button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .button-secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .button-secondary:hover {
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .profile-card {
+            background: rgba(0, 78, 137, 0.15);
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .profile-stat {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .profile-label {
+            font-weight: 600;
+            color: var(--accent);
+            min-width: 140px;
+        }
+
+        .profile-value {
+            color: #e0e0e0;
+        }
+
+        .race-entry {
+            background: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--success);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .race-date {
+            color: var(--success);
+            font-weight: 600;
+            min-width: 100px;
+        }
+
+        .race-result {
+            flex: 1;
+        }
+
+        .race-pace {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.2em;
+        }
+
+        .delete-btn {
+            background: rgba(231, 76, 60, 0.3);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #e74c3c;
+            padding: 8px 12px;
+            font-size: 0.8em;
+        }
+
+        .delete-btn:hover {
+            background: rgba(231, 76, 60, 0.5);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .pace-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .pace-card {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pace-card:hover {
+            background: rgba(255, 107, 53, 0.15);
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .pace-label {
+            color: var(--muted);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .pace-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .pace-effort {
+            color: var(--muted);
+            font-size: 0.75em;
+            margin-top: 6px;
+        }
+
+        .prediction-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, rgba(0, 78, 137, 0.2), rgba(255, 107, 53, 0.1));
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .prediction-scenario {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .prediction-time {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .prediction-timeline {
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box {
+            background: rgba(0, 78, 137, 0.15);
+            border-left: 4px solid var(--accent);
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 16px;
+        }
+
+        .training-zones {
+            margin: 20px 0;
+        }
+
+        .zone-bar {
+            background: linear-gradient(90deg, #2ecc71, #f39c12, #e74c3c);
+            height: 30px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zone-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 700;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            font-size: 0.9em;
+        }
+
+        .zone-markers {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .zone-marker {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.8em;
+            color: var(--muted);
+        }
+
+        .zone-marker.active {
+            background: rgba(255, 107, 53, 0.3);
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .race-entry {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .tabs {
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                padding: 12px 16px;
+                font-size: 0.85em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>⚡ Tinman Coaching</h1>
+            <p class="subtitle">Dynamic progression modeling with weekly feedback loops</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('athlete')">Athlete Profile</button>
+            <button class="tab-btn" onclick="switchTab('races')">Race History</button>
+            <button class="tab-btn" onclick="switchTab('paces')">Training Paces</button>
+            <button class="tab-btn" onclick="switchTab('predict')">Progression Prediction</button>
+            <button class="tab-btn" onclick="switchTab('feedback')">Weekly Feedback</button>
+        </div>
+
+        <!-- ATHLETE PROFILE TAB -->
+        <div id="athlete" class="tab-content active">
+            <div class="section">
+                <h2>Athlete Profile</h2>
+                <p class="info-box">Complete this profile once. It contextualizes all predictions and pacing recommendations based on training age, injury history, and current capacity.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Athlete Name</label>
+                        <input type="text" id="athleteName" placeholder="e.g., Sarah">
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="athleteAge" placeholder="25" min="10" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select id="athleteGender">
+                            <option value="">Select</option>
+                            <option value="F">Female</option>
+                            <option value="M">Male</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Years of Consistent Running</label>
+                        <input type="number" id="trainingAge" placeholder="2" min="0" max="50" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Weekly Mileage (miles)</label>
+                        <input type="number" id="weeklyMileage" placeholder="30" min="0" max="200">
+                    </div>
+                    <div class="form-group">
+                        <label>Mileage Trend (Last 3 Months)</label>
+                        <select id="mileageTrend">
+                            <option value="increasing">Increasing</option>
+                            <option value="stable" selected>Stable</option>
+                            <option value="recovering">Recovering from low</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Recent Injuries or Setbacks?</label>
+                        <select id="injuryHistory">
+                            <option value="none" selected>None</option>
+                            <option value="recent">Within last 3 months</option>
+                            <option value="recurring">Recurring issues</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Primary Race Focus</label>
+                        <select id="raceDistance">
+                            <option value="5K">5K</option>
+                            <option value="10K">10K</option>
+                            <option value="HM">Half Marathon</option>
+                            <option value="M">Marathon</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Current Fitness Level</label>
+                        <select id="fitnessLevel">
+                            <option value="beginner">Beginner (just started)</option>
+                            <option value="developing">Developing (improving)</option>
+                            <option value="intermediate" selected>Intermediate (consistent)</option>
+                            <option value="advanced">Advanced (competitive)</option>
+                            <option value="elite">Elite</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3>Additional Context</h3>
+                <div class="form-group">
+                    <label>Notes (injury patterns, strengths, weaknesses)</label>
+                    <textarea id="athleteNotes" placeholder="e.g., strong on hills, struggles with speed work recovery..." rows="4"></textarea>
+                </div>
+
+                <button onclick="saveAthlete()">Save Athlete Profile</button>
+            </div>
+
+            <div class="section" id="profileDisplay" style="display: none;">
+                <h2>Current Profile</h2>
+                <div id="profileContent"></div>
+                <button class="button-secondary" onclick="document.getElementById('athlete').scrollIntoView(); document.querySelector('input[id=athleteName]').focus();">Edit Profile</button>
+            </div>
+        </div>
+
+        <!-- RACE HISTORY TAB -->
+        <div id="races" class="tab-content">
+            <div class="section">
+                <h2>Race History</h2>
+                <p class="info-box">Log all recent race results. The system uses progression patterns to identify training age effect, diminishing returns, and projected potential.</p>
+
+                <h3>Add Race Result</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Race Date</label>
+                        <input type="date" id="raceDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Distance (miles)</label>
+                        <input type="number" id="raceDistance" placeholder="3.1" min="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Time (mm:ss)</label>
+                        <input type="text" id="raceTime" placeholder="20:45">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Course Difficulty</label>
+                        <select id="courseDifficulty">
+                            <option value="fast">Fast/Flat</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="hilly">Hilly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Weather/Conditions</label>
+                        <input type="text" id="raceConditions" placeholder="e.g., Hot, humid" style="grid-column: span 2;">
+                    </div>
+                </div>
+
+                <button onclick="addRace()">Add Race</button>
+
+                <h3 style="margin-top: 32px;">Recent Races</h3>
+                <div id="raceList" class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p>No races logged yet. Add your first race result above.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRAINING PACES TAB -->
+        <div id="paces" class="tab-content">
+            <div class="section">
+                <h2>Current Training Paces</h2>
+                <p class="info-box">Paces calculated from your most recent race result, contextualized by training age and fitness level. Includes conservative, realistic, and potential estimates.</p>
+
+                <div id="pacesDisplay" class="empty-state">
+                    <div class="empty-state-icon">🏃</div>
+                    <p>Add a race result to see your training paces.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESSION PREDICTION TAB -->
+        <div id="predict" class="tab-content">
+            <div class="section">
+                <h2>Progression Projection</h2>
+                <p class="info-box">Estimates where your athlete will be in 3, 6, and 12 months based on training age, current fitness, and typical improvement curves. Accounts for diminishing returns at higher levels.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Projection Distance</label>
+                        <select id="projectionDistance">
+                            <option value="5K">5K</option>
+                            <option value="10K">10K</option>
+                            <option value="HM">Half Marathon</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Training Consistency (next 6 months)</label>
+                        <select id="trainingConsistency">
+                            <option value="conservative">Conservative (occasional missed weeks)</option>
+                            <option value="realistic" selected>Realistic (90% consistency)</option>
+                            <option value="aggressive">Aggressive (95%+ consistency)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="generateProjection()">Generate Projection</button>
+
+                <div id="projectionDisplay" class="empty-state" style="margin-top: 30px;">
+                    <div class="empty-state-icon">📈</div>
+                    <p>Add athlete profile and a race result to see projections.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- WEEKLY FEEDBACK TAB -->
+        <div id="feedback" class="tab-content">
+            <div class="section">
+                <h2>Weekly Feedback Loop</h2>
+                <p class="info-box">Log weekly data points to dynamically adjust pacing recommendations. The system recalibrates based on actual performance, perceived effort, and recovery patterns.</p>
+
+                <h3>This Week's Session</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Week Of (Date)</label>
+                        <input type="date" id="feedbackDate">
+                    </div>
+                    <div class="form-group">
+                        <label>CV Workout: How Did It Feel?</label>
+                        <select id="cvFeel">
+                            <option value="">Select...</option>
+                            <option value="easy">Too Easy</option>
+                            <option value="right">Just Right</option>
+                            <option value="hard">Too Hard</option>
+                            <option value="skipped">Skipped/Missed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Recovery Status</label>
+                        <select id="recoveryStatus">
+                            <option value="">Select...</option>
+                            <option value="excellent">Excellent (ready for hard work)</option>
+                            <option value="good">Good (normal recovery)</option>
+                            <option value="fatigued">Fatigued (need easy week)</option>
+                            <option value="injured">Injured/Sore</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Weekly Mileage Completed</label>
+                        <input type="number" id="weekMileage" placeholder="30" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Biggest Challenge This Week</label>
+                        <select id="weekChallenge">
+                            <option value="">Select...</option>
+                            <option value="motivation">Motivation</option>
+                            <option value="fatigue">Fatigue/Recovery</option>
+                            <option value="pacing">Pacing consistency</option>
+                            <option value="injury">Injury/Pain</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes for Coach</label>
+                    <textarea id="feedbackNotes" placeholder="How's the plan working? Any adjustments needed?" rows="4"></textarea>
+                </div>
+
+                <button onclick="submitFeedback()">Submit Weekly Feedback</button>
+
+                <h3 style="margin-top: 32px;">Feedback History</h3>
+                <div id="feedbackList" class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <p>Weekly feedback entries will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Storage
+        const storageKey = 'tinmanCoachingData';
+
+        function loadData() {
+            const stored = localStorage.getItem(storageKey);
+            return stored ? JSON.parse(stored) : {
+                athlete: null,
+                races: [],
+                feedback: []
+            };
+        }
+
+        function saveData(data) {
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabName === 'races') loadRaceDisplay();
+            if (tabName === 'paces') loadPacesDisplay();
+            if (tabName === 'predict') loadProjectionDisplay();
+            if (tabName === 'feedback') loadFeedbackDisplay();
+        }
+
+        // ATHLETE PROFILE
+        function saveAthlete() {
+            const data = loadData();
+            data.athlete = {
+                name: document.getElementById('athleteName').value,
+                age: parseInt(document.getElementById('athleteAge').value),
+                gender: document.getElementById('athleteGender').value,
+                trainingAge: parseFloat(document.getElementById('trainingAge').value),
+                weeklyMileage: parseInt(document.getElementById('weeklyMileage').value),
+                mileageTrend: document.getElementById('mileageTrend').value,
+                injuryHistory: document.getElementById('injuryHistory').value,
+                raceDistance: document.getElementById('raceDistance').value,
+                fitnessLevel: document.getElementById('fitnessLevel').value,
+                notes: document.getElementById('athleteNotes').value
+            };
+            saveData(data);
+            showProfileDisplay();
+            alert('Athlete profile saved!');
+        }
+
+        function showProfileDisplay() {
+            const data = loadData();
+            if (!data.athlete) return;
+            const a = data.athlete;
+
+            const trainingAgeCategory = getTrainingAgeCategory(a.trainingAge);
+            
+            const html = `
+                <div class="profile-card">
+                    <div class="profile-stat">
+                        <div class="profile-label">Name</div>
+                        <div class="profile-value">${a.name}, ${a.age} yrs</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-label">Training Age</div>
+                        <div class="profile-value">${a.trainingAge} years (${trainingAgeCategory})</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-label">Weekly Mileage</div>
+                        <div class="profile-value">${a.weeklyMileage} mi/week (${a.mileageTrend})</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-label">Primary Distance</div>
+                        <div class="profile-value">${a.raceDistance}</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-label">Current Level</div>
+                        <div class="profile-value">${capitalize(a.fitnessLevel)}</div>
+                    </div>
+                    <div class="profile-stat">
+                        <div class="profile-label">Recent Injuries</div>
+                        <div class="profile-value">${capitalize(a.injuryHistory)}</div>
+                    </div>
+                    ${a.notes ? `<div class="profile-stat">
+                        <div class="profile-label">Notes</div>
+                        <div class="profile-value">${a.notes}</div>
+                    </div>` : ''}
+                </div>
+            `;
+            
+            document.getElementById('profileContent').innerHTML = html;
+            document.getElementById('profileDisplay').style.display = 'block';
+        }
+
+        function getTrainingAgeCategory(years) {
+            if (years < 1) return 'Beginner';
+            if (years < 3) return 'Developing';
+            if (years < 5) return 'Intermediate';
+            return 'Advanced';
+        }
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // RACE HISTORY
+        function addRace() {
+            const date = document.getElementById('raceDate').value;
+            const distance = parseFloat(document.getElementById('raceDistance').value);
+            const time = document.getElementById('raceTime').value;
+            const difficulty = document.getElementById('courseDifficulty').value;
+            const conditions = document.getElementById('raceConditions').value;
+
+            if (!date || !distance || !time) {
+                alert('Please fill in date, distance, and time');
+                return;
+            }
+
+            const [minutes, seconds] = time.split(':').map(Number);
+            const totalSeconds = minutes * 60 + seconds;
+            const pace = totalSeconds / distance / 60;
+
+            const data = loadData();
+            data.races.push({
+                date,
+                distance,
+                time,
+                totalSeconds,
+                pace,
+                difficulty,
+                conditions,
+                addedAt: new Date().toISOString()
+            });
+            
+            data.races.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveData(data);
+            
+            document.getElementById('raceDistance').value = '';
+            document.getElementById('raceTime').value = '';
+            document.getElementById('raceConditions').value = '';
+            
+            loadRaceDisplay();
+            alert('Race added!');
+        }
+
+        function loadRaceDisplay() {
+            const data = loadData();
+            if (data.races.length === 0) {
+                document.getElementById('raceList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No races logged yet. Add your first race result above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            data.races.forEach((race, idx) => {
+                const paceMin = Math.floor(race.pace);
+                const paceSec = Math.round((race.pace - paceMin) * 60);
+                html += `
+                    <div class="race-entry">
+                        <div class="race-date">${formatDate(race.date)}</div>
+                        <div class="race-result">
+                            <div>${race.distance.toFixed(2)} miles in ${race.time}</div>
+                            <div class="race-pace">${paceMin}:${paceSec.toString().padStart(2, '0')}/mile</div>
+                            <div style="font-size: 0.85em; color: var(--muted);">${race.difficulty}, ${race.conditions || 'standard conditions'}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRace(${idx})">Delete</button>
+                    </div>
+                `;
+            });
+            document.getElementById('raceList').innerHTML = html;
+        }
+
+        function deleteRace(idx) {
+            if (!confirm('Delete this race result?')) return;
+            const data = loadData();
+            data.races.splice(idx, 1);
+            saveData(data);
+            loadRaceDisplay();
+        }
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        // TRAINING PACES
+        function loadPacesDisplay() {
+            const data = loadData();
+            if (!data.athlete || data.races.length === 0) {
+                document.getElementById('pacesDisplay').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🏃</div>
+                        <p>Add a race result to see your training paces.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const latestRace = data.races[0];
+            const paces = calculatePaces(latestRace, data.athlete);
+
+            let html = `
+                <h3>Based on ${latestRace.distance} miles on ${formatDate(latestRace.date)}</h3>
+                <div class="pace-grid">
+                    ${renderPaceCard('Critical Velocity', paces.cv, '90% vVO2max', 'primary')}
+                    ${renderPaceCard('VO2 Max Pace', paces.vo2, '100% vVO2max', 'warning')}
+                    ${renderPaceCard('Threshold', paces.threshold, '~87.5% vVO2max', 'accent')}
+                    ${renderPaceCard('Aerobic Power', paces.power, '85% vVO2max', 'success')}
+                    ${renderPaceCard('Easy Base', paces.easy, '70% vVO2max', 'info')}
+                </div>
+
+                <h3 style="margin-top: 30px;">Effort Context</h3>
+                <div class="info-box">
+                    <strong>Critical Velocity (CV):</strong> Your main quality workout intensity. Sustainable for ~30 minutes at an all-out effort. Feels "comfortably hard" — you can speak in short phrases but not hold a conversation. This trains Type IIa muscle fibers for both speed and endurance across all race distances.<br><br>
+                    <strong>VO2 Max Pace:</strong> Faster intervals (3-8 min repeats). Builds raw aerobic power. Requires full recovery between reps.<br><br>
+                    <strong>Threshold:</strong> Tempo runs and longer steady efforts. You're at the edge of lactate accumulation — can sustain for ~60 minutes at race effort.
+                </div>
+
+                <h3>Sample CV Workouts This Week</h3>
+                <div class="info-box">
+                    ${getSampleWorkouts(paces)}
+                </div>
+            `;
+
+            document.getElementById('pacesDisplay').innerHTML = html;
+        }
+
+        function calculatePaces(race, athlete) {
+            const miles = race.distance;
+            const seconds = race.totalSeconds;
+            
+            // Convert to m/min for Daniels equation
+            const meters = miles * 1609.34;
+            const velocityMperMin = meters / seconds;
+            
+            // VO2 cost = 0.2 * v + 3.5
+            const vo2Cost = 0.2 * velocityMperMin + 3.5;
+            
+            // Get %VO2max at race effort
+            const percentVO2 = getPercentVO2max(seconds);
+            const vVO2max = vo2Cost / percentVO2;
+            
+            // Apply training age modifier (beginners need slightly easier paces)
+            const trainingAgeMod = getTrainingAgeMod(athlete.trainingAge);
+            
+            return {
+                cv: vVO2max * 0.90 * trainingAgeMod,
+                vo2: vVO2max * 1.00 * trainingAgeMod,
+                threshold: vVO2max * 0.875 * trainingAgeMod,
+                power: vVO2max * 0.85 * trainingAgeMod,
+                easy: vVO2max * 0.70 * trainingAgeMod,
+                vVO2max: vVO2max
+            };
+        }
+
+        function getPercentVO2max(seconds) {
+            if (seconds <= 180) return 1.00;
+            if (seconds <= 300) return 0.975;
+            if (seconds <= 600) return 0.94;
+            if (seconds <= 900) return 0.92;
+            if (seconds <= 1200) return 0.91;
+            if (seconds <= 1500) return 0.90;
+            if (seconds <= 1800) return 0.88;
+            if (seconds <= 2400) return 0.85;
+            if (seconds <= 3600) return 0.83;
+            return 0.80;
+        }
+
+        function getTrainingAgeMod(trainingAge) {
+            // Beginners get slightly easier paces to avoid overtraining
+            if (trainingAge < 1) return 0.95;
+            if (trainingAge < 2) return 0.97;
+            return 1.00;
+        }
+
+        function renderPaceCard(label, velocity, effort, type) {
+            const paceMin = 60 / velocity;
+            const mins = Math.floor(paceMin);
+            const secs = Math.round((paceMin - mins) * 60);
+            return `
+                <div class="pace-card">
+                    <div class="pace-label">${label}</div>
+                    <div class="pace-value">${mins}:${secs.toString().padStart(2, '0')}</div>
+                    <div class="pace-effort">${effort}</div>
+                </div>
+            `;
+        }
+
+        function getSampleWorkouts(paces) {
+            const cvMin = Math.floor(60 / paces.cv);
+            const cvSec = Math.round((60 / paces.cv - cvMin) * 60);
+            const cvPace = `${cvMin}:${cvSec.toString().padStart(2, '0')}`;
+            
+            return `
+                • <strong>Easy CV:</strong> 4-5 × 1km @ ${cvPace} pace with 90-120s jog recovery<br>
+                • <strong>Medium CV:</strong> 6-8 × 800m @ ${cvPace} with 90s easy jog<br>
+                • <strong>Long CV:</strong> 3-4 × 2km @ ${cvPace} with 2-3min recovery<br>
+                • <strong>CV + Speed:</strong> 5 × (600m @ ${cvPace}, 200m @ race pace) with full rest<br>
+                • <strong>CV Pyramid:</strong> 400-800-1200-800-400m all @ ${cvPace}
+            `;
+        }
+
+        // PROGRESSION PROJECTION
+        function generateProjection() {
+            const data = loadData();
+            if (!data.athlete || data.races.length === 0) {
+                alert('Need athlete profile and race result first');
+                return;
+            }
+
+            const distance = document.getElementById('projectionDistance').value;
+            const consistency = document.getElementById('trainingConsistency').value;
+            const latestRace = data.races[0];
+            const paces = calculatePaces(latestRace, data.athlete);
+
+            const projections = projectFitness(latestRace, data.athlete, distance, consistency);
+
+            let html = `
+                <h3>6-Month Projection for ${distance}</h3>
+                <div class="prediction-cards">
+                    <div class="prediction-card">
+                        <div class="prediction-scenario">3 Months</div>
+                        <div class="prediction-time">${projections.m3}</div>
+                        <div class="prediction-timeline">Improvement: ${projections.m3Imp}</div>
+                    </div>
+                    <div class="prediction-card">
+                        <div class="prediction-scenario">6 Months</div>
+                        <div class="prediction-time">${projections.m6}</div>
+                        <div class="prediction-timeline">Improvement: ${projections.m6Imp}</div>
+                    </div>
+                    <div class="prediction-card">
+                        <div class="prediction-scenario">12 Months</div>
+                        <div class="prediction-time">${projections.m12}</div>
+                        <div class="prediction-timeline">Improvement: ${projections.m12Imp}</div>
+                    </div>
+                    <div class="prediction-card">
+                        <div class="prediction-scenario">Estimated Ceiling</div>
+                        <div class="prediction-time">${projections.ceiling}</div>
+                        <div class="prediction-timeline">Time to reach: ${projections.ceilingMonths}</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Projection Notes:</strong><br>
+                    Training Age: ${data.athlete.trainingAge} years (${getTrainingAgeCategory(data.athlete.trainingAge)})<br>
+                    Scenario: ${consistency} training consistency<br>
+                    These are estimates based on typical adaptation curves. Actual results depend on adherence, life factors, and individual response.
+                </div>
+            `;
+
+            document.getElementById('projectionDisplay').innerHTML = html;
+        }
+
+        function projectFitness(race, athlete, distance, consistency) {
+            // Base improvement rates by training age
+            const trainingAge = athlete.trainingAge;
+            let monthlyImprovement = 0.02; // 2% per month default
+
+            if (trainingAge < 1) monthlyImprovement = 0.08; // 8% for beginners
+            else if (trainingAge < 2) monthlyImprovement = 0.05;
+            else if (trainingAge < 3) monthlyImprovement = 0.035;
+            else if (trainingAge < 5) monthlyImprovement = 0.02;
+            else monthlyImprovement = 0.01; // < 1% for advanced
+
+            // Adjust for consistency
+            if (consistency === 'conservative') monthlyImprovement *= 0.75;
+            else if (consistency === 'aggressive') monthlyImprovement *= 1.2;
+
+            // Get current PR for distance and project
+            const currentTime = estimateTimeForDistance(race, distance);
+            const m3 = currentTime * Math.pow(1 - monthlyImprovement, 3);
+            const m6 = currentTime * Math.pow(1 - monthlyImprovement, 6);
+            const m12 = currentTime * Math.pow(1 - monthlyImprovement, 12);
+
+            // Estimate ceiling based on training age and age
+            let ceilingMod = 1.0;
+            if (trainingAge < 1) ceilingMod = 0.75; // Still has room
+            else if (trainingAge < 3) ceilingMod = 0.85;
+            else if (trainingAge < 5) ceilingMod = 0.92;
+            else ceilingMod = 0.97; // Already advanced
+
+            const ceiling = currentTime * ceilingMod;
+            const monthsToceiling = -Math.log(ceilingMod) / Math.log(1 - monthlyImprovement) / 12;
+
+            return {
+                m3: formatTime(m3),
+                m3Imp: formatImprovement(currentTime, m3),
+                m6: formatTime(m6),
+                m6Imp: formatImprovement(currentTime, m6),
+                m12: formatTime(m12),
+                m12Imp: formatImprovement(currentTime, m12),
+                ceiling: formatTime(ceiling),
+                ceilingMonths: Math.round(monthsToceiling) + ' months'
+            };
+        }
+
+        function estimateTimeForDistance(race, distance) {
+            // Use race equivalency
+            const distMap = {
+                '5K': 3.107,
+                '10K': 6.214,
+                'HM': 13.1,
+                'M': 26.2
+            };
+
+            const raceDistance = race.distance;
+            const targetDistance = distMap[distance];
+
+            // Rough pace progression model
+            const dFactor = 1 + (Math.log(targetDistance / raceDistance) * 0.1);
+            const projectedTime = race.totalSeconds * (targetDistance / raceDistance) * dFactor;
+
+            return projectedTime;
+        }
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.round(seconds % 60);
+
+            if (hrs > 0) {
+                return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatImprovement(from, to) {
+            const improvement = ((from - to) / from) * 100;
+            return improvement.toFixed(1) + '%';
+        }
+
+        function loadProjectionDisplay() {
+            document.getElementById('projectionDisplay').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📈</div>
+                    <p>Add athlete profile and a race result to see projections.</p>
+                </div>
+            `;
+        }
+
+        // WEEKLY FEEDBACK
+        function submitFeedback() {
+            const date = document.getElementById('feedbackDate').value;
+            const cvFeel = document.getElementById('cvFeel').value;
+            const recovery = document.getElementById('recoveryStatus').value;
+            const mileage = parseInt(document.getElementById('weekMileage').value);
+            const challenge = document.getElementById('weekChallenge').value;
+            const notes = document.getElementById('feedbackNotes').value;
+
+            if (!date || !cvFeel || !recovery || !mileage) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const data = loadData();
+            data.feedback.push({
+                date,
+                cvFeel,
+                recovery,
+                mileage,
+                challenge,
+                notes,
+                addedAt: new Date().toISOString()
+            });
+
+            data.feedback.sort((a, b) => new Date(b.date) - new Date(a.date));
+            saveData(data);
+
+            document.getElementById('feedbackDate').value = '';
+            document.getElementById('cvFeel').value = '';
+            document.getElementById('recoveryStatus').value = '';
+            document.getElementById('weekMileage').value = '';
+            document.getElementById('weekChallenge').value = '';
+            document.getElementById('feedbackNotes').value = '';
+
+            loadFeedbackDisplay();
+            alert('Feedback submitted!');
+        }
+
+        function loadFeedbackDisplay() {
+            const data = loadData();
+            if (data.feedback.length === 0) {
+                document.getElementById('feedbackList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>Weekly feedback entries will appear here.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            data.feedback.forEach((entry, idx) => {
+                html += `
+                    <div class="race-entry" style="border-left-color: #3498db;">
+                        <div class="race-date">${formatDate(entry.date)}</div>
+                        <div class="race-result">
+                            <div><strong>CV Feel:</strong> ${capitalize(entry.cvFeel)} | <strong>Recovery:</strong> ${capitalize(entry.recovery)}</div>
+                            <div style="font-size: 0.9em; margin-top: 6px;">${entry.mileage} mi completed | Challenge: ${entry.challenge}</div>
+                            ${entry.notes ? `<div style="font-size: 0.85em; color: var(--muted); margin-top: 6px; font-style: italic;">"${entry.notes}"</div>` : ''}
+                        </div>
+                        <button class="delete-btn" onclick="deleteFeedback(${idx})">Delete</button>
+                    </div>
+                `;
+            });
+            document.getElementById('feedbackList').innerHTML = html;
+        }
+
+        function deleteFeedback(idx) {
+            if (!confirm('Delete this feedback entry?')) return;
+            const data = loadData();
+            data.feedback.splice(idx, 1);
+            saveData(data);
+            loadFeedbackDisplay();
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            document.getElementById('feedbackDate').valueAsDate = new Date();
+            showProfileDisplay();
+            loadRaceDisplay();
+        });
+    </script>
+</body>
+</html>

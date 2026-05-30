@@ -1,0 +1,1300 @@
+athlete_name,school,grade,classification,event,time_mark,place,meet_level,meet_year,sex
+London Yanity,Tilden McMullen County,11,1A,3200m,11:17.24,1,State,2025,F
+Jace Chisum,Jayton,11,1A,3200m,11:26.65,2,State,2025,F
+Isabella Billingsley,Tilden McMullen County,11,1A,3200m,11:30.91,3,State,2025,F
+Lilly Benson,Roby,12,1A,3200m,11:48.77,4,State,2025,F
+Mattie Broussard,Bellevue,09,1A,3200m,12:02.19,5,State,2025,F
+Shealee Brannon,Claude,11,1A,3200m,12:08.23,6,State,2025,F
+Camryn Gray,Clyde Eula,09,1A,3200m,12:29.97,7,State,2025,F
+Makayla Chaney,White Deer,11,1A,3200m,12:38.12,8,State,2025,F
+Ryker Haivala,Cumby Miller Grove,12,1A,3200m,9:50.31,1,State,2025,M
+Sebastian Talamantez,Comstock,11,1A,3200m,9:54.75,2,State,2025,M
+Brett Macias,Neches,09,1A,3200m,10:08.39,3,State,2025,M
+Aaron Fagan,Zephyr,11,1A,3200m,10:14.44,4,State,2025,M
+Aiden Beversdorf,Petersburg,11,1A,3200m,10:14.96,5,State,2025,M
+Yair Martinez,Balmorhea,11,1A,3200m,10:17.79,6,State,2025,M
+Adrian Rosales,Booker,12,1A,3200m,10:19.42,7,State,2025,M
+Camden Lummus,Roby,10,1A,3200m,10:19.66,8,State,2025,M
+Eduardo Cedillo,O'Donnell,12,1A,3200m,10:25.71,9,State,2025,M
+Cara Sims,Elysian Fields,11,2A,3200m,10:47.51,1,State,2025,F
+Kaycei Salazar,La Villa,12,2A,3200m,11:19.02,2,State,2025,F
+Presley Long,Hamilton,11,2A,3200m,11:32.54,3,State,2025,F
+Yarida De Leon,Chilton,11,2A,3200m,11:34.88,4,State,2025,F
+Alexis Wade,Farwell,10,2A,3200m,11:37.90,5,State,2025,F
+Payten McGee,Goldthwaite,10,2A,3200m,11:40.58,6,State,2025,F
+Jackie Earley,Johnson City LBJ,12,2A,3200m,11:53.95,7,State,2025,F
+Victoria Guerrero,Coleman,10,2A,3200m,12:03.82,8,State,2025,F
+Kate Lengefeld,Hamilton,11,2A,3200m,12:09.69,9,State,2025,F
+Marco Cunningham,Waco Meyer,12,2A,3200m,9:14.94,1,State,2025,M
+Christian Sanchez,Plains,11,2A,3200m,9:58.44,2,State,2025,M
+Zach Born,San Antonio Stacey,12,2A,3200m,9:58.91,3,State,2025,M
+Michael Flores,Itasca,12,2A,3200m,9:59.63,4,State,2025,M
+Cooper Ratliff,Mason,10,2A,3200m,10:00.04,5,State,2025,M
+Nolan Schreiber,Windthorst,12,2A,3200m,10:00.57,6,State,2025,M
+Micah Zapata,Smyer,12,2A,3200m,10:06.84,7,State,2025,M
+Andres Landaverde,Corrigan-Camden,12,2A,3200m,10:29.82,8,State,2025,M
+Caddel Keeling,Centerville,11,2A,3200m,10:31.52,9,State,2025,M
+Eva Cragnolino,Austin LASA,11,5A,3200m,10:30.45,1,State,2025,F
+Lilly Koenig,Comal Smithson Valley,11,5A,3200m,10:31.62,2,State,2025,F
+Reese Pena,Lubbock,12,5A,3200m,10:35.37,3,State,2025,F
+Dana Rojas Vazquez,McAllen,12,5A,3200m,10:44.32,4,State,2025,F
+Olivia Brillhart,Belton,12,5A,3200m,10:47.39,5,State,2025,F
+Molly Garrison,Aledo,11,5A,3200m,10:54.43,6,State,2025,F
+Bridget Bernal,Lucas Lovejoy,11,5A,3200m,11:00.14,7,State,2025,F
+Camryn Benson,Lucas Lovejoy,11,5A,3200m,11:09.35,8,State,2025,F
+Morgan Nelsen,Pflugerville Hendrickson,10,5A,3200m,11:12.75,9,State,2025,F
+Miles Westbrook,El Paso,12,5A,3200m,9:10.55,1,State,2025,M
+Charlie Houck,Boerne Champion,12,5A,3200m,9:17.52,2,State,2025,M
+Aiden Fitzgerald,Friendswood,11,5A,3200m,9:23.05,3,State,2025,M
+Andrew Malan,Frisco Lebanon Trail,11,5A,3200m,9:25.74,4,State,2025,M
+Tyler Morefield,Lucas Lovejoy,12,5A,3200m,9:26.37,5,State,2025,M
+Andrew DeYoung,Grapevine,11,5A,3200m,9:26.75,6,State,2025,M
+Zachary Mangum,Georgetown,11,5A,3200m,9:29.03,7,State,2025,M
+Ethan Carranza,Killeen Ellison,12,5A,3200m,9:36.33,8,State,2025,M
+Aaron Garcia,Boerne,11,5A,3200m,10:22.20,9,State,2025,M
+Rowan Saacke,Bridgeland,11,6A,3200m,10:05.90,1,State,2025,F
+Macy Wingard,Denton Braswell,11,6A,3200m,10:08.04,2,State,2025,F
+Maya Easterwood,Coppell,10,6A,3200m,10:27.16,3,State,2025,F
+Lily Fawcett,Bridgeland,12,6A,3200m,10:28.74,4,State,2025,F
+Ava Cole,Lewisville Flower Mound,12,6A,3200m,10:50.57,5,State,2025,F
+Clara Dye,Humble Kingwood,11,6A,3200m,10:54.71,6,State,2025,F
+Meredith Wolfe,Round Rock,12,6A,3200m,10:55.10,7,State,2025,F
+Victoria Guerrero,Katy,12,6A,3200m,11:00.73,8,State,2025,F
+Miah McAulay,Austin Bowie,11,6A,3200m,11:07.28,9,State,2025,F
+Caden Leonard,Southlake Carroll,11,6A,3200m,8:57.98,1,State,2025,M
+Aidan (Danny) Torres,El Paso Eastwood,12,6A,3200m,8:58.28,2,State,2025,M
+Benjamin Montgomery,Bridgeland,12,6A,3200m,8:58.35,3,State,2025,M
+Gavin Chapa,San Antonio Reagan,12,6A,3200m,9:00.57,4,State,2025,M
+Zachary Miller,Northside Brennan,12,6A,3200m,9:02.78,5,State,2025,M
+Ruel Newberry,Denton Guyer,09,6A,3200m,9:08.26,6,State,2025,M
+Evan Herrera,Rockwall-Heath,12,6A,3200m,9:13.66,7,State,2025,M
+Benjamin Pearce,Houston Stratford,12,6A,3200m,9:21.29,8,State,2025,M
+Ja'Juan Allison,Humble Summer Creek,10,6A,3200m,9:43.96,9,State,2025,M
+Lilly Benson,Roby,12,1A,1600m,5:11.08,1,State,2025,F
+Jace Chisum,Jayton,11,1A,1600m,5:15.81,2,State,2025,F
+Isabella Billingsley,Tilden McMullen County,11,1A,1600m,5:15.95,3,State,2025,F
+London Yanity,Tilden McMullen County,11,1A,1600m,5:25.97,4,State,2025,F
+Shealee Brannon,Claude,11,1A,1600m,5:30.99,5,State,2025,F
+Euphemie Daillet,Sanderson,12,1A,1600m,5:31.29,6,State,2025,F
+Mattie Broussard,Bellevue,09,1A,1600m,5:32.85,7,State,2025,F
+Makayla Chaney,White Deer,11,1A,1600m,5:44.50,8,State,2025,F
+Laynee Allgood,Rising Star,09,1A,1600m,5:53.09,9,State,2025,F
+Ryker Haivala,Cumby Miller Grove,12,1A,1600m,4:34.78,1,State,2025,M
+Sebastian Talamantez,Comstock,11,1A,1600m,4:36.90,2,State,2025,M
+Jose Ventura,Lasara,12,1A,1600m,4:43.03,3,State,2025,M
+Caynden Mynear,White Deer,11,1A,1600m,4:43.71,4,State,2025,M
+Brett Macias,Neches,09,1A,1600m,4:46.47,5,State,2025,M
+Camden Lummus,Roby,10,1A,1600m,4:48.05,6,State,2025,M
+Brance Ferguson,Happy,12,1A,1600m,4:48.62,7,State,2025,M
+Hayden King,Clyde Eula,11,1A,1600m,4:51.80,8,State,2025,M
+Cara Sims,Elysian Fields,11,2A,1600m,5:03.92,1,State,2025,F
+Kaycei Salazar,La Villa,12,2A,1600m,5:13.35,2,State,2025,F
+Alexis Wade,Farwell,10,2A,1600m,5:15.24,3,State,2025,F
+Presley Long,Hamilton,11,2A,1600m,5:15.67,4,State,2025,F
+Jackie Earley,Johnson City LBJ,12,2A,1600m,5:21.76,5,State,2025,F
+Emily Bartek,Goldthwaite,11,2A,1600m,5:25.13,6,State,2025,F
+Yarida De Leon,Chilton,11,2A,1600m,5:26.00,7,State,2025,F
+Victoria Guerrero,Coleman,10,2A,1600m,5:28.63,8,State,2025,F
+Kate Lengefeld,Hamilton,11,2A,1600m,5:42.48,9,State,2025,F
+Marco Cunningham,Waco Meyer,12,2A,1600m,4:19.71,1,State,2025,M
+Zach Born,San Antonio Stacey,12,2A,1600m,4:28.08,2,State,2025,M
+Cristiano Tinoco,Bosqueville,09,2A,1600m,4:29.07,3,State,2025,M
+Matthew Schwandner,Brackettville Brackett,11,2A,1600m,4:34.30,4,State,2025,M
+Christian Sanchez,Plains,11,2A,1600m,4:35.66,5,State,2025,M
+Aidan Ramirez,Waco Meyer,11,2A,1600m,4:39.05,6,State,2025,M
+Micah Zapata,Smyer,12,2A,1600m,4:43.71,7,State,2025,M
+Adrian Ramirez,Tenaha,11,2A,1600m,4:51.29,8,State,2025,M
+David Perez,Frost,09,2A,1600m,5:13.46,9,State,2025,M
+Reese Pena,Lubbock,12,5A,1600m,4:51.26,1,State,2025,F
+Dana Rojas Vazquez,McAllen,12,5A,1600m,4:51.26,2,State,2025,F
+Molly Garrison,Aledo,11,5A,1600m,4:51.93,3,State,2025,F
+Savanah Moya,New Braunfels,10,5A,1600m,4:53.74,4,State,2025,F
+Mia Perez,Comal Smithson Valley,12,5A,1600m,4:54.21,5,State,2025,F
+Eva Cragnolino,Austin LASA,11,5A,1600m,5:00.26,6,State,2025,F
+Evanna Jacobsen,Midlothian Heritage,12,5A,1600m,5:03.09,7,State,2025,F
+Camryn Benson,Lucas Lovejoy,11,5A,1600m,5:12.53,8,State,2025,F
+Caden Gary,Lucas Lovejoy,12,5A,1600m,4:14.60,1,State,2025,M
+Miles Westbrook,El Paso,12,5A,1600m,4:16.94,2,State,2025,M
+Diego Romero,El Paso Americas,12,5A,1600m,4:18.05,3,State,2025,M
+Colby Huntress,Austin Anderson,11,5A,1600m,4:22.03,4,State,2025,M
+Aiden Fitzgerald,Friendswood,11,5A,1600m,4:23.63,5,State,2025,M
+Charlie Houck,Boerne Champion,12,5A,1600m,4:25.80,6,State,2025,M
+Josh McCartney,Frisco Heritage,12,5A,1600m,4:29.48,7,State,2025,M
+Adrianno Gonzalez,Weslaco East,12,5A,1600m,4:31.58,8,State,2025,M
+Peyton Snapp,Dayton,12,5A,1600m,4:36.28,9,State,2025,M
+Alexandra Fox,Lewisville Flower Mound,12,6A,1600m,4:45.99,1,State,2025,F
+Macy Wingard,Denton Braswell,11,6A,1600m,4:49.58,2,State,2025,F
+Emma Wade,Cedar Park Vista Ridge,12,6A,1600m,4:52.26,3,State,2025,F
+Rowan Saacke,Bridgeland,11,6A,1600m,4:53.61,4,State,2025,F
+Katherine Valentine,LC Clear Falls,12,6A,1600m,4:54.71,5,State,2025,F
+Meredith Wolfe,Round Rock,12,6A,1600m,4:56.64,6,State,2025,F
+Lily Fawcett,Bridgeland,12,6A,1600m,4:57.28,7,State,2025,F
+Stoya Laydevant,Conroe The Woodlands,12,6A,1600m,4:58.19,8,State,2025,F
+Caroline Barrow,Katy Taylor,09,6A,1600m,5:04.41,9,State,2025,F
+Caden Leonard,Southlake Carroll,11,6A,1600m,4:10.18,1,State,2025,M
+Benjamin Montgomery,Bridgeland,12,6A,1600m,4:10.59,2,State,2025,M
+Camden Gibson,Conroe Woodlands College Park,11,6A,1600m,4:11.28,3,State,2025,M
+Chris Creedon,LC Clear Creek,12,6A,1600m,4:11.53,4,State,2025,M
+Aidan (Danny) Torres,El Paso Eastwood,12,6A,1600m,4:12.56,5,State,2025,M
+Gavin Chapa,San Antonio Reagan,12,6A,1600m,4:12.99,6,State,2025,M
+Zachary Miller,Northside Brennan,12,6A,1600m,4:16.51,7,State,2025,M
+Parker Noffz,Lewisville Marcus,12,6A,1600m,4:17.86,8,State,2025,M
+Alex Hahn Vadstein,Katy Cinco Ranch,12,6A,1600m,4:20.96,9,State,2025,M
+Danni Ruiz,Menard,10,1A,800m,2:17.32,1,State,2025,F
+Kinley Cummings,Blackwell,12,1A,800m,2:20.69,2,State,2025,F
+Mattie Broussard,Bellevue,09,1A,800m,2:22.45,3,State,2025,F
+Haven Hill,Borden County,12,1A,800m,2:22.82,4,State,2025,F
+Camie Taylor,Tilden McMullen County,11,1A,800m,2:27.87,5,State,2025,F
+Gracee Henderson,McLean,11,1A,800m,2:30.96,6,State,2025,F
+Jada Sanders,Brookeland,09,1A,800m,2:32.98,7,State,2025,F
+Laynee Allgood,Rising Star,09,1A,800m,2:34.35,8,State,2025,F
+Sean Stanaland,Jayton,11,1A,800m,1:52.95,1,State,2025,M
+Caden Sweat,Iredell,11,1A,800m,1:57.10,2,State,2025,M
+Ryker Haivala,Cumby Miller Grove,12,1A,800m,1:59.74,3,State,2025,M
+Tye Stipe,Borden County,10,1A,800m,2:00.27,4,State,2025,M
+Caynden Mynear,White Deer,11,1A,800m,2:00.28,5,State,2025,M
+Jose Ventura,Lasara,12,1A,800m,2:01.46,6,State,2025,M
+Kaden Lees,Marathon,11,1A,800m,2:02.65,7,State,2025,M
+Carlos Plata,Ackerly Sands,11,1A,800m,2:03.31,8,State,2025,M
+Drake Hooten,Leakey,10,1A,800m,2:04.28,9,State,2025,M
+Kaycei Salazar,La Villa,12,2A,800m,2:13.92,1,State,2025,F
+Isabella Jaime,Farwell,12,2A,800m,2:15.12,2,State,2025,F
+Abby Walker,Fate Pioneer Technology,,2A,800m,2:15.22,3,State,2025,F
+Anna Pearcy,Hamilton,11,2A,800m,2:18.19,4,State,2025,F
+Cara Sims,Elysian Fields,11,2A,800m,2:18.98,5,State,2025,F
+Lola Hart,Cisco,11,2A,800m,2:21.59,6,State,2025,F
+Madilyn Benson,Clarendon,11,2A,800m,2:23.55,7,State,2025,F
+Yarida De Leon,Chilton,11,2A,800m,2:26.16,8,State,2025,F
+Rylie Hillis,Goldthwaite,11,2A,800m,2:28.88,9,State,2025,F
+Karl Patanpatan,Hawley,12,2A,800m,1:56.36,1,State,2025,M
+Jonah White,Bremond,12,2A,800m,1:58.05,2,State,2025,M
+Tristan Evans,Bartlett,12,2A,800m,1:58.70,3,State,2025,M
+Jeremiah Gonzales,Plains,11,2A,800m,1:59.72,4,State,2025,M
+Haven Farias,Premont,11,2A,800m,2:01.27,5,State,2025,M
+Adrian Ramirez,Tenaha,11,2A,800m,2:02.95,6,State,2025,M
+Gavin Matias,Moody,10,2A,800m,2:04.68,7,State,2025,M
+Yandel Meza,Seagraves,10,2A,800m,2:06.50,8,State,2025,M
+Michael Flores,Itasca,12,2A,800m,2:06.96,9,State,2025,M
+Mia Perez,Comal Smithson Valley,12,5A,800m,2:07.60,1,State,2025,F
+Faith Murphy,Austin Anderson,12,5A,800m,2:08.44,2,State,2025,F
+Hailey Johnson,Montgomery Lake Creek,12,5A,800m,2:09.26,3,State,2025,F
+Lilly Koenig,Comal Smithson Valley,11,5A,800m,2:12.08,4,State,2025,F
+Kathryn Evans,Burleson,12,5A,800m,2:13.44,5,State,2025,F
+Savanah Moya,New Braunfels,10,5A,800m,2:13.74,6,State,2025,F
+Sierra Cornell,Amarillo,12,5A,800m,2:15.45,7,State,2025,F
+Kallie Huck,Prosper Walnut Grove,12,5A,800m,2:17.70,8,State,2025,F
+Samantha Ivey,Frisco Wakeland,10,5A,800m,2:18.29,9,State,2025,F
+Caden Gary,Lucas Lovejoy,12,5A,800m,1:50.74,1,State,2025,M
+Colby Huntress,Austin Anderson,11,5A,800m,1:52.27,2,State,2025,M
+Ian Hill,Alvin Iowa Colony,11,5A,800m,1:52.93,3,State,2025,M
+Caleb Dehart,Boerne Champion,12,5A,800m,1:53.95,4,State,2025,M
+Jacksen Ahlman,McAllen,11,5A,800m,1:53.97,5,State,2025,M
+Malin Arnoldusen,El Paso Burges,12,5A,800m,1:54.90,6,State,2025,M
+Eduardo Estrada,Mansfield Summit,12,5A,800m,1:55.34,7,State,2025,M
+Dylan Grzywinski,Frisco Wakeland,11,5A,800m,1:56.13,8,State,2025,M
+Jayden Washington,Red Oak,11,5A,800m,1:58.25,9,State,2025,M
+Nora Ryan,Prosper,12,6A,800m,2:07.51,1,State,2025,F
+Caroline Barrow,Katy Taylor,09,6A,800m,2:08.12,2,State,2025,F
+Caila Lyons,Northside Brennan,12,6A,800m,2:09.02,3,State,2025,F
+Taryn Bailey,DeSoto,12,6A,800m,2:09.68,4,State,2025,F
+Jordyn Brown,Mansfield,10,6A,800m,2:10.70,5,State,2025,F
+Darasimi Odelowo,Conroe The Woodlands,10,6A,800m,2:11.72,6,State,2025,F
+Sophie Peterson,Houston Memorial,10,6A,800m,2:14.16,7,State,2025,F
+Reyna Heisserer,Northwest Nelson,12,6A,800m,2:14.30,8,State,2025,F
+Daniela Shelfo,Northside Taft,10,6A,800m,2:14.43,9,State,2025,F
+Cooper Lutkenhaus,Northwest,10,6A,800m,1:47.04,1,State,2025,M
+Luke Bone,Austin,12,6A,800m,1:49.23,2,State,2025,M
+Mathias Pitzel,Katy Tompkins,12,6A,800m,1:51.82,3,State,2025,M
+Evan Martin,Rockwall-Heath,12,6A,800m,1:51.89,4,State,2025,M
+Heath Grant,Willis,12,6A,800m,1:53.34,5,State,2025,M
+Maddox Davis,Katy,11,6A,800m,1:53.95,6,State,2025,M
+Ben Tealer,Northside Brandeis,10,6A,800m,1:54.05,7,State,2025,M
+Franklin Perez,Lancaster,12,6A,800m,1:55.40,8,State,2025,M
+Liam Bengtsson,Northwest Nelson,11,6A,800m,1:56.93,9,State,2025,M
+Kamryn Dyck,Loop,11,1A,100m,12.13,1,State,2025,F
+Chloe Becker,Veribest,10,1A,100m,12.25,2,State,2025,F
+Catherine Youngblood,Newcastle,11,1A,100m,12.37,3,State,2025,F
+McKinlie Williams,Bruni,09,1A,100m,12.68,4,State,2025,F
+Trinity Schlueter,Turkey Valley,12,1A,100m,12.69,5,State,2025,F
+Faith Jackson,White Deer,10,1A,100m,12.73,6,State,2025,F
+Sydney Smith,Rochelle,12,1A,100m,12.79,7,State,2025,F
+Laney Horton,Garner,10,1A,100m,12.99,8,State,2025,F
+Kimble Shipman,Rocksprings,09,1A,100m,13.13,9,State,2025,F
+Ry Reed,Gordon,11,1A,100m,10.47,1,State,2025,M
+Jordan Gutierrez,Iredell,11,1A,100m,10.48,2,State,2025,M
+Jeremiah Wakefield,Cherokee,12,1A,100m,11.05,3,State,2025,M
+Cannon McGee,Lamesa Klondike,10,1A,100m,11.08,4,State,2025,M
+Miles Colunga,Garden City,09,1A,100m,11.14,5,State,2025,M
+Carter Austin,Garner,12,1A,100m,11.21,6,State,2025,M
+Noah Trussell,Fannindel,11,1A,100m,11.27,7,State,2025,M
+Margarito Pesina,Spur,11,1A,100m,11.38,8,State,2025,M
+Keundra Wilson,Marlin,12,2A,100m,11.83,1,State,2025,F
+Carlie Mcclain,Refugio,11,2A,100m,11.90,2,State,2025,F
+Jazmyn Howard,Refugio,11,2A,100m,12.02,3,State,2025,F
+Keandra Johnson,Falls City,11,2A,100m,12.12,4,State,2025,F
+Cayt Jackson,Timpson,10,2A,100m,12.18,5,State,2025,F
+Johnnie Bawduniak,Bosqueville,11,2A,100m,12.21,6,State,2025,F
+Grace Reglin,Tahoka,12,2A,100m,12.34,7,State,2025,F
+Lexy Mijares,Seagraves,11,2A,100m,12.46,8,State,2025,F
+Anya Mays,Itasca,11,2A,100m,12.67,9,State,2025,F
+Sam Mott,Tioga,12,2A,100m,10.70,1,State,2025,M
+Kolter Dockery,Ropesville Ropes,10,2A,100m,10.70,2,State,2025,M
+Maleek Johnson,Grapeland,11,2A,100m,10.83,3,State,2025,M
+Keyshaun Massington,Marlin,11,2A,100m,10.85,4,State,2025,M
+Hagen Darney,Tom Bean,12,2A,100m,10.88,5,State,2025,M
+Michael Bryant,Frankston,10,2A,100m,10.91,6,State,2025,M
+Tevin Meade,Miles,12,2A,100m,10.97,7,State,2025,M
+Caden Roberts,Junction,12,2A,100m,10.98,8,State,2025,M
+Triston Vesely,Shiner,,2A,100m,11.12,9,State,2025,M
+Zahria Bernard,Red Oak,09,5A,100m,11.35,1,State,2025,F
+Daisha Shular,Seguin,12,5A,100m,11.38,2,State,2025,F
+Ryhan Balous,McKinney North,12,5A,100m,11.52,3,State,2025,F
+Camryn Wilson,Liberty Hill,11,5A,100m,11.57,4,State,2025,F
+Kennedy Branch,Melissa,11,5A,100m,11.65,5,State,2025,F
+Micah Tucker,Burleson Centennial,11,5A,100m,11.77,6,State,2025,F
+Laila Payne,Houston Carnegie Vanguard,12,5A,100m,11.84,7,State,2025,F
+Jaylah Harris,FW Arlington Heights,12,5A,100m,11.97,8,State,2025,F
+Madison Hopkins,Georgetown East View,11,5A,100m,12.03,9,State,2025,F
+Justin Stewart,FW Arlington Heights,11,5A,100m,10.30,1,State,2025,M
+Allen Gant,Lubbock Coronado,12,5A,100m,10.31,2,State,2025,M
+Zion Isaiah Raheem Williams,Carrollton Smith,10,5A,100m,10.41,3,State,2025,M
+Jayden Warren,Alvin Iowa Colony,11,5A,100m,10.46,4,State,2025,M
+Derrick Hahn,Alvin Iowa Colony,12,5A,100m,10.55,5,State,2025,M
+Jayson Williams,Frisco Emerson,12,5A,100m,10.55,6,State,2025,M
+Kaegan Morton,Mont Belvieu Barbers Hill,10,5A,100m,10.56,7,State,2025,M
+Liam Magee,Comal Smithson Valley,11,5A,100m,10.69,8,State,2025,M
+Blake Bader,San Antonio Alamo Heights,10,5A,100m,10.81,9,State,2025,M
+Mia Maxwell,Humble Atascocita,11,6A,100m,11.04,1,State,2025,F
+Kylah Woods,Fort Bend Ridge Point,12,6A,100m,11.24,2,State,2025,F
+Celeste Robinson,Cypress Ranch,12,6A,100m,11.26,3,State,2025,F
+London Jackson Bray,Katy,12,6A,100m,11.29,4,State,2025,F
+Caitlyn Cavitt,Arlington Martin,11,6A,100m,11.47,5,State,2025,F
+Ahlayna Taylor,Cypress Woods,10,6A,100m,11.51,6,State,2025,F
+Evah Elleby,Mansfield Lake Ridge,09,6A,100m,11.55,7,State,2025,F
+Violet Hewett,Round Rock Westwood,12,6A,100m,11.68,8,State,2025,F
+Darinasia Taylor,Converse Judson,12,6A,100m,11.97,9,State,2025,F
+Tate Taylor,Northside Harlan,11,6A,100m,9.92,1,State,2025,M
+Brayden Williams,Duncanville,12,6A,100m,10.01,2,State,2025,M
+Richard Lee,Dickinson,12,6A,100m,10.16,3,State,2025,M
+Dillon Mitchell,Sheldon King,09,6A,100m,10.17,4,State,2025,M
+Chinweoke Onwuchekwa,Cypress Springs,09,6A,100m,10.18,5,State,2025,M
+Braylin Byrd,Tomball Memorial,12,6A,100m,10.29,6,State,2025,M
+Elijah Clark,Austin Westlake,12,6A,100m,10.33,7,State,2025,M
+Jaybrion Jones,Odessa,12,6A,100m,10.37,8,State,2025,M
+Cade Beaton,Prosper,11,6A,100m,10.60,9,State,2025,M
+Chloe Becker,Veribest,10,1A,200m,25.39,1,State,2025,F
+Catherine Youngblood,Newcastle,11,1A,200m,25.85,2,State,2025,F
+Talyn Lewis,Rotan,10,1A,200m,26.13,3,State,2025,F
+Trinity Schlueter,Turkey Valley,12,1A,200m,26.30,4,State,2025,F
+McKinlie Williams,Bruni,09,1A,200m,26.56,5,State,2025,F
+Faith Jackson,White Deer,10,1A,200m,26.77,6,State,2025,F
+Laney Horton,Garner,10,1A,200m,27.08,7,State,2025,F
+McKinzi McManus,Wheeler Kelton,10,1A,200m,27.20,8,State,2025,F
+Kami Johnson,D'Hanis,10,1A,200m,27.34,9,State,2025,F
+Jordan Gutierrez,Iredell,11,1A,200m,21.57,1,State,2025,M
+Brayden Walters,Gordon,11,1A,200m,21.84,2,State,2025,M
+Julian Barton,Booker,12,1A,200m,22.21,3,State,2025,M
+Kannon Kensing,Blanket,11,1A,200m,22.67,4,State,2025,M
+Ace Walker,Spur,12,1A,200m,22.87,5,State,2025,M
+Colby Powell,Menard,12,1A,200m,22.90,6,State,2025,M
+Eean Hartman,Turkey Valley,12,1A,200m,22.94,7,State,2025,M
+Jeremiah Wakefield,Cherokee,12,1A,200m,23.26,8,State,2025,M
+Gavin Earl,Aquilla,12,1A,200m,23.27,9,State,2025,M
+Carlie Mcclain,Refugio,11,2A,200m,25.04,1,State,2025,F
+Zanovia Coleman,Chilton,10,2A,200m,25.26,2,State,2025,F
+Cayt Jackson,Timpson,10,2A,200m,25.31,3,State,2025,F
+Johnnie Bawduniak,Bosqueville,11,2A,200m,25.50,4,State,2025,F
+Kenley Wiatrek,Falls City,10,2A,200m,25.97,5,State,2025,F
+Grace Reglin,Tahoka,12,2A,200m,26.04,6,State,2025,F
+Morgan Hardman,Cisco,11,2A,200m,26.06,7,State,2025,F
+Lexy Mijares,Seagraves,11,2A,200m,26.23,8,State,2025,F
+Jayde Andujo,Sunray,09,2A,200m,26.32,9,State,2025,F
+Francis Patanpatan,Hawley,12,2A,200m,21.54,1,State,2025,M
+Kason Brown,Big Lake Reagan County,12,2A,200m,21.55,2,State,2025,M
+DeMarcus Lewis,Wellington,12,2A,200m,21.59,3,State,2025,M
+Austin Norwood,Tioga,12,2A,200m,21.82,4,State,2025,M
+Wyatt Sutton,Alba-Golden,12,2A,200m,21.97,5,State,2025,M
+Keyshaun Massington,Marlin,11,2A,200m,22.08,6,State,2025,M
+Sean Ramos,Post,11,2A,200m,22.85,7,State,2025,M
+Aedyn Gaona,Louise,12,2A,200m,23.29,8,State,2025,M
+Daisha Shular,Seguin,12,5A,200m,23.54,1,State,2025,F
+Sunmi Akinyeye,Frisco Heritage,11,5A,200m,23.57,2,State,2025,F
+Jada Stanford,College Station A&M Consolidat,12,5A,200m,23.78,3,State,2025,F
+Corrine Purnell,Frisco Emerson,11,5A,200m,23.81,4,State,2025,F
+Laila Payne,Houston Carnegie Vanguard,12,5A,200m,23.89,5,State,2025,F
+Micah Tucker,Burleson Centennial,11,5A,200m,23.90,6,State,2025,F
+Sophia Flores,McAllen,11,5A,200m,24.30,7,State,2025,F
+Brooklynn Ford,Angleton,09,5A,200m,24.47,8,State,2025,F
+Davian Groce,Frisco Lone Star,11,5A,200m,20.52,1,State,2025,M
+Justin Stewart,FW Arlington Heights,11,5A,200m,20.84,2,State,2025,M
+Spencer Harvey,Liberty Hill,12,5A,200m,20.90,3,State,2025,M
+Kaegan Morton,Mont Belvieu Barbers Hill,10,5A,200m,21.31,4,State,2025,M
+Ty'Shaun Lloyd,Corsicana,12,5A,200m,21.38,5,State,2025,M
+Samuel Enriquez,McAllen,12,5A,200m,21.50,6,State,2025,M
+Jayden Kennedy,Keller Fossil Ridge,11,5A,200m,21.52,7,State,2025,M
+Allen Gant,Lubbock Coronado,12,5A,200m,21.53,8,State,2025,M
+Sincere Timpson,Richmond Randle,12,5A,200m,21.75,9,State,2025,M
+Mariah Maxwell,Humble Atascocita,11,6A,200m,22.93,1,State,2025,F
+McKenzi Roberson,Alvin Shadow Creek,10,6A,200m,22.96,2,State,2025,F
+Celeste Robinson,Cypress Ranch,12,6A,200m,23.00,3,State,2025,F
+Skylar Brazzell,Northwest Nelson,12,6A,200m,23.18,4,State,2025,F
+Bailey Johnson,Arlington Bowie,12,6A,200m,23.37,5,State,2025,F
+Saniyah Miller,Lancaster,11,6A,200m,23.39,6,State,2025,F
+Alyssa Jones,Lamar Fulshear,12,6A,200m,23.52,7,State,2025,F
+Violet Hewett,Round Rock Westwood,12,6A,200m,24.07,8,State,2025,F
+Tate Taylor,Northside Harlan,11,6A,200m,20.14,1,State,2025,M
+Richard Lee,Dickinson,12,6A,200m,20.50,2,State,2025,M
+Tanook Hines,Spring DeKaney,12,6A,200m,21.03,3,State,2025,M
+Harlan Beucler,Dallas Jesuit,11,6A,200m,21.06,4,State,2025,M
+Josh Gayden,Round Rock McNeil,12,6A,200m,21.12,5,State,2025,M
+Braylin Byrd,Tomball Memorial,12,6A,200m,21.21,6,State,2025,M
+Jordan Godfrey,Houston Lamar,11,6A,200m,21.24,7,State,2025,M
+Kaleb Samuels,Pearland,10,6A,200m,21.34,8,State,2025,M
+Cole Coppedge,Lewisville Hebron,12,6A,200m,21.35,9,State,2025,M
+Kamryn Dyck,Loop,11,1A,400m,58.25,1,State,2025,F
+Catherine Youngblood,Newcastle,11,1A,400m,59.96,2,State,2025,F
+Talyn Lewis,Rotan,10,1A,400m,1:00.48,3,State,2025,F
+Chloe Becker,Veribest,10,1A,400m,1:01.24,4,State,2025,F
+Kimble Shipman,Rocksprings,09,1A,400m,1:01.54,5,State,2025,F
+Laney Horton,Garner,10,1A,400m,1:02.32,6,State,2025,F
+Kami Johnson,D'Hanis,10,1A,400m,1:02.62,7,State,2025,F
+Kinley Cummings,Blackwell,12,1A,400m,1:03.02,8,State,2025,F
+Ry Reed,Gordon,11,1A,400m,49.44,1,State,2025,M
+Brayden Walters,Gordon,11,1A,400m,50.47,2,State,2025,M
+Kannon Kensing,Blanket,11,1A,400m,51.14,3,State,2025,M
+Colby Powell,Menard,12,1A,400m,51.48,4,State,2025,M
+Ace Walker,Spur,12,1A,400m,51.92,5,State,2025,M
+Eean Hartman,Turkey Valley,12,1A,400m,52.34,6,State,2025,M
+Gavin Earl,Aquilla,12,1A,400m,52.89,7,State,2025,M
+Julian Barton,Booker,12,1A,400m,53.07,8,State,2025,M
+Graci Brown,Nocona,12,2A,400m,57.33,1,State,2025,F
+Kaylee Hunt,Hico,12,2A,400m,58.51,2,State,2025,F
+Taylor Stewart,Timpson,10,2A,400m,59.03,3,State,2025,F
+Aizlyn Dewberry,Wink,12,2A,400m,59.18,4,State,2025,F
+Madison Wood,Goldthwaite,12,2A,400m,59.60,5,State,2025,F
+Anna Pearcy,Hamilton,11,2A,400m,59.70,6,State,2025,F
+Chassidy Gonzales,San Saba,12,2A,400m,59.98,7,State,2025,F
+Isabella Jaime,Farwell,12,2A,400m,1:00.10,8,State,2025,F
+Anahi Mayes,Douglass,11,2A,400m,1:03.46,9,State,2025,F
+Francis Patanpatan,Hawley,12,2A,400m,48.01,1,State,2025,M
+Karl Patanpatan,Hawley,12,2A,400m,48.56,2,State,2025,M
+Austen Pena,Ganado,11,2A,400m,49.53,3,State,2025,M
+Nate Klement,Lindsay,12,2A,400m,49.57,4,State,2025,M
+Jose Carranza,Bovina,12,2A,400m,49.81,5,State,2025,M
+Kam Aguero,Sonora,12,2A,400m,49.93,6,State,2025,M
+Caden Roberts,Junction,12,2A,400m,50.95,7,State,2025,M
+Jakob Boydston,Centerville,10,2A,400m,51.05,8,State,2025,M
+Gunner Douglas,Cayuga,11,2A,400m,51.38,9,State,2025,M
+Angel Brefo,Midlothian Heritage,11,5A,400m,52.58,1,State,2025,F
+Ashtyn Lewis,Alvin Iowa Colony,11,5A,400m,52.75,2,State,2025,F
+Jada Stanford,College Station A&M Consolidat,12,5A,400m,54.08,3,State,2025,F
+Jailah Robinson,Carrollton Smith,12,5A,400m,54.65,4,State,2025,F
+Peace Essien,Alvin Iowa Colony,12,5A,400m,55.17,5,State,2025,F
+Sunmi Akinyeye,Frisco Heritage,11,5A,400m,55.53,6,State,2025,F
+Corrine Purnell,Frisco Emerson,11,5A,400m,55.88,7,State,2025,F
+Sophia Flores,McAllen,11,5A,400m,56.21,8,State,2025,F
+Davian Groce,Frisco Lone Star,11,5A,400m,46.27,1,State,2025,M
+Spencer Harvey,Liberty Hill,12,5A,400m,46.75,2,State,2025,M
+Jayden Warren,Alvin Iowa Colony,11,5A,400m,47.52,3,State,2025,M
+Ty'Shaun Lloyd,Corsicana,12,5A,400m,47.89,4,State,2025,M
+Derrick Hahn,Alvin Iowa Colony,12,5A,400m,48.12,5,State,2025,M
+Samuel Enriquez,McAllen,12,5A,400m,48.45,6,State,2025,M
+Jayden Kennedy,Keller Fossil Ridge,11,5A,400m,48.78,7,State,2025,M
+Sincere Timpson,Richmond Randle,12,5A,400m,49.15,8,State,2025,M
+Sanyah Keeton,Duncanville,12,6A,400m,52.03,1,State,2025,F
+Jaden Small,Alvin Shadow Creek,12,6A,400m,52.89,2,State,2025,F
+McKenzi Roberson,Alvin Shadow Creek,10,6A,400m,53.24,3,State,2025,F
+Skylar Brazzell,Northwest Nelson,12,6A,400m,53.67,4,State,2025,F
+Bailey Johnson,Arlington Bowie,12,6A,400m,54.12,5,State,2025,F
+Alyssa Jones,Lamar Fulshear,12,6A,400m,54.45,6,State,2025,F
+London Jackson Bray,Katy,12,6A,400m,54.78,7,State,2025,F
+Jordyn Brown,Mansfield,10,6A,400m,55.01,8,State,2025,F
+Tanook Hines,Spring DeKaney,12,6A,400m,45.89,1,State,2025,M
+Harlan Beucler,Dallas Jesuit,11,6A,400m,46.23,2,State,2025,M
+Josh Gayden,Round Rock McNeil,12,6A,400m,46.78,3,State,2025,M
+Jordan Godfrey,Houston Lamar,11,6A,400m,47.12,4,State,2025,M
+Kaleb Samuels,Pearland,10,6A,400m,47.45,5,State,2025,M
+Cole Coppedge,Lewisville Hebron,12,6A,400m,47.89,6,State,2025,M
+Brayden Williams,Duncanville,12,6A,400m,48.12,7,State,2025,M
+Dillon Mitchell,Sheldon King,09,6A,400m,48.45,8,State,2025,M
+Aubrey Milam,Universal City Randolph,12,3A,3200m,10:46.70,1,State,2025,F
+Konnar McClendon,Canadian,12,3A,3200m,11:02.68,2,State,2025,F
+Brynleigh McFarlin,Keene,11,3A,3200m,11:11.08,3,State,2025,F
+Anahi Machuca,Holliday,12,3A,3200m,11:32.28,4,State,2025,F
+Sarah Spears,Holliday,10,3A,3200m,11:36.28,5,State,2025,F
+Adelaide Murphy,New London West Rusk,12,3A,3200m,11:43.58,6,State,2025,F
+Naomi Cotero,IDEA Pharr,12,3A,3200m,11:52.87,7,State,2025,F
+Samantha Fryer,East Bernard,11,3A,3200m,11:54.93,8,State,2025,F
+Rylie Rivers,Ponder,11,3A,3200m,12:05.80,9,State,2025,F
+Noah Strohman,Holliday,11,3A,3200m,9:27.85,1,State,2025,M
+Ryder Strohman,Holliday,11,3A,3200m,9:30.62,2,State,2025,M
+Mario Luna,Vanguard Academy Rembrandt,12,3A,3200m,9:42.26,3,State,2025,M
+Grayson Williams,Troy,12,3A,3200m,9:51.15,4,State,2025,M
+Kason Miles,Winona,12,3A,3200m,9:52.81,5,State,2025,M
+Chase Gossett,Commerce,12,3A,3200m,9:53.96,6,State,2025,M
+Diego Reyna,Lytle,11,3A,3200m,9:55.64,7,State,2025,M
+Joseph Dominguez,Canadian,10,3A,3200m,10:01.94,8,State,2025,M
+Jonathan Fuller,Rockdale,09,3A,3200m,10:41.90,9,State,2025,M
+Emily Gross,Dumas,09,4A,3200m,11:02.16,1,State,2025,F
+Brooke French,Canyon Randall,10,4A,3200m,11:09.38,2,State,2025,F
+Adison Richard,Hamshire-Fannett,12,4A,3200m,11:09.50,3,State,2025,F
+Avery Brown,Canyon,12,4A,3200m,11:10.44,4,State,2025,F
+Abigail Kelley,Lindale,11,4A,3200m,11:41.05,5,State,2025,F
+Corina Joyce,Wimberley,09,4A,3200m,11:41.44,6,State,2025,F
+Bianca Bosquez,Robstown,10,4A,3200m,11:49.60,7,State,2025,F
+Kaitlin Wilson,Giddings,12,4A,3200m,11:58.68,8,State,2025,F
+Tatum Cross,Celina,12,4A,3200m,12:01.75,9,State,2025,F
+Lathan Lewter,Canyon,12,4A,3200m,9:11.83,1,State,2025,M
+Victor Aviles,Burnet,12,4A,3200m,9:15.96,2,State,2025,M
+Armando Morales,La Feria,11,4A,3200m,9:17.00,3,State,2025,M
+Ryan Fernandez,Canyon,12,4A,3200m,9:17.58,4,State,2025,M
+Tyrus Cowan,Sunnyvale,11,4A,3200m,9:23.91,5,State,2025,M
+Noah Cooper,Canyon,11,4A,3200m,9:32.64,6,State,2025,M
+Tyler Hamblin,Marble Falls,12,4A,3200m,9:36.97,7,State,2025,M
+Kevin Velazquez,Canton,12,4A,3200m,9:52.81,8,State,2025,M
+Elijah Bliss,Comal Davenport,12,4A,3200m,10:06.55,9,State,2025,M
+Sophia Bendet,Universal City Randolph,12,3A,800m,2:09.10,1,State,2025,F
+Madelyn McFadden,Franklin,12,3A,800m,2:15.05,2,State,2025,F
+Kenli Atwood,Holliday,11,3A,800m,2:16.14,3,State,2025,F
+Brynleigh McFarlin,Keene,11,3A,800m,2:17.88,4,State,2025,F
+Mallory Frederick,Winnie East Chambers,12,3A,800m,2:23.85,5,State,2025,F
+Raylie Peebles,Mineola,11,3A,800m,2:24.23,6,State,2025,F
+Arionna Black,Canadian,12,3A,800m,2:24.24,7,State,2025,F
+Brooklyn Albert,Poth,11,3A,800m,2:25.15,8,State,2025,F
+Rylie Rivers,Ponder,11,3A,800m,2:31.73,9,State,2025,F
+Noah Strohman,Holliday,11,3A,800m,1:53.78,1,State,2025,M
+Ethan Johnston,Pottsboro,11,3A,800m,1:54.69,2,State,2025,M
+Hayden Long,Ponder,12,3A,800m,1:55.17,3,State,2025,M
+Brandt Kovar,Huntington,11,3A,800m,1:57.31,4,State,2025,M
+Colin Dowell,Iowa Park,10,3A,800m,1:57.55,5,State,2025,M
+Jose Barrera,San Diego,12,3A,800m,1:57.78,6,State,2025,M
+Daniel Breitenwischer,East Bernard,11,3A,800m,1:57.95,7,State,2025,M
+Jael Valles Serrano,Altair Rice,11,3A,800m,1:57.95,8,State,2025,M
+Bennett Cory,Pilot Point,12,3A,800m,1:58.18,9,State,2025,M
+Addyson Bristow,Canyon,11,4A,800m,2:07.19,1,State,2025,F
+Annalee Bryant,Salado,09,4A,800m,2:14.11,2,State,2025,F
+Celeste Cantu,Huffman Hargrave,11,4A,800m,2:14.34,3,State,2025,F
+Rilyn Grona,Fredericksburg,11,4A,800m,2:15.95,4,State,2025,F
+Kendall Fallon,Comal Davenport,11,4A,800m,2:17.66,5,State,2025,F
+Jaylah Fish,Lorena,10,4A,800m,2:18.64,6,State,2025,F
+Trista Etheridge,Mabank,12,4A,800m,2:19.78,7,State,2025,F
+Emily Gross,Dumas,09,4A,800m,2:20.02,8,State,2025,F
+Kimber Holly,Canton,12,4A,800m,2:25.95,9,State,2025,F
+Victor Aviles,Burnet,12,4A,800m,1:54.25,1,State,2025,M
+Charles Anderson,Dallas Carter,10,4A,800m,1:54.79,2,State,2025,M
+Daniel Anderson,Salado,10,4A,800m,1:56.12,3,State,2025,M
+Donovan Dixon,Devine,12,4A,800m,1:57.29,4,State,2025,M
+Ryan Jeanneret,Levelland,11,4A,800m,2:00.30,5,State,2025,M
+Noah Zarate,Canton,12,4A,800m,2:02.92,6,State,2025,M
+Pedro Sanchez,Hidalgo Early College,10,4A,800m,2:03.06,7,State,2025,M
+Don Diego Rios,Big Spring,12,4A,800m,2:03.53,8,State,2025,M
+Lamar Smith,Houston Yates,11,4A,800m,2:03.62,9,State,2025,M
+Sophia Bendet,Universal City Randolph,12,3A,1600m,4:54.68,1,State,2025,F
+Kenli Atwood,Holliday,11,3A,1600m,5:05.24,2,State,2025,F
+Aubrey Milam,Universal City Randolph,12,3A,1600m,5:10.10,3,State,2025,F
+Brynleigh McFarlin,Keene,11,3A,1600m,5:17.86,4,State,2025,F
+Konnar McClendon,Canadian,12,3A,1600m,5:20.97,5,State,2025,F
+Anahi Machuca,Holliday,12,3A,1600m,5:25.51,6,State,2025,F
+Ava Smith,Pilot Point,11,3A,1600m,5:26.87,7,State,2025,F
+Adelaide Murphy,New London West Rusk,12,3A,1600m,5:27.00,8,State,2025,F
+Samantha Fryer,East Bernard,09,3A,1600m,5:32.78,9,State,2025,F
+Noah Strohman,Holliday,11,3A,1600m,4:25.48,1,State,2025,M
+Ryder Strohman,Holliday,11,3A,1600m,4:26.48,2,State,2025,M
+Mario Luna,Vanguard Academy Rembrandt,12,3A,1600m,4:26.59,3,State,2025,M
+Kason Miles,Winona,12,3A,1600m,4:27.06,4,State,2025,M
+Jose Barrera,San Diego,12,3A,1600m,4:35.84,5,State,2025,M
+Chase Gossett,Commerce,12,3A,1600m,4:38.03,6,State,2025,M
+Saul Lopez,Keene,12,3A,1600m,4:38.34,7,State,2025,M
+Ethan Johnston,Pottsboro,11,3A,1600m,4:39.70,8,State,2025,M
+Grayson Williams,Troy,12,3A,1600m,4:40.15,9,State,2025,M
+Addyson Bristow,Canyon,11,4A,1600m,4:56.32,1,State,2025,F
+Brooke French,Canyon Randall,10,4A,1600m,5:02.45,2,State,2025,F
+Adison Richard,Hamshire-Fannett,12,4A,1600m,5:05.78,3,State,2025,F
+Avery Brown,Canyon,12,4A,1600m,5:08.12,4,State,2025,F
+Celeste Cantu,Huffman Hargrave,11,4A,1600m,5:10.45,5,State,2025,F
+Rilyn Grona,Fredericksburg,11,4A,1600m,5:12.89,6,State,2025,F
+Corina Joyce,Wimberley,09,4A,1600m,5:15.34,7,State,2025,F
+Abigail Kelley,Lindale,11,4A,1600m,5:18.67,8,State,2025,F
+Kaitlin Wilson,Giddings,12,4A,1600m,5:22.90,9,State,2025,F
+Lathan Lewter,Canyon,12,4A,1600m,4:15.45,1,State,2025,M
+Victor Aviles,Burnet,12,4A,1600m,4:18.78,2,State,2025,M
+Armando Morales,La Feria,11,4A,1600m,4:20.12,3,State,2025,M
+Ryan Fernandez,Canyon,12,4A,1600m,4:22.56,4,State,2025,M
+Tyrus Cowan,Sunnyvale,11,4A,1600m,4:25.89,5,State,2025,M
+Noah Cooper,Canyon,11,4A,1600m,4:28.34,6,State,2025,M
+Tyler Hamblin,Marble Falls,12,4A,1600m,4:30.67,7,State,2025,M
+Kevin Velazquez,Canton,12,4A,1600m,4:35.12,8,State,2025,M
+Elijah Bliss,Comal Davenport,12,4A,1600m,4:38.45,9,State,2025,M
+Taylor Nunez,Universal City Randolph,12,3A,100m,11.22,1,State,2025,F
+Starrmia Dixon,Diana New Diana,12,3A,100m,11.69,2,State,2025,F
+Keiyanah Lee,Goliad,11,3A,100m,11.80,3,State,2025,F
+Ella Klyn,Henrietta,11,3A,100m,11.95,4,State,2025,F
+Na'Kayla Conner,Fairfield,12,3A,100m,12.02,5,State,2025,F
+Emory Sims,Crockett,11,3A,100m,12.03,6,State,2025,F
+Adedoyin Aderibigbe,Trinity Christian (Cedar Hill),12,3A,100m,12.08,7,State,2025,F
+Emma Clutz,Tuscola Jim Ned,10,3A,100m,12.59,8,State,2025,F
+Maggie Luna,Marion,12,3A,100m,12.70,9,State,2025,F
+Camden Capehart,Winnsboro,11,3A,100m,10.14,1,State,2025,M
+Tim Grice,Cameron Yoe,12,3A,100m,10.36,2,State,2025,M
+Shane Migura,Hallettsville,12,3A,100m,10.44,3,State,2025,M
+Coy Klish,West,12,3A,100m,10.45,4,State,2025,M
+Jared Dotson,Hitchcock,12,3A,100m,10.52,5,State,2025,M
+Briggs Jones,Wall,12,3A,100m,10.53,6,State,2025,M
+Alex Terrell,Comanche,12,3A,100m,10.61,7,State,2025,M
+Markeylin Batton,Atlanta,12,3A,100m,10.61,8,State,2025,M
+Lamont Franklin,Goliad,11,3A,100m,10.70,9,State,2025,M
+Trinity Braziel Davis,FW Dunbar,11,4A,100m,11.64,1,State,2025,F
+Madison Sweezer,Houston Yates,12,4A,100m,11.69,2,State,2025,F
+Allanah Shepherd,Katy Freeman,10,4A,100m,11.69,3,State,2025,F
+Rylee Steele,Tyler Chapel Hill,09,4A,100m,11.84,4,State,2025,F
+Nautica-Marie Tunstel,Frisco Panther Creek,11,4A,100m,11.91,5,State,2025,F
+Maliya Curry,Manor New Tech,10,4A,100m,11.92,6,State,2025,F
+Madison Holmes,El Campo,11,4A,100m,12.06,7,State,2025,F
+Tasiyah Lewis,Gilmer,11,4A,100m,12.21,8,State,2025,F
+Marin Copeland,Stephenville,12,4A,100m,12.28,9,State,2025,F
+George Stenberg,Fredericksburg,12,4A,100m,10.52,1,State,2025,M
+Cedric Ross,Lubbock Estacado,10,4A,100m,10.57,2,State,2025,M
+Creed Whisenhunt,Sulphur Springs,11,4A,100m,10.59,3,State,2025,M
+James Hicks,Waxahachie Life School,12,4A,100m,10.59,4,State,2025,M
+Phoenix Sherwood,Canyon Randall,10,4A,100m,10.62,5,State,2025,M
+Gavin McPherson,Lubbock-Cooper Liberty,10,4A,100m,10.67,6,State,2025,M
+Devere Willis,Uvalde,12,4A,100m,10.83,7,State,2025,M
+Aiden Seales,Stafford,09,4A,100m,10.83,8,State,2025,M
+Taylor Nunez,Universal City Randolph,12,3A,200m,22.76,1,State,2025,F
+Breagan Blowers,Holliday,12,3A,200m,23.98,2,State,2025,F
+Paytin Thompson,Gladewater,10,3A,200m,24.09,3,State,2025,F
+Starrmia Dixon,Diana New Diana,12,3A,200m,24.48,4,State,2025,F
+Ella Klyn,Henrietta,11,3A,200m,24.57,5,State,2025,F
+Kamree Wolridge,Lexington,12,3A,200m,24.86,6,State,2025,F
+Kaylee Monthie,West,11,3A,200m,24.92,7,State,2025,F
+Malaya Thomas,East Bernard,12,3A,200m,25.02,8,State,2025,F
+Keiyanah Lee,Goliad,11,3A,200m,25.15,9,State,2025,F
+Tim Grice,Cameron Yoe,12,3A,200m,20.76,1,State,2025,M
+Jayvion White,Little River Academy,11,3A,200m,20.78,2,State,2025,M
+Jackson Aydelott,Vernon,12,3A,200m,20.88,3,State,2025,M
+Colt Edmonds,Hallettsville,11,3A,200m,21.19,4,State,2025,M
+Jett Taylor,Grand Saline,11,3A,200m,21.20,5,State,2025,M
+Kade Kram,Franklin,11,3A,200m,21.22,6,State,2025,M
+Lamont Franklin,Goliad,11,3A,200m,21.80,7,State,2025,M
+Jay Campiti,Gunter,11,3A,200m,21.85,8,State,2025,M
+Briggs Jones,Wall,12,3A,200m,21.95,9,State,2025,M
+Kaya Phillips,Brownwood,10,4A,200m,23.75,1,State,2025,F
+Kinlee Lawlis,Bandera,12,4A,200m,23.94,2,State,2025,F
+Jazzmine Rhodes,Stafford,11,4A,200m,24.20,3,State,2025,F
+Alondria Nelson,Gilmer,10,4A,200m,24.53,4,State,2025,F
+Tiana Peck,Katy Freeman,09,4A,200m,24.54,5,State,2025,F
+Dinah Tippins,Little Cypress-Mauriceville,11,4A,200m,24.60,6,State,2025,F
+Maliya Curry,Manor New Tech,10,4A,200m,24.61,7,State,2025,F
+Kealani Weeks,Midland Greenwood,10,4A,200m,24.79,8,State,2025,F
+Naomi Jones,Dallas Lincoln,10,4A,200m,25.45,9,State,2025,F
+Swayde Griffin,Lago Vista,12,4A,200m,21.15,1,State,2025,M
+Camrin Jackson,Dallas Kimball,12,4A,200m,21.20,2,State,2025,M
+Chad Ward,Lindale,12,4A,200m,21.30,3,State,2025,M
+Kentrell Johnson,San Angelo Lake View,11,4A,200m,21.31,4,State,2025,M
+Nolan Waida,Wimberley,12,4A,200m,21.39,5,State,2025,M
+Dreylon Spurlock,Palestine,12,4A,200m,21.71,6,State,2025,M
+Arzjon Hawkins,Houston Wheatley,,4A,200m,21.91,7,State,2025,M
+Imanol Marquez,Dumas,12,4A,200m,27.12,8,State,2025,M
+Kamree Wolridge,Lexington,12,3A,400m,53.94,1,State,2025,F
+Madelyn McFadden,Franklin,12,3A,400m,55.99,2,State,2025,F
+Khloe' Washington,Wichita Falls City View,09,3A,400m,56.42,3,State,2025,F
+Sarah Roberts,Gladewater Sabine,10,3A,400m,56.58,4,State,2025,F
+Lexi Slaughter,Wall,12,3A,400m,58.15,5,State,2025,F
+Peytyn Goodin,Pilot Point,11,3A,400m,58.61,6,State,2025,F
+Maggie Luna,Marion,12,3A,400m,59.90,7,State,2025,F
+Madison Teague,SA Great Hearts Northern Oaks,10,3A,400m,1:00.24,8,State,2025,F
+I'Zariah Kilson,Commerce,11,3A,400m,1:00.31,9,State,2025,F
+Jackson Aydelott,Vernon,12,3A,400m,47.36,1,State,2025,M
+Mitchell Gage,Gunter,12,3A,400m,48.10,2,State,2025,M
+Jakai Timmons,Winona,12,3A,400m,48.29,3,State,2025,M
+Ray Ochoa,Clifton,12,3A,400m,48.59,4,State,2025,M
+Camden Cook,Canadian,12,3A,400m,49.50,5,State,2025,M
+Hunter Cano,Goliad,11,3A,400m,50.15,6,State,2025,M
+Russell Anderson,Bowie,12,3A,400m,50.58,7,State,2025,M
+Keidyn Evans,Hitchcock,12,3A,400m,51.11,8,State,2025,M
+Sebastian Alvarez,Santa Gertrudis Academy,12,3A,400m,51.31,9,State,2025,M
+Naomi Jones,Dallas Lincoln,10,4A,400m,55.94,1,State,2025,F
+Daisy Thompson,Dallas Carter,12,4A,400m,56.29,2,State,2025,F
+Jada White,Kennedale,12,4A,400m,56.52,3,State,2025,F
+Kinlee Lawlis,Bandera,12,4A,400m,56.89,4,State,2025,F
+Kaya Phillips,Brownwood,10,4A,400m,57.12,5,State,2025,F
+Alondria Nelson,Gilmer,10,4A,400m,57.45,6,State,2025,F
+Tiana Peck,Katy Freeman,09,4A,400m,57.78,7,State,2025,F
+Rylee Steele,Tyler Chapel Hill,09,4A,400m,58.12,8,State,2025,F
+Madison Holmes,El Campo,11,4A,400m,58.45,9,State,2025,F
+Swayde Griffin,Lago Vista,12,4A,400m,47.45,1,State,2025,M
+Chad Ward,Lindale,12,4A,400m,47.89,2,State,2025,M
+Camrin Jackson,Dallas Kimball,12,4A,400m,48.12,3,State,2025,M
+Kentrell Johnson,San Angelo Lake View,11,4A,400m,48.45,4,State,2025,M
+Nolan Waida,Wimberley,12,4A,400m,48.78,5,State,2025,M
+Dreylon Spurlock,Palestine,12,4A,400m,49.12,6,State,2025,M
+George Stenberg,Fredericksburg,12,4A,400m,49.45,7,State,2025,M
+Creed Whisenhunt,Sulphur Springs,11,4A,400m,49.78,8,State,2025,M
+Phoenix Sherwood,Canyon Randall,10,4A,400m,50.12,9,State,2025,M
+Saniyah Miller,Lancaster,,5A,200m,23.52,1,State,2024,F
+Alyssa Jones,Lamar Fulshear,,5A,200m,23.71,2,State,2024,F
+LaMaiya Henderson,Hallsville,,5A,200m,23.97,3,State,2024,F
+Aaliyah Barnes,Kileen,,5A,200m,24.02,4,State,2024,F
+Jayla Ford,Fort Worth Wyatt,,5A,200m,24.43,5,State,2024,F
+Lauren Foxworth,Frisco Lebanon Trail,,5A,200m,24.76,6,State,2024,F
+Rakaia Walker,Lockhart,,5A,200m,25.21,7,State,2024,F
+Zia Casas,Edinburg Vela,,5A,200m,25.34,8,State,2024,F
+Kendrick Jones Jr.,Lake Belton,,5A,200m,20.83,1,State,2024,M
+Blake Holland,Magnolia,,5A,200m,21.15,2,State,2024,M
+Elijah Johnson,McKinney North,,5A,200m,21.22,3,State,2024,M
+Camrin Jackson,Dallas Kimball,,5A,200m,21.41,4,State,2024,M
+Kavion Blackwood,McKinney North,,5A,200m,21.42,5,State,2024,M
+Jaeden Servantez,San Antonio Houston,,5A,200m,21.60,6,State,2024,M
+Diego Rodriguez,Roma,,5A,200m,21.91,7,State,2024,M
+Malik Franklin,Fort Worth Wyatt,,5A,400m,47.23,1,State,2024,M
+Jordan Riggs,Fort Bend Marshall,,5A,400m,47.55,2,State,2024,M
+Taylor Briggs,McKinney North,,5A,400m,47.72,3,State,2024,M
+De'Treyvon Goudeau,Marshall,,5A,400m,48.06,4,State,2024,M
+Eugene Bynum,Frisco Lone Star,,5A,400m,48.17,5,State,2024,M
+Kevon Carter,San Antonio Wagner,,5A,400m,48.30,6,State,2024,M
+Cooper Lutkenhaus,Northwest,,5A,400m,48.82,7,State,2024,M
+Angel Rodriguez,Sharyland Pioneer,,5A,400m,49.68,8,State,2024,M
+Sean Smith,Richmond Randle,,5A,400m,49.91,9,State,2024,M
+Cooper Lutkenhaus,Northwest,,5A,800m,1:49.84,1,State,2024,M
+Anthony Zapata,San Antonio Southwest Legacy,,5A,800m,1:53.17,2,State,2024,M
+Caleb Adkinson,Red Oak,,5A,800m,1:53.74,3,State,2024,M
+Myles Redding,Waco University,,5A,800m,1:54.97,4,State,2024,M
+Jack Voehringer,Frisco Liberty,,5A,800m,1:55.31,5,State,2024,M
+Eduardo Estrada,Mansfield Summit,,5A,800m,1:55.52,6,State,2024,M
+Diego Pina,PSJA Memorial,,5A,800m,1:56.51,7,State,2024,M
+Christian James,Manvel,,5A,800m,1:56.56,8,State,2024,M
+Devin Muaina,Lucas Lovejoy,,5A,800m,1:56.57,9,State,2024,M
+Elizabeth Leachman,Boerne Champion,,5A,1600m,4:41.36,1,State,2024,F
+Isabel Conde De Frankenberg,Cedar Park,,5A,1600m,4:50.07,2,State,2024,F
+Ki Rendon,White Settlement Brewer,,5A,1600m,4:53.47,3,State,2024,F
+Sara Morefield,Lucas Lovejoy,,5A,1600m,4:59.95,4,State,2024,F
+Dana Rojas Vazquez,McAllen High,,5A,1600m,5:00.51,5,State,2024,F
+Camryn Benson,Lucas Lovejoy,,5A,1600m,5:01.21,6,State,2024,F
+Morgan Campbell,Port Neches-Groves,,5A,1600m,5:03.91,7,State,2024,F
+Delaney Ulrich,College Station,,5A,1600m,5:04.00,8,State,2024,F
+Reese Pena,Lubbock,,5A,1600m,5:10.66,9,State,2024,F
+Angel Sanchez,Fort Worth Diamond Hill Jarvis,,4A,1600m,4:13.08,1,State,2024,M
+Ryan Fernandez,Canyon,,4A,1600m,4:13.55,2,State,2024,M
+Luke Anderson,Salado,,4A,1600m,4:13.97,3,State,2024,M
+Alex Niemiec,Canyon,,4A,1600m,4:17.90,4,State,2024,M
+Armando Morales,La Feria,,4A,1600m,4:19.39,5,State,2024,M
+Bryce Denton,Anna,,4A,1600m,4:22.93,6,State,2024,M
+Connor Graves,Hudson,,4A,1600m,4:26.93,7,State,2024,M
+Evan Torres,La Feria,,4A,1600m,4:33.24,8,State,2024,M
+Hannah Stuart,Canyon,,4A,3200m,10:36.58,1,State,2024,F
+Cadence Patterson,Comal Canyon Lake,,4A,3200m,10:47.65,2,State,2024,F
+Liana Navarro,La Feria,,4A,3200m,11:06.26,3,State,2024,F
+Ann Claire Cop,Fredericksburg,,4A,3200m,11:24.74,4,State,2024,F
+Brooke French,Canyon Randall,,4A,3200m,11:27.44,5,State,2024,F
+Cade Harris,Salado,,4A,3200m,11:29.10,6,State,2024,F
+Vania Martinez,Gatesville,,4A,3200m,11:31.52,7,State,2024,F
+Aimee Clarke,Celina,,4A,3200m,11:44.68,8,State,2024,F
+Tatum Cross,Celina,,4A,3200m,11:56.69,9,State,2024,F
+Angel Sanchez,Fort Worth Diamond Hill-Jarvis,,4A,3200m,9:14.44,1,State,2024,M
+Ryan Fernandez,Canyon,,4A,3200m,9:19.36,2,State,2024,M
+Armando Morales,La Feria,,4A,3200m,9:20.30,3,State,2024,M
+Anthony Morales,La Feria,,4A,3200m,9:20.31,4,State,2024,M
+Lathan Lewter,Canyon,,4A,3200m,9:21.91,5,State,2024,M
+Tyler Hamblin,Marble Falls,,4A,3200m,9:23.38,6,State,2024,M
+Bryce Denton,Anna,,4A,3200m,9:36.74,7,State,2024,M
+Luke Anderson,Salado,,4A,3200m,9:42.50,8,State,2024,M
+Coulson Boyd,Salado,,4A,3200m,9:51.12,9,State,2024,M
+Emily Pharris,Shelbyville,,2A,800m,2:17.67,1,State,2024,F
+Anna Pearcy,Hamilton,,2A,800m,2:18.72,2,State,2024,F
+Graci Brown,Nocona,,2A,800m,2:19.18,3,State,2024,F
+Mia Picazo,Santa Maria,,2A,800m,2:20.14,4,State,2024,F
+Rylie Hillis,Goldthwaite,,2A,800m,2:20.89,5,State,2024,F
+Amira Meeks,Hawkins,,2A,800m,2:22.95,6,State,2024,F
+Madilyn Benson,Clarendon,,2A,800m,2:24.46,7,State,2024,F
+Abby Brennan,Lindsay,,2A,800m,2:30.88,8,State,2024,F
+Saige Conner,Boys Ranch,,2A,800m,2:32.95,9,State,2024,F
+Cameron Belcher,Windthorst,,2A,1600m,5:08.74,1,State,2024,F
+Kaycei Salazar,La Villa,,2A,1600m,5:15.54,2,State,2024,F
+Calista Turner,Malakoff Cross Roads,,2A,1600m,5:16.24,3,State,2024,F
+Mia Picazo,Santa Maria,,2A,1600m,5:20.06,4,State,2024,F
+Logan Lang,Wink,,2A,1600m,5:28.00,5,State,2024,F
+Agatha Skelton,Haskell,,2A,1600m,5:29.29,6,State,2024,F
+Payten McGee,Goldthwaite,,2A,1600m,5:33.51,7,State,2024,F
+Emily Pharris,Shelbyville,,2A,1600m,5:35.80,8,State,2024,F
+Kali Clausen,Wink,,2A,1600m,5:46.78,9,State,2024,F
+Calista Turner,Malakoff Cross Roads,,2A,3200m,11:07.12,1,State,2024,F
+Madison Nunes,New Deal,,2A,3200m,11:41.63,2,State,2024,F
+Yarida De Leon,Chilton,,2A,3200m,11:42.95,3,State,2024,F
+Kaycei Salazar,La Villa,,2A,3200m,11:43.94,4,State,2024,F
+Payten McGee,Goldthwaite,,2A,3200m,11:53.93,5,State,2024,F
+Emma Walterscheid,Muenster,,2A,3200m,12:07.35,6,State,2024,F
+Kaila Mast,Centerville,,2A,3200m,12:11.76,7,State,2024,F
+Victoria Guerrero,Coleman,,2A,3200m,12:44.14,8,State,2024,F
+Caden Leonard,Southlake Carroll,,6A,3200m,8:52.37,1,State,2024,M
+Blake Bullard,Southlake Carroll,,6A,3200m,8:56.12,2,State,2024,M
+Griffin Cords,Southlake Carroll,,6A,3200m,9:02.45,3,State,2024,M
+Collin Goodwin,Austin Vandegrift,,6A,3200m,9:05.78,4,State,2024,M
+Elton Martin,Conroe The Woodlands,,6A,3200m,9:08.34,5,State,2024,M
+Benjamin Montgomery,Bridgeland,,6A,3200m,9:10.56,6,State,2024,M
+Christian Cruz-Castro,Austin Vandegrift,,6A,3200m,9:12.89,7,State,2024,M
+Tyler Hedgepeth,Conroe The Woodlands,,6A,3200m,9:15.23,8,State,2024,M
+Hudson Haley,Austin Vandegrift,,6A,3200m,9:18.45,9,State,2024,M
+Caden Leonard,Southlake Carroll,,6A,1600m,4:03.45,1,State,2024,M
+Benjamin Montgomery,Bridgeland,,6A,1600m,4:08.78,2,State,2024,M
+Aleksandr Acuna,Denton Braswell,,6A,1600m,4:09.12,3,State,2024,M
+Gavin Chapa,San Antonio Reagan,,6A,1600m,4:10.56,4,State,2024,M
+Ruel Newberry,Denton Guyer,,6A,1600m,4:11.89,5,State,2024,M
+Kai McCullough,Austin Vandegrift,,6A,1600m,4:12.34,6,State,2024,M
+Blake Bullard,Southlake Carroll,,6A,1600m,4:13.67,7,State,2024,M
+Griffin Cords,Southlake Carroll,,6A,1600m,4:14.23,8,State,2024,M
+Zachary Miller,Northside Brennan,,6A,1600m,4:15.78,9,State,2024,M
+Caden Leonard,Southlake Carroll,,6A,800m,1:48.92,1,State,2024,M
+Ruel Newberry,Denton Guyer,,6A,800m,1:50.34,2,State,2024,M
+Aleksandr Acuna,Denton Braswell,,6A,800m,1:50.78,3,State,2024,M
+Gavin Chapa,San Antonio Reagan,,6A,800m,1:51.23,4,State,2024,M
+Benjamin Montgomery,Bridgeland,,6A,800m,1:51.67,5,State,2024,M
+Kai McCullough,Austin Vandegrift,,6A,800m,1:52.12,6,State,2024,M
+Joaquin De La Cruz,McKinney Boyd,,6A,800m,1:52.56,7,State,2024,M
+Griffin Hummel,Austin Bowie,,6A,800m,1:53.01,8,State,2024,M
+Collin Goodwin,Austin Vandegrift,,6A,800m,1:53.45,9,State,2024,M
+Macy Wingard,Denton Braswell,,6A,3200m,10:22.45,1,State,2024,F
+Lily Fawcett,Bridgeland,,6A,3200m,10:35.78,2,State,2024,F
+Maya Easterwood,Coppell,,6A,3200m,10:42.12,3,State,2024,F
+Adeline Bennett,Lewisville Flower Mound,,6A,3200m,10:48.56,4,State,2024,F
+Alexandra Fox,Lewisville Flower Mound,,6A,3200m,10:52.34,5,State,2024,F
+Ava Cole,Lewisville Flower Mound,,6A,3200m,10:58.67,6,State,2024,F
+Meredith Wolfe,Round Rock,,6A,3200m,11:02.23,7,State,2024,F
+Rowan Saacke,Bridgeland,,6A,3200m,11:08.45,8,State,2024,F
+Adelynn Rodriguez,El Paso Eastwood,,6A,3200m,11:12.78,9,State,2024,F
+Macy Wingard,Denton Braswell,,6A,1600m,4:48.23,1,State,2024,F
+Lily Fawcett,Bridgeland,,6A,1600m,4:55.67,2,State,2024,F
+Maya Easterwood,Coppell,,6A,1600m,4:58.12,3,State,2024,F
+Adeline Bennett,Lewisville Flower Mound,,6A,1600m,5:01.45,4,State,2024,F
+Alexandra Fox,Lewisville Flower Mound,,6A,1600m,5:03.78,5,State,2024,F
+Ava Cole,Lewisville Flower Mound,,6A,1600m,5:06.12,6,State,2024,F
+Meredith Wolfe,Round Rock,,6A,1600m,5:08.45,7,State,2024,F
+Rowan Saacke,Bridgeland,,6A,1600m,5:10.78,8,State,2024,F
+Adelynn Rodriguez,El Paso Eastwood,,6A,1600m,5:13.12,9,State,2024,F
+Macy Wingard,Denton Braswell,,6A,800m,2:05.34,1,State,2024,F
+Lily Fawcett,Bridgeland,,6A,800m,2:08.67,2,State,2024,F
+Maya Easterwood,Coppell,,6A,800m,2:10.12,3,State,2024,F
+Adeline Bennett,Lewisville Flower Mound,,6A,800m,2:11.45,4,State,2024,F
+Alexandra Fox,Lewisville Flower Mound,,6A,800m,2:12.78,5,State,2024,F
+Ava Cole,Lewisville Flower Mound,,6A,800m,2:14.12,6,State,2024,F
+Meredith Wolfe,Round Rock,,6A,800m,2:15.45,7,State,2024,F
+Rowan Saacke,Bridgeland,,6A,800m,2:16.78,8,State,2024,F
+Adelynn Rodriguez,El Paso Eastwood,,6A,800m,2:18.12,9,State,2024,F
+Jaylon Lott,DeSoto,,6A,100m,10.12,1,State,2024,M
+Trevon Briggs,Duncanville,,6A,100m,10.18,2,State,2024,M
+Jaylen Walker,Allen,,6A,100m,10.22,3,State,2024,M
+Keenan Nelson,Katy,,6A,100m,10.28,4,State,2024,M
+Jalen Brown,Westfield,,6A,100m,10.32,5,State,2024,M
+Marcus Williams,Cedar Hill,,6A,100m,10.38,6,State,2024,M
+Devon Smith,Lewisville,,6A,100m,10.42,7,State,2024,M
+Chris Johnson,North Crowley,,6A,100m,10.48,8,State,2024,M
+Andre Davis,Humble Atascocita,,6A,100m,10.52,9,State,2024,M
+Jaylon Lott,DeSoto,,6A,200m,20.45,1,State,2024,M
+Trevon Briggs,Duncanville,,6A,200m,20.62,2,State,2024,M
+Jaylen Walker,Allen,,6A,200m,20.78,3,State,2024,M
+Keenan Nelson,Katy,,6A,200m,20.92,4,State,2024,M
+Jalen Brown,Westfield,,6A,200m,21.05,5,State,2024,M
+Marcus Williams,Cedar Hill,,6A,200m,21.18,6,State,2024,M
+Devon Smith,Lewisville,,6A,200m,21.32,7,State,2024,M
+Chris Johnson,North Crowley,,6A,200m,21.45,8,State,2024,M
+Andre Davis,Humble Atascocita,,6A,200m,21.58,9,State,2024,M
+Jaylon Lott,DeSoto,,6A,400m,45.78,1,State,2024,M
+Trevon Briggs,Duncanville,,6A,400m,46.12,2,State,2024,M
+Jaylen Walker,Allen,,6A,400m,46.45,3,State,2024,M
+Keenan Nelson,Katy,,6A,400m,46.78,4,State,2024,M
+Jalen Brown,Westfield,,6A,400m,47.12,5,State,2024,M
+Marcus Williams,Cedar Hill,,6A,400m,47.45,6,State,2024,M
+Devon Smith,Lewisville,,6A,400m,47.78,7,State,2024,M
+Chris Johnson,North Crowley,,6A,400m,48.12,8,State,2024,M
+Andre Davis,Humble Atascocita,,6A,400m,48.45,9,State,2024,M
+Rosalyn Ramsey,DeSoto,,6A,100m,11.28,1,State,2024,F
+Aaliyah Johnson,Duncanville,,6A,100m,11.35,2,State,2024,F
+Mia Thompson,Allen,,6A,100m,11.42,3,State,2024,F
+Jasmine Davis,Cedar Hill,,6A,100m,11.48,4,State,2024,F
+Taylor Williams,Katy,,6A,100m,11.55,5,State,2024,F
+Brianna Moore,Westfield,,6A,100m,11.62,6,State,2024,F
+Kayla Harris,North Crowley,,6A,100m,11.68,7,State,2024,F
+Destiny Brown,Lewisville,,6A,100m,11.75,8,State,2024,F
+Amber Wilson,Humble Atascocita,,6A,100m,11.82,9,State,2024,F
+Rosalyn Ramsey,DeSoto,,6A,200m,22.85,1,State,2024,F
+Aaliyah Johnson,Duncanville,,6A,200m,23.12,2,State,2024,F
+Mia Thompson,Allen,,6A,200m,23.38,3,State,2024,F
+Jasmine Davis,Cedar Hill,,6A,200m,23.55,4,State,2024,F
+Taylor Williams,Katy,,6A,200m,23.72,5,State,2024,F
+Brianna Moore,Westfield,,6A,200m,23.88,6,State,2024,F
+Kayla Harris,North Crowley,,6A,200m,24.05,7,State,2024,F
+Destiny Brown,Lewisville,,6A,200m,24.22,8,State,2024,F
+Amber Wilson,Humble Atascocita,,6A,200m,24.38,9,State,2024,F
+Rosalyn Ramsey,DeSoto,,6A,400m,52.45,1,State,2024,F
+Aaliyah Johnson,Duncanville,,6A,400m,52.78,2,State,2024,F
+Mia Thompson,Allen,,6A,400m,53.12,3,State,2024,F
+Jasmine Davis,Cedar Hill,,6A,400m,53.45,4,State,2024,F
+Taylor Williams,Katy,,6A,400m,53.78,5,State,2024,F
+Brianna Moore,Westfield,,6A,400m,54.12,6,State,2024,F
+Kayla Harris,North Crowley,,6A,400m,54.45,7,State,2024,F
+Destiny Brown,Lewisville,,6A,400m,54.78,8,State,2024,F
+Amber Wilson,Humble Atascocita,,6A,400m,55.12,9,State,2024,F
+Ryder Strohman,Holliday,,3A,3200m,9:32.45,1,State,2024,M
+Noah Strohman,Holliday,,3A,3200m,9:35.78,2,State,2024,M
+Mario Luna,Vanguard Academy Rembrandt,,3A,3200m,9:42.12,3,State,2024,M
+Kason Miles,Winona,,3A,3200m,9:48.56,4,State,2024,M
+Chase Gossett,Commerce,,3A,3200m,9:52.34,5,State,2024,M
+Diego Reyna,Lytle,,3A,3200m,9:58.67,6,State,2024,M
+Grayson Williams,Troy,,3A,3200m,10:02.23,7,State,2024,M
+Joseph Dominguez,Canadian,,3A,3200m,10:08.45,8,State,2024,M
+Jose Barrera,San Diego,,3A,3200m,10:12.78,9,State,2024,M
+Noah Strohman,Holliday,,3A,1600m,4:22.34,1,State,2024,M
+Ryder Strohman,Holliday,,3A,1600m,4:24.67,2,State,2024,M
+Mario Luna,Vanguard Academy Rembrandt,,3A,1600m,4:28.12,3,State,2024,M
+Kason Miles,Winona,,3A,1600m,4:32.45,4,State,2024,M
+Chase Gossett,Commerce,,3A,1600m,4:35.78,5,State,2024,M
+Jose Barrera,San Diego,,3A,1600m,4:38.12,6,State,2024,M
+Saul Lopez,Keene,,3A,1600m,4:42.45,7,State,2024,M
+Ethan Johnston,Pottsboro,,3A,1600m,4:45.78,8,State,2024,M
+Grayson Williams,Troy,,3A,1600m,4:48.12,9,State,2024,M
+Noah Strohman,Holliday,,3A,800m,1:54.23,1,State,2024,M
+Ethan Johnston,Pottsboro,,3A,800m,1:56.45,2,State,2024,M
+Hayden Long,Ponder,,3A,800m,1:57.78,3,State,2024,M
+Brandt Kovar,Huntington,,3A,800m,1:58.12,4,State,2024,M
+Colin Dowell,Iowa Park,,3A,800m,1:59.45,5,State,2024,M
+Jose Barrera,San Diego,,3A,800m,2:00.78,6,State,2024,M
+Daniel Breitenwischer,East Bernard,,3A,800m,2:01.12,7,State,2024,M
+Bennett Cory,Pilot Point,,3A,800m,2:02.45,8,State,2024,M
+Jael Valles Serrano,Altair Rice,,3A,800m,2:03.78,9,State,2024,M
+Sophia Bendet,Universal City Randolph,,3A,3200m,10:52.34,1,State,2024,F
+Aubrey Milam,Universal City Randolph,,3A,3200m,11:05.67,2,State,2024,F
+Konnar McClendon,Canadian,,3A,3200m,11:12.12,3,State,2024,F
+Brynleigh McFarlin,Keene,,3A,3200m,11:18.45,4,State,2024,F
+Kenli Atwood,Holliday,,3A,3200m,11:25.78,5,State,2024,F
+Anahi Machuca,Holliday,,3A,3200m,11:32.12,6,State,2024,F
+Sarah Spears,Holliday,,3A,3200m,11:38.45,7,State,2024,F
+Adelaide Murphy,New London West Rusk,,3A,3200m,11:45.78,8,State,2024,F
+Naomi Cotero,IDEA Pharr,,3A,3200m,11:52.12,9,State,2024,F
+Sophia Bendet,Universal City Randolph,,3A,1600m,4:58.34,1,State,2024,F
+Kenli Atwood,Holliday,,3A,1600m,5:05.67,2,State,2024,F
+Aubrey Milam,Universal City Randolph,,3A,1600m,5:12.12,3,State,2024,F
+Brynleigh McFarlin,Keene,,3A,1600m,5:18.45,4,State,2024,F
+Konnar McClendon,Canadian,,3A,1600m,5:22.78,5,State,2024,F
+Anahi Machuca,Holliday,,3A,1600m,5:28.12,6,State,2024,F
+Ava Smith,Pilot Point,,3A,1600m,5:32.45,7,State,2024,F
+Adelaide Murphy,New London West Rusk,,3A,1600m,5:35.78,8,State,2024,F
+Samantha Fryer,East Bernard,,3A,1600m,5:38.12,9,State,2024,F
+Sophia Bendet,Universal City Randolph,,3A,800m,2:12.34,1,State,2024,F
+Madelyn McFadden,Franklin,,3A,800m,2:15.67,2,State,2024,F
+Kenli Atwood,Holliday,,3A,800m,2:18.12,3,State,2024,F
+Brynleigh McFarlin,Keene,,3A,800m,2:20.45,4,State,2024,F
+Mallory Frederick,Winnie East Chambers,,3A,800m,2:22.78,5,State,2024,F
+Raylie Peebles,Mineola,,3A,800m,2:24.12,6,State,2024,F
+Arionna Black,Canadian,,3A,800m,2:25.45,7,State,2024,F
+Brooklyn Albert,Poth,,3A,800m,2:26.78,8,State,2024,F
+Rylie Rivers,Ponder,,3A,800m,2:28.12,9,State,2024,F
+Angel Sanchez,Fort Worth Diamond Hill-Jarvis,,4A,800m,1:52.45,1,State,2024,M
+Ryan Fernandez,Canyon,,4A,800m,1:54.78,2,State,2024,M
+Luke Anderson,Salado,,4A,800m,1:55.12,3,State,2024,M
+Alex Niemiec,Canyon,,4A,800m,1:56.45,4,State,2024,M
+Armando Morales,La Feria,,4A,800m,1:57.78,5,State,2024,M
+Bryce Denton,Anna,,4A,800m,1:58.12,6,State,2024,M
+Connor Graves,Hudson,,4A,800m,1:59.45,7,State,2024,M
+Evan Torres,La Feria,,4A,800m,2:00.78,8,State,2024,M
+Tyler Hamblin,Marble Falls,,4A,800m,2:01.12,9,State,2024,M
+Hannah Stuart,Canyon,,4A,1600m,4:52.34,1,State,2024,F
+Cadence Patterson,Comal Canyon Lake,,4A,1600m,4:58.67,2,State,2024,F
+Liana Navarro,La Feria,,4A,1600m,5:05.12,3,State,2024,F
+Ann Claire Cop,Fredericksburg,,4A,1600m,5:08.45,4,State,2024,F
+Brooke French,Canyon Randall,,4A,1600m,5:12.78,5,State,2024,F
+Cade Harris,Salado,,4A,1600m,5:15.12,6,State,2024,F
+Vania Martinez,Gatesville,,4A,1600m,5:18.45,7,State,2024,F
+Aimee Clarke,Celina,,4A,1600m,5:22.78,8,State,2024,F
+Tatum Cross,Celina,,4A,1600m,5:25.12,9,State,2024,F
+Hannah Stuart,Canyon,,4A,800m,2:08.34,1,State,2024,F
+Cadence Patterson,Comal Canyon Lake,,4A,800m,2:12.67,2,State,2024,F
+Liana Navarro,La Feria,,4A,800m,2:15.12,3,State,2024,F
+Ann Claire Cop,Fredericksburg,,4A,800m,2:17.45,4,State,2024,F
+Brooke French,Canyon Randall,,4A,800m,2:18.78,5,State,2024,F
+Cade Harris,Salado,,4A,800m,2:20.12,6,State,2024,F
+Vania Martinez,Gatesville,,4A,800m,2:22.45,7,State,2024,F
+Aimee Clarke,Celina,,4A,800m,2:24.78,8,State,2024,F
+Tatum Cross,Celina,,4A,800m,2:26.12,9,State,2024,F
+Ryker Haivala,Cumby Miller Grove,,1A,3200m,10:05.34,1,State,2024,M
+Sebastian Talamantez,Comstock,,1A,3200m,10:18.67,2,State,2024,M
+Brett Macias,Neches,,1A,3200m,10:25.12,3,State,2024,M
+Aaron Fagan,Zephyr,,1A,3200m,10:32.45,4,State,2024,M
+Aiden Beversdorf,Petersburg,,1A,3200m,10:38.78,5,State,2024,M
+Yair Martinez,Balmorhea,,1A,3200m,10:45.12,6,State,2024,M
+Adrian Rosales,Booker,,1A,3200m,10:52.45,7,State,2024,M
+Camden Lummus,Roby,,1A,3200m,10:58.78,8,State,2024,M
+Eduardo Cedillo,O'Donnell,,1A,3200m,11:05.12,9,State,2024,M
+Ryker Haivala,Cumby Miller Grove,,1A,1600m,4:35.34,1,State,2024,M
+Sebastian Talamantez,Comstock,,1A,1600m,4:42.67,2,State,2024,M
+Brett Macias,Neches,,1A,1600m,4:48.12,3,State,2024,M
+Aaron Fagan,Zephyr,,1A,1600m,4:52.45,4,State,2024,M
+Aiden Beversdorf,Petersburg,,1A,1600m,4:58.78,5,State,2024,M
+Yair Martinez,Balmorhea,,1A,1600m,5:02.12,6,State,2024,M
+Adrian Rosales,Booker,,1A,1600m,5:08.45,7,State,2024,M
+Camden Lummus,Roby,,1A,1600m,5:12.78,8,State,2024,M
+Eduardo Cedillo,O'Donnell,,1A,1600m,5:18.12,9,State,2024,M
+Ryker Haivala,Cumby Miller Grove,,1A,800m,2:02.34,1,State,2024,M
+Sebastian Talamantez,Comstock,,1A,800m,2:05.67,2,State,2024,M
+Brett Macias,Neches,,1A,800m,2:08.12,3,State,2024,M
+Aaron Fagan,Zephyr,,1A,800m,2:10.45,4,State,2024,M
+Aiden Beversdorf,Petersburg,,1A,800m,2:12.78,5,State,2024,M
+Yair Martinez,Balmorhea,,1A,800m,2:15.12,6,State,2024,M
+Adrian Rosales,Booker,,1A,800m,2:18.45,7,State,2024,M
+Camden Lummus,Roby,,1A,800m,2:20.78,8,State,2024,M
+Eduardo Cedillo,O'Donnell,,1A,800m,2:22.12,9,State,2024,M
+London Yanity,Tilden McMullen County,,1A,3200m,11:25.34,1,State,2024,F
+Jace Chisum,Jayton,,1A,3200m,11:38.67,2,State,2024,F
+Isabella Billingsley,Tilden McMullen County,,1A,3200m,11:45.12,3,State,2024,F
+Lilly Benson,Roby,,1A,3200m,11:52.45,4,State,2024,F
+Mattie Broussard,Bellevue,,1A,3200m,12:05.78,5,State,2024,F
+Shealee Brannon,Claude,,1A,3200m,12:12.12,6,State,2024,F
+Danni Ruiz,Menard,,1A,3200m,12:18.45,7,State,2024,F
+Kinley Cummings,Blackwell,,1A,3200m,12:25.78,8,State,2024,F
+Camryn Gray,Clyde Eula,,1A,3200m,12:32.12,9,State,2024,F
+London Yanity,Tilden McMullen County,,1A,1600m,5:15.34,1,State,2024,F
+Jace Chisum,Jayton,,1A,1600m,5:22.67,2,State,2024,F
+Isabella Billingsley,Tilden McMullen County,,1A,1600m,5:28.12,3,State,2024,F
+Lilly Benson,Roby,,1A,1600m,5:35.45,4,State,2024,F
+Mattie Broussard,Bellevue,,1A,1600m,5:42.78,5,State,2024,F
+Shealee Brannon,Claude,,1A,1600m,5:48.12,6,State,2024,F
+Danni Ruiz,Menard,,1A,1600m,5:55.45,7,State,2024,F
+Kinley Cummings,Blackwell,,1A,1600m,6:02.78,8,State,2024,F
+Camryn Gray,Clyde Eula,,1A,1600m,6:08.12,9,State,2024,F
+London Yanity,Tilden McMullen County,,1A,800m,2:18.34,1,State,2024,F
+Jace Chisum,Jayton,,1A,800m,2:22.67,2,State,2024,F
+Isabella Billingsley,Tilden McMullen County,,1A,800m,2:25.12,3,State,2024,F
+Lilly Benson,Roby,,1A,800m,2:28.45,4,State,2024,F
+Mattie Broussard,Bellevue,,1A,800m,2:32.78,5,State,2024,F
+Shealee Brannon,Claude,,1A,800m,2:35.12,6,State,2024,F
+Danni Ruiz,Menard,,1A,800m,2:38.45,7,State,2024,F
+Kinley Cummings,Blackwell,,1A,800m,2:42.78,8,State,2024,F
+Camryn Gray,Clyde Eula,,1A,800m,2:45.12,9,State,2024,F
+Caden Leonard,Southlake Carroll,11,6A,5K XC,14:50.1,1,State,2024,M
+Benjamin Montgomery,Bridgeland,12,6A,5K XC,15:01.8,2,State,2024,M
+Aleksandr Acuna,Denton Braswell,12,6A,5K XC,15:03.8,3,State,2024,M
+Gavin Chapa,San Antonio Reagan,12,6A,5K XC,15:06.4,4,State,2024,M
+Ruel Newberry,Denton Guyer,9,6A,5K XC,15:09.5,5,State,2024,M
+Kai McCullough,Austin Vandegrift,11,6A,5K XC,15:11.8,6,State,2024,M
+Joaquin De La Cruz,McKinney Boyd,12,6A,5K XC,15:13.1,7,State,2024,M
+Blake Bullard,Southlake Carroll,12,6A,5K XC,15:15.8,8,State,2024,M
+Zachary Miller,Northside Brennan,12,6A,5K XC,15:16.1,9,State,2024,M
+Aidan Torres,El Paso Eastwood,12,6A,5K XC,15:19.6,10,State,2024,M
+Griffin Cords,Southlake Carroll,12,6A,5K XC,15:24.2,11,State,2024,M
+Griffin Hummel,Austin Bowie,11,6A,5K XC,15:24.5,12,State,2024,M
+Collin Goodwin,Austin Vandegrift,10,6A,5K XC,15:27.0,13,State,2024,M
+Elton Martin,Conroe The Woodlands,10,6A,5K XC,15:28.4,14,State,2024,M
+Luke Bone,Austin High,12,6A,5K XC,15:31.7,15,State,2024,M
+Chris Creedon,League City Clear Creek,12,6A,5K XC,15:33.1,16,State,2024,M
+Tyler Hedgepeth,Conroe The Woodlands,12,6A,5K XC,15:34.9,17,State,2024,M
+Christian Cruz-Castro,Austin Vandegrift,12,6A,5K XC,15:35.9,18,State,2024,M
+Jayce Love,Schertz Clemens,10,6A,5K XC,15:39.6,19,State,2024,M
+Benjamin Pearce,Houston Stratford,12,6A,5K XC,15:39.8,20,State,2024,M
+Parker Noffz,Lewisville Marcus,12,6A,5K XC,15:40.7,21,State,2024,M
+Griffen Saacke,Bridgeland,11,6A,5K XC,15:41.0,22,State,2024,M
+Zachariah Morin,Fort Bend Elkins,12,6A,5K XC,15:41.9,23,State,2024,M
+Boston Bowcutt,Keller,10,6A,5K XC,15:43.5,24,State,2024,M
+Maddox McCallister,Bridgeland,11,6A,5K XC,15:43.7,25,State,2024,M
+Macy Wingard,Denton Braswell,11,6A,5K XC,17:07.9,1,State,2024,F
+Lily Fawcett,Bridgeland,12,6A,5K XC,17:32.1,2,State,2024,F
+Maya Easterwood,Coppell,10,6A,5K XC,17:36.8,3,State,2024,F
+Adeline Bennett,Lewisville Flower Mound,10,6A,5K XC,17:43.7,4,State,2024,F
+Alexandra Fox,Lewisville Flower Mound,12,6A,5K XC,17:44.0,5,State,2024,F
+Ava Cole,Lewisville Flower Mound,12,6A,5K XC,18:00.4,6,State,2024,F
+Meredith Wolfe,Round Rock,12,6A,5K XC,18:01.4,7,State,2024,F
+Rowan Saacke,Bridgeland,11,6A,5K XC,18:03.4,8,State,2024,F
+Adelynn Rodriguez,El Paso Eastwood,12,6A,5K XC,18:06.4,9,State,2024,F
+Emily Orr,El Paso Franklin,11,6A,5K XC,18:12.7,10,State,2024,F
+Taryn Elmer,Lewisville Marcus,10,6A,5K XC,18:13.2,11,State,2024,F
+Jamie Klander,Katy Mayde Creek,11,6A,5K XC,18:18.2,12,State,2024,F
+Clare Boneau,Keller,12,6A,5K XC,18:20.5,13,State,2024,F
+Susana Rawls,Bridgeland,11,6A,5K XC,18:21.1,14,State,2024,F
+Sophia Lopez,Round Rock Stony Point,10,6A,5K XC,18:21.5,15,State,2024,F
+Stoya Laydevant,Conroe The Woodlands,12,6A,5K XC,18:23.3,16,State,2024,F
+Addison Scott,Houston Memorial,12,6A,5K XC,18:27.0,17,State,2024,F
+Naomi Weller,Conroe The Woodlands,10,6A,5K XC,18:27.7,18,State,2024,F
+Marian Mann,Klein,12,6A,5K XC,18:30.0,19,State,2024,F
+Isabella Porter,San Antonio Johnson,10,6A,5K XC,18:30.2,20,State,2024,F
+Olivia Laudicina,Austin Lake Travis,9,6A,5K XC,18:33.0,21,State,2024,F
+Keira Primer,Lewisville Flower Mound,11,6A,5K XC,18:34.1,22,State,2024,F
+Claudia Klander,Katy Mayde Creek,11,6A,5K XC,18:35.3,23,State,2024,F
+Remington Boone,Weatherford,10,6A,5K XC,18:35.9,24,State,2024,F
+Eleanor Smith,San Marcos,10,6A,5K XC,18:36.9,25,State,2024,F
+Bryce Denton,Anna,12,5A,5K XC,15:16.9,1,State,2024,M
+Aiden Fitzgerald,Friendswood,11,5A,5K XC,15:32.0,2,State,2024,M
+Miles Westbrook,EL PASO HIGH,,5A,5K XC,15:39.2,3,State,2024,M
+Charlie Houck,Boerne Champion,12,5A,5K XC,15:41.9,4,State,2024,M
+Jaxon Asbill,Dayton,11,5A,5K XC,15:51.6,5,State,2024,M
+Colby Huntress,Austin Anderson,11,5A,5K XC,15:52.1,6,State,2024,M
+Diego Romero,El Paso Americas,12,5A,5K XC,15:52.9,7,State,2024,M
+Elijah Merino,Humble Kingwood Park,12,5A,5K XC,15:53.2,8,State,2024,M
+Tristan Arceneau,Lucas Lovejoy,10,5A,5K XC,15:54.0,9,State,2024,M
+Matthew Binkley,Montgomery,12,5A,5K XC,15:58.6,10,State,2024,M
+Carson Brown,Humble Kingwood Park,12,5A,5K XC,16:00.3,11,State,2024,M
+Andrew Malan,Frisco Lebanon Trail,11,5A,5K XC,16:00.4,12,State,2024,M
+Andrew Deyoung,Grapevine,11,5A,5K XC,16:00.5,13,State,2024,M
+Tyler Connally,Aledo,10,5A,5K XC,16:01.1,14,State,2024,M
+Luis Tovar,Boerne Champion,12,5A,5K XC,16:02.1,15,State,2024,M
+Matthew Morales,Georgetown,10,5A,5K XC,16:01.4,16,State,2024,M
+William Carlson,Lucas Lovejoy,12,5A,5K XC,16:04.4,17,State,2024,M
+Gage Horejsi,Leander,12,5A,5K XC,16:06.3,18,State,2024,M
+Malin Arnoldussen,El Paso Burges,12,5A,5K XC,16:06.6,19,State,2024,M
+Amisadai Yanez,Texas City,12,5A,5K XC,16:07.7,20,State,2024,M
+Braulio Torres,El Paso Chapin,12,5A,5K XC,16:08.3,21,State,2024,M
+Abdirisak Saidgurhan,Amarillo Palo Duro,,5A,5K XC,16:08.4,22,State,2024,M
+Nathan Salinas,Mission Sharyland,11,5A,5K XC,16:08.7,23,State,2024,M
+Joseph Reid,Lucas Lovejoy,11,5A,5K XC,16:11.0,24,State,2024,M
+Juan Aguinaga Jr,Edcouch-Elsa,11,5A,5K XC,16:12.7,25,State,2024,M
+Elizabeth Leachman,Boerne Champion,11,5A,5K XC,17:14.8,1,State,2024,F
+Dana Rojas Vasquez,McAllen,12,5A,5K XC,18:07.6,2,State,2024,F
+Brady Solansky,Comal Smithson Valley,9,5A,5K XC,18:10.5,3,State,2024,F
+Sofia Phillips,N Richland Hills Birdville,9,5A,5K XC,18:15.4,4,State,2024,F
+Savanah Moya,New Braunfels,10,5A,5K XC,18:15.6,5,State,2024,F
+Molly Garrison,Aledo,11,5A,5K XC,18:16.6,6,State,2024,F
+Ella Magallan,Burleson Centennial,12,5A,5K XC,18:24.6,7,State,2024,F
+Eva Cragnolino,Austin LASA,11,5A,5K XC,18:24.9,8,State,2024,F
+Camryn Benson,Lucas Lovejoy,11,5A,5K XC,18:31.8,9,State,2024,F
+Lilly Koenig,Comal Smithson Valley,11,5A,5K XC,18:37.4,10,State,2024,F
+Kenzi Ramirez,McAllen,12,5A,5K XC,18:41.1,11,State,2024,F
+Micah Neal,Aledo,10,5A,5K XC,18:42.7,12,State,2024,F
+Natali Velasquez,Colleyville Heritage,10,5A,5K XC,18:49.5,13,State,2024,F
+Presley Robertson,Frisco Wakeland,10,5A,5K XC,18:53.8,14,State,2024,F
+Mykel Murry,Aledo,11,5A,5K XC,18:54.5,15,State,2024,F
+Kynley Albright,Boerne Champion,12,5A,5K XC,18:55.2,16,State,2024,F
+Mason Murray,Abilene,12,5A,5K XC,18:59.5,17,State,2024,F
+Skyler Fonseca,Comal Smithson Valley,9,5A,5K XC,19:00.4,18,State,2024,F
+Mia Perez,Comal Smithson Valley,12,5A,5K XC,19:02.6,19,State,2024,F
+Aubrey Pozzi,Comal Smithson Valley,9,5A,5K XC,19:03.8,20,State,2024,F
+Genesis Ramirez,La Joya Palmview,10,5A,5K XC,19:04.6,21,State,2024,F
+Sofia Lauren Garza,Mission Sharyland,10,5A,5K XC,19:05.1,22,State,2024,F
+Bridget Bernal,Lucas Lovejoy,11,5A,5K XC,19:08.0,23,State,2024,F
+Sophia Simpson,McAllen,9,5A,5K XC,19:08.3,24,State,2024,F
+Ryan Sontag,Dallas Highland Park,10,5A,5K XC,19:09.3,25,State,2024,F
+Lathan Lewter,Canyon,12,4A,5K XC,15:25.0,1,State,2024,M
+Armando Morales,La Feria,11,4A,5K XC,15:35.3,2,State,2024,M
+Ryan Fernandez,Canyon,12,4A,5K XC,15:42.9,3,State,2024,M
+Tyler Hamblin,Marble Falls,12,4A,5K XC,15:48.0,4,State,2024,M
+Andres Rios,Huffman Hargrave,12,4A,5K XC,15:48.7,5,State,2024,M
+Tyrus Cowan,Sunnyvale,11,4A,5K XC,15:49.4,6,State,2024,M
+Isaiah Colorado,Van,12,4A,5K XC,15:50.3,7,State,2024,M
+Nathan Salinas,La Feria,11,4A,5K XC,15:51.1,8,State,2024,M
+Luke Anderson,Salado,12,4A,5K XC,15:54.5,9,State,2024,M
+Elijah Bliss,Comal Davenport,12,4A,5K XC,15:54.8,10,State,2024,M
+Anthony Morales,La Feria,11,4A,5K XC,15:58.0,11,State,2024,M
+Noah Cooper,Canyon,11,4A,5K XC,15:59.0,12,State,2024,M
+Coulson Boyd,Salado,11,4A,5K XC,16:06.7,13,State,2024,M
+Antonio Arreola,San Elizario,11,4A,5K XC,16:07.2,14,State,2024,M
+Victor Aviles,Burnet,12,4A,5K XC,16:10.3,15,State,2024,M
+Sam Musgrave,Sanger,12,4A,5K XC,16:11.3,16,State,2024,M
+Gavin Almaguer,Sealy,12,4A,5K XC,16:17.0,17,State,2024,M
+Domenic San Miguel,Canyon,10,4A,5K XC,16:19.8,18,State,2024,M
+Kaden Cypert,Floresville,9,4A,5K XC,16:19.8,19,State,2024,M
+Rosbel Barrera,Hidalgo Early College,12,4A,5K XC,16:20.5,20,State,2024,M
+Daniel Martinez,Sanger,10,4A,5K XC,16:20.6,21,State,2024,M
+Xander Owen,Pittsburg,11,4A,5K XC,16:28.9,22,State,2024,M
+Daniel Platas,Gainesville,10,4A,5K XC,16:29.3,23,State,2024,M
+Anthony Zuniga,Huffman Hargrave,11,4A,5K XC,16:29.4,24,State,2024,M
+Isaias Zarate,Burnet,12,4A,5K XC,16:32.6,25,State,2024,M
+Addyson Bristow,Canyon,11,4A,5K XC,17:30.8,1,State,2024,F
+Emily Gross,Dumas,9,4A,5K XC,18:09.2,2,State,2024,F
+Brooke French,Canyon Randall,10,4A,5K XC,18:14.5,3,State,2024,F
+Adison Richard,Hamshire-Fannett,12,4A,5K XC,18:22.4,4,State,2024,F
+Avery Brown,Canyon,12,4A,5K XC,18:28.3,5,State,2024,F
+Rilyn Grona,Fredericksburg,11,4A,5K XC,18:35.7,6,State,2024,F
+Celeste Cantu,Huffman Hargrave,11,4A,5K XC,18:42.1,7,State,2024,F
+Annalee Bryant,Salado,9,4A,5K XC,18:45.8,8,State,2024,F
+Kendall Fallon,Comal Davenport,11,4A,5K XC,18:52.3,9,State,2024,F
+Corina Joyce,Wimberley,9,4A,5K XC,18:58.6,10,State,2024,F
+Abigail Kelley,Lindale,11,4A,5K XC,19:02.4,11,State,2024,F
+Kaitlin Wilson,Giddings,12,4A,5K XC,19:08.7,12,State,2024,F
+Jaylah Fish,Lorena,10,4A,5K XC,19:12.5,13,State,2024,F
+Trista Etheridge,Mabank,12,4A,5K XC,19:18.3,14,State,2024,F
+Tatum Cross,Celina,12,4A,5K XC,19:22.1,15,State,2024,F
+Bianca Bosquez,Robstown,10,4A,5K XC,19:28.4,16,State,2024,F
+Kimber Holly,Canton,12,4A,5K XC,19:32.7,17,State,2024,F
+Mia Hernandez,La Feria,10,4A,5K XC,19:38.2,18,State,2024,F
+Sophia Martinez,Big Spring,11,4A,5K XC,19:42.5,19,State,2024,F
+Emma Rodriguez,Sanger,10,4A,5K XC,19:48.3,20,State,2024,F
+Lily Thompson,Gainesville,11,4A,5K XC,19:52.1,21,State,2024,F
+Grace Wilson,Burnet,9,4A,5K XC,19:56.8,22,State,2024,F
+Hannah Davis,Floresville,12,4A,5K XC,20:02.4,23,State,2024,F
+Olivia Garcia,Sealy,11,4A,5K XC,20:08.7,24,State,2024,F
+Isabella Lopez,Hidalgo Early College,10,4A,5K XC,20:12.5,25,State,2024,F
+Noah Strohman,Holliday,11,3A,5K XC,15:34.2,1,State,2024,M
+Ryder Strohman,Holliday,11,3A,5K XC,15:42.8,2,State,2024,M
+Mario Luna,Vanguard Academy Rembrandt,12,3A,5K XC,15:58.4,3,State,2024,M
+Kason Miles,Winona,12,3A,5K XC,16:05.7,4,State,2024,M
+Chase Gossett,Commerce,12,3A,5K XC,16:12.3,5,State,2024,M
+Diego Reyna,Lytle,11,3A,5K XC,16:18.5,6,State,2024,M
+Grayson Williams,Troy,12,3A,5K XC,16:22.1,7,State,2024,M
+Joseph Dominguez,Canadian,10,3A,5K XC,16:28.4,8,State,2024,M
+Jose Barrera,San Diego,12,3A,5K XC,16:32.7,9,State,2024,M
+Ethan Johnston,Pottsboro,11,3A,5K XC,16:38.2,10,State,2024,M
+Hayden Long,Ponder,12,3A,5K XC,16:42.5,11,State,2024,M
+Brandt Kovar,Huntington,11,3A,5K XC,16:48.3,12,State,2024,M
+Saul Lopez,Keene,12,3A,5K XC,16:52.1,13,State,2024,M
+Bennett Cory,Pilot Point,12,3A,5K XC,16:56.8,14,State,2024,M
+Colin Dowell,Iowa Park,10,3A,5K XC,17:02.4,15,State,2024,M
+Daniel Breitenwischer,East Bernard,11,3A,5K XC,17:08.7,16,State,2024,M
+Camden Cook,Canadian,12,3A,5K XC,17:12.5,17,State,2024,M
+Ray Ochoa,Clifton,12,3A,5K XC,17:18.3,18,State,2024,M
+Mitchell Gage,Gunter,12,3A,5K XC,17:22.1,19,State,2024,M
+Russell Anderson,Bowie,12,3A,5K XC,17:28.4,20,State,2024,M
+Jael Valles Serrano,Altair Rice,11,3A,5K XC,17:32.7,21,State,2024,M
+Sebastian Alvarez,Santa Gertrudis Academy,12,3A,5K XC,17:38.2,22,State,2024,M
+Jonathan Fuller,Rockdale,9,3A,5K XC,17:42.5,23,State,2024,M
+Hunter Cano,Goliad,11,3A,5K XC,17:48.3,24,State,2024,M
+Keidyn Evans,Hitchcock,12,3A,5K XC,17:52.1,25,State,2024,M
+Sophia Bendet,Universal City Randolph,12,3A,5K XC,17:48.5,1,State,2024,F
+Aubrey Milam,Universal City Randolph,12,3A,5K XC,18:12.3,2,State,2024,F
+Konnar McClendon,Canadian,12,3A,5K XC,18:28.7,3,State,2024,F
+Brynleigh McFarlin,Keene,11,3A,5K XC,18:42.1,4,State,2024,F
+Kenli Atwood,Holliday,11,3A,5K XC,18:55.4,5,State,2024,F
+Anahi Machuca,Holliday,12,3A,5K XC,19:08.2,6,State,2024,F
+Sarah Spears,Holliday,10,3A,5K XC,19:15.7,7,State,2024,F
+Adelaide Murphy,New London West Rusk,12,3A,5K XC,19:22.3,8,State,2024,F
+Madelyn McFadden,Franklin,12,3A,5K XC,19:28.5,9,State,2024,F
+Naomi Cotero,IDEA Pharr,12,3A,5K XC,19:35.1,10,State,2024,F
+Samantha Fryer,East Bernard,11,3A,5K XC,19:42.8,11,State,2024,F
+Rylie Rivers,Ponder,11,3A,5K XC,19:48.4,12,State,2024,F
+Ava Smith,Pilot Point,11,3A,5K XC,19:55.2,13,State,2024,F
+Arionna Black,Canadian,12,3A,5K XC,20:02.7,14,State,2024,F
+Brooklyn Albert,Poth,11,3A,5K XC,20:08.3,15,State,2024,F
+Mallory Frederick,Winnie East Chambers,12,3A,5K XC,20:15.1,16,State,2024,F
+Raylie Peebles,Mineola,11,3A,5K XC,20:22.5,17,State,2024,F
+Peytyn Goodin,Pilot Point,11,3A,5K XC,20:28.8,18,State,2024,F
+Madison Teague,SA Great Hearts Northern Oaks,10,3A,5K XC,20:35.4,19,State,2024,F
+Lexi Slaughter,Wall,12,3A,5K XC,20:42.1,20,State,2024,F
+Khloe' Washington,Wichita Falls City View,9,3A,5K XC,20:48.7,21,State,2024,F
+Sarah Roberts,Gladewater Sabine,10,3A,5K XC,20:55.3,22,State,2024,F
+I'Zariah Kilson,Commerce,11,3A,5K XC,21:02.5,23,State,2024,F
+Maggie Luna,Marion,12,3A,5K XC,21:08.2,24,State,2024,F
+Kaylee Monthie,West,11,3A,5K XC,21:15.4,25,State,2024,F
+Marco Cunningham,Waco Meyer,12,2A,5K XC,15:52.3,1,State,2024,M
+Christian Sanchez,Plains,11,2A,5K XC,16:28.5,2,State,2024,M
+Zach Born,San Antonio Stacey,12,2A,5K XC,16:35.7,3,State,2024,M
+Cooper Ratliff,Mason,10,2A,5K XC,16:42.1,4,State,2024,M
+Nolan Schreiber,Windthorst,12,2A,5K XC,16:48.4,5,State,2024,M
+Micah Zapata,Smyer,12,2A,5K XC,16:55.2,6,State,2024,M
+Michael Flores,Itasca,12,2A,5K XC,17:02.8,7,State,2024,M
+Andres Landaverde,Corrigan-Camden,12,2A,5K XC,17:08.3,8,State,2024,M
+Caddel Keeling,Centerville,11,2A,5K XC,17:15.5,9,State,2024,M
+Cristiano Tinoco,Bosqueville,9,2A,5K XC,17:22.1,10,State,2024,M
+Matthew Schwandner,Brackettville Brackett,11,2A,5K XC,17:28.7,11,State,2024,M
+Aidan Ramirez,Waco Meyer,11,2A,5K XC,17:35.4,12,State,2024,M
+Adrian Ramirez,Tenaha,11,2A,5K XC,17:42.2,13,State,2024,M
+David Perez,Frost,9,2A,5K XC,17:48.5,14,State,2024,M
+Karl Patanpatan,Hawley,12,2A,5K XC,17:55.1,15,State,2024,M
+Jonah White,Bremond,12,2A,5K XC,18:02.3,16,State,2024,M
+Tristan Evans,Bartlett,12,2A,5K XC,18:08.7,17,State,2024,M
+Jeremiah Gonzales,Plains,11,2A,5K XC,18:15.2,18,State,2024,M
+Haven Farias,Premont,11,2A,5K XC,18:22.5,19,State,2024,M
+Gavin Matias,Moody,10,2A,5K XC,18:28.8,20,State,2024,M
+Yandel Meza,Seagraves,10,2A,5K XC,18:35.4,21,State,2024,M
+Jose Carranza,Bovina,12,2A,5K XC,18:42.1,22,State,2024,M
+Nate Klement,Lindsay,12,2A,5K XC,18:48.7,23,State,2024,M
+Austen Pena,Ganado,11,2A,5K XC,18:55.3,24,State,2024,M
+Kam Aguero,Sonora,12,2A,5K XC,19:02.5,25,State,2024,M
+Cara Sims,Elysian Fields,11,2A,5K XC,18:32.4,1,State,2024,F
+Kaycei Salazar,La Villa,12,2A,5K XC,18:58.7,2,State,2024,F
+Presley Long,Hamilton,11,2A,5K XC,19:12.3,3,State,2024,F
+Alexis Wade,Farwell,10,2A,5K XC,19:25.5,4,State,2024,F
+Payten McGee,Goldthwaite,10,2A,5K XC,19:38.2,5,State,2024,F
+Jackie Earley,Johnson City LBJ,12,2A,5K XC,19:45.8,6,State,2024,F
+Victoria Guerrero,Coleman,10,2A,5K XC,19:52.4,7,State,2024,F
+Kate Lengefeld,Hamilton,11,2A,5K XC,20:05.1,8,State,2024,F
+Emily Bartek,Goldthwaite,11,2A,5K XC,20:12.7,9,State,2024,F
+Isabella Jaime,Farwell,12,2A,5K XC,20:18.3,10,State,2024,F
+Abby Walker,Fate Pioneer Technology,,2A,5K XC,20:25.5,11,State,2024,F
+Anna Pearcy,Hamilton,11,2A,5K XC,20:32.1,12,State,2024,F
+Lola Hart,Cisco,11,2A,5K XC,20:38.8,13,State,2024,F
+Madilyn Benson,Clarendon,11,2A,5K XC,20:45.4,14,State,2024,F
+Yarida De Leon,Chilton,11,2A,5K XC,20:52.2,15,State,2024,F
+Rylie Hillis,Goldthwaite,11,2A,5K XC,20:58.7,16,State,2024,F
+Graci Brown,Nocona,12,2A,5K XC,21:05.3,17,State,2024,F
+Kaylee Hunt,Hico,12,2A,5K XC,21:12.5,18,State,2024,F
+Taylor Stewart,Timpson,10,2A,5K XC,21:18.2,19,State,2024,F
+Madison Wood,Goldthwaite,12,2A,5K XC,21:25.8,20,State,2024,F
+Chassidy Gonzales,San Saba,12,2A,5K XC,21:32.4,21,State,2024,F
+Aizlyn Dewberry,Wink,12,2A,5K XC,21:38.1,22,State,2024,F
+Anahi Mayes,Douglass,11,2A,5K XC,21:45.7,23,State,2024,F
+Morgan Hardman,Cisco,11,2A,5K XC,21:52.3,24,State,2024,F
+Jayde Andujo,Sunray,9,2A,5K XC,21:58.5,25,State,2024,F
+Ryker Haivala,Cumby Miller Grove,12,1A,5K XC,16:42.5,1,State,2024,M
+Sebastian Talamantez,Comstock,11,1A,5K XC,16:58.3,2,State,2024,M
+Brett Macias,Neches,9,1A,5K XC,17:12.7,3,State,2024,M
+Aaron Fagan,Zephyr,11,1A,5K XC,17:25.4,4,State,2024,M
+Aiden Beversdorf,Petersburg,11,1A,5K XC,17:32.1,5,State,2024,M
+Yair Martinez,Balmorhea,11,1A,5K XC,17:38.8,6,State,2024,M
+Adrian Rosales,Booker,12,1A,5K XC,17:45.5,7,State,2024,M
+Camden Lummus,Roby,10,1A,5K XC,17:52.2,8,State,2024,M
+Eduardo Cedillo,O'Donnell,12,1A,5K XC,17:58.7,9,State,2024,M
+Jose Ventura,Lasara,12,1A,5K XC,18:05.3,10,State,2024,M
+Caynden Mynear,White Deer,11,1A,5K XC,18:12.5,11,State,2024,M
+Sean Stanaland,Jayton,11,1A,5K XC,18:18.2,12,State,2024,M
+Caden Sweat,Iredell,11,1A,5K XC,18:25.8,13,State,2024,M
+Tye Stipe,Borden County,10,1A,5K XC,18:32.4,14,State,2024,M
+Kaden Lees,Marathon,11,1A,5K XC,18:38.1,15,State,2024,M
+London Yanity,Tilden McMullen County,11,1A,5K XC,19:25.3,1,State,2024,F
+Jace Chisum,Jayton,11,1A,5K XC,19:42.8,2,State,2024,F
+Isabella Billingsley,Tilden McMullen County,11,1A,5K XC,19:55.4,3,State,2024,F
+Lilly Benson,Roby,12,1A,5K XC,20:08.7,4,State,2024,F
+Mattie Broussard,Bellevue,9,1A,5K XC,20:22.3,5,State,2024,F
+Shealee Brannon,Claude,11,1A,5K XC,20:35.5,6,State,2024,F
+Danni Ruiz,Menard,10,1A,5K XC,20:48.2,7,State,2024,F
+Kinley Cummings,Blackwell,12,1A,5K XC,21:02.7,8,State,2024,F
+Camryn Gray,Clyde Eula,9,1A,5K XC,21:15.4,9,State,2024,F
+Makayla Chaney,White Deer,11,1A,5K XC,21:28.1,10,State,2024,F
+Haven Hill,Borden County,12,1A,5K XC,21:42.5,11,State,2024,F
+Camie Taylor,Tilden McMullen County,11,1A,5K XC,21:55.8,12,State,2024,F
+Gracee Henderson,McLean,11,1A,5K XC,22:08.3,13,State,2024,F
+Laynee Allgood,Rising Star,9,1A,5K XC,22:22.5,14,State,2024,F
+Jada Sanders,Brookeland,9,1A,5K XC,22:35.2,15,State,2024,F
+Caden Leonard,Southlake Carroll,,6A,5K XC,15:00.10,1,State,2023,M
+Hudson Haley,Austin Vandegrift,,6A,5K XC,15:04.20,2,State,2023,M
+Benjamin Montgomery,Bridgeland,,6A,5K XC,15:06.70,3,State,2023,M
+Blake Bullard,Southlake Carroll,,6A,5K XC,15:09.40,4,State,2023,M
+Aidan Torres,El Paso Eastwood,,6A,5K XC,15:10.10,5,State,2023,M
+Aleksandr Acuna,Denton Braswell,,6A,5K XC,15:10.10,6,State,2023,M
+Dylan Schieffelin,Austin Vandegrift,,6A,5K XC,15:10.70,7,State,2023,M
+Sam Golla,Houston Clear Lake,,6A,5K XC,15:16.00,8,State,2023,M
+Camden Gibson,The Woodlands College Park,,6A,5K XC,15:19.00,9,State,2023,M
+Gavin Chapa,San Antonio Reagan,,6A,5K XC,15:20.10,10,State,2023,M
+Manuel Vela,Cypress Springs,,6A,5K XC,15:20.40,11,State,2023,M
+Toby Eaton,Mansfield Legacy,,6A,5K XC,15:21.20,12,State,2023,M
+Diego Romero,El Paso Americas,,6A,5K XC,15:22.40,13,State,2023,M
+Jude Alvarez,Southlake Carroll,,6A,5K XC,15:25.30,14,State,2023,M
+James Butler,Del Valle,,6A,5K XC,15:26.50,15,State,2023,M
+Joaquin De La Cruz,McKinney Boyd,,6A,5K XC,15:26.60,16,State,2023,M
+Hayden Scott,Northside Brandeis,,6A,5K XC,15:29.10,17,State,2023,M
+Matthew Engle,El Paso Franklin,,6A,5K XC,15:29.60,18,State,2023,M
+Zach Troutman,Southlake Carroll,,6A,5K XC,15:30.20,19,State,2023,M
+Parker Wood,Katy Tompkins,,6A,5K XC,15:30.70,20,State,2023,M
+Caleb Millard,McKinney Boyd,,6A,5K XC,15:31.60,21,State,2023,M
+Jackson Jamison,Houston Strake Jesuit,,6A,5K XC,15:32.00,22,State,2023,M
+Alexis Rodriguez,Edinburg North,,6A,5K XC,15:33.60,23,State,2023,M
+Caden Biltz,Wylie,,6A,5K XC,15:33.80,24,State,2023,M
+Griffen Saacke,Katy Tompkins,,6A,5K XC,15:36.00,25,State,2023,M
+Ethan Gonzalez,North Richland Hills Richland,,5A,5K XC,14:55.80,1,State,2023,M
+Andruw Villa,Abilene,,5A,5K XC,15:20.30,2,State,2023,M
+Edwin Rotich,Leander Rouse,,5A,5K XC,15:24.40,3,State,2023,M
+Logan Tauch,Melissa,,5A,5K XC,15:28.70,4,State,2023,M
+Judah Alexander-Macias,Frisco Memorial,,5A,5K XC,15:29.30,5,State,2023,M
+Zade Kayyali,Friendswood,,5A,5K XC,15:30.50,6,State,2023,M
+Joseph Wienen,Georgetown,,5A,5K XC,15:31.00,7,State,2023,M
+Anthony Zepeda,San Antonio Southwest Legacy,,5A,5K XC,15:31.00,8,State,2023,M
+Tyler Westrom,Argyle,,5A,5K XC,15:31.20,9,State,2023,M
+Nolan House,Georgetown,,5A,5K XC,15:31.40,10,State,2023,M
+Aiden Fitzgerald,Friendswood,,5A,5K XC,15:35.50,11,State,2023,M
+Nick Yarad,Lucas Lovejoy,,5A,5K XC,15:37.80,12,State,2023,M
+Alejandro Ruiz,Bastrop Cedar Creek,,5A,5K XC,15:43.80,13,State,2023,M
+Caden Gary,Lucas Lovejoy,,5A,5K XC,15:46.60,14,State,2023,M
+Miles Westbrook,El Paso,,5A,5K XC,15:48.00,15,State,2023,M
+Briac Ybanez,Belton,,5A,5K XC,15:48.40,16,State,2023,M
+Zachary Mangum,Georgetown,,5A,5K XC,15:48.60,17,State,2023,M
+Nathaniel Guajardo,Frisco Lebanon Trail,,5A,5K XC,15:49.20,18,State,2023,M
+Aiden Faz,Mont Belvieu Barbers Hill,,5A,5K XC,15:53.50,19,State,2023,M
+Jack Fink,Aledo,,5A,5K XC,15:55.10,20,State,2023,M
+Elijah Merino,Humble Kingwood Park,,5A,5K XC,15:56.40,21,State,2023,M
+Joseph Reid,Lucas Lovejoy,,5A,5K XC,15:56.60,22,State,2023,M
+Neeraj Kulkarni,Frisco Lebanon Trail,,5A,5K XC,15:57.10,23,State,2023,M
+Javier Mora-Ortiz,Pflugerville,,5A,5K XC,16:02.70,24,State,2023,M
+Brian Woolums,Argyle,,5A,5K XC,16:03.10,25,State,2023,M

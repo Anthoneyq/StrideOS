@@ -689,11 +689,6 @@ function clearDB(){ try{ localStorage.removeItem(KEY); }catch(e){} _mem=null; }
 
 // ── SUPABASE SYNC ──
 const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
-const STRIDE_BILLING_CONFIG = window.STRIDE_BILLING || {};
-const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$19/mo';
-const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$167/yr';
-const BILLING_MONTHLY_PAYMENT_LINK = STRIDE_BILLING_CONFIG.monthlyPaymentLink || '';
-const BILLING_ANNUAL_PAYMENT_LINK = STRIDE_BILLING_CONFIG.annualPaymentLink || '';
 let sbClient = null;
 let sbUser = null;
 let sbCoachReady = false;
@@ -708,7 +703,6 @@ let sbSubscription = {
   trialSecondsRemaining: null
 };
 const FREE_ATHLETE_LIMIT = 3;
-const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
 
 function setAuthMode(mode){
@@ -767,7 +761,7 @@ function renderAuthPanel(){
 
   if(sbUser){
     const tier = sbSubscription && sbSubscription.tier;
-    const isPro = ['pro','team','athlete'].includes(tier);
+    const isPro = tier === 'pro';
     const tierBadge = tier
       ? `<span class="auth-tier-badge auth-tier-${esc(tier)}">${esc(tier.toUpperCase())}</span>`
       : '';
@@ -1751,14 +1745,6 @@ function hasProAccess(){
   return Boolean(sbSubscription && sbSubscription.hasProAccess);
 }
 
-// Per-tier athlete cap. Returns null = unlimited (Pro / Team / trial).
-function athleteLimit(){
-  const tier = sbSubscription && sbSubscription.tier;
-  if(tier === 'athlete') return ATHLETE_TIER_LIMIT;
-  if(hasProAccess()) return null;
-  return FREE_ATHLETE_LIMIT;
-}
-
 function trialDaysRemaining(){
   if(!sbSubscription || sbSubscription.trialSecondsRemaining == null) return null;
   return Math.max(0, Math.ceil(sbSubscription.trialSecondsRemaining / 86400));
@@ -1774,7 +1760,7 @@ function renderTierBanner(){
     return;
   }
   const tier = sbSubscription.tier;
-  if(tier === 'pro' || tier === 'team' || tier === 'athlete'){
+  if(tier === 'pro'){
     host.innerHTML = '';
     return;
   }
@@ -1808,8 +1794,7 @@ function renderTierBanner(){
 
 // Pricing card — shown inside the upgrade modal.
 function showUpgradeModal(){
-  const hasDirectBillingLink = Boolean(BILLING_MONTHLY_PAYMENT_LINK || BILLING_ANNUAL_PAYMENT_LINK);
-  if(!sbUser && !hasDirectBillingLink){
+  if(!sbUser){
     setAuthFeedback('info', 'Sign in or create an account first, then upgrade.', false);
     return;
   }
@@ -1828,14 +1813,14 @@ function showUpgradeModal(){
       <div class="upgrade-plans">
         <button class="upgrade-plan" onclick="startCheckout('monthly')" id="planMonthlyBtn">
           <div class="upgrade-plan-label">Monthly</div>
-          <div class="upgrade-plan-price">${BILLING_MONTHLY_LABEL.replace('/mo', '')}<span>/mo</span></div>
+          <div class="upgrade-plan-price">$19<span>/mo</span></div>
           <div class="upgrade-plan-note">Billed monthly. Cancel anytime.</div>
         </button>
         <button class="upgrade-plan upgrade-plan-best" onclick="startCheckout('annual')" id="planAnnualBtn">
-          <div class="upgrade-plan-badge">Best value · save 31%</div>
+          <div class="upgrade-plan-badge">Best value · save 27%</div>
           <div class="upgrade-plan-label">Annual</div>
-          <div class="upgrade-plan-price">${BILLING_ANNUAL_LABEL.replace('/yr', '')}<span>/yr</span></div>
-          <div class="upgrade-plan-note">~$16.58/mo billed yearly.</div>
+          <div class="upgrade-plan-price">$167<span>/yr</span></div>
+          <div class="upgrade-plan-note">~$13.92/mo billed yearly.</div>
         </button>
       </div>
 
@@ -1848,13 +1833,6 @@ function showUpgradeModal(){
         <li>All future Phase 3 features (Athlete Profile Engine, etc.)</li>
       </ul>
 
-      <div style="border-top:1px solid var(--border-s);margin-top:.25rem;margin-bottom:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--text-2)">
-          <strong style="color:var(--text)">Coaching a team or program?</strong><br>
-          STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; your whole staff, unlimited athletes, program admin &middot; <span style="color:var(--accent)">$399/yr</span>.
-        </div>
-        <button class="btn" onclick="startCheckout('team_annual')" style="white-space:nowrap">Get Team &rarr;</button>
-      </div>
       <p class="upgrade-foot">Have a promo code? Add it on the Stripe checkout page.</p>
     </div>
   `;
@@ -1869,18 +1847,14 @@ function closeUpgradeModal(){
 // Kicks off Stripe Checkout for the chosen plan.
 async function startCheckout(plan){
   if(plan !== 'monthly' && plan !== 'annual') return;
+  if(!sbClient || !sbUser){
+    toast('Sign in first');
+    return;
+  }
   const btn = document.getElementById(plan === 'monthly' ? 'planMonthlyBtn' : 'planAnnualBtn');
   const prev = btn ? btn.innerHTML : null;
   if(btn){ btn.disabled = true; btn.innerHTML = '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
   try{
-    const paymentLink = plan === 'monthly' ? BILLING_MONTHLY_PAYMENT_LINK : BILLING_ANNUAL_PAYMENT_LINK;
-    if(paymentLink){
-      window.location.href = paymentLink;
-      return;
-    }
-    if(!sbClient || !sbUser){
-      throw new Error('Sign in first');
-    }
     const { data: { session } } = await sbClient.auth.getSession();
     const token = session ? session.access_token : null;
     if(!token) throw new Error('Not signed in');
@@ -1968,9 +1942,8 @@ async function handlePostCheckoutReturn(){
 // the rest stay safely in the DB and reappear on upgrade.
 function athletesForCurrentTier(){
   const list = (DB && DB.athletes) ? DB.athletes : [];
-  const lim = athleteLimit();
-  if(lim === null) return list;
-  return list.slice(0, lim);
+  if(hasProAccess()) return list;
+  return list.slice(0, FREE_ATHLETE_LIMIT);
 }
 
 async function syncLocalToSupabase(){
@@ -3798,9 +3771,9 @@ function renderFreeTierCalculator(){
             <label for="ftPct" style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin:0">Training Intensity</label>
             <span id="ftPctVal" style="color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1.125rem;font-weight:700">100%</span>
           </div>
-          <input type="range" id="ftPct" min="50" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="freeTierUpdate()">
+          <input type="range" id="ftPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="freeTierUpdate()">
           <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);margin-top:.375rem">
-            <span>50%</span><span>RACE</span><span>130%</span>
+            <span>60%</span><span>RACE</span><span>130%</span>
           </div>
         </div>
         <div>
@@ -3821,15 +3794,10 @@ function renderFreeTierCalculator(){
       <div style="display:flex;gap:.375rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
         <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;margin-right:.5rem;align-self:center">Presets</span>
         ${[
-          [55,  'Recovery'],
-          [65,  'Easy'],
-          [80,  'Steady'],
-          [88,  'Tempo'],
-          [93,  'Threshold'],
-          [96,  'CV'],
+          [80, 'Easy'],
+          [90, 'Threshold'],
           [100, 'Race'],
-          [105, 'VO2'],
-          [112, 'Speed']
+          [110, 'Speed']
         ].map(([p,lbl])=>`<button onclick="ftSetPct(${p})" style="background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.4rem .75rem;border-radius:999px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.6875rem;transition:all .15s">${p}% <span style="color:var(--text-4);margin-left:.25rem">${esc(lbl)}</span></button>`).join('')}
       </div>
     </div>
@@ -5339,9 +5307,9 @@ function renderRoster(){
 
   const hiddenBanner = hiddenCount > 0 ? `
     <div class="card" style="border-color:var(--accent-line);background:var(--accent-soft)">
-      <p class="card-title"><span>${hiddenCount} athlete${hiddenCount===1?'':'s'} hidden on your plan</span></p>
+      <p class="card-title"><span>${hiddenCount} athlete${hiddenCount===1?'':'s'} hidden by Free plan</span></p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin:.5rem 0 .875rem">
-        You have ${totalCount} athletes on file. Your plan shows the first ${athleteLimit()}. Your other ${hiddenCount===1?'athlete is':'athletes are'} safely stored and will reappear when you upgrade.
+        You have ${totalCount} athletes on file. The free plan shows the first ${FREE_ATHLETE_LIMIT}. Your other ${hiddenCount===1?'athlete is':'athletes are'} safely stored and will reappear when you upgrade.
       </p>
       <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
     </div>
@@ -6070,9 +6038,8 @@ function saveAthlete(){
 function startNewAthlete(){
   // Free tier is capped at FREE_ATHLETE_LIMIT athletes. Trial and Pro coaches
   // bypass this — only block free-tier users.
-  const _lim = athleteLimit();
-  if(_lim !== null && (DB.athletes || []).length >= _lim){
-    toast(`Plan limit reached (${_lim} athlete${_lim===1?'':'s'})`);
+  if(!hasProAccess() && (DB.athletes || []).length >= FREE_ATHLETE_LIMIT){
+    toast(`Free plan limit reached (${FREE_ATHLETE_LIMIT} athletes)`);
     showUpgradeModal();
     return;
   }

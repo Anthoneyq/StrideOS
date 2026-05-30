@@ -1,9 +1,17 @@
-.env
-.env.*
-!.env.example
-
-.vercel/
+# OS junk
 .DS_Store
+**/.DS_Store
 
-supabase/.branches/
+# Supabase local-only state
 supabase/.temp/
+supabase/.branches/
+
+# Editor / secrets
+.vscode/
+.idea/
+*.swp
+.env
+.env.local
+
+# Node (if ever added)
+node_modules/

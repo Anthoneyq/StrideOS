@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinman Critical Velocity Pace Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(30, 30, 50, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #00d4ff, #7928ca);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #a0a0c0;
+            font-size: 0.95em;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            align-items: end;
+        }
+
+        input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #e0e0e0;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        input::placeholder {
+            color: #707090;
+        }
+
+        .select-distance {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .distance-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #a0a0c0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+
+        .distance-btn:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .distance-btn.active {
+            background: linear-gradient(135deg, #00d4ff, #7928ca);
+            color: white;
+            border-color: transparent;
+        }
+
+        button.calculate {
+            background: linear-gradient(135deg, #00d4ff, #7928ca);
+            border: none;
+            border-radius: 8px;
+            padding: 14px 32px;
+            color: white;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        button.calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        button.calculate:active {
+            transform: translateY(0);
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pace-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .pace-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .pace-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 212, 255, 0.4);
+            transform: translateY(-4px);
+        }
+
+        .pace-label {
+            color: #a0a0c0;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .pace-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7928ca);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Courier New', monospace;
+        }
+
+        .pace-effort {
+            color: #707090;
+            font-size: 0.75em;
+            margin-top: 6px;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #00d4ff;
+        }
+
+        .workouts {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .workouts h3 {
+            color: #00d4ff;
+            margin-bottom: 16px;
+            font-size: 1.2em;
+        }
+
+        .workout-list {
+            list-style: none;
+        }
+
+        .workout-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #c0c0e0;
+            font-size: 0.95em;
+        }
+
+        .workout-list li:last-child {
+            border-bottom: none;
+        }
+
+        .unit-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #a0a0c0;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .select-distance {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pace-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tinman Critical Velocity</h1>
+        <p class="subtitle">Calculate your training paces based on Tom Schwartz's proven methodology</p>
+
+        <div class="unit-toggle">
+            <button class="toggle-btn active" onclick="setUnits('metric')">Metric (km/min)</button>
+            <button class="toggle-btn" onclick="setUnits('imperial')">Imperial (min/mile)</button>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label>Select Race Distance</label>
+                <div class="select-distance">
+                    <button class="distance-btn" onclick="setDistance(800)">800m</button>
+                    <button class="distance-btn" onclick="setDistance(1600)">1 mile</button>
+                    <button class="distance-btn active" onclick="setDistance(5000)">5K</button>
+                    <button class="distance-btn" onclick="setDistance(10000)">10K</button>
+                    <button class="distance-btn" onclick="setDistance(21097)">Half Marathon</button>
+                    <button class="distance-btn" onclick="setDistance(42195)">Marathon</button>
+                    <button class="distance-btn" onclick="setDistance(0)">Custom</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Race Time & Distance</label>
+                <div class="input-row">
+                    <div>
+                        <label style="font-size: 0.8em; margin-bottom: 4px;">Minutes</label>
+                        <input type="number" id="minutes" placeholder="20" min="0" max="999">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8em; margin-bottom: 4px;">Seconds</label>
+                        <input type="number" id="seconds" placeholder="00" min="0" max="59">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8em; margin-bottom: 4px;" id="distanceLabel">Distance (m)</label>
+                        <input type="number" id="distance" placeholder="5000" value="5000" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <button class="calculate" onclick="calculatePaces()">Calculate Training Paces</button>
+        </div>
+
+        <div class="results-section" id="results">
+            <div class="pace-grid">
+                <div class="pace-card">
+                    <div class="pace-label">Critical Velocity</div>
+                    <div class="pace-value" id="cvPace">--:--</div>
+                    <div class="pace-effort">90% vVO2max</div>
+                </div>
+
+                <div class="pace-card">
+                    <div class="pace-label">VO2 Max Pace</div>
+                    <div class="pace-value" id="vo2Pace">--:--</div>
+                    <div class="pace-effort">100% vVO2max</div>
+                </div>
+
+                <div class="pace-card">
+                    <div class="pace-label">Threshold Pace</div>
+                    <div class="pace-value" id="thresholdPace">--:--</div>
+                    <div class="pace-effort">~85-90% vVO2max</div>
+                </div>
+
+                <div class="pace-card">
+                    <div class="pace-label">Easy Pace</div>
+                    <div class="pace-value" id="easyPace">--:--</div>
+                    <div class="pace-effort">70% vVO2max</div>
+                </div>
+
+                <div class="pace-card">
+                    <div class="pace-label">Aerobic Base</div>
+                    <div class="pace-value" id="aerobicPace">--:--</div>
+                    <div class="pace-effort">75-81% vVO2max</div>
+                </div>
+
+                <div class="pace-card">
+                    <div class="pace-label">Aerobic Power</div>
+                    <div class="pace-value" id="powerPace">--:--</div>
+                    <div class="pace-effort">82-88% vVO2max</div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>About Critical Velocity:</strong> CV is the fastest pace you can sustain all-out for approximately 30 minutes. It sits between threshold and VO2max intensity, training your Type IIa muscle fibers to be oxygen consumers and power producers. This improves race pace sustainability and kicking power across all distances from 800m to marathon.
+            </div>
+
+            <div class="workouts">
+                <h3>Sample CV Workouts</h3>
+                <ul class="workout-list">
+                    <li>📍 <strong>Easy CV Builder:</strong> 4-5 × 1000m @ CV pace with 90-120s easy jog recovery</li>
+                    <li>📍 <strong>Medium CV Session:</strong> 6-7 × 800m @ CV pace with 90s recovery</li>
+                    <li>📍 <strong>Long CV Push:</strong> 4-6 × 1.5-2km @ CV pace with 2-3min recovery</li>
+                    <li>📍 <strong>CV + Speed:</strong> 5 × (600m @ CV, 200m @ mile race pace) with full recovery</li>
+                    <li>📍 <strong>CV Pyramid:</strong> 400, 800, 1200, 1000, 800, 400m all @ CV with 60-90s jog</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let units = 'metric';
+        let selectedDistance = 5000;
+
+        function setUnits(unit) {
+            units = unit;
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            const label = document.getElementById('distanceLabel');
+            label.textContent = unit === 'metric' ? 'Distance (m)' : 'Distance (yds)';
+        }
+
+        function setDistance(distance) {
+            selectedDistance = distance;
+            document.querySelectorAll('.distance-btn').forEach(btn => btn.classList.remove('active'));
+            if (distance === 0) {
+                event.target.classList.add('active');
+            } else {
+                event.target.classList.add('active');
+                document.getElementById('distance').value = distance;
+            }
+        }
+
+        function calculatePaces() {
+            const minutes = parseInt(document.getElementById('minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('seconds').value) || 0;
+            const distance = parseInt(document.getElementById('distance').value);
+
+            if (!minutes && !seconds || !distance) {
+                alert('Please enter valid race time and distance');
+                return;
+            }
+
+            const totalSeconds = minutes * 60 + seconds;
+
+            // Daniels/Gilbert VO2 cost equation
+            // VO2 = 0.2 * velocity + 3.5
+            const velocityMperMin = distance / totalSeconds;
+            const vo2Cost = 0.2 * velocityMperMin + 3.5;
+
+            // Calculate %VO2max at race effort based on duration
+            const percentVO2max = getPercentVO2max(totalSeconds);
+            const vVO2max = vo2Cost / percentVO2max;
+
+            // Calculate paces
+            const cvPace = vVO2max * 0.90;     // 90% vVO2max
+            const vo2Pace = vVO2max * 1.00;    // 100% vVO2max
+            const thresholdPace = vVO2max * 0.875;  // 87.5% vVO2max
+            const easyPace = vVO2max * 0.70;   // 70% vVO2max
+            const aerobicPace = vVO2max * 0.78;  // 78% vVO2max
+            const powerPace = vVO2max * 0.85;   // 85% vVO2max
+
+            // Convert to display format
+            const cvDisplay = formatPace(cvPace);
+            const vo2Display = formatPace(vo2Pace);
+            const thresholdDisplay = formatPace(thresholdPace);
+            const easyDisplay = formatPace(easyPace);
+            const aerobicDisplay = formatPace(aerobicPace);
+            const powerDisplay = formatPace(powerPace);
+
+            // Update display
+            document.getElementById('cvPace').textContent = cvDisplay;
+            document.getElementById('vo2Pace').textContent = vo2Display;
+            document.getElementById('thresholdPace').textContent = thresholdDisplay;
+            document.getElementById('easyPace').textContent = easyDisplay;
+            document.getElementById('aerobicPace').textContent = aerobicDisplay;
+            document.getElementById('powerPace').textContent = powerDisplay;
+
+            document.getElementById('results').classList.add('show');
+        }
+
+        function getPercentVO2max(seconds) {
+            // Empirical curve based on race duration
+            // From Daniels' research
+            if (seconds <= 180) return 1.00;      // 3 min: 100%
+            if (seconds <= 300) return 0.975;     // 5 min: 97.5%
+            if (seconds <= 600) return 0.94;      // 10 min: 94%
+            if (seconds <= 900) return 0.92;      // 15 min: 92%
+            if (seconds <= 1200) return 0.91;     // 20 min: 91%
+            if (seconds <= 1500) return 0.90;     // 25 min: 90%
+            if (seconds <= 1800) return 0.88;     // 30 min: 88%
+            if (seconds <= 2400) return 0.85;     // 40 min: 85%
+            if (seconds <= 3600) return 0.83;     // 60 min: 83%
+            return 0.80;                          // Marathon: ~80%
+        }
+
+        function formatPace(velocity) {
+            // velocity is in meters/minute
+            if (units === 'metric') {
+                // Convert to min/km
+                const paceMin = 1000 / velocity;
+                const mins = Math.floor(paceMin);
+                const secs = Math.round((paceMin - mins) * 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}/km`;
+            } else {
+                // Convert to min/mile
+                const mileMeters = 1609.34;
+                const paceMin = mileMeters / velocity;
+                const mins = Math.floor(paceMin);
+                const secs = Math.round((paceMin - mins) * 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}/mi`;
+            }
+        }
+
+        // Set default values on load
+        window.addEventListener('load', () => {
+            document.getElementById('minutes').value = '20';
+            document.getElementById('distance').value = '5000';
+        });
+    </script>
+</body>
+</html>

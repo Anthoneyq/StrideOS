@@ -1,0 +1,87 @@
+athlete_name,age_group,age,event,time_mark,place,meet_name,meet_level,meet_year,sex,country
+Pieter Berben,M35,37,10K,31:21,1,World Masters Athletics Championships,International,2024,M,BEL
+Pedro Javier Vega Ballesteros,M40,42,10K,31:13,1,World Masters Athletics Championships,International,2024,M,ESP
+Mustafa Mohamed,M45,47,10K,30:15,1,World Masters Athletics Championships,International,2024,M,SWE
+Kenneth Mburu Mungara,M50,52,10K,30:22,1,World Masters Athletics Championships,International,2024,M,KEN
+Miguel Molero-Eichwein,M55,57,10K,33:10,1,World Masters Athletics Championships,International,2024,M,GER
+Andrew Leach,M60,62,10K,34:58,1,World Masters Athletics Championships,International,2024,M,GBR
+Alex Stienstra,M65,67,10K,36:13,1,World Masters Athletics Championships,International,2024,M,NED
+Rafael Rico,M70,72,10K,39:43,1,World Masters Athletics Championships,International,2024,M,ESP
+Egbert Zijlstra,M75,77,10K,42:26,1,World Masters Athletics Championships,International,2024,M,NED
+Peter Giles,M80,82,10K,51:06,1,World Masters Athletics Championships,International,2024,M,GBR
+Fokke Kramer,M85,87,10K,56:44,1,World Masters Athletics Championships,International,2024,M,GER
+Angelo Squadrone,M95,97,10K,1:49:03,1,World Masters Athletics Championships,International,2024,M,ITA
+David Nilsson,M35,37,Half Marathon,1:06:54,1,World Masters Athletics Championships,International,2024,M,SWE
+Rafiq Arouaoui,M40,42,Half Marathon,1:09:23,1,World Masters Athletics Championships,International,2024,M,ALG
+Mustafa Mohamed,M45,47,Half Marathon,1:06:45,1,World Masters Athletics Championships,International,2024,M,SWE
+Laust Bengtsen,M50,52,Half Marathon,1:13:04,1,World Masters Athletics Championships,International,2024,M,DEN
+Miguel Molero-Eichwein,M55,57,Half Marathon,1:13:53,1,World Masters Athletics Championships,International,2024,M,GER
+John Meagher,M60,62,Half Marathon,1:17:51,1,World Masters Athletics Championships,International,2024,M,AUS
+Paul Mingay,M65,67,Half Marathon,1:22:25,1,World Masters Athletics Championships,International,2024,M,GBR
+Victor Kiessel,M70,72,Half Marathon,1:26:44,1,World Masters Athletics Championships,International,2024,M,LUX
+Araldo Viroli,M75,77,Half Marathon,1:32:35,1,World Masters Athletics Championships,International,2024,M,ITA
+Siegfried Kalweit,M80,82,Half Marathon,2:11:54,1,World Masters Athletics Championships,International,2024,M,GER
+Jens Myrup Noe,M85,87,Half Marathon,2:31:15,1,World Masters Athletics Championships,International,2024,M,DEN
+Andreia Filipa Santos,W35,37,10K,35:37,1,World Masters Athletics Championships,International,2024,F,POR
+Ellie Stevens,W40,42,10K,35:09,1,World Masters Athletics Championships,International,2024,F,GBR
+Rosaline David,W45,47,10K,35:08,1,World Masters Athletics Championships,International,2024,F,KEN
+Carla Primo,W50,52,10K,36:58,1,World Masters Athletics Championships,International,2024,F,ITA
+Annette Kealy,W55,57,10K,39:30,1,World Masters Athletics Championships,International,2024,F,IRL
+Sabine Hofer,W60,62,10K,40:58,1,World Masters Athletics Championships,International,2024,F,AUT
+Synove Brox,W65,67,10K,41:49,1,World Masters Athletics Championships,International,2024,F,NOR
+Vibeke Hansen,W70,72,10K,46:36,1,World Masters Athletics Championships,International,2024,F,DEN
+Jeannie Rice,W75,77,10K,47:30,1,World Masters Athletics Championships,International,2024,F,USA
+Barbara Prymakowska,W80,82,10K,1:01:55,1,World Masters Athletics Championships,International,2024,F,POL
+Liduina van Sitteren,W35,37,Half Marathon,1:20:19,1,World Masters Athletics Championships,International,2024,F,SWE
+Ellie Stevens,W40,42,Half Marathon,1:18:23,1,World Masters Athletics Championships,International,2024,F,GBR
+Erica Lech,W45,47,Half Marathon,1:20:56,1,World Masters Athletics Championships,International,2024,F,SWE
+Catherine Bertone,W50,52,Half Marathon,1:20:25,1,World Masters Athletics Championships,International,2024,F,ITA
+Lisa Finlay,W55,57,Half Marathon,1:26:00,1,World Masters Athletics Championships,International,2024,F,GBR
+Tove Schultz-Lorentzen,W60,62,Half Marathon,1:33:45,1,World Masters Athletics Championships,International,2024,F,DEN
+Elizabeth Alexandra Waywell,W65,67,Half Marathon,1:33:58,1,World Masters Athletics Championships,International,2024,F,CAN
+Vibeke Hansen,W70,72,Half Marathon,1:40:54,1,World Masters Athletics Championships,International,2024,F,DEN
+Jeannie Rice,W75,77,Half Marathon,1:40:58,1,World Masters Athletics Championships,International,2024,F,USA
+Hannele Kivisto,W80,82,Half Marathon,2:18:20,1,World Masters Athletics Championships,International,2024,F,FIN
+Joseph Gray,M40,40,5K XC,15:30,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Neil McDonagh,M40,43,5K XC,15:49,2,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Tyler Butterfield,M40,40,5K XC,16:14,3,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Taylor Carrington,M45,47,5K XC,17:53,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Gregory Mitchell,M50,52,5K XC,16:52,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Frank Zoldak,M55,57,5K XC,16:55,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Nat Larson,M60,62,5K XC,18:56,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Daniel King,M65,67,5K XC,18:28,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+James Linn,M70,72,5K XC,22:39,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Gary Ostwald,M75,77,5K XC,23:00,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Jan Frisby,M80,82,5K XC,28:00,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Melissa Dock,W40,42,5K XC,17:53,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Ann Kirkpatrick,W40,44,5K XC,18:15,2,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Michele Yates,W40,43,5K XC,18:27,3,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Sara Callor,W45,47,5K XC,21:28,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Nicole Howley,W50,52,5K XC,21:25,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Cheryl Aley,W55,57,5K XC,22:05,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Kristine Clark,W60,61,5K XC,21:13,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Suzanne Cordes,W65,67,5K XC,23:43,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Connie Harmon,W70,72,5K XC,31:46,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Irene Herman,W75,77,5K XC,34:15,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Joseph Gray,M40,40,5K XC,15:30,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Neil McDonagh,M40,43,5K XC,15:49,2,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Tyler Butterfield,M40,40,5K XC,16:14,3,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Taylor Carrington,M45,47,5K XC,17:53,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Gregory Mitchell,M50,52,5K XC,16:52,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Frank Zoldak,M55,57,5K XC,16:55,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Nat Larson,M60,62,5K XC,18:56,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Daniel King,M65,67,5K XC,18:28,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+James Linn,M70,72,5K XC,22:39,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Gary Ostwald,M75,77,5K XC,23:00,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Jan Frisby,M80,82,5K XC,28:00,1,USATF Masters 5K Cross Country Championships,National,2024,M,USA
+Melissa Dock,W40,42,5K XC,17:53,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Ann Kirkpatrick,W40,44,5K XC,18:15,2,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Michele Yates,W40,43,5K XC,18:27,3,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Sara Callor,W45,47,5K XC,21:28,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Nicole Howley,W50,52,5K XC,21:25,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Cheryl Aley,W55,57,5K XC,22:05,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Kristine Clark,W60,61,5K XC,21:13,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Suzanne Cordes,W65,67,5K XC,23:43,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Connie Harmon,W70,72,5K XC,31:46,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Irene Herman,W75,77,5K XC,34:15,1,USATF Masters 5K Cross Country Championships,National,2024,F,USA
+Joseph Gray,M40,40,10K,31:30,1,USATF Masters 10K Championships,National,2024,M,USA

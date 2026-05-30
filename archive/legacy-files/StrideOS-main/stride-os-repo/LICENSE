@@ -1,0 +1,16 @@
+Copyright (c) 2026 CoachLab / STRIDE OS
+
+All rights reserved.
+
+This software and its documentation are proprietary.
+
+For licensing inquiries, research collaboration, or commercial use,
+please contact: contact@coachlab.com
+
+---
+
+The validation corpus contained in /data/validation_corpus.csv is composed
+of publicly available race results from official sources (UIL Texas,
+TFRRS / NCAA, World Masters Athletics, USATF Masters). These results are
+in the public record. The compilation and structuring of this corpus is
+maintained by CoachLab for research and validation purposes.

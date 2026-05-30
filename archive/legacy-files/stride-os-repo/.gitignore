@@ -1,0 +1,75 @@
+# Dependencies (none currently, but reserved for future build tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# Supabase local development
+.supabase/
+supabase/.branches
+supabase/.temp
+
+# Build outputs (reserved)
+dist/
+build/
+.next/
+out/
+
+# OS-specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*~
+
+# Logs
+*.log
+logs/
+
+# Coverage / testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Local data dumps (NEVER commit real athlete data)
+# Coach-contributed data should never be in the repo
+backups/
+exports/
+*.dump
+*.sql.gz
+local_data/
+athlete_data/
+coach_exports/
+
+# Python (if we add any tooling)
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.venv/
+
+# Lock files for tooling we may add later
+package-lock.json.bak
+yarn.lock.bak

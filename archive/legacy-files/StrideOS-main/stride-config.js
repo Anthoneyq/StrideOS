@@ -16,15 +16,3 @@ window.STRIDE_STRAVA = {
   redirectUri: 'https://uvjrflkzgulxwrlrqowp.supabase.co/functions/v1/strava-oauth-callback',
   scope: 'read,activity:read_all',
 };
-
-// Billing config for STRIDE OS Pro.
-// - Leave payment links null if you are using the Supabase Edge Function
-//   checkout flow.
-// - Populate the payment links if you want a direct Stripe Payment Link
-//   fallback or a lightweight launch path before the backend is live.
-window.STRIDE_BILLING = {
-  monthlyLabel: '$24/mo',
-  annualLabel: '$199/yr',
-  monthlyPaymentLink: null,
-  annualPaymentLink: null,
-};

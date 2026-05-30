@@ -1,0 +1,2570 @@
+WEBVTT
+
+1
+00:00:15.870 --> 00:00:16.710
+Alex Muntefering: Can you hear me?
+
+2
+00:00:16.860 --> 00:00:18.390
+Anthoney Q., CSCS: Yeah? How you doing?
+
+3
+00:00:18.630 --> 00:00:19.449
+Alex Muntefering: Good, how are you?
+
+4
+00:00:19.650 --> 00:00:20.460
+Anthoney Q., CSCS: Doing well.
+
+5
+00:00:21.670 --> 00:00:25.919
+Anthoney Q., CSCS: Just transitioned Joshua to a… from a crib to a bed, so that's pretty.
+
+6
+00:00:25.920 --> 00:00:28.500
+Alex Muntefering: Excellent. Yeah, that's big.
+
+7
+00:00:28.500 --> 00:00:33.110
+Anthoney Q., CSCS: Yeah, he's, I guess he's…
+
+8
+00:00:33.710 --> 00:00:36.520
+Anthoney Q., CSCS: He's excited, so he's not taking his nap.
+
+9
+00:00:39.020 --> 00:00:40.430
+Anthoney Q., CSCS: Dang.
+
+10
+00:00:40.860 --> 00:00:41.490
+Alex Muntefering: Nice.
+
+11
+00:00:41.490 --> 00:00:42.729
+Anthoney Q., CSCS: We'll see what happens, though.
+
+12
+00:00:43.980 --> 00:00:45.190
+Anthoney Q., CSCS: Alright.
+
+13
+00:00:45.360 --> 00:00:46.730
+Anthoney Q., CSCS: So…
+
+14
+00:00:47.020 --> 00:00:58.290
+Anthoney Q., CSCS: Let me share my screen. Basically, what I want to do is show you what I'm creating, where the ideas come from, and then you can, like, critique it and say, like, what you like, don't like, etc.
+
+15
+00:00:58.500 --> 00:00:59.170
+Alex Muntefering: Okay.
+
+16
+00:00:59.180 --> 00:01:00.200
+Anthoney Q., CSCS: Cool.
+
+17
+00:01:01.150 --> 00:01:04.549
+Anthoney Q., CSCS: Meanwhile, I'll have AI in the background doing a bunch of work.
+
+18
+00:01:05.650 --> 00:01:06.220
+Alex Muntefering: Thanks.
+
+19
+00:01:08.700 --> 00:01:11.269
+Anthoney Q., CSCS: Okay… can you see that?
+
+20
+00:01:14.750 --> 00:01:17.740
+Anthoney Q., CSCS: My shirt? Oh, there it is. There you go. You see it now.
+
+21
+00:01:17.740 --> 00:01:18.300
+Alex Muntefering: Yep.
+
+22
+00:01:18.590 --> 00:01:19.440
+Anthoney Q., CSCS: Sweet.
+
+23
+00:01:21.270 --> 00:01:22.390
+Anthoney Q., CSCS: Okay.
+
+24
+00:01:23.020 --> 00:01:24.959
+Anthoney Q., CSCS: And tell me if you can't see something easily.
+
+25
+00:01:26.400 --> 00:01:29.160
+Alex Muntefering: Okay, I should be good. I can zoom in on my phone.
+
+26
+00:01:29.160 --> 00:01:31.450
+Anthoney Q., CSCS: Okay, cool.
+
+27
+00:01:34.790 --> 00:01:35.510
+Anthoney Q., CSCS: Okay.
+
+28
+00:01:36.110 --> 00:01:41.739
+Anthoney Q., CSCS: So… The idea is… Lindsey was using the…
+
+29
+00:01:42.990 --> 00:01:47.130
+Anthoney Q., CSCS: Jack Daniels VDOT calculator for some of her pacing recommendations.
+
+30
+00:01:47.130 --> 00:01:47.670
+Alex Muntefering: Yep.
+
+31
+00:01:47.830 --> 00:01:53.880
+Anthoney Q., CSCS: And… before that, she's using the Tinman's calculator, but now it's like a paid service.
+
+32
+00:01:54.210 --> 00:01:54.570
+Alex Muntefering: Yep.
+
+33
+00:01:54.570 --> 00:02:00.279
+Anthoney Q., CSCS: So she's like, okay, I'll just use a VDOT, like, that'll kind of get me close enough based on what my athlete's doing.
+
+34
+00:02:00.520 --> 00:02:01.190
+Alex Muntefering: Yep.
+
+35
+00:02:01.710 --> 00:02:04.669
+Anthoney Q., CSCS: So then I was like…
+
+36
+00:02:05.330 --> 00:02:08.620
+Anthoney Q., CSCS: Well, I'll just make you a Tinman's calculator for free.
+
+37
+00:02:09.180 --> 00:02:13.089
+Anthoney Q., CSCS: Like, that's… that'll be pretty simple. Like, I have all the data points.
+
+38
+00:02:13.350 --> 00:02:13.820
+Alex Muntefering: Yup.
+
+39
+00:02:13.820 --> 00:02:19.470
+Anthoney Q., CSCS: Well, that turned into… how can I make something even far superior than either one of those?
+
+40
+00:02:19.470 --> 00:02:20.130
+Alex Muntefering: Right.
+
+41
+00:02:21.110 --> 00:02:23.730
+Anthoney Q., CSCS: So that led me down the rabbit hole of…
+
+42
+00:02:24.710 --> 00:02:38.820
+Anthoney Q., CSCS: Creating a superior pace calculator that goes above and beyond any other calculator, uses metrics from all scientifically validated formulas, from everything from the 100 meters to a marathon.
+
+43
+00:02:39.220 --> 00:02:39.810
+Alex Muntefering: Okay.
+
+44
+00:02:40.300 --> 00:02:45.899
+Anthoney Q., CSCS: And so something like VDOT, you can put paces in there for the 100 meters, but…
+
+45
+00:02:46.130 --> 00:02:51.740
+Anthoney Q., CSCS: the VDOT's not really geared for short-distance sprint stuff, right? But you can still put it in there.
+
+46
+00:02:52.150 --> 00:02:57.960
+Anthoney Q., CSCS: calculator would say, we'll check it based on the VDOT, but we're not going to use that information.
+
+47
+00:02:59.050 --> 00:03:05.089
+Anthoney Q., CSCS: And I had that idea because I created a one rep max calculator that uses all the…
+
+48
+00:03:05.270 --> 00:03:14.240
+Anthoney Q., CSCS: One rep max tests, put them… puts them into one formula, averages them, and then it comes up with, like, here's the most accurate way to determine one rep max.
+
+49
+00:03:14.370 --> 00:03:18.590
+Anthoney Q., CSCS: If we're doing a 10 rep max to determine an estimated 1 rep max.
+
+50
+00:03:20.640 --> 00:03:28.800
+Anthoney Q., CSCS: Certain formulas work better for that state, to give you a more accurate depiction of what a 1 rep max is based on 10 reps.
+
+51
+00:03:29.930 --> 00:03:39.299
+Anthoney Q., CSCS: Others require a 3-5 rep max range. So, like, the closer you get to a 1 rep max, or actually doing the 1 rep max is gonna show you what your 1 rep max is.
+
+52
+00:03:39.300 --> 00:03:39.740
+Alex Muntefering: Yep.
+
+53
+00:03:39.740 --> 00:03:41.729
+Anthoney Q., CSCS: Everything else is always just gonna be an estimate.
+
+54
+00:03:41.920 --> 00:03:42.480
+Alex Muntefering: Yep.
+
+55
+00:03:42.620 --> 00:03:48.739
+Anthoney Q., CSCS: But, if we do… if we have athletes that are doing 10 to 20 reps.
+
+56
+00:03:48.860 --> 00:04:01.259
+Anthoney Q., CSCS: like, we shouldn't use any of the metrics that are doing 8 or less reps. So then, I kind of… the way the formula's set up, if they're doing 8 or less reps, remove all these formulas, because they don't even apply, and that's just gonna muddy the waters.
+
+57
+00:04:02.230 --> 00:04:07.490
+Anthoney Q., CSCS: Same thing is happening here with the pace calculator. So…
+
+58
+00:04:08.930 --> 00:04:11.279
+Anthoney Q., CSCS: If we create a new athlete.
+
+59
+00:04:11.560 --> 00:04:17.150
+Anthoney Q., CSCS: We'll just put in… do you have any athletes that run multiple events?
+
+60
+00:04:18.329 --> 00:04:19.199
+Anthoney Q., CSCS: That you can think of?
+
+61
+00:04:19.200 --> 00:04:23.060
+Alex Muntefering: Everyone pretty much runs multiple events.
+
+62
+00:04:24.550 --> 00:04:32.160
+Anthoney Q., CSCS: We have one… okay. Give me a random name of someone, we'll just put in some generic information just to kind of show you how this works.
+
+63
+00:04:32.160 --> 00:04:33.799
+Alex Muntefering: put Emma in there.
+
+64
+00:04:34.240 --> 00:04:37.280
+Anthoney Q., CSCS: And, like that, EMA?
+
+65
+00:04:37.280 --> 00:04:38.069
+Alex Muntefering: Yeah, that's fine.
+
+66
+00:04:38.070 --> 00:04:38.720
+Anthoney Q., CSCS: How old?
+
+67
+00:04:39.710 --> 00:04:40.860
+Alex Muntefering: 22.
+
+68
+00:04:41.020 --> 00:04:45.800
+Anthoney Q., CSCS: 22… Female… How many years of training?
+
+69
+00:04:48.710 --> 00:04:50.540
+Alex Muntefering: But 8. 8.
+
+70
+00:04:51.080 --> 00:04:52.150
+Anthoney Q., CSCS: Weekly mileage?
+
+71
+00:04:53.050 --> 00:04:55.040
+Alex Muntefering: Put 55.
+
+72
+00:04:56.830 --> 00:04:58.290
+Anthoney Q., CSCS: Was she college?
+
+73
+00:04:58.580 --> 00:04:59.230
+Anthoney Q., CSCS: Since…
+
+74
+00:04:59.230 --> 00:04:59.960
+Alex Muntefering: College, yeah.
+
+75
+00:04:59.960 --> 00:05:00.590
+Anthoney Q., CSCS: Okay.
+
+76
+00:05:00.780 --> 00:05:03.700
+Anthoney Q., CSCS: Just make sure she wasn't, like, a high school or post-college person.
+
+77
+00:05:04.890 --> 00:05:06.310
+Anthoney Q., CSCS: Main event?
+
+78
+00:05:06.770 --> 00:05:07.760
+Alex Muntefering: 5,000.
+
+79
+00:05:10.130 --> 00:05:12.000
+Anthoney Q., CSCS: Okay, secondary events?
+
+80
+00:05:14.310 --> 00:05:15.190
+Alex Muntefering: But…
+
+81
+00:05:17.050 --> 00:05:23.340
+Alex Muntefering: But mile, I mean, I guess technically in college, we'd run the 3K, so it'd be close as well to the 32.
+
+82
+00:05:25.170 --> 00:05:26.779
+Anthoney Q., CSCS: Okay, I need to put the…
+
+83
+00:05:27.430 --> 00:05:31.409
+Anthoney Q., CSCS: 3K in there. Does she do a 10K as well? Or no?
+
+84
+00:05:31.600 --> 00:05:34.259
+Alex Muntefering: She… yeah, not… it's…
+
+85
+00:05:34.260 --> 00:05:34.589
+Anthoney Q., CSCS: I guess.
+
+86
+00:05:34.590 --> 00:05:36.750
+Alex Muntefering: Like, third to all those events.
+
+87
+00:05:36.750 --> 00:05:37.490
+Anthoney Q., CSCS: Okay
+
+88
+00:05:41.040 --> 00:05:46.420
+Anthoney Q., CSCS: Do you have her… 5K… Time?
+
+89
+00:05:47.740 --> 00:05:49.290
+Alex Muntefering: 1643.
+
+90
+00:05:53.660 --> 00:05:57.550
+Anthoney Q., CSCS: Date doesn't really matter for this example, I'll just put it somewhere, like, back here.
+
+91
+00:05:57.610 --> 00:05:58.270
+Alex Muntefering: Okay.
+
+92
+00:05:58.270 --> 00:06:01.729
+Anthoney Q., CSCS: What location was it? The zip code? Was her PR?
+
+93
+00:06:02.150 --> 00:06:06.660
+Alex Muntefering: This is taking place in Fargo, North Dakota. I don't know the zip code, though.
+
+94
+00:06:10.410 --> 00:06:12.150
+Anthoney Q., CSCS: Okay, do you know about what time it was?
+
+95
+00:06:13.240 --> 00:06:14.780
+Alex Muntefering: 2pm.
+
+96
+00:06:17.970 --> 00:06:21.779
+Anthoney Q., CSCS: So what this is doing is we're looking at the distance, the time.
+
+97
+00:06:25.320 --> 00:06:28.370
+Anthoney Q., CSCS: Of the… of the, like, what she ran, right?
+
+98
+00:06:28.510 --> 00:06:42.269
+Anthoney Q., CSCS: date, location, and then the actual hour, and we're pulling weather data from all of that. So we can see what barometric pressure is, what humidity is, dew point, all that stuff, because that can all factor in, like, how.
+
+99
+00:06:42.270 --> 00:06:44.800
+Alex Muntefering: Date would have been May 16th.
+
+100
+00:06:46.150 --> 00:06:48.179
+Anthoney Q., CSCS: May 16th.
+
+101
+00:06:48.180 --> 00:06:48.740
+Alex Muntefering: Yeah.
+
+102
+00:06:49.020 --> 00:06:49.620
+Anthoney Q., CSCS: Cut.
+
+103
+00:06:51.290 --> 00:06:56.019
+Anthoney Q., CSCS: Okay, so for any of her events, do you have any other times? For her mile, 1600?
+
+104
+00:06:56.280 --> 00:06:58.180
+Alex Muntefering: Mile 453.
+
+105
+00:07:00.500 --> 00:07:01.310
+Anthoney Q., CSCS: Okay.
+
+106
+00:07:02.150 --> 00:07:09.880
+Alex Muntefering: Yeah, in college, we would run the… I guess the other comparable event would be 1500, so no 1,600 in college.
+
+107
+00:07:10.140 --> 00:07:14.780
+Alex Muntefering: But the mile, pretty much, is… Included in that.
+
+108
+00:07:15.300 --> 00:07:16.930
+Alex Muntefering: Estimate on the 16?
+
+109
+00:07:16.930 --> 00:07:18.280
+Anthoney Q., CSCS: On the 32?
+
+110
+00:07:19.210 --> 00:07:19.600
+Alex Muntefering: Yeah, no.
+
+111
+00:07:19.970 --> 00:07:34.360
+Alex Muntefering: For 32, it'd be… 936 is the 3K, so let's add 40 seconds to that. 9.36, 10… 10, 16.
+
+112
+00:07:35.700 --> 00:07:36.910
+Alex Muntefering: For $3,200.
+
+113
+00:07:37.530 --> 00:07:41.390
+Anthoney Q., CSCS: 2016. Alright. Now we have all that data, we save it.
+
+114
+00:07:42.540 --> 00:07:47.780
+Anthoney Q., CSCS: So inside the basic calculator, we can take what she has.
+
+115
+00:07:48.650 --> 00:07:55.919
+Anthoney Q., CSCS: Switch this out to 5K. Now you have all your calculations either Selecting them down here.
+
+116
+00:07:58.060 --> 00:08:18.060
+Anthoney Q., CSCS: as just solid numbers, or you can figure out what percentage you're trying to get her to achieve, right? So if you wanted to do… I need to change terminology here, but say you wanted to do, like, critical velocity, you know, bring it down to… I see critical velocity anywhere between 93 and 97.
+
+117
+00:08:20.420 --> 00:08:22.570
+Alex Muntefering: Of, 5K race space.
+
+118
+00:08:22.980 --> 00:08:27.529
+Anthoney Q., CSCS: Of just, in general, critical velocity paces, or distance.
+
+119
+00:08:30.810 --> 00:08:36.559
+Alex Muntefering: critical velocity, This is what we would reference as…
+
+120
+00:08:37.789 --> 00:08:40.810
+Alex Muntefering: Closer to 10,000 meter pace, maybe close to…
+
+121
+00:08:41.260 --> 00:08:48.890
+Alex Muntefering: 35, like, an all-out race that lasts about 30 to 35 minutes, which is generally corresponding to a 10,000 meter race.
+
+122
+00:08:48.890 --> 00:08:49.610
+Anthoney Q., CSCS: Okay.
+
+123
+00:08:51.010 --> 00:08:59.239
+Anthoney Q., CSCS: So I think that's where, like, some of the terminology gets a little murky, because some people are using critical velocity for shorter distances, as low as, like, the mile.
+
+124
+00:09:00.290 --> 00:09:01.600
+Alex Muntefering: Yeah, we would…
+
+125
+00:09:02.510 --> 00:09:10.109
+Alex Muntefering: We would say… we would maybe assign a workout, say 8 by 1,000 meter repeats at critical velocity, would be…
+
+126
+00:09:10.790 --> 00:09:15.690
+Alex Muntefering: A little bit quicker than, like, 8x1000 meter repeats at.
+
+127
+00:09:16.020 --> 00:09:17.740
+Alex Muntefering: threshold pace.
+
+128
+00:09:18.190 --> 00:09:24.060
+Alex Muntefering: Slightly harder. Generally… generally close to 10,000 meter race pace.
+
+129
+00:09:24.810 --> 00:09:26.589
+Anthoney Q., CSCS: Okay, so for a 5K.
+
+130
+00:09:26.940 --> 00:09:29.669
+Anthoney Q., CSCS: If you have them doing, like, an easy run.
+
+131
+00:09:30.330 --> 00:09:35.040
+Anthoney Q., CSCS: Right here, I have it preset to 80% of, like, a 5K time.
+
+132
+00:09:36.260 --> 00:09:36.870
+Alex Muntefering: Buh.
+
+133
+00:09:38.110 --> 00:09:39.570
+Anthoney Q., CSCS: How do you feel about that?
+
+134
+00:09:40.060 --> 00:09:40.780
+Anthoney Q., CSCS: 8%.
+
+135
+00:09:40.840 --> 00:09:44.650
+Alex Muntefering: 20.03, what is that? 627 per mile?
+
+136
+00:09:44.760 --> 00:09:49.429
+Alex Muntefering: That would not be… that would be hard. That would be closer to tempo, pace.
+
+137
+00:09:49.670 --> 00:09:56.339
+Alex Muntefering: So, if they were going out, I would call that an… if it was an easy run, say, just going out for…
+
+138
+00:09:56.650 --> 00:09:59.400
+Alex Muntefering: There's…
+
+139
+00:09:59.560 --> 00:10:05.779
+Alex Muntefering: standard mileage run on a Monday, the day before a workout, and they're going for a 6-mile run.
+
+140
+00:10:07.170 --> 00:10:11.660
+Alex Muntefering: if they were running 627 pace, the B, I mean, their heart rate would be…
+
+141
+00:10:11.880 --> 00:10:16.940
+Alex Muntefering: probably getting in the 180s, 170s, for a person like Emma.
+
+142
+00:10:17.410 --> 00:10:18.140
+Anthoney Q., CSCS: Okay.
+
+143
+00:10:18.140 --> 00:10:20.549
+Alex Muntefering: So it would be pretty… that would be difficult.
+
+144
+00:10:20.550 --> 00:10:21.650
+Anthoney Q., CSCS: Try to get her to.
+
+145
+00:10:23.020 --> 00:10:26.689
+Anthoney Q., CSCS: Consuming her normal pace is a 523 for a 5K.
+
+146
+00:10:27.260 --> 00:10:31.570
+Alex Muntefering: This is gonna… an easy day for her is probably gonna average, like, 7.15.
+
+147
+00:10:31.570 --> 00:10:32.900
+Anthoney Q., CSCS: 715.
+
+148
+00:10:32.900 --> 00:10:33.550
+Alex Muntefering: Yup.
+
+149
+00:10:33.760 --> 00:10:37.510
+Anthoney Q., CSCS: 7… approximately… 65%.
+
+150
+00:10:37.740 --> 00:10:39.460
+Alex Muntefering: Okay, yeah, I…
+
+151
+00:10:39.600 --> 00:10:44.969
+Alex Muntefering: I guess I don't use percentages like that, so I can't say right off the top of my mind, but…
+
+152
+00:10:45.620 --> 00:10:47.649
+Anthoney Q., CSCS: So you would base it off of…
+
+153
+00:10:50.190 --> 00:10:52.450
+Anthoney Q., CSCS: Like, how would you come up with…
+
+154
+00:10:52.790 --> 00:10:59.050
+Alex Muntefering: We run off of feel a lot, so we want it to feel easy, if we're going on an easy day.
+
+155
+00:10:59.580 --> 00:11:02.799
+Alex Muntefering: I'm not prescribing exact paces for an easy run.
+
+156
+00:11:03.030 --> 00:11:04.019
+Anthoney Q., CSCS: Just a moment. Okay.
+
+157
+00:11:05.420 --> 00:11:07.810
+Anthoney Q., CSCS: What about a hard day, like, if you were to do…
+
+158
+00:11:08.700 --> 00:11:10.690
+Anthoney Q., CSCS: So, like, down here, for example.
+
+159
+00:11:11.180 --> 00:11:19.000
+Anthoney Q., CSCS: having the table chart, like, if we're running easy paces, For a mile up to…
+
+160
+00:11:19.950 --> 00:11:23.640
+Anthoney Q., CSCS: Or, sorry, yeah, 1 mile up to a 10K, like, here's your…
+
+161
+00:11:25.950 --> 00:11:29.630
+Anthoney Q., CSCS: Your distance is at that 80%
+
+162
+00:11:29.880 --> 00:11:37.530
+Anthoney Q., CSCS: Right? So, what you're saying is, like, your EZ would be closer to 65, Percent, but that's based on…
+
+163
+00:11:37.920 --> 00:11:43.450
+Anthoney Q., CSCS: If she runs easy versus someone else runs easy, someone else's easy run could be 50%.
+
+164
+00:11:43.880 --> 00:11:46.799
+Alex Muntefering: Could be, yeah. Generally,
+
+165
+00:11:48.590 --> 00:11:59.209
+Alex Muntefering: this is gonna be highly person-dependent. Some people need to recover at a much slower pace. You could have two people running the same 5K times, and one person
+
+166
+00:11:59.310 --> 00:12:10.449
+Alex Muntefering: Runs, you know, their easy mileage slower than another person to feel recovered by, you know, the next workout or the next race.
+
+167
+00:12:10.740 --> 00:12:16.509
+Alex Muntefering: Okay. But there's not a ton of variability. Probably no one's doing 627 pace for an easy day.
+
+168
+00:12:16.610 --> 00:12:22.120
+Alex Muntefering: Most people are probably gonna be between 7 to 8 minute pace.
+
+169
+00:12:22.380 --> 00:12:36.299
+Alex Muntefering: That's a pretty wide window, but 627 pace for someone who runs 1643 for 5K would be consistently, like, too hard of a day from what I've seen. They would feel like they would burn out fairly quickly.
+
+170
+00:12:36.590 --> 00:12:37.270
+Anthoney Q., CSCS: Okay.
+
+171
+00:12:38.150 --> 00:12:41.659
+Anthoney Q., CSCS: So I need to reevaluate what EZ is.
+
+172
+00:12:45.910 --> 00:12:49.159
+Alex Muntefering: I would almost classify that as closer to steady.
+
+173
+00:12:49.340 --> 00:12:52.800
+Alex Muntefering: Like, it's steady would be closer to 627.
+
+174
+00:12:53.000 --> 00:12:54.830
+Alex Muntefering: Tempo would be…
+
+175
+00:12:57.390 --> 00:13:05.399
+Alex Muntefering: I mean, tempo is all dependent on how many, like, how long it is, because let's say someone's going for a 6-mile straight tempo run.
+
+176
+00:13:05.760 --> 00:13:17.860
+Alex Muntefering: It's gonna be slower than what I would do for a 3-mile straight tempo run, but in general, let's just shoot it down the middle and say they're going for a 4-mile tempo run or something.
+
+177
+00:13:18.700 --> 00:13:22.940
+Alex Muntefering: Emma would probably be on a track in a control environment, probably.
+
+178
+00:13:23.100 --> 00:13:25.419
+Alex Muntefering: Gonna be running that closer to 6 minute pace.
+
+179
+00:13:25.950 --> 00:13:31.280
+Alex Muntefering: And the threshold's gonna be probably closer. It almost is like… well…
+
+180
+00:13:31.840 --> 00:13:36.669
+Alex Muntefering: from what I've seen in the way that I train, it's almost like each of these categories is just off.
+
+181
+00:13:36.890 --> 00:13:41.090
+Alex Muntefering: by 1. Like, threshold's a little bit closer to tempo for her.
+
+182
+00:13:41.240 --> 00:13:44.430
+Alex Muntefering: Tempo would be…
+
+183
+00:13:47.300 --> 00:13:57.960
+Alex Muntefering: Wait, sorry, reverse that. So, easy would… is… yeah, trying to think. Easy would slide up into a category that's non-existent to a slower category.
+
+184
+00:13:58.250 --> 00:14:02.240
+Alex Muntefering: Steady would be more associated with what you have listed as easy.
+
+185
+00:14:02.820 --> 00:14:09.349
+Anthoney Q., CSCS: Okay, so would you say, if we put easy into a category, we could say somewhere between, like, 50% to 65%?
+
+186
+00:14:09.950 --> 00:14:10.470
+Alex Muntefering: Yeah.
+
+187
+00:14:10.470 --> 00:14:11.790
+Anthoney Q., CSCS: Generally speaking.
+
+188
+00:14:11.990 --> 00:14:14.120
+Alex Muntefering: Yeah, this one is. You said…
+
+189
+00:14:14.290 --> 00:14:18.230
+Alex Muntefering: This is 78% to 82%, is what you have listed? Okay.
+
+190
+00:14:18.860 --> 00:14:26.679
+Alex Muntefering: I guess, without doing the math, I don't know what that spits out to, what a 50% spits out to. That seems like that would be too slow, because that's probably…
+
+191
+00:14:27.990 --> 00:14:29.769
+Alex Muntefering: A 10-11 minute pace.
+
+192
+00:14:29.770 --> 00:14:34.490
+Anthoney Q., CSCS: 62nd would be… Yeah, 732.
+
+193
+00:14:34.720 --> 00:14:38.769
+Alex Muntefering: 60%. What's 50%? That's gotta be too slow. That'd be, like, dragon.
+
+194
+00:14:38.770 --> 00:14:40.489
+Anthoney Q., CSCS: I can't even get that low.
+
+195
+00:14:40.490 --> 00:14:41.220
+Alex Muntefering: Yeah.
+
+196
+00:14:41.410 --> 00:14:45.410
+Alex Muntefering: Yeah, so, yeah, it's probably upper 50s to low 60s would be my guess.
+
+197
+00:14:45.740 --> 00:14:46.590
+Anthoney Q., CSCS: Okay.
+
+198
+00:14:46.980 --> 00:14:48.460
+Anthoney Q., CSCS: So that would be… so…
+
+199
+00:14:49.380 --> 00:14:59.450
+Anthoney Q., CSCS: I guess let me rethink this real quick. The idea of an easy day matters less because you're like, just go out easy, whatever that feels like. So that, I guess.
+
+200
+00:15:00.400 --> 00:15:12.859
+Anthoney Q., CSCS: has less to do with this calculator, because, like, everyone's easy could be different. Whereas I think whenever we go based off of pay, you know, off of, like, race pace, if she's racing a 5K,
+
+201
+00:15:13.280 --> 00:15:15.419
+Anthoney Q., CSCS: At 5.32.
+
+202
+00:15:15.590 --> 00:15:23.900
+Anthoney Q., CSCS: and we know nothing else about her, because, like, the more data you put in here, the more information you're gonna get over the course of time. If she needs to do…
+
+203
+00:15:27.680 --> 00:15:28.859
+Anthoney Q., CSCS: I guess, like…
+
+204
+00:15:30.200 --> 00:15:41.040
+Anthoney Q., CSCS: higher-end, like, faster than race pace stuff, so I classified this as, fast reps, and she was doing 800-meter runs. Her 800 meter should be at…
+
+205
+00:15:41.290 --> 00:15:43.020
+Anthoney Q., CSCS: 2.35, so that'd be.
+
+206
+00:15:43.020 --> 00:15:43.840
+Alex Muntefering: Yeah.
+
+207
+00:15:43.840 --> 00:15:44.790
+Anthoney Q., CSCS: 5%.
+
+208
+00:15:45.180 --> 00:15:50.389
+Alex Muntefering: Yeah, and I would classify… kind of the… pace range that I would…
+
+209
+00:15:50.510 --> 00:15:59.409
+Alex Muntefering: name that one. For me personally, I'm not saying that you should name it this, but how I identify that fast-trip one would be VO2
+
+210
+00:16:00.360 --> 00:16:02.159
+Alex Muntefering: It'd be pretty close to BO2.
+
+211
+00:16:02.360 --> 00:16:03.150
+Anthoney Q., CSCS: Okay.
+
+212
+00:16:04.320 --> 00:16:11.700
+Anthoney Q., CSCS: I guess go through all the names, then, and how would you classify each name, regardless of… without looking at the percentages?
+
+213
+00:16:15.360 --> 00:16:27.519
+Anthoney Q., CSCS: how would you word each scenario? So you have a kind of a categorical way to tell your kid, like, hey, today we're doing, like, steady, today we're doing race pace, today we're doing VO2 max, or VO2 style.
+
+214
+00:16:27.520 --> 00:16:32.179
+Alex Muntefering: Yeah, that steady, which I would equate to more like that 627.
+
+215
+00:16:32.500 --> 00:16:37.089
+Alex Muntefering: We might do that towards the end of a long run in the base phase during the fall.
+
+216
+00:16:37.270 --> 00:16:37.720
+Anthoney Q., CSCS: Okay.
+
+217
+00:16:37.720 --> 00:16:42.890
+Alex Muntefering: But not for an entire run, that would be,
+
+218
+00:16:43.050 --> 00:16:54.789
+Alex Muntefering: at least in the way that I train, I don't do much in that steady range, unless we're progressing a long run. Say she goes out for a 10-mile long run. Starts at easy pace, works into steady pace. Again.
+
+219
+00:16:54.970 --> 00:16:57.219
+Alex Muntefering: For me, that was more so for…
+
+220
+00:16:57.360 --> 00:17:08.620
+Alex Muntefering: for this particular student athlete would look like. 7.30 maybe progressing down to 6.30 pace by the end of the long run. Most of that's gonna happen in the base phase in the fall, not during, like, track racing season.
+
+221
+00:17:08.900 --> 00:17:15.459
+Anthoney Q., CSCS: Okay. Would you consider that… Those categorical names are… like, is that how you tell them?
+
+222
+00:17:15.890 --> 00:17:18.689
+Anthoney Q., CSCS: Like, is that how you'd word it to them? Or…
+
+223
+00:17:18.690 --> 00:17:26.109
+Alex Muntefering: Yeah, study would… that would be the correct… the correct terminology that coaches would use, be, like, study-state.
+
+224
+00:17:26.780 --> 00:17:36.860
+Alex Muntefering: tempo, I classify that as… a specific workout… pace, that…
+
+225
+00:17:37.450 --> 00:17:53.040
+Alex Muntefering: is generally done, say, we're gonna do a 4-mile tempo run up to, you know, maybe up to 8-mile tempo run. 8 miles, we might start a little bit slower than tempo, so the average time might be a little bit slower than that,
+
+226
+00:17:53.260 --> 00:18:00.709
+Alex Muntefering: designated tempo pace, than it would be, say, for a 4-mile tempo run, would probably be closer to…
+
+227
+00:18:01.160 --> 00:18:03.310
+Alex Muntefering: What this might spit out.
+
+228
+00:18:03.900 --> 00:18:10.260
+Alex Muntefering: Although, I think it's… I think for someone like Emma, her tempo pace is probably closer to 6 minutes, maybe 5.55 per mile.
+
+229
+00:18:10.550 --> 00:18:30.089
+Alex Muntefering: But if she were to do an 8-mile tempo, which would be more so for, like, 10K, training, so I don't really have her do that, she'd probably need to be running an average of closer to 610 pace. If I have her doing a 4-mile tempo, yeah, she can probably average closer, like, 5… like, upper 550s to 6 flat pace.
+
+230
+00:18:30.400 --> 00:18:35.980
+Alex Muntefering: So yeah, tempo… Is generally going to be
+
+231
+00:18:36.210 --> 00:18:50.520
+Alex Muntefering: worded as, like, you're doing a 4-mile tempo run, or a 5-mile tempo run, or a 6-mile tempo run. Sometimes it can be broken up into very easy intervals, so if I have people doing 2 workouts in a day, Emma was an example of this, where
+
+232
+00:18:50.670 --> 00:18:59.270
+Alex Muntefering: She might do broken-up tempo miles in the morning, say, 5x1.
+
+233
+00:18:59.610 --> 00:19:00.650
+Alex Muntefering: mile.
+
+234
+00:19:00.980 --> 00:19:03.650
+Alex Muntefering: Tempo, pace reps.
+
+235
+00:19:03.780 --> 00:19:07.729
+Alex Muntefering: So, you know, basically you would do 5 by mile at 6-minute pace.
+
+236
+00:19:07.940 --> 00:19:10.890
+Alex Muntefering: With short rest, maybe 60 seconds rest.
+
+237
+00:19:11.200 --> 00:19:14.950
+Alex Muntefering: And then in the afternoon, would do threshold. Threshold…
+
+238
+00:19:15.990 --> 00:19:26.429
+Alex Muntefering: in terms of a straight run, because people will sometimes do straight threshold runs, at most, I've seen, effectively, is 4 miles, but generally are going to be in shorter chunks.
+
+239
+00:19:26.580 --> 00:19:29.599
+Alex Muntefering: She might do… 5 by mile threshold.
+
+240
+00:19:30.340 --> 00:19:32.560
+Alex Muntefering: 5x2k threshold.
+
+241
+00:19:32.680 --> 00:19:36.120
+Alex Muntefering: maybe… You know, 2x2 mile threshold.
+
+242
+00:19:36.680 --> 00:19:40.180
+Alex Muntefering: At longest, might be a 4-mile threshold, but that's starting to get…
+
+243
+00:19:40.470 --> 00:19:45.710
+Alex Muntefering: fairly difficult. So… in Emma's case, a classic
+
+244
+00:19:46.190 --> 00:19:50.259
+Alex Muntefering: workout would be 8x1K threshold.
+
+245
+00:19:50.460 --> 00:20:00.019
+Alex Muntefering: And that would probably elicit a pace of around 548 to 545, so pretty close to what this calculator's spitting out for tempo.
+
+246
+00:20:02.670 --> 00:20:08.240
+Anthoney Q., CSCS: So it seems like, kind of what you're saying, too, is… the…
+
+247
+00:20:08.930 --> 00:20:12.609
+Anthoney Q., CSCS: Columns need to be filled out more for tempo, so we have, like.
+
+248
+00:20:13.080 --> 00:20:21.679
+Anthoney Q., CSCS: We're probably not gonna be doing tempo for a 5K runner, that's our primary event. Probably not gonna be doing tempo at an 800 meter. Probably gonna be… Probably not.
+
+249
+00:20:21.790 --> 00:20:23.849
+Anthoney Q., CSCS: Mile up to 4 miles. Okay.
+
+250
+00:20:23.850 --> 00:20:29.859
+Alex Muntefering: Yeah, generally a tempo… another word, if you see it pop up, might be cruise interval.
+
+251
+00:20:32.370 --> 00:20:42.650
+Alex Muntefering: Tempo is usually associated with, something you would do long and sustained, 4 miles, up to 8 miles, I mean, even some… some men.
+
+252
+00:20:42.760 --> 00:20:47.550
+Alex Muntefering: in college system do 10-mile tempos. But…
+
+253
+00:20:48.710 --> 00:20:54.350
+Alex Muntefering: You might see it referred to as a cruise interval, which… is…
+
+254
+00:20:54.820 --> 00:20:59.690
+Alex Muntefering: More likely gonna be broken up into mile repeats, so…
+
+255
+00:21:00.230 --> 00:21:12.459
+Alex Muntefering: you know, cruise miles could be 5 by a mile. Really, it's just that tempo pace. Pretty light workout. Oftentimes done in the morning, and oftentimes
+
+256
+00:21:12.540 --> 00:21:32.289
+Alex Muntefering: is done prior to a secondary workout in the afternoon. Look up, if you want to dive into this, you just look up, the papers written by Marius Bakken, you know, who's come up with the Norwegian threshold model, and so he would talk a little bit more on this stuff.
+
+257
+00:21:32.520 --> 00:21:37.110
+Alex Muntefering: I don't think he uses the word cruise, but he uses more, like, LT1 and LT2.
+
+258
+00:21:37.290 --> 00:21:43.030
+Alex Muntefering: It's two different training zones, LT1 in the morning, LT2 in the afternoon, which is a touch faster.
+
+259
+00:21:43.340 --> 00:21:47.820
+Anthoney Q., CSCS: Okay. So… We could assume.
+
+260
+00:21:47.960 --> 00:21:53.949
+Anthoney Q., CSCS: Or could I assume, asking you this, anything at a percentage
+
+261
+00:21:54.320 --> 00:21:58.930
+Anthoney Q., CSCS: Less than a race pace would be… higher…
+
+262
+00:22:02.110 --> 00:22:04.910
+Anthoney Q., CSCS: would be higher mileage than the 5K.
+
+263
+00:22:05.960 --> 00:22:07.380
+Anthoney Q., CSCS: Generally speaking.
+
+264
+00:22:08.320 --> 00:22:08.940
+Anthoney Q., CSCS: So, like…
+
+265
+00:22:08.940 --> 00:22:17.749
+Alex Muntefering: You're saying, if you're doing 95% of your race pace, you'd be doing more workout volume than that race itself?
+
+266
+00:22:17.980 --> 00:22:18.640
+Anthoney Q., CSCS: Yeah.
+
+267
+00:22:19.850 --> 00:22:31.680
+Alex Muntefering: Generally, yeah. Especially for someone like Emma, who's training, you know, she's in college, and it's fairly advanced, and relatively speaking, compared to maybe a high school student-athlete who
+
+268
+00:22:31.830 --> 00:22:39.939
+Alex Muntefering: You know, high school student-athletes may just not have that much experience with volume, so it's not safe to assume that a high school student athlete would do
+
+269
+00:22:40.230 --> 00:22:52.309
+Alex Muntefering: more than 5x1K threshold repeats. Often, many times they are doing it, but a new freshman is probably not. Or, you know, a freshman in high school with no training background is probably not doing more volume.
+
+270
+00:22:52.310 --> 00:22:52.650
+Anthoney Q., CSCS: You know.
+
+271
+00:22:52.650 --> 00:22:53.940
+Alex Muntefering: and the race itself.
+
+272
+00:22:53.940 --> 00:23:02.499
+Anthoney Q., CSCS: So for this graph in general, I could probably say whatever the pace is that we're calculating for, we can go two columns to the left of that, so here we have
+
+273
+00:23:02.710 --> 00:23:06.000
+Anthoney Q., CSCS: Or… Like, for easy.
+
+274
+00:23:06.890 --> 00:23:10.450
+Anthoney Q., CSCS: We could assume that their 5K pace
+
+275
+00:23:11.830 --> 00:23:15.949
+Anthoney Q., CSCS: We could probably go down to 1 mile, so if they're doing easy repeats.
+
+276
+00:23:16.860 --> 00:23:19.810
+Anthoney Q., CSCS: That would work. And then if we're going…
+
+277
+00:23:21.040 --> 00:23:24.659
+Anthoney Q., CSCS: Up to threshold, this is going all the way down to 600 meters.
+
+278
+00:23:25.160 --> 00:23:30.710
+Anthoney Q., CSCS: So instead of doing 600 meters for a 5K calculation, we would probably… like, what… what would be the…
+
+279
+00:23:30.910 --> 00:23:33.550
+Anthoney Q., CSCS: Shortest distance that they would run.
+
+280
+00:23:34.130 --> 00:23:35.940
+Anthoney Q., CSCS: Like, would they… I would never…
+
+281
+00:23:35.940 --> 00:23:37.450
+Alex Muntefering: threshold pace?
+
+282
+00:23:37.450 --> 00:23:43.790
+Anthoney Q., CSCS: Let's just say for, like, let's go to the very bottom and say a full sprint, like 115 to 130%.
+
+283
+00:23:44.430 --> 00:23:56.570
+Anthoney Q., CSCS: for a full sprint, they're probably… like, are they going to be doing that as a 5K runner? So then that's, like, another categorical thing. I'll say, like, if they're running 5K as their primary event, we're not gonna put 100 meters in there.
+
+284
+00:23:57.160 --> 00:23:58.400
+Anthoney Q., CSCS: maybe they're…
+
+285
+00:23:58.980 --> 00:24:07.150
+Anthoney Q., CSCS: shortest distance is 800 meters, right? So then this whole bottom section needs to be pushed over, so they're 115%
+
+286
+00:24:07.710 --> 00:24:10.230
+Anthoney Q., CSCS: Would really start at 800 meters for, like.
+
+287
+00:24:10.760 --> 00:24:12.349
+Anthoney Q., CSCS: Speed work. Does that make sense?
+
+288
+00:24:13.030 --> 00:24:13.890
+Anthoney Q., CSCS: what I'm putting out.
+
+289
+00:24:14.140 --> 00:24:21.139
+Alex Muntefering: I do strides the day before workouts, and so we would generally do 100 to 150 meter length strides, 4 of them.
+
+290
+00:24:21.570 --> 00:24:33.070
+Alex Muntefering: And those would be about spot-on on what we do for strides for a person like Emma. Generally, we're targeting 15, or 150 meters at about 24 to 25 seconds.
+
+291
+00:24:33.360 --> 00:24:37.989
+Anthoney Q., CSCS: Okay, so those, like, those numbers are usable in this scenario for what they're doing?
+
+292
+00:24:37.990 --> 00:24:53.879
+Alex Muntefering: Yes, so the way that I would prescribe what's in your category as a sprint would be the day before a workout, even within a workout, I would prescribe it maybe at the end. So not as much in the base phase in the fall.
+
+293
+00:24:53.950 --> 00:25:01.569
+Alex Muntefering: It's because we're on grass, and we're more so focused on volume and aerobic strength, but during the track season, we could…
+
+294
+00:25:01.700 --> 00:25:17.409
+Alex Muntefering: finish a threshold workout with 4x150, basically at that pace right there, which seems to be pretty spot on, or 3x200, basically, right at that pace right there, 34 seconds, so that's pretty much spot on for what we would do,
+
+295
+00:25:17.730 --> 00:25:22.130
+Alex Muntefering: On the very fastest and shortest, end.
+
+296
+00:25:23.030 --> 00:25:23.850
+Anthoney Q., CSCS: Okay.
+
+297
+00:25:24.710 --> 00:25:32.990
+Anthoney Q., CSCS: So then I guess, what would probably be more effective is taking this table, expanding each column out a little bit more.
+
+298
+00:25:33.560 --> 00:25:39.840
+Anthoney Q., CSCS: Anything… Race pacing below, push that out to higher mileage.
+
+299
+00:25:41.910 --> 00:25:43.620
+Anthoney Q., CSCS: And then anything…
+
+300
+00:25:48.910 --> 00:26:00.509
+Anthoney Q., CSCS: I guess let's go back to the categories. So you said easy, you would say easy, but change the percentage. So, not looking at percentage, but you'd say easy, steady, tempo, threshold…
+
+301
+00:26:00.790 --> 00:26:02.549
+Anthoney Q., CSCS: than race pace. Is that all?
+
+302
+00:26:02.550 --> 00:26:12.439
+Alex Muntefering: I do… I do use one more, between threshold… and race pace.
+
+303
+00:26:13.710 --> 00:26:15.179
+Alex Muntefering: Is that the V2? I do.
+
+304
+00:26:15.780 --> 00:26:26.050
+Alex Muntefering: Mmm… not in the context of race pace being 5K, right? Vo2, think more closely associated with 3,000 meters, 3,000 meter race pace.
+
+305
+00:26:26.050 --> 00:26:26.640
+Anthoney Q., CSCS: Okay.
+
+306
+00:26:26.640 --> 00:26:36.449
+Alex Muntefering: So, obviously, if this chart stays the same, but then you plug in a mile or something, I don't know how… if that chart… if it would stay the same if you put a mile in, but then…
+
+307
+00:26:37.320 --> 00:26:41.409
+Alex Muntefering: you know, VO2 would be between
+
+308
+00:26:41.680 --> 00:26:44.919
+Alex Muntefering: Threshold and race pace in that context.
+
+309
+00:26:45.510 --> 00:26:46.210
+Anthoney Q., CSCS: Okay.
+
+310
+00:26:46.940 --> 00:26:53.290
+Alex Muntefering: But in this context, with race pace being associated with a 5,000 meter run,
+
+311
+00:26:55.260 --> 00:27:01.630
+Alex Muntefering: Really, the only thing in between there, where we're really starting to split hairs, but I do use it, is critical velocity.
+
+312
+00:27:01.810 --> 00:27:07.770
+Alex Muntefering: So, a touch faster than threshold would be critical velocity. A touch faster than…
+
+313
+00:27:08.710 --> 00:27:18.490
+Alex Muntefering: critical velocity would really just, I call the next pace layer 5K pace, which is already on that chart, and then a touch faster than that.
+
+314
+00:27:18.670 --> 00:27:25.359
+Alex Muntefering: Would be VO2 max work, which is more closely associated with 3,000 meter race pace.
+
+315
+00:27:25.620 --> 00:27:40.030
+Alex Muntefering: A touch faster on that, would just be, for me, I don't even term it as fast speed or sprint, I just call it more so, what the specific race pace is, so mile race pace, 800 meter race pace.
+
+316
+00:27:40.410 --> 00:27:46.469
+Alex Muntefering: For a 5,000 meter runner, barely runs 800 meter race pace stuff in practice.
+
+317
+00:27:46.730 --> 00:27:47.980
+Alex Muntefering: But sometimes.
+
+318
+00:27:48.280 --> 00:27:57.570
+Anthoney Q., CSCS: That's kind of where I was taking this, is like, if a 5,000 meter runner was to run an 800 meter run, predicted would be a 2.35.
+
+319
+00:27:59.740 --> 00:28:00.370
+Anthoney Q., CSCS: at…
+
+320
+00:28:01.310 --> 00:28:03.910
+Alex Muntefering: If a 5,000 meter runner were to… Alright.
+
+321
+00:28:03.910 --> 00:28:06.020
+Anthoney Q., CSCS: If a 5,000 meter runner…
+
+322
+00:28:07.230 --> 00:28:18.669
+Anthoney Q., CSCS: raced at the time that you stated on the 5… or PR for the 5K, that estimation for an 800 meter run would be a 240 at race pace. At that race pace.
+
+323
+00:28:19.680 --> 00:28:26.329
+Alex Muntefering: That would be her split, yeah. So, she should be running… each 800 of her 5K should be about 240.
+
+324
+00:28:26.550 --> 00:28:27.320
+Anthoney Q., CSCS: Yeah.
+
+325
+00:28:28.040 --> 00:28:35.870
+Alex Muntefering: Yeah, 16… 1640 flat is… 240 flat for an 800. 80.0 for a 400.
+
+326
+00:28:36.810 --> 00:28:48.230
+Anthoney Q., CSCS: Okay, so right now, the calculations are set up to where if she's running a 5K, her splits on the 800 would be a 240, which, in reality, her actual race pace for 800 should be faster than that.
+
+327
+00:28:49.480 --> 00:28:53.560
+Alex Muntefering: Yeah, significantly faster, probably somewhere in the two teens.
+
+328
+00:28:53.660 --> 00:28:55.579
+Alex Muntefering: 220 at slowest.
+
+329
+00:28:56.330 --> 00:28:59.029
+Alex Muntefering: Peak estimation, even though she doesn't run the 800.
+
+330
+00:29:01.240 --> 00:29:03.189
+Anthoney Q., CSCS: So then we could…
+
+331
+00:29:04.910 --> 00:29:12.770
+Alex Muntefering: Which I'm assuming isn't the scope of this chart, it's not to predict others, or do you have a different chart for that, to predict other race times?
+
+332
+00:29:12.770 --> 00:29:15.880
+Anthoney Q., CSCS: I want this to predict what
+
+333
+00:29:17.110 --> 00:29:19.419
+Anthoney Q., CSCS: they should be hitting. So I'm basing all this.
+
+334
+00:29:19.420 --> 00:29:20.489
+Alex Muntefering: and training.
+
+335
+00:29:20.640 --> 00:29:40.640
+Anthoney Q., CSCS: In training, yeah. So, like, if you run… like, if we have no data on someone, and they came to you fresh, and they're like, I ran a 5K in 30 minutes, can you train me? And you're like, I… okay, give me more information, and then I can plug it into this calculator, and based on this calculator, if you're running a 5K in 30 minutes, you should be able to run…
+
+336
+00:29:42.760 --> 00:29:46.090
+Anthoney Q., CSCS: Half of that time, faster than 15 minutes.
+
+337
+00:29:46.230 --> 00:29:52.070
+Anthoney Q., CSCS: You should be able to run, but, you know, going all the way down to 100 meter, you're probably not gonna sprint, because that's a different energy system.
+
+338
+00:29:52.740 --> 00:29:55.040
+Anthoney Q., CSCS: You're not going to sprint faster than…
+
+339
+00:29:55.640 --> 00:30:05.949
+Anthoney Q., CSCS: just how fast you are. So, within those terms, I would like to see, like, this race pace at 800 meters, which should be closer to a 2…
+
+340
+00:30:06.080 --> 00:30:10.060
+Anthoney Q., CSCS: Like, 16, or 215, or like, like you said, in the two teens.
+
+341
+00:30:10.790 --> 00:30:18.229
+Anthoney Q., CSCS: Because right now, I think for the 5K, it should show her true time.
+
+342
+00:30:18.430 --> 00:30:32.619
+Anthoney Q., CSCS: And then if we were wanting to know what her splits are for the 800, then we can break it down. I'm looking at that with Lindsey, it's easy for me to think of, because she's running a 400 meter. I can look at every 100 meter, like, if you're trying to break 60,
+
+343
+00:30:32.780 --> 00:30:46.179
+Anthoney Q., CSCS: you need to hit 15 seconds at each, like, every 100 needs to be approximately, you know, 15 seconds, on average. Then that way, it's like, oh, your first 100 was a 16, your second was a 17, and then you're making it up in the end.
+
+344
+00:30:46.330 --> 00:30:47.160
+Anthoney Q., CSCS: Cool.
+
+345
+00:30:47.460 --> 00:30:56.759
+Anthoney Q., CSCS: But, like, we… we need to resolve, like, what's going on here. Like, where can you push harder? Can you push harder at the beginning to lower those numbers, or in the middle? Yeah. You know, so…
+
+346
+00:30:57.370 --> 00:31:02.100
+Anthoney Q., CSCS: I think… the average point would be, like, if we're looking at Lindsey's chart.
+
+347
+00:31:02.400 --> 00:31:09.130
+Anthoney Q., CSCS: unless, say, they're running… she's running a 5K, and we're looking at this 800 meter section, then, like, yeah, I want to see what that number should look like.
+
+348
+00:31:09.780 --> 00:31:17.109
+Anthoney Q., CSCS: not at 800 meter splits, but what she would run an 800 meter in with a 5K time. So I want this to be a little more predictive.
+
+349
+00:31:17.640 --> 00:31:20.330
+Anthoney Q., CSCS: Or breaking the splits down.
+
+350
+00:31:24.970 --> 00:31:26.369
+Anthoney Q., CSCS: I also have, like.
+
+351
+00:31:27.420 --> 00:31:36.199
+Anthoney Q., CSCS: For additional stuff up here, like, we can go to conservative, so we can shift everything 5% less, or more aggressive, and shift everything, you know, 3% more.
+
+352
+00:31:36.750 --> 00:31:41.810
+Anthoney Q., CSCS: Keeping everything standard. New runners, right? Everything's just gonna be, like, if she had…
+
+353
+00:31:42.400 --> 00:31:50.469
+Anthoney Q., CSCS: If she was younger than 16 and had less than 2 years of experience, it's gonna automatically select conservative for her, because she doesn't have enough training experience.
+
+354
+00:31:50.470 --> 00:31:51.010
+Alex Muntefering: too.
+
+355
+00:31:51.330 --> 00:31:55.210
+Anthoney Q., CSCS: I keep it at standard, I don't want to put aggressive in there for anyone.
+
+356
+00:31:55.420 --> 00:31:57.120
+Anthoney Q., CSCS: Because that's, like, a coaching call.
+
+357
+00:31:57.520 --> 00:32:02.560
+Anthoney Q., CSCS: I don't want to push anyone beyond, and like, oh, I want to do more aggressive stuff. Okay, well, here's your numbers.
+
+358
+00:32:02.830 --> 00:32:03.280
+Alex Muntefering: Yep.
+
+359
+00:32:06.540 --> 00:32:13.279
+Alex Muntefering: Yeah, I think that's smart. I categorize pretty much everybody on the team based on how they respond to trainings.
+
+360
+00:32:13.450 --> 00:32:18.720
+Alex Muntefering: Generally, in those three categories, are they pretty much right on what the calculator would say that they can run?
+
+361
+00:32:19.070 --> 00:32:30.910
+Alex Muntefering: Do they not respond to that, but respond to slightly easier? Or then I have a select few where it's just like, wow, I just keep pushing them harder than the calculator says they should, and they just keep getting better.
+
+362
+00:32:30.910 --> 00:32:31.610
+Anthoney Q., CSCS: That's awesome.
+
+363
+00:32:31.610 --> 00:32:39.590
+Alex Muntefering: Yeah, most people are standard, but a few… yeah, there's a few outliers in one direction or the other. So that's pretty smart to do that.
+
+364
+00:32:41.150 --> 00:32:42.790
+Anthoney Q., CSCS: Let's see…
+
+365
+00:32:48.860 --> 00:32:50.439
+Anthoney Q., CSCS: Good, just rolling around.
+
+366
+00:32:50.880 --> 00:32:55.610
+Anthoney Q., CSCS: Okay, so… That's kind of the calculation part.
+
+367
+00:32:56.410 --> 00:33:01.710
+Anthoney Q., CSCS: I'm gonna start… is there any other studies you would recommend looking into? Or just looking at overall, like.
+
+368
+00:33:04.320 --> 00:33:09.940
+Anthoney Q., CSCS: Strategies of pacing and percentages and… Or
+
+369
+00:33:10.280 --> 00:33:14.480
+Anthoney Q., CSCS: Yeah, list any things that you can think of other… outside that… the study you already mentioned.
+
+370
+00:33:16.760 --> 00:33:17.840
+Anthoney Q., CSCS: If you can think of any.
+
+371
+00:33:19.120 --> 00:33:22.500
+Alex Muntefering: No, not in particular. I mean, mostly I've…
+
+372
+00:33:22.830 --> 00:33:30.119
+Alex Muntefering: In terms of trying to get precise with workout paces for somebody, I've…
+
+373
+00:33:30.270 --> 00:33:33.920
+Alex Muntefering: I've largely done what Lindsey's done. I mean, he's a
+
+374
+00:33:34.180 --> 00:33:46.349
+Alex Muntefering: I… in the past, I used a lot of Tim Mann's calculator, just like the interface on the internet, but… I mean, I use a lot of the Daniels calculator, and then…
+
+375
+00:33:46.950 --> 00:33:52.670
+Alex Muntefering: There was one more…
+
+376
+00:33:57.480 --> 00:33:58.780
+Alex Muntefering: Alright, one more thought.
+
+377
+00:34:01.780 --> 00:34:11.259
+Alex Muntefering: But, anyways, yeah. I… in terms of studies, no, not necessarily. Maurice Bakins, I don't know that his… I'm not necessarily…
+
+378
+00:34:11.409 --> 00:34:17.590
+Alex Muntefering: Referencing a published study. Maybe he has published some studies, but… His was…
+
+379
+00:34:17.830 --> 00:34:22.479
+Alex Muntefering: He first experimented with what he termed the Norwegian threshold model.
+
+380
+00:34:22.739 --> 00:34:29.180
+Alex Muntefering: He experimented with it on himself, and then that has since absolutely erupted, and it's…
+
+381
+00:34:29.780 --> 00:34:42.019
+Alex Muntefering: It's taken over, collegiate and professional running, like, the style of coaching and collegiate and professional running, over the last 5 years.
+
+382
+00:34:42.250 --> 00:34:45.510
+Alex Muntefering: So if you look up a guy named Jakob Ingebrigtsen, who…
+
+383
+00:34:45.810 --> 00:34:51.470
+Alex Muntefering: Is probably one of the most famous middle distance runners over the last decade.
+
+384
+00:34:52.179 --> 00:34:59.729
+Alex Muntefering: he was trained under that model. He's a Norwegian guy, but, not trained by Bakken, but,
+
+385
+00:35:00.010 --> 00:35:06.570
+Alex Muntefering: trained under that system. And now, I mean, it's… Pretty…
+
+386
+00:35:06.740 --> 00:35:17.200
+Alex Muntefering: pretty pervasive in college coaching as well, to use that model. Now, it's not, like, they don't have, like, necessarily a chart. They utilize blood lactate
+
+387
+00:35:17.460 --> 00:35:25.920
+Alex Muntefering: readings. And… they'll, determine what pace they need to run based on…
+
+388
+00:35:26.330 --> 00:35:44.520
+Alex Muntefering: what their blood lactate reader is spitting out for numbers after, you know, doing maybe 4 tests throughout an entire workout. And in the morning, they generally shoot for a lower blood lactate reading, closer to, like, 2.0. So if they're doing, say, those cruise intervals or tempo repeats, you know, 5 by mile.
+
+389
+00:35:44.670 --> 00:35:50.720
+Alex Muntefering: They're probably shooting more for, like, a 2.0 blood lactate reading in the afternoon, they'll push it up a little bit higher.
+
+390
+00:35:50.950 --> 00:36:04.330
+Alex Muntefering: Marius Bakken would, you know, you can look up, he's got free papers on this. He also just published a book on it as well, on Amazon, that I'm probably gonna get and try and read this summer, but he gives more reasoning.
+
+391
+00:36:04.820 --> 00:36:06.970
+Alex Muntefering: Mmm… look at this.
+
+392
+00:36:11.580 --> 00:36:12.430
+Alex Muntefering: Inc.
+
+393
+00:36:13.720 --> 00:36:14.390
+Alex Muntefering: Thanks.
+
+394
+00:36:18.190 --> 00:36:25.270
+Alex Muntefering: called the Norwegian Method Applied, Threshold Training and Intensity Control for Faster, More Durable running at every level.
+
+395
+00:36:25.390 --> 00:36:27.659
+Alex Muntefering: by Marius Bakken and Steve Magnus.
+
+396
+00:36:28.330 --> 00:36:30.130
+Anthoney Q., CSCS: Hmm, good ol' Steve Magnus.
+
+397
+00:36:33.310 --> 00:36:34.330
+Anthoney Q., CSCS: Good book.
+
+398
+00:36:34.330 --> 00:36:36.890
+Alex Muntefering: I guess the forward is by Steve Magnus, but…
+
+399
+00:36:36.890 --> 00:36:37.940
+Anthoney Q., CSCS: the…
+
+400
+00:36:41.060 --> 00:36:43.460
+Anthoney Q., CSCS: Load that real quick.
+
+401
+00:36:49.260 --> 00:37:01.240
+Anthoney Q., CSCS: The idea that I would eventually get with with this would be, like, if you have a bunch of data on an athlete, like, you have blood lactate levels at whatever, if you have VO2 max testing at whatever, then we could drop
+
+402
+00:37:01.520 --> 00:37:04.200
+Anthoney Q., CSCS: Your whole athlete into a drag-and-drop file?
+
+403
+00:37:04.740 --> 00:37:14.280
+Anthoney Q., CSCS: you know, whether it's Excel spreadsheet, PDF, whatever, drop a file in, have this analyze everything, and then put it all into these charts for you, so you can see what
+
+404
+00:37:15.400 --> 00:37:17.170
+Anthoney Q., CSCS: pre-season, what…
+
+405
+00:37:17.340 --> 00:37:29.669
+Anthoney Q., CSCS: season looks like, what postseason, what off-season, like, what all the different seasons should look like, theoretically, with predictions based on looking at not just studies, because I wanted to look at studies, because that's like a…
+
+406
+00:37:29.740 --> 00:37:43.200
+Anthoney Q., CSCS: controlled environment, but also, people aren't in controlled environments, so now we have to look at what are actual athletes doing. So, then a lot of the studies right now have 5,000, not in this version yet, that's working in the background.
+
+407
+00:37:48.210 --> 00:37:49.560
+Anthoney Q., CSCS: Yeah, it's still working.
+
+408
+00:37:49.700 --> 00:37:51.230
+Anthoney Q., CSCS: Still working in the background.
+
+409
+00:37:51.540 --> 00:37:52.650
+Anthoney Q., CSCS: So…
+
+410
+00:37:57.120 --> 00:38:01.249
+Anthoney Q., CSCS: You drag and drop all of that in, whether it's…
+
+411
+00:38:02.250 --> 00:38:07.030
+Anthoney Q., CSCS: one 5K, or it's… you have 5 years of data on the person.
+
+412
+00:38:07.830 --> 00:38:13.459
+Anthoney Q., CSCS: You get a better trendline of seeing where their potential is.
+
+413
+00:38:14.190 --> 00:38:19.950
+Anthoney Q., CSCS: And any notes you want to put in, then take all of that into account, like, oh, you know, from…
+
+414
+00:38:20.180 --> 00:38:21.520
+Anthoney Q., CSCS: 7th grade…
+
+415
+00:38:21.650 --> 00:38:29.269
+Anthoney Q., CSCS: to 10th grade, they were on a steady incline, and then something happened where they were slower in 11th grade.
+
+416
+00:38:29.560 --> 00:38:36.910
+Anthoney Q., CSCS: And then they got faster, like, they're… they continued that trend of going up, and then you look back, and they're like, oh, there's an injury there.
+
+417
+00:38:37.060 --> 00:38:38.550
+Anthoney Q., CSCS: So they didn't get to run.
+
+418
+00:38:38.750 --> 00:38:41.040
+Anthoney Q., CSCS: Or something happened, right?
+
+419
+00:38:42.050 --> 00:38:50.699
+Anthoney Q., CSCS: But then it… it kind of gets to the asymptote of human potential. Like, you can never… you're never gonna reach… like, your 100% is always gonna be your 100%, and that's…
+
+420
+00:38:52.230 --> 00:38:56.059
+Anthoney Q., CSCS: Like, until your age dictates, like, you can't do this anymore.
+
+421
+00:38:56.270 --> 00:38:59.479
+Anthoney Q., CSCS: Yeah. Human physiology just capped out at a certain potential.
+
+422
+00:38:59.710 --> 00:39:06.730
+Anthoney Q., CSCS: So, that's kind of the goal of the calculator eventually. Could I… I'm working with a…
+
+423
+00:39:06.930 --> 00:39:10.119
+Anthoney Q., CSCS: gym in Austin that does VO2 max testing.
+
+424
+00:39:10.760 --> 00:39:14.429
+Anthoney Q., CSCS: he's super excited about it. I'm just not…
+
+425
+00:39:14.810 --> 00:39:16.409
+Anthoney Q., CSCS: I think it's cool to see.
+
+426
+00:39:16.880 --> 00:39:23.249
+Anthoney Q., CSCS: But I don't think it's that exciting because it's… there's so much variation. When I was in college and running the Exercise Phys Lab.
+
+427
+00:39:23.380 --> 00:39:30.270
+Anthoney Q., CSCS: Saw a guy run… Like a 75?
+
+428
+00:39:30.860 --> 00:39:35.690
+Anthoney Q., CSCS: What's the score? And another guy that ran…
+
+429
+00:39:36.250 --> 00:39:41.549
+Anthoney Q., CSCS: on the cross-country team ran a 72. The guy who ran a 72.
+
+430
+00:39:41.780 --> 00:39:43.140
+Alex Muntefering: That was their VO2 max?
+
+431
+00:39:43.140 --> 00:39:43.460
+Anthoney Q., CSCS: Yeah.
+
+432
+00:39:43.460 --> 00:39:44.130
+Alex Muntefering: You're saying?
+
+433
+00:39:44.130 --> 00:39:44.730
+Anthoney Q., CSCS: Yeah.
+
+434
+00:39:45.000 --> 00:39:49.970
+Anthoney Q., CSCS: the 72… score… Was the better runner.
+
+435
+00:39:51.510 --> 00:39:57.690
+Anthoney Q., CSCS: Which is, you know, it's like, well, shouldn't a higher scorer be better, and it's like… Not necessarily.
+
+436
+00:39:58.280 --> 00:40:00.899
+Alex Muntefering: Right, yeah, it's generally been accepted that,
+
+437
+00:40:01.580 --> 00:40:06.999
+Alex Muntefering: VO2 maxes don't predict, race, like, order of finish.
+
+438
+00:40:07.260 --> 00:40:07.920
+Anthoney Q., CSCS: Yeah.
+
+439
+00:40:08.070 --> 00:40:21.769
+Anthoney Q., CSCS: So that's where, like, looking at blood lactate, we can see, like, are we pushing that curve to the right? Like, that's what we're ultimately trying to do. If you can resist or sustain at a higher lactate threshold, and push that curve to the right more, then we can…
+
+440
+00:40:22.470 --> 00:40:26.340
+Anthoney Q., CSCS: be in that more suckfest of a zone, right?
+
+441
+00:40:26.590 --> 00:40:31.610
+Anthoney Q., CSCS: Our suckfest is less than someone else's at the same percentage, because we're pushing the curve to the right.
+
+442
+00:40:32.770 --> 00:40:38.340
+Anthoney Q., CSCS: So then I was like, why… I don't know, I haven't looked into it yet, and I just remembered that I should have.
+
+443
+00:40:38.660 --> 00:40:40.460
+Anthoney Q., CSCS: I wonder why they haven't done…
+
+444
+00:40:41.410 --> 00:40:43.700
+Anthoney Q., CSCS: Cause there's a monitor coming out through…
+
+445
+00:40:44.020 --> 00:40:47.449
+Anthoney Q., CSCS: One of the blood glucose monitors companies, where they're doing…
+
+446
+00:40:47.450 --> 00:40:49.170
+Alex Muntefering: continuous lactate.
+
+447
+00:40:49.170 --> 00:40:50.250
+Anthoney Q., CSCS: Yeah.
+
+448
+00:40:50.250 --> 00:40:52.569
+Alex Muntefering: Yeah, I've been waiting for something like that to come out.
+
+449
+00:40:52.570 --> 00:40:55.560
+Anthoney Q., CSCS: It was supposed to come out… this…
+
+450
+00:40:56.100 --> 00:41:09.360
+Anthoney Q., CSCS: this year, whatever that means. FDA approval and whatnot. But something like that would be cool, because then you can see where it, like… because normal blood lactate is you take the test before, so you can find baseline, and then…
+
+451
+00:41:09.700 --> 00:41:15.660
+Anthoney Q., CSCS: basically jump off bike or whatever you're doing, test it again and see what's going on. And it's like…
+
+452
+00:41:15.660 --> 00:41:16.469
+Alex Muntefering: and Anthony.
+
+453
+00:41:16.470 --> 00:41:16.940
+Anthoney Q., CSCS: Yep.
+
+454
+00:41:16.940 --> 00:41:17.640
+Alex Muntefering: One second.
+
+455
+00:41:17.810 --> 00:41:18.910
+Alex Muntefering: What'd you say?
+
+456
+00:41:20.470 --> 00:41:21.510
+Alex Muntefering: Oh, nice.
+
+457
+00:41:21.760 --> 00:41:23.249
+Alex Muntefering: Sweet, thank you.
+
+458
+00:41:24.500 --> 00:41:25.840
+Alex Muntefering: Alright, you're good, Anthony.
+
+459
+00:41:26.360 --> 00:41:32.989
+Anthoney Q., CSCS: Okay. So the blood lactate is just, like, it's so limited, because you're only pulling one, you know.
+
+460
+00:41:33.620 --> 00:41:42.629
+Anthoney Q., CSCS: a baseline and then another time. Yeah. And then I guess the 5 minutes after to see where baseline is later, or that's how we did it in lab. So…
+
+461
+00:41:44.170 --> 00:41:47.410
+Anthoney Q., CSCS: Because you're not going to pull someone off the bike in the middle of.
+
+462
+00:41:47.410 --> 00:41:48.160
+Alex Muntefering: Right.
+
+463
+00:41:48.160 --> 00:41:49.580
+Anthoney Q., CSCS: Right? So…
+
+464
+00:41:49.580 --> 00:42:05.709
+Alex Muntefering: Yeah, and it's also just, like, why… like, why I haven't dove into it more is because it's like $2 a test strip. So, if we're testing… let's say we're testing everyone on the team in a workout, and we're trying to get, say, 3 or 4 tests.
+
+465
+00:42:05.710 --> 00:42:18.840
+Alex Muntefering: Assuming that every single one is successful, which is hard, like, I've done it with athletes before, and it's like, goll, like, you're… you've got 60 seconds of rest, gotta get over the table, you gotta get your finger cleaned off, you gotta get…
+
+466
+00:42:18.920 --> 00:42:26.869
+Alex Muntefering: you know, the poke and all that stuff right, and enough blood to come out. It's like, geez, it is brutal. And then it's $2 a strip.
+
+467
+00:42:27.120 --> 00:42:27.750
+Anthoney Q., CSCS: Yo.
+
+468
+00:42:27.750 --> 00:42:37.040
+Alex Muntefering: So, you're talking $8 a person per workout, and, you know, for testing, say, 20 athletes, all of a sudden, that's…
+
+469
+00:42:37.300 --> 00:42:41.670
+Alex Muntefering: About 160 bucks a workout, like, that's… you can't do that. That's crazy!
+
+470
+00:42:41.960 --> 00:42:42.550
+Anthoney Q., CSCS: Yep.
+
+471
+00:42:42.990 --> 00:42:44.379
+Anthoney Q., CSCS: That's where I think…
+
+472
+00:42:44.980 --> 00:42:53.669
+Anthoney Q., CSCS: I mean, I think if we're gonna do something, if we're gonna do a VO2 max test, we might as well do blood lactate while we're there, and correlate them together, because then.
+
+473
+00:42:54.040 --> 00:42:55.380
+Anthoney Q., CSCS: That's gonna give us more data.
+
+474
+00:42:56.180 --> 00:43:00.769
+Anthoney Q., CSCS: And that's what I was trying to tell the guy, I'm like, I think we should do both. Get blood lactate baseline.
+
+475
+00:43:00.770 --> 00:43:01.490
+Alex Muntefering: True.
+
+476
+00:43:01.490 --> 00:43:13.889
+Anthoney Q., CSCS: right after, because they're already hooked up to the VO2Maccess, pull them off, prick finger, and then do the 5 or 10 minute, whatever the protocol is, I forgot, it's been a while, and then find, like, where they are post.
+
+477
+00:43:14.660 --> 00:43:18.330
+Anthoney Q., CSCS: Then, you're getting all the data to, like, actually do something with.
+
+478
+00:43:18.800 --> 00:43:19.310
+Alex Muntefering: Yep.
+
+479
+00:43:19.310 --> 00:43:30.709
+Anthoney Q., CSCS: But yeah, that's kind of the goal. The basic calculator is, let's give as much data as we can, base that on science, and base that on… I have 5,000 athletes in here, I have…
+
+480
+00:43:32.000 --> 00:43:38.040
+Anthoney Q., CSCS: 2,000 athletes… or sorry, 3,000 athletes from high school, or… from UIL?
+
+481
+00:43:39.060 --> 00:43:42.070
+Anthoney Q., CSCS: 7th grade to 12th grade in the United States.
+
+482
+00:43:42.340 --> 00:43:48.129
+Anthoney Q., CSCS: I have… data from Texas, specifically UIL?
+
+483
+00:43:48.580 --> 00:43:51.209
+Anthoney Q., CSCS: And then I have… I'm working on college right now.
+
+484
+00:43:51.400 --> 00:44:01.350
+Anthoney Q., CSCS: and masters, so that's what's running in the background. I'm just scraping data from all… aspects from 2020… 3?
+
+485
+00:44:01.490 --> 00:44:19.630
+Anthoney Q., CSCS: to now. So we can get all PRs and what people have done and how they've performed, so that way we can say, based on what actual people have done and how they have actually improved, we can't control how the coach coached them. Maybe they're doing high mileage, maybe they're doing speed-style work. Like, we can't determine that.
+
+486
+00:44:19.850 --> 00:44:26.140
+Anthoney Q., CSCS: But now we have, like, a bigger picture of what people are doing, and we have a picture of what science is saying that they're doing.
+
+487
+00:44:26.390 --> 00:44:26.990
+Alex Muntefering: Yeah.
+
+488
+00:44:27.180 --> 00:44:28.810
+Anthoney Q., CSCS: Okay, so…
+
+489
+00:44:29.070 --> 00:44:35.610
+Alex Muntefering: Are you scraping for college, are you scraping off of, TFERS.org, T-F-R-R-S dot org?
+
+490
+00:44:36.210 --> 00:44:37.439
+Anthoney Q., CSCS: Let me see…
+
+491
+00:44:37.440 --> 00:44:44.789
+Alex Muntefering: That would be the, that's the data… the results database for college. Yeah.
+
+492
+00:44:44.790 --> 00:44:45.849
+Anthoney Q., CSCS: from TF.
+
+493
+00:44:45.850 --> 00:44:46.360
+Alex Muntefering: Perfect.
+
+494
+00:44:46.360 --> 00:44:47.240
+Anthoney Q., CSCS: RRS?
+
+495
+00:44:47.480 --> 00:44:57.270
+Alex Muntefering: Yes, yep, that's the… that's the… yeah, that has all races, or has to, like, for any race to be valid for college, it has to be published to that website, so that would have everything.
+
+496
+00:44:57.910 --> 00:44:59.059
+Anthoney Q., CSCS: I put all mine…
+
+497
+00:44:59.410 --> 00:45:02.969
+Anthoney Q., CSCS: stuff in here, so like I said, this is kind of outdated. Like, this one only has…
+
+498
+00:45:03.710 --> 00:45:07.280
+Anthoney Q., CSCS: 1,300 results for high school.
+
+499
+00:45:07.850 --> 00:45:13.529
+Anthoney Q., CSCS: 284 results for college, Division I, track and field, and then USA Masters.
+
+500
+00:45:14.670 --> 00:45:19.930
+Anthoney Q., CSCS: Okay, so, coaching tools… We're kind of looking at…
+
+501
+00:45:20.050 --> 00:45:24.899
+Anthoney Q., CSCS: what that type of person is, like, are they anaerobic or aerobic, right? Clearly.
+
+502
+00:45:25.150 --> 00:45:27.240
+Anthoney Q., CSCS: This athlete's gonna be anaerobic?
+
+503
+00:45:27.380 --> 00:45:30.810
+Anthoney Q., CSCS: I mean, I'm sorry, aerobic, and not anaerobic.
+
+504
+00:45:31.350 --> 00:45:34.210
+Anthoney Q., CSCS: And then I wanted to show you this, so…
+
+505
+00:45:35.720 --> 00:45:37.760
+Anthoney Q., CSCS: This is something I thought would be interesting.
+
+506
+00:45:38.740 --> 00:45:46.399
+Anthoney Q., CSCS: Looking at events, and then taking times of events, her 5K time.
+
+507
+00:45:48.000 --> 00:45:53.839
+Anthoney Q., CSCS: It's our primary event, and this needs more data to be plugged in to really find, like, what's going on.
+
+508
+00:45:53.960 --> 00:45:56.259
+Anthoney Q., CSCS: But anything above the line is…
+
+509
+00:45:56.370 --> 00:46:00.219
+Anthoney Q., CSCS: A better fit for her potential…
+
+510
+00:46:01.020 --> 00:46:01.610
+Alex Muntefering: Right.
+
+511
+00:46:01.610 --> 00:46:13.230
+Anthoney Q., CSCS: forecasting, right? So… 453 mile, or 1600, would be… A stronger competitive advantage.
+
+512
+00:46:13.790 --> 00:46:15.420
+Anthoney Q., CSCS: than a 5K at that…
+
+513
+00:46:15.740 --> 00:46:25.279
+Anthoney Q., CSCS: potential without having any other data on it, right? So the more data you have, the more accurate this becomes, the more data you have on what's competitive, the more accurate this becomes, too.
+
+514
+00:46:25.730 --> 00:46:26.450
+Alex Muntefering: Sure, yeah.
+
+515
+00:46:26.450 --> 00:46:34.079
+Anthoney Q., CSCS: But right now, maybe a 453 for a mile, or 1600, whatever you… whatever one we put in. Maybe that's not competitive.
+
+516
+00:46:34.630 --> 00:46:35.250
+Alex Muntefering: Right.
+
+517
+00:46:35.250 --> 00:46:35.690
+Anthoney Q., CSCS: So.
+
+518
+00:46:35.690 --> 00:46:36.480
+Alex Muntefering: Yeah. It's like.
+
+519
+00:46:36.650 --> 00:46:41.810
+Anthoney Q., CSCS: Well, that curve looks cool, but it's not competitive, so really this orange line needs to be higher
+
+520
+00:46:41.920 --> 00:46:47.540
+Anthoney Q., CSCS: And show that she's below that, like, this should be below, like, the line should be more… Yeah.
+
+521
+00:46:47.760 --> 00:46:52.749
+Alex Muntefering: Yeah, and competitive is relative to who you're competing against, so…
+
+522
+00:46:52.960 --> 00:47:00.450
+Alex Muntefering: Primarily in a college setting, you know, we're competing against, first and foremost, those in our conference.
+
+523
+00:47:00.620 --> 00:47:02.920
+Alex Muntefering: So for us, the Summit League.
+
+524
+00:47:03.480 --> 00:47:18.250
+Alex Muntefering: you know, the Texas State competing in the Sun Belt, and so, you know, maybe they're stronger in the 800 versus the mile, or, you know, maybe we're stronger in the 5K versus the mile. Our conference, for her primary events, the 5K, because…
+
+525
+00:47:18.510 --> 00:47:27.630
+Alex Muntefering: It's, you know, she scores well in that event within the conference, versus her mile time. She was ranked much worse.
+
+526
+00:47:27.840 --> 00:47:28.510
+Anthoney Q., CSCS: Damn.
+
+527
+00:47:28.710 --> 00:47:31.550
+Anthoney Q., CSCS: So that's where something, like, eventually I would like to…
+
+528
+00:47:32.170 --> 00:47:42.320
+Anthoney Q., CSCS: have this prediction performance curve based on, like, that type of data. Like, you pull in what conference are they in, what, like, give me all the information of the athlete, and then it pulls all of this and starts interpreting
+
+529
+00:47:42.880 --> 00:47:49.719
+Anthoney Q., CSCS: where things are. So then you as a coach, you look at this line, and you're like, that's incorrect. I want it to be like, you look at this line, you're like.
+
+530
+00:47:50.620 --> 00:47:53.919
+Anthoney Q., CSCS: This 453 should be below the line.
+
+531
+00:47:54.100 --> 00:47:59.510
+Anthoney Q., CSCS: for your conference. Maybe if she went somewhere else, and like, yeah, it is above, and maybe you need to consider, like.
+
+532
+00:47:59.790 --> 00:48:09.569
+Anthoney Q., CSCS: you have other athletes, or maybe you just don't have enough athletes, where, like, her 643 is good enough for a 5K that she's just gonna blow everyone else out of the water that I don't want her running in the 1600.
+
+533
+00:48:10.720 --> 00:48:18.819
+Anthoney Q., CSCS: But then also, we can look at the psychological state of, like, a high school kid or a junior high kid. They're running a 5K, you know, they're doing cross-country.
+
+534
+00:48:19.100 --> 00:48:27.859
+Anthoney Q., CSCS: And then they're doing the 1600 and 800. And they're dominating in the 800, but their distance coach wants them to keep doing the 5K.
+
+535
+00:48:28.160 --> 00:48:34.610
+Anthoney Q., CSCS: because they're a long-distance coach, and they're like, oh, let's do more 5K stuff, because I like that. Not because you're…
+
+536
+00:48:35.380 --> 00:48:37.239
+Anthoney Q., CSCS: Doing better in something else.
+
+537
+00:48:37.540 --> 00:48:38.170
+Alex Muntefering: Yep.
+
+538
+00:48:38.480 --> 00:48:41.079
+Anthoney Q., CSCS: So I see that a lot with high school coaches, specifically.
+
+539
+00:48:41.730 --> 00:48:47.859
+Anthoney Q., CSCS: there's a lot of, like, I am this type of person, so I want to train everyone to this standard because I understand it more, etc.
+
+540
+00:48:47.860 --> 00:48:49.020
+Alex Muntefering: Alright, yep.
+
+541
+00:48:49.020 --> 00:48:53.930
+Anthoney Q., CSCS: So, that's kind of where this comes in. Less so for college, because you're recruiting people for what you want.
+
+542
+00:48:54.170 --> 00:48:56.029
+Anthoney Q., CSCS: And then, secondly.
+
+543
+00:48:56.200 --> 00:49:12.019
+Anthoney Q., CSCS: I would want to make this, because, like, whenever you recruit people, you have to go through all the data yourself, right? Like, you have to figure out who's running what. I want this to scrape all the data at, like, live, so then if you're trying to look for people, you can find the best fit for where you need, as a college coach.
+
+544
+00:49:12.760 --> 00:49:14.090
+Anthoney Q., CSCS: Who to look into.
+
+545
+00:49:14.420 --> 00:49:14.940
+Alex Muntefering: Yep.
+
+546
+00:49:14.940 --> 00:49:19.539
+Anthoney Q., CSCS: Did you only have so many people on your team, or since you can only have so many people on your team now.
+
+547
+00:49:20.200 --> 00:49:25.070
+Anthoney Q., CSCS: Maybe there's, like, 20 people… Or 50 people that have
+
+548
+00:49:25.280 --> 00:49:31.529
+Anthoney Q., CSCS: Within a boundary of 5% of a number that you're trying to reach, 5% plus or minus.
+
+549
+00:49:31.530 --> 00:49:32.030
+Alex Muntefering: Yeah.
+
+550
+00:49:32.030 --> 00:49:36.020
+Anthoney Q., CSCS: Then you say, let's go talk to these 50 people instead of having to research it all on your own.
+
+551
+00:49:36.560 --> 00:49:37.210
+Alex Muntefering: Right.
+
+552
+00:49:37.580 --> 00:49:38.270
+Alex Muntefering: Yep.
+
+553
+00:49:38.490 --> 00:49:46.810
+Anthoney Q., CSCS: Race forecast, kind of the concept here would be, if we're being conservative, how much increase should we see
+
+554
+00:49:47.080 --> 00:49:56.069
+Anthoney Q., CSCS: 4-year athlete. For a 5K, if we did it conservatively, that's .5%, so in 3 months, she should be able to hit a 1641.
+
+555
+00:49:59.050 --> 00:50:04.970
+Anthoney Q., CSCS: In a year, she should be able to hit a 1638. I don't know how realistic these numbers are.
+
+556
+00:50:06.580 --> 00:50:16.740
+Anthoney Q., CSCS: Because, like, we just need more data, and so if we could see a trajectory of what she's done in the past, up until this point, then that might change, like.
+
+557
+00:50:17.280 --> 00:50:20.930
+Anthoney Q., CSCS: Annual percentage is, like, maybe a .1%.
+
+558
+00:50:21.100 --> 00:50:32.670
+Anthoney Q., CSCS: Right? Like, maybe in a year, instead of her running a 1240, whatever you said, maybe she runs, like, closer to a 1239 in 12 months.
+
+559
+00:50:33.640 --> 00:50:40.179
+Anthoney Q., CSCS: So… That's kind of the forecasting, and then looking at…
+
+560
+00:50:41.810 --> 00:50:54.349
+Anthoney Q., CSCS: limitations of, like, where, like, what elevation is she running at? At what race, at what temperature? Do we see a trend in… whenever she runs in humid environments, for some reason, she just does better than other people.
+
+561
+00:50:54.830 --> 00:50:55.719
+Alex Muntefering: Right. Like…
+
+562
+00:50:55.720 --> 00:51:03.519
+Anthoney Q., CSCS: That seems very strange, like, the air feels heavier and thicker, and it feels awful, but it's like, yeah, this athlete just does better in that situation.
+
+563
+00:51:03.970 --> 00:51:13.219
+Anthoney Q., CSCS: Yeah. Whereas some people, like… like, everyone's gonna be affected by altitude. Like, if you go from zero, and you train in zero all the time, and you never go up to altitude…
+
+564
+00:51:13.450 --> 00:51:16.869
+Anthoney Q., CSCS: you go to altitude, like, you are going to have a performance drop. Like.
+
+565
+00:51:18.070 --> 00:51:24.819
+Anthoney Q., CSCS: Whereas other things like altitude and temperature and humidity, that's gonna affect different people differently, so then you can start seeing some trends that way.
+
+566
+00:51:27.820 --> 00:51:42.879
+Anthoney Q., CSCS: And then, yeah, you get an event profile for each of the athletes to see, like, where they are, how things are weighted, what's going on here, what's their… what kind of training model is she working in? Like, critical velocities heavily influenced in this framework.
+
+567
+00:51:43.290 --> 00:51:48.690
+Anthoney Q., CSCS: aerobic endurance, heavily influenced, like, she's not doing a bunch of sprint stuff and strength impact stuff, right?
+
+568
+00:51:49.110 --> 00:51:49.680
+Alex Muntefering: Yep.
+
+569
+00:51:49.680 --> 00:51:50.510
+Anthoney Q., CSCS: So…
+
+570
+00:51:50.860 --> 00:52:01.119
+Anthoney Q., CSCS: I guess, and then just sources, that's the last page, basically. Everything that I find, every study that I put into here, every concept is broken down into…
+
+571
+00:52:01.580 --> 00:52:04.479
+Anthoney Q., CSCS: If you want to critique what we're doing here.
+
+572
+00:52:04.660 --> 00:52:09.919
+Anthoney Q., CSCS: read all the studies first, and then start critiquing me, and show me how I'm wrong so I can improve it.
+
+573
+00:52:10.680 --> 00:52:11.820
+Alex Muntefering: Sounds good.
+
+574
+00:52:11.820 --> 00:52:15.399
+Anthoney Q., CSCS: I guess… My last question to you, because you look busy.
+
+575
+00:52:15.710 --> 00:52:19.099
+Anthoney Q., CSCS: And I've already kept you for 52… 52 minutes.
+
+576
+00:52:19.100 --> 00:52:21.140
+Alex Muntefering: Oh, you're good. I just got a meeting at 1.
+
+577
+00:52:21.860 --> 00:52:25.700
+Anthoney Q., CSCS: How would you… Would you use a calculator?
+
+578
+00:52:26.140 --> 00:52:27.800
+Anthoney Q., CSCS: like this.
+
+579
+00:52:28.180 --> 00:52:33.050
+Anthoney Q., CSCS: Would you change from using the calculators that you're currently using, and if so.
+
+580
+00:52:34.060 --> 00:52:36.440
+Anthoney Q., CSCS: What would you look for in something like this?
+
+581
+00:52:36.610 --> 00:52:40.650
+Anthoney Q., CSCS: That no other calculator is doing for you, or…
+
+582
+00:52:43.120 --> 00:52:49.689
+Anthoney Q., CSCS: Like, yeah, what would make you switch calculators, or what would you want in a calculator that… that you don't see?
+
+583
+00:52:50.880 --> 00:52:59.550
+Alex Muntefering: So, right now, I use, like, I think it's just B.02.whatever it is, so the Jack Daniels online version.
+
+584
+00:52:59.780 --> 00:53:01.349
+Alex Muntefering: It's very limited.
+
+585
+00:53:01.710 --> 00:53:12.410
+Alex Muntefering: And so it just doesn't have as widespread of, like, a graph, or not a graph, a chart, with, like, all the different rep paces, so it just takes a little extra work calculating in my head.
+
+586
+00:53:12.740 --> 00:53:15.940
+Alex Muntefering: So that would be nice. The Tin Man calculator was…
+
+587
+00:53:16.100 --> 00:53:23.120
+Alex Muntefering: way more in-depth, and, you know, like, Lindsay Experience started charging for it, and I'm not gonna pay for that, because I can just figure it out myself.
+
+588
+00:53:23.300 --> 00:53:29.220
+Alex Muntefering: So, first and foremost, that would make it just easier, just to have…
+
+589
+00:53:29.370 --> 00:53:31.700
+Alex Muntefering: all of those different pace zones.
+
+590
+00:53:31.870 --> 00:53:38.389
+Alex Muntefering: With a wide range of, you know, okay, here's threshold, pays for this
+
+591
+00:53:38.900 --> 00:53:47.409
+Alex Muntefering: type of person with these times. What I like that this is gonna start incorporating that would be different than, say, the VO2
+
+592
+00:53:47.520 --> 00:53:57.990
+Alex Muntefering: or sorry, the Jack Daniels calculator, or the Timad calculator, is that you're collecting more data points. So, that's a… that's a,
+
+593
+00:53:58.010 --> 00:54:09.020
+Alex Muntefering: I guess, shortcoming of the… or, you know, a downside to the Jack Daniels calculator, or the Tim Man calculator, is you're only plugging in one race time. Well.
+
+594
+00:54:09.730 --> 00:54:12.290
+Alex Muntefering: It's a better picture to know
+
+595
+00:54:12.520 --> 00:54:15.370
+Alex Muntefering: like, let's say in Emma's case, her…
+
+596
+00:54:15.950 --> 00:54:26.740
+Alex Muntefering: mile, 3K, and 5K time to spit out what sort of threshold pace work she should be doing, versus if I just plug in one of those marks.
+
+597
+00:54:27.190 --> 00:54:32.449
+Alex Muntefering: It's also be helpful for a race predictor. That is super…
+
+598
+00:54:32.590 --> 00:54:38.990
+Alex Muntefering: Useful. We use it… we use the Daniels BDOT chart for that as well.
+
+599
+00:54:39.170 --> 00:54:52.959
+Alex Muntefering: predicting outlier events like the 10K, which aren't commonly contested. Okay, if Emma can run this for a mile, this for a 3K, what could she… and this for 5K, what could she feasibly run for a 10K? But there's no… like, there's a chart?
+
+600
+00:54:53.400 --> 00:55:01.000
+Alex Muntefering: for each one of those data points, but there's not a chart that connects all of those data points to extrapolate out to a 10K.
+
+601
+00:55:02.230 --> 00:55:11.550
+Alex Muntefering: So, by having that and just making it really refined, I mean, that would be… you'd be definitely multiple steps above any of the existing calculators.
+
+602
+00:55:12.030 --> 00:55:12.750
+Anthoney Q., CSCS: Okay.
+
+603
+00:55:13.310 --> 00:55:14.519
+Anthoney Q., CSCS: That's the goal.
+
+604
+00:55:14.590 --> 00:55:19.720
+Alex Muntefering: Yeah, so I think the race prediction thing using multiple data points is really helpful.
+
+605
+00:55:19.970 --> 00:55:26.050
+Alex Muntefering: And then the, having that…
+
+606
+00:55:26.170 --> 00:55:31.260
+Alex Muntefering: chart, which, you know, we went into in depth, but just expanding that out a little bit, so if I'm doing…
+
+607
+00:55:31.720 --> 00:55:34.400
+Alex Muntefering: You know…
+
+608
+00:55:34.550 --> 00:55:43.989
+Alex Muntefering: that CV pace, which would be a touch faster than threshold, if I'm doing. And Tin Man mostly calculates CV, because that's kind of his…
+
+609
+00:55:44.610 --> 00:55:52.859
+Alex Muntefering: his corner of the market is, like, doing a lot of CV-type stuff, so he has a good reference point on, like, the more precise
+
+610
+00:55:53.040 --> 00:55:55.770
+Alex Muntefering: CV rating, I don't know if he's getting that from…
+
+611
+00:55:57.190 --> 00:56:01.340
+Alex Muntefering: research articles or what? Probably is, I mean, he's…
+
+612
+00:56:01.340 --> 00:56:06.930
+Anthoney Q., CSCS: that from… from what I was looking at. I can't remember if it's VDOT or… or Tin Man.
+
+613
+00:56:06.930 --> 00:56:11.000
+Alex Muntefering: So VDOT doesn't use a CV.
+
+614
+00:56:11.000 --> 00:56:25.130
+Anthoney Q., CSCS: Well, I meant, like, for their data points. I can't remember who… I remember seeing somewhere that one of the people found their numbers based on people that they were training. So, like, it's, like, data points of, like, we're gonna train someone under this, and then pull the numbers from that.
+
+615
+00:56:26.280 --> 00:56:29.180
+Anthoney Q., CSCS: I don't… I think… that might have been something else I read.
+
+616
+00:56:29.370 --> 00:56:32.720
+Anthoney Q., CSCS: Yeah. My brain does 500,000 things a day, so…
+
+617
+00:56:33.250 --> 00:56:47.080
+Alex Muntefering: Yeah, so I would, you know, the other thing in that workout, you know, from using that chart of yours for workouts would be, having a VO2 max,
+
+618
+00:56:47.510 --> 00:56:50.080
+Alex Muntefering: Pace range in there as well.
+
+619
+00:56:50.670 --> 00:56:51.420
+Anthoney Q., CSCS: Okay.
+
+620
+00:56:53.310 --> 00:56:54.030
+Anthoney Q., CSCS: That would be helpful.
+
+621
+00:56:54.030 --> 00:56:57.169
+Alex Muntefering: Yeah, I think a critical velocity of U2 max.
+
+622
+00:56:58.060 --> 00:57:08.160
+Alex Muntefering: You know, if you're identifying these pace ranges as fast reps, speed, sprint, if those are closely associated with, say.
+
+623
+00:57:10.430 --> 00:57:20.590
+Alex Muntefering: fast rep seems to be closely associated with VO2 max for Emma. Speed seems to be closely associated with mile race pace. You know, you could say…
+
+624
+00:57:21.490 --> 00:57:28.129
+Alex Muntefering: you could even reference it like that. Not… you don't have to change those names, but even just have another…
+
+625
+00:57:28.280 --> 00:57:38.559
+Alex Muntefering: thing that helps coaches kind of understand, well, what does fast… you know, what does fast rep mean? What does speed rep mean? Like, what is this even close to? I don't know, you know, should I be doing speed?
+
+626
+00:57:38.560 --> 00:57:40.170
+Anthoney Q., CSCS: information button there, like.
+
+627
+00:57:40.170 --> 00:57:41.309
+Alex Muntefering: Yeah, 100%.
+
+628
+00:57:41.310 --> 00:57:44.319
+Anthoney Q., CSCS: They're like, oh, this means… here's other terminology for this word.
+
+629
+00:57:44.470 --> 00:57:47.079
+Alex Muntefering: Yep, yeah, yeah, for sure, yeah.
+
+630
+00:57:47.610 --> 00:58:03.319
+Alex Muntefering: And, I think even associating with… a coach could figure this out, but, you know, maybe a high school coach would have a little bit harder trouble, immediate… or not even high school… high school coaches are brilliant, but, just a… a beginner coach would have trouble
+
+631
+00:58:03.630 --> 00:58:11.280
+Alex Muntefering: Looking at that and just saying, okay, speed rep, that's probably close to mile, maybe a touch faster than mile pace.
+
+632
+00:58:12.550 --> 00:58:13.340
+Anthoney Q., CSCS: Okay.
+
+633
+00:58:14.380 --> 00:58:20.039
+Anthoney Q., CSCS: Cool. I'll let you get to your next meeting. Is there anything else that you can think of?
+
+634
+00:58:20.210 --> 00:58:22.020
+Anthoney Q., CSCS: Let me know, and then I'll…
+
+635
+00:58:22.370 --> 00:58:32.559
+Anthoney Q., CSCS: Whenever it's ready, I'll just send it to you, and then you can start seeing if you like it, and if there's anything you hate on it, then you say, hey, this is… why is it… why is it garbage? Why is it not doing this for me? Or why is it doing that, and…
+
+636
+00:58:33.000 --> 00:58:34.600
+Anthoney Q., CSCS: Finding any inconsistencies.
+
+637
+00:58:34.600 --> 00:58:38.999
+Alex Muntefering: Yeah, I'd love to play around with it. I'll let you know what, what'd I think?
+
+638
+00:58:39.000 --> 00:58:43.139
+Anthoney Q., CSCS: I think I have another couple days on it, so I think by the end of the week, I should…
+
+639
+00:58:43.280 --> 00:58:47.160
+Anthoney Q., CSCS: I'll probably… I can send it to you at the end of the week, then you can start playing around with it. Cool?
+
+640
+00:58:47.160 --> 00:58:50.210
+Alex Muntefering: Yeah, sweet. Thank you. Thanks, man. Appreciate it. Yeah, of course. Have a good one.
+
+641
+00:58:50.210 --> 00:58:50.880
+Anthoney Q., CSCS: See you later.
+
+642
+00:58:51.160 --> 00:58:51.680
+Alex Muntefering: Bye.
+
