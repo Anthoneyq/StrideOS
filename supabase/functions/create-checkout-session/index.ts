@@ -2,14 +2,15 @@
 // Creates a Stripe Checkout Session for the signed-in coach, returns the
 // hosted Checkout URL. The frontend redirects to this URL.
 //
-// Request body: { plan: "monthly" | "annual" }
+// Request body: { plan: "monthly" | "annual" | "team_annual" }
 // Response:     { url: "https://checkout.stripe.com/..." }
 //
 // Required env vars (set in Supabase Dashboard → Project Settings → Edge
 // Functions → secrets):
 //   STRIPE_SECRET_KEY        sk_live_... (or sk_test_... for test mode)
-//   STRIPE_PRICE_MONTHLY     price_... for the $19/mo price
-//   STRIPE_PRICE_ANNUAL      price_... for the $167/yr price
+//   STRIPE_PRICE_MONTHLY     price_... for the $24/mo price
+//   STRIPE_PRICE_ANNUAL      price_... for the $199/yr price
+//   STRIPE_PRICE_TEAM_ANNUAL price_... for the $399/yr Program/Team price
 //   APP_BASE_URL             e.g. https://strideos.thecoachlab.app
 //   SUPABASE_URL             auto-provided
 //   SUPABASE_SERVICE_ROLE_KEY auto-provided
@@ -46,22 +47,28 @@ Deno.serve(async (req) => {
       return json({ error: 'not signed in' }, 401);
     }
 
-    // 2. Parse the requested plan.
+    // 2. Parse the requested plan and resolve its configured price.
     const body = await req.json().catch(() => ({}));
     const plan = body?.plan;
-    if (plan !== 'monthly' && plan !== 'annual') {
-      return json({ error: 'plan must be "monthly" or "annual"' }, 400);
+    const PRICE_ENV: Record<string, string> = {
+      monthly: 'STRIPE_PRICE_MONTHLY',
+      annual: 'STRIPE_PRICE_ANNUAL',
+      team_annual: 'STRIPE_PRICE_TEAM_ANNUAL',
+    };
+    const envVar = PRICE_ENV[plan];
+    if (!envVar) {
+      return json(
+        { error: 'plan must be "monthly", "annual", or "team_annual"' },
+        400,
+      );
     }
-    const priceId =
-      plan === 'monthly'
-        ? Deno.env.get('STRIPE_PRICE_MONTHLY')
-        : Deno.env.get('STRIPE_PRICE_ANNUAL');
+    const priceId = Deno.env.get(envVar);
     if (!priceId) {
       return json({ error: `price for ${plan} is not configured` }, 500);
     }
 
     // 3. Look up the coach row (need stripe_customer_id if present).
-    // We use service-role client here because the coaches table has RLS
+    // We use the service-role client here because the coaches table has RLS
     // and we want a clean read regardless of the user's RLS state.
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,

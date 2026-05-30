@@ -690,8 +690,8 @@ function clearDB(){ try{ localStorage.removeItem(KEY); }catch(e){} _mem=null; }
 // ── SUPABASE SYNC ──
 const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 const STRIDE_BILLING_CONFIG = window.STRIDE_BILLING || {};
-const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$19/mo';
-const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$167/yr';
+const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$24/mo';
+const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$199/yr';
 const BILLING_MONTHLY_PAYMENT_LINK = STRIDE_BILLING_CONFIG.monthlyPaymentLink || '';
 const BILLING_ANNUAL_PAYMENT_LINK = STRIDE_BILLING_CONFIG.annualPaymentLink || '';
 let sbClient = null;
@@ -1853,7 +1853,7 @@ function showUpgradeModal(){
           <strong style="color:var(--text)">Coaching a team or program?</strong><br>
           STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; your whole staff, unlimited athletes, program admin &middot; <span style="color:var(--accent)">$399/yr</span>.
         </div>
-        <button class="btn" onclick="startCheckout('team_annual')" style="white-space:nowrap">Get Team &rarr;</button>
+        <button class="btn" id="planTeamBtn" onclick="startCheckout('team_annual')" style="white-space:nowrap">Get Team &rarr;</button>
       </div>
       <p class="upgrade-foot">Have a promo code? Add it on the Stripe checkout page.</p>
     </div>
@@ -1868,12 +1868,13 @@ function closeUpgradeModal(){
 
 // Kicks off Stripe Checkout for the chosen plan.
 async function startCheckout(plan){
-  if(plan !== 'monthly' && plan !== 'annual') return;
-  const btn = document.getElementById(plan === 'monthly' ? 'planMonthlyBtn' : 'planAnnualBtn');
+  if(plan !== 'monthly' && plan !== 'annual' && plan !== 'team_annual') return;
+  const btnId = plan === 'monthly' ? 'planMonthlyBtn' : plan === 'annual' ? 'planAnnualBtn' : 'planTeamBtn';
+  const btn = document.getElementById(btnId);
   const prev = btn ? btn.innerHTML : null;
-  if(btn){ btn.disabled = true; btn.innerHTML = '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
+  if(btn){ btn.disabled = true; btn.innerHTML = plan === 'team_annual' ? 'Opening Stripe…' : '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
   try{
-    const paymentLink = plan === 'monthly' ? BILLING_MONTHLY_PAYMENT_LINK : BILLING_ANNUAL_PAYMENT_LINK;
+    const paymentLink = plan === 'monthly' ? BILLING_MONTHLY_PAYMENT_LINK : plan === 'annual' ? BILLING_ANNUAL_PAYMENT_LINK : '';
     if(paymentLink){
       window.location.href = paymentLink;
       return;
