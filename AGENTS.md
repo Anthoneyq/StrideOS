@@ -59,26 +59,16 @@ S226 Fixed broken sign out button by adding error handling to signOutSupabase() 
 216 12:45p 🔵 Git status shows untracked HTML copies also present in working directory
 217 12:46p 🔵 Supabase auth project linked; OTP email auth configured with rate limiting
 218 " 🔵 Database schema migrations in sync with remote Supabase project
-S227 Set up Claude Code Max with Vercel AI Gateway integration from Vercel documentation (May 22 at 12:46 PM)
-219 12:50p 🔵 Claude Code Max API credentials not configured in environment
-220 12:51p ✅ Vercel AI Gateway environment configuration added to shell profile
-S228 Complete Vercel AI Gateway API key configuration in ~/.zshrc for Claude Code Max integration (May 22 at 12:51 PM)
-S229 Streamline Vercel AI Gateway setup with clear instructions for obtaining and configuring API key (May 22 at 12:52 PM)
-S230 Establish naming convention for Vercel AI Gateway API key creation (May 22 at 12:52 PM)
-S231 Verify Vercel AI Gateway setup readiness and confirm next steps for API key integration (May 22 at 12:55 PM)
-221 12:56p 🔵 Claude Code and Vercel CLI already installed and available
-222 " 🔵 Vercel AI Gateway configuration confirmed in ~/.zshrc
-223 12:57p 🔵 Vercel AI Gateway environment loaded and verified; API key placeholder detected
-224 12:58p ✅ Vercel AI Gateway API key configured and environment fully activated
-225 " 🔵 Claude Code version confirmed installed and operational
-S232 Verify Vercel AI Gateway integration is complete and Claude Code is ready for launch (May 22 at 12:59 PM)
+S227-S232 Retired third-party Claude gateway setup notes (May 22 at 12:46 PM-12:59 PM)
+219-225 Historical gateway setup guidance removed on 2026-06-03 because Claude Code should use first-party `claude.ai` auth.
+Claude Code version was confirmed installed and operational; do not restore shell-level Anthropic gateway overrides for Claude Code.
 **Investigated**: Environment variable configuration state, Claude Code installation, version availability, and command responsiveness after API key substitution
 
-**Learned**: Claude Code 2.1.148 is installed and functional; environment variables properly loaded after shell config reload; API key substitution into ANTHROPIC_CUSTOM_HEADERS completed successfully; security best practice of rotating API keys after sharing credentials in chat
+**Learned**: Claude Code 2.1.148 was installed and functional. Shell-level gateway routing was later removed because it interfered with normal Claude Code connection behavior.
 
-**Completed**: API key successfully substituted in ~/.zshrc with real Vercel credential; ANTHROPIC_BASE_URL verified set to https://ai-gateway.vercel.sh; ANTHROPIC_CUSTOM_HEADERS confirmed configured; Claude Code version 2.1.148 verified operational; all configuration validated and environment ready for use
+**Completed**: Claude Code installation verified. Retired gateway-specific configuration notes were scrubbed from this project context.
 
-**Next Steps**: Launch Claude Code with `claude` command; authenticate with Claude Max account when prompted; verify Vercel AI Gateway routing is working; rotate API key by creating new credential in Vercel dashboard, updating ~/.zshrc, and deleting the exposed key
+**Next Steps**: Launch Claude Code with `claude` and authenticate through the normal Claude Max / `claude.ai` path.
 
 
 Access 204k tokens of past work via get_observations([IDs]) or mem-search skill.

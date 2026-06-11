@@ -58,7 +58,7 @@ This is a static site — there is **no `npm install` / `build` / `lint` / `test
 
 ## 6. Open findings (not yet changed — see BUGS.md for detail)
 
-**Security — stored XSS surface (HIGH).** ~45 `innerHTML =` assignments interpolate data, some of it user-controlled and cross-user. The clearest vector: a Strava activity name is stored as `coach_notes = "Strava: <name>"` and later rendered into the coach's dashboard via `innerHTML`. A crafted activity name (`<img src=x onerror=…>`) would execute in the coach's browser. Fix is to escape user-supplied strings (athlete names, notes, Strava names) before `innerHTML`, or use `textContent`. Not auto-fixed because verifying 45 render sites safely needs a browser test loop.
+**Security — `innerHTML` XSS surface (REVIEWED — already mitigated).** ~45 `innerHTML =` assignments interpolate data. This was flagged as a likely stored-XSS vector (e.g. a Strava activity name → `coach_notes` → coach's dashboard) and then traced exhaustively. **It is not vulnerable:** the only sink is direct `.innerHTML =`, and a robust `esc()` helper (escapes `& < > " '`) is applied at every user-controlled render site (athlete name, `coach_notes` at line 1310, notes, location, event, prediction source, tier badge), while `toast()`/`updateChip()` use `textContent` and deletion uses `confirm()`. No change needed. The standing rule: any *new* `innerHTML` interpolation of a DB/user string must be wrapped in `esc()`. (See BUG-002.)
 
 **Billing — no distinct "team" tier (LOW/product).** `create-checkout-session` accepts `team_annual`, but the webhook only maps subscriptions to `pro`/`free` and `plan_interval` to `monthly`/`annual`. A team purchase is recorded as a normal annual `pro` and is indistinguishable from an individual annual. Functionally fine (they get Pro); revisit when team features ship.
 
@@ -69,19 +69,20 @@ This is a static site — there is **no `npm install` / `build` / `lint` / `test
 ## 7. Tech debt
 
 - **Monolithic `index.html`** (~5,500 lines of inline JS). Hard to test and review. A future structural improvement is to split JS/CSS into modules — but only with a test loop in place, since it touches everything.
-- **Doc drift:** `README.md` says `index.html` is "~4,500 lines"; it's 6,180. Trial copy and price points have changed across the codebase — keep `stride-config.js`, the edge-function comments, and `Stripe_Setup_SOP.md` in sync.
-- **Two stray `console.log`s** and **8 loose `==`** comparisons in the frontend — harmless, cosmetic.
+- **Doc drift:** `README.md` line-count was stale (fixed this pass: `~4,500` → `~6,180`). Trial copy and price points still live in several places — keep `stride-config.js`, the edge-function comments, and `Stripe_Setup_SOP.md` in sync.
+- **Eight loose `==`** comparisons in the frontend — harmless, cosmetic. (The two `console.log`s are debug-gated and intentional — not debt.)
 - **Large data/research artifacts in the repo** (`Data_Validation/*.csv`, `research/`). Fine for a knowledge repo, but bloats clones; consider Git LFS or a separate data repo.
 - **Uncommitted work:** `index.html` and `create-checkout-session/index.ts` have unstaged changes; `deploy-stripe-functions.sh` is untracked. Commit or stash to keep the working tree clean.
 
 ## 8. Priority order (recommended next steps)
 
 1. **Apply the migration** (`supabase db push` or paste in SQL editor) and re-test Strava "Sync Now." *(Fix is written; deploy is yours.)*
-2. **Escape user input before `innerHTML`** (athlete names, workout/coach/athlete notes, Strava activity names). Highest-value safety fix.
-3. **Commit the working tree** and reconcile price/trial copy across files.
-4. **Add a minimal test loop** — even a manual QA checklist (see `FINAL_HANDOFF.md` §QA) or a headless smoke test — so future frontend edits are verifiable.
-5. **Decide the team-tier model** before selling `team_annual` broadly.
-6. **Pre-launch performance pass** (minify + cache headers) once features stabilize.
+2. **Commit the working tree** and reconcile price/trial copy across files.
+3. **Add a minimal test loop** — even a manual QA checklist or a headless smoke test — so future frontend edits are verifiable.
+4. **Decide the team-tier model** before selling `team_annual` broadly.
+5. **Pre-launch performance pass** (minify + cache headers) once features stabilize.
+
+*(The previously-suspected `innerHTML` XSS work was investigated and found unnecessary — see §6 / BUG-002.)*
 
 ## 9. What was deliberately *not* done
 

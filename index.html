@@ -2014,6 +2014,55 @@ async function syncAthleteToSupabase(athlete){
   }
 }
 
+// ── PREDICTION SNAPSHOT LOGGING ──
+// Fire-and-forget: whenever an athlete is saved with a race anchor, log the
+// engine's full forecast set to Supabase. As real race results accumulate,
+// this becomes the prediction-vs-outcome dataset used to recalibrate the
+// ensemble (the core data flywheel). Deduped per athlete via a signature of
+// the inputs, so re-saving without changes doesn't write duplicate rows.
+const PREDICTION_ENGINE_VERSION = 'ensemble-2026-06-10';
+
+async function logPredictionSnapshot(athlete){
+  try{
+    if(!sbClient || !sbUser || !athlete || !athlete.raceDistanceM || !athlete.raceTime) return;
+    const anchorSec = parseTime(athlete.raceTime);
+    if(!anchorSec) return;
+
+    const sig = [PREDICTION_ENGINE_VERSION, athlete.raceDistanceM, anchorSec, athlete.weeklyMileage || '', athlete.age || ''].join('|');
+    let sigs = {};
+    try{ sigs = JSON.parse(localStorage.getItem('strideos_pred_log_sigs') || '{}'); }catch(_e){}
+    if(sigs[athlete.id] === sig) return;
+
+    const targets = [100, 200, 400, 800, 1500, 1600, 3200, 5000, 8000, 10000, 21097, 42195];
+    const preds = targets.filter(d => d !== athlete.raceDistanceM).map(d => {
+      const r = strideEnsemble(athlete.raceDistanceM, anchorSec, d, 1.0, { weeklyMiles: athlete.weeklyMileage });
+      return {
+        distM: d,
+        likelySec: Math.round(r.predSec * 10) / 10,
+        ci95Low: Math.round(r.ci95Low * 10) / 10,
+        ci95High: Math.round(r.ci95High * 10) / 10,
+        confidence: Math.round(r.confidence)
+      };
+    });
+
+    const { error } = await sbClient.from('prediction_log').insert({
+      athlete_client_ref: String(athlete.id),
+      engine_version: PREDICTION_ENGINE_VERSION,
+      anchor_event: athlete.raceDistance || null,
+      anchor_dist_m: athlete.raceDistanceM,
+      anchor_sec: anchorSec,
+      weekly_mileage: athlete.weeklyMileage || null,
+      age_years: parseInt(athlete.age, 10) || null,
+      predictions: preds
+    });
+    if(error) throw error;
+    sigs[athlete.id] = sig;
+    localStorage.setItem('strideos_pred_log_sigs', JSON.stringify(sigs));
+  }catch(err){
+    console.warn('Prediction snapshot log failed', err);
+  }
+}
+
 async function softDeleteRemoteAthlete(clientRef){
   if(!sbClient || !sbUser || !clientRef) return;
   try{
@@ -2278,10 +2327,12 @@ function fmtMileRange(spkmLo, spkmHi){
 // Full Daniels-Gilbert formula (from Oxygen Power / LetsRun docs)
 
 function danielsPctVO2(timeSec){
-  // Fraction of VO2max sustained for a given race duration
+  // Fraction of VO2max sustained for a given race duration.
+  // NOTE: the published Daniels-Gilbert constants expect time in MINUTES.
+  const tMin = timeSec / 60;
   return 0.8
-       + 0.1894393 * Math.exp(-0.012778  * timeSec)
-       + 0.2989558 * Math.exp(-0.1932605 * timeSec);
+       + 0.1894393 * Math.exp(-0.012778  * tMin)
+       + 0.2989558 * Math.exp(-0.1932605 * tMin);
 }
 
 function danielsVO2atVelocity(vMperMin){
@@ -4122,14 +4173,13 @@ function _formulaRiegel(d1, t1, d2){
 }
 
 function _formulaCameron(d1, t1, d2){
-  // Cameron formula (1998) — refined for marathon predictions
-  // Time = a × (D^b), where the exponent varies subtly with distance
-  // Cameron published an algorithmic version; we use the published constants:
-  // T2/T1 = (D2/D1)^x where x = 1.07731 - 0.00027 × log(d1·d2)
-  // This gives slightly less aggressive scaling than Riegel at long distances
-  const logMean = Math.log10(Math.sqrt(d1 * d2));
-  const exp = 1.07731 - 0.00027 * logMean * 100;
-  return t1 * Math.pow(d2/d1, Math.max(1.04, Math.min(1.09, exp)));
+  // Cameron formula (David Cameron, 1998) — published model:
+  //   f(x) = 13.49681 − 0.048865·x + 2.438936 / x^0.7905   (x = distance in MILES)
+  //   T2 = (T1/D1) · (f(D1)/f(D2)) · D2
+  // Validated 400m–50mi; strongest from 1 mile through the marathon.
+  const f = xMiles => 13.49681 - 0.048865*xMiles + 2.438936/Math.pow(xMiles, 0.7905);
+  const m1 = d1/1609.344, m2 = d2/1609.344;
+  return (t1/d1) * (f(m1)/f(m2)) * d2;
 }
 
 function _formulaVDOT(d1, t1, d2){
@@ -4158,27 +4208,47 @@ function _formulaVDOT(d1, t1, d2){
   return ((lo + hi)/2) * (d2/100);
 }
 
-function _formulaVickersVertosick(d1, t1, d2){
-  // Vickers & Vertosick (2016) found Riegel overestimates marathon by 10+ min
-  // for half of recreational runners. Their refinement uses a softer exponent
-  // at long distances. We implement a simplified version: exponent scales
-  // with target distance category.
+function _formulaVickersVertosick(d1, t1, d2, weeklyMiles){
+  // Vickers & Vertosick (2016, n=2,303): Riegel's 1.06 predicts marathon times
+  // that are TOO FAST (optimistic) for most sub-elite runners — actual times run
+  // 10+ min slower. The effective fatigue exponent at long distances is HIGHER
+  // than 1.06, and their model keys on TRAINING VOLUME: ~1.15 at low weekly
+  // mileage down to ~1.07 at high mileage. When the athlete's weekly mileage is
+  // known we interpolate; otherwise we use moderate developmental-athlete values.
+  const longest = Math.max(d1, d2);
+  const vol = (typeof weeklyMiles === 'number' && weeklyMiles > 0)
+    ? Math.min(Math.max((weeklyMiles - 10) / 60, 0), 1)   // 0 at ≤10 mi/wk → 1 at ≥70
+    : null;
   let exp = 1.06;
-  if(d2 > 21097) exp = 1.04;        // marathon-plus: softer
-  else if(d2 > 10000) exp = 1.05;   // half marathon: slightly softer
-  else if(d2 > 5000) exp = 1.055;   // 10K to half: slight refinement
+  if(longest > 21097)      exp = (vol === null) ? 1.10  : 1.15 - vol * 0.08; // 1.15 → 1.07
+  else if(longest > 10000) exp = (vol === null) ? 1.075 : 1.09 - vol * 0.03; // 1.09 → 1.06
+  else if(longest > 5000)  exp = 1.065;   // 10K band
   return t1 * Math.pow(d2/d1, exp);
 }
 
 function _formulaPurdy(d1, t1, d2){
-  // Purdy points use a velocity-versus-distance curve fitted to world records
-  // Simplified implementation: treat as a power law with empirically-derived
-  // exponent that varies by distance band (closer to Riegel at common ranges)
-  const ratio = d2/d1;
-  let exp = 1.06;
-  // Purdy gives slightly more aggressive scaling for sprints
-  if(d1 < 800) exp = 1.075;
-  return t1 * Math.pow(ratio, exp);
+  // Short-distance speed-endurance curve (Purdy-points-style velocity curve,
+  // segmented). A single Riegel exponent (~1.06) is badly wrong below 3200m:
+  // equivalent-performance charts (Purdy, McMillan, NFHS conversions) show the
+  // fatigue exponent is near 1.0 from 100→200 (start cost dominates), spikes
+  // through the anaerobic→aerobic transition (200→800), then decays to ~1.06.
+  // We integrate banded exponents across log-distance so predictions are
+  // path-consistent (100→400 ≡ 100→200→400).
+  const BANDS = [
+    { lo: 0,    hi: 200,  k: 1.03 },
+    { lo: 200,  hi: 400,  k: 1.16 },
+    { lo: 400,  hi: 800,  k: 1.18 },
+    { lo: 800,  hi: 1600, k: 1.14 },
+    { lo: 1600, hi: 3200, k: 1.10 },
+    { lo: 3200, hi: 1e9,  k: 1.06 },
+  ];
+  const a = Math.min(d1, d2), b = Math.max(d1, d2);
+  let ratio = 1;
+  for(const band of BANDS){
+    const s = Math.max(a, band.lo), e = Math.min(b, band.hi);
+    if(e > s && s > 0) ratio *= Math.pow(e/s, band.k);
+  }
+  return (d2 >= d1) ? t1 * ratio : t1 / ratio;
 }
 
 // ── ENSEMBLE WEIGHTING ──
@@ -4196,14 +4266,18 @@ function _ensembleWeights(d1, d2){
   const isLongTarget     = d2 >= 10000;
   const isUltraTarget    = d2 >= 21097;
 
-  // SPRINT FAMILY (100m–400m) — use sprint-validated formulas only
+  // SPRINT FAMILY (100m–400m) — segmented speed-endurance curve dominates;
+  // flat-exponent formulas (Riegel/Vickers ~1.06) are systematically too
+  // optimistic at 200→400 (true equivalence exponent ≈1.16).
   if(isSprintAnchor && isSprintTarget){
-    return { riegel: 0.20, cameron: 0.10, vdot: 0.00, vickers: 0.10, purdy: 0.60 };
+    return { riegel: 0.10, cameron: 0.00, vdot: 0.00, vickers: 0.10, purdy: 0.80 };
   }
 
-  // HYBRID FAMILY (400m–1500m) — blend with caution
+  // HYBRID FAMILY (400m–1500m) — segmented curve + Cameron (strong at middle
+  // distance); VDOT underweighted because it inflates aerobic ability for
+  // anaerobic specialists.
   if((isSprintAnchor || isHybridAnchor) && (isHybridTarget || (isDistanceTarget && d2 <= 1600))){
-    return { riegel: 0.30, cameron: 0.20, vdot: 0.20, vickers: 0.15, purdy: 0.15 };
+    return { riegel: 0.10, cameron: 0.25, vdot: 0.15, vickers: 0.10, purdy: 0.40 };
   }
 
   // DISTANCE FAMILY (1500m–10K) — sweet spot for VDOT/Riegel
@@ -4247,15 +4321,19 @@ function getEventDomain(distM){
   return { key: 'distance', ...EVENT_DOMAINS.distance };
 }
 
-// Observed event-transfer ratios from RunRepeat (35M+ race results).
-// Used as a sanity nudge on Riegel for long-distance predictions.
+// Equivalent-performance time ratios (Daniels' Running Formula tables, VDOT 50
+// reference row — ratios are nearly constant across the 40–65 VDOT range).
+// Used as a sanity nudge on the ensemble for long-distance predictions.
+// NOTE: earlier versions used population-average ratios from mass race data;
+// those compare DIFFERENT populations per event (selection bias) and implied
+// impossible fatigue exponents (<1.0), so they were replaced 2026-06-10.
 const OBSERVED_RATIOS = {
-  '5000_10000':    1.79,
-  '5000_21097':    3.88,
-  '5000_42195':    7.69,
-  '10000_21097':   2.17,
-  '10000_42195':   4.29,
-  '21097_42195':   1.98,
+  '5000_10000':    2.073,
+  '5000_21097':    4.591,
+  '5000_42195':    9.565,
+  '10000_21097':   2.215,
+  '10000_42195':   4.614,
+  '21097_42195':   2.083,
 };
 
 function getObservedRatio(d1M, d2M){
@@ -4351,11 +4429,16 @@ function buildPredictiveRaceTable(){
       return { ...t, targetDomain, isSource: true, likely: raceSec, conservative: raceSec, aggressive: raceSec, confidence: 100, confLabel: 'Verified PR', reasons: ["Athlete's actual logged result"] };
     }
 
-    const result = strideEnsemble(A.raceDistanceM, raceSec, t.distM, freshPenalty);
+    const result = strideEnsemble(A.raceDistanceM, raceSec, t.distM, freshPenalty, { weeklyMiles: A.weeklyMileage });
     let likely = result.predSec;
+    let personalW = 0;
     if(personalK && t.distM >= 400 && A.raceDistanceM >= 400){
       const personalPrediction = raceSec * Math.pow(t.distM / A.raceDistanceM, personalK.k);
-      likely = personalPrediction * 0.6 + likely * 0.4;
+      // More logged PR pairs → trust the athlete's own fatigue curve more
+      // (1 pair = 60%, 2 pairs = 80% cap). The athlete's measured curve is
+      // better evidence than population formulas once it's well-sampled.
+      personalW = Math.min(0.8, 0.4 + 0.2 * personalK.nPairs);
+      likely = personalPrediction * personalW + likely * (1 - personalW);
     }
     const observedRatio = getObservedRatio(A.raceDistanceM, t.distM);
     if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000){
@@ -4371,6 +4454,14 @@ function buildPredictiveRaceTable(){
     else                    rangePct = 0.050 + logRatio * 0.025;
     rangePct *= freshPenalty;
 
+    // Youth adjustment: pre/mid-maturation athletes show high inter-individual
+    // variance in event transfer (growth, late specialization, rapidly shifting
+    // anaerobic capacity). No validated directional correction exists, so the
+    // point estimate is unchanged — but the range widens and confidence drops.
+    const ageYears = parseInt(A.age, 10) || null;
+    const youthFactor = (ageYears && ageYears < 18) ? (ageYears <= 14 ? 1.5 : 1.25) : 1;
+    rangePct *= youthFactor;
+
     const conservative = likely * (1 + rangePct);
     const aggressive   = likely * (1 - rangePct);
 
@@ -4383,6 +4474,7 @@ function buildPredictiveRaceTable(){
     if(freshness === 'stale')   confidence *= 0.9;
     if(freshness === 'expired') confidence *= 0.75;
     if(personalK && sameDomain) confidence = Math.min(95, confidence + 5);
+    if(youthFactor > 1) confidence *= (youthFactor === 1.5 ? 0.85 : 0.92);
 
     let confLabel;
     if(confidence >= 90) confLabel = 'Very High';
@@ -4401,7 +4493,9 @@ function buildPredictiveRaceTable(){
     else reasons.push(`Large distance ratio ${distRatio.toFixed(1)}×`);
     if(freshness === 'stale') reasons.push('PR is stale');
     if(freshness === 'expired') reasons.push('PR is expired (>1 year)');
-    if(personalK && sameDomain) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)})`);
+    if(personalW > 0) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)}, ${Math.round(personalW*100)}% weight)`);
+    if(youthFactor > 1) reasons.push(ageYears <= 14 ? 'Youth athlete (≤14) — maturation widens range' : 'Youth athlete — maturation widens range');
+    if(typeof A.weeklyMileage === 'number' && A.weeklyMileage > 0 && t.distM > 10000) reasons.push(`Volume-adjusted (${A.weeklyMileage} mi/wk)`);
     if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000) reasons.push('Cross-validated vs. population data');
     if(isExploratory) reasons.push('Exploratory only — no published validation across this distance gap');
 
@@ -4436,7 +4530,7 @@ function buildPredictiveRaceTable(){
   const personalKBanner = personalK ? `
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.25rem">Personalized Fatigue Curve</p>
-      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5">k = <strong style="color:var(--text)">${personalK.k.toFixed(3)}</strong> · <span style="color:${personalK.biasColor};font-weight:500">${personalK.bias}</span> · derived from ${personalK.nPRs} logged PRs (${personalK.nPairs} distance pairs)</p>
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5">k = <strong style="color:var(--text)">${personalK.k.toFixed(3)}</strong> · <span style="color:${personalK.biasColor};font-weight:500">${personalK.bias}</span> · derived from ${personalK.nPRs} logged PRs (${personalK.nPairs} distance pairs) · weighted <strong style="color:var(--text)">${Math.round(Math.min(0.8, 0.4 + 0.2*personalK.nPairs)*100)}%</strong> vs. population formulas — this athlete's own curve, not a generic table</p>
     </div>` : '';
 
   return `
@@ -4907,17 +5001,18 @@ function predictiveRaceTableLocked(){
 // Returns { predSec, ci95Low, ci95High, agreement, confidence }
 // `agreement` = inter-formula agreement (0-1, higher = formulas agree)
 // `confidence` = overall confidence percentage (0-100)
-function strideEnsemble(d1, t1, d2, freshnessPenalty){
+function strideEnsemble(d1, t1, d2, freshnessPenalty, opts){
   if(d1 === d2) return { predSec: t1, ci95Low: t1, ci95High: t1, agreement: 1, confidence: 100 };
 
   const weights = _ensembleWeights(d1, d2);
+  const weeklyMiles = opts && typeof opts.weeklyMiles === 'number' ? opts.weeklyMiles : (opts && opts.weeklyMiles ? parseInt(opts.weeklyMiles, 10) || null : null);
 
   // Get individual predictions (only call formulas with non-zero weight)
   const predictions = {};
   if(weights.riegel  > 0) predictions.riegel  = _formulaRiegel(d1, t1, d2);
   if(weights.cameron > 0) predictions.cameron = _formulaCameron(d1, t1, d2);
   if(weights.vdot    > 0) predictions.vdot    = _formulaVDOT(d1, t1, d2);
-  if(weights.vickers > 0) predictions.vickers = _formulaVickersVertosick(d1, t1, d2);
+  if(weights.vickers > 0) predictions.vickers = _formulaVickersVertosick(d1, t1, d2, weeklyMiles);
   if(weights.purdy   > 0) predictions.purdy   = _formulaPurdy(d1, t1, d2);
 
   // Weighted ensemble prediction
@@ -5012,7 +5107,7 @@ function buildPreds(distM, sec, primary){
     if(isSelf){
       predSec = sec; ci95Low = sec; ci95High = sec; conf = 100; agreement = 1;
     } else {
-      const result = strideEnsemble(anchor.distM, anchor.sec, t, freshnessPenalty);
+      const result = strideEnsemble(anchor.distM, anchor.sec, t, freshnessPenalty, { weeklyMiles: A.weeklyMileage });
       predSec = result.predSec;
       ci95Low = result.ci95Low;
       ci95High = result.ci95High;
@@ -6063,6 +6158,7 @@ function saveAthlete(){
   refreshActiveAthlete();
   updateChip();
   syncAthleteToSupabase(athleteData);
+  logPredictionSnapshot(athleteData);
   toast('✓ Athlete saved');
   goTo('overview',null);
 }
