@@ -203,17 +203,17 @@ $$\text{Age-Graded Performance (\%)} = \frac{\text{Age Standard (World Record fo
 
 | VDOT | 1500m | Mile | 3K | 5K | 10K | Half Marathon | Marathon |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 30 | 6:36 | 7:07 | 14:04 | 24:03 | 50:03 | 1:51:40 | 3:52:00 |
-| 35 | 5:49 | 6:15 | 12:19 | 28:22 | 59:00 | 2:10:30 | 4:32:00 |
-| 40 | 5:11 | 5:35 | 10:59 | 24:40 | 51:16 | 1:52:46 | 3:55:00 |
-| 45 | 4:40 | 5:02 | 9:52 | 21:51 | 45:16 | 1:39:36 | 3:28:00 |
-| 50 | 4:14 | 4:33 | 8:55 | 19:31 | 40:27 | 1:29:04 | 3:07:00 |
-| 55 | 3:52 | 4:09 | 8:07 | 17:36 | 36:26 | 1:20:23 | 2:49:00 |
-| 60 | 3:33 | 3:49 | 7:26 | 16:00 | 33:06 | 1:13:02 | 2:33:00 |
-| 65 | 3:17 | 3:31 | 6:50 | 14:39 | 30:18 | 1:06:48 | 2:20:00 |
-| 70 | 3:02 | 3:16 | 6:18 | 13:30 | 27:55 | 1:01:29 | 2:09:00 |
-| 75 | 2:50 | 3:02 | 5:50 | 12:29 | 25:48 | 56:51 | 1:59:30 |
-| 80 | 2:39 | 2:50 | 5:25 | 11:35 | 23:53 | 52:37 | 1:51:00 |
+| 30 | 8:30 | 9:10 | 17:56 | 30:41 | 1:03:49 | 2:21:17 | 4:49:49 |
+| 35 | 7:25 | 8:01 | 15:44 | 26:59 | 56:02 | 2:04:13 | 4:16:06 |
+| 40 | 6:35 | 7:07 | 14:02 | 24:06 | 50:01 | 1:50:54 | 3:49:37 |
+| 45 | 5:56 | 6:24 | 12:40 | 21:49 | 45:13 | 1:40:14 | 3:28:16 |
+| 50 | 5:24 | 5:50 | 11:33 | 19:56 | 41:20 | 1:31:31 | 3:10:40 |
+| 55 | 4:57 | 5:21 | 10:37 | 18:22 | 38:06 | 1:24:16 | 2:55:55 |
+| 60 | 4:35 | 4:57 | 9:50 | 17:03 | 35:22 | 1:18:09 | 2:43:22 |
+| 65 | 4:16 | 4:37 | 9:09 | 15:55 | 33:02 | 1:12:54 | 2:32:35 |
+| 70 | 4:00 | 4:19 | 8:35 | 14:56 | 31:01 | 1:08:23 | 2:23:13 |
+| 75 | 3:46 | 4:04 | 8:04 | 14:04 | 29:15 | 1:04:26 | 2:14:59 |
+| 80 | 3:34 | 3:51 | 7:37 | 13:18 | 27:42 | 1:00:57 | 2:07:43 |
 | 85 | 2:29 | 2:40 | 5:03 | 10:47 | 22:10 | 48:48 | 1:43:00 |
 
 ---
@@ -456,17 +456,46 @@ def vo2max_1_5_mile(time_minutes):
 ### H.4 Environmental Adjustments
 
 ```python
-# Altitude Correction (Schwartz/Tinman model approximation)
-def altitude_correction_factor(altitude_ft):
-    if altitude_ft < 1500:
-        return 1.0
-    return 1.0 + 0.000004 * (altitude_ft - 1500) ** 1.15
-
-# Temperature Adjustment (approximate)
-def heat_pace_adjustment_pct(temp_f, humidity_pct=50):
-    if temp_f <= 60:
+# Altitude correction used in the current app.
+def altitude_slowdown(altitude_ft):
+    if altitude_ft is None or altitude_ft < 1500:
         return 0.0
-    return 0.015 * (temp_f - 60) * (1 + 0.005 * humidity_pct)
+    meters = altitude_ft * 0.3048
+    if meters < 500:
+        return 0.0
+    if meters < 1000:
+        return 0.01
+    if meters < 1500:
+        return 0.018
+    if meters < 2000:
+        return 0.028
+    if meters < 2500:
+        return 0.04
+    if meters < 3000:
+        return 0.055
+    return 0.07
+
+# Temperature slowdown used in the current app.
+def heat_slowdown(temp_f):
+    if temp_f is None or temp_f <= 50:
+        return 0.0
+    if temp_f <= 55:
+        return 0.005
+    if temp_f <= 60:
+        return 0.01
+    if temp_f <= 65:
+        return 0.02
+    if temp_f <= 70:
+        return 0.03
+    if temp_f <= 75:
+        return 0.045
+    if temp_f <= 80:
+        return 0.06
+    if temp_f <= 85:
+        return 0.08
+    if temp_f <= 90:
+        return 0.10
+    return 0.13
 
 # Age Grading
 def age_graded_percent(actual_time_sec, age_standard_sec):

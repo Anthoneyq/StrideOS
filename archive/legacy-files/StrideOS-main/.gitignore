@@ -1,9 +1,0 @@
-.env
-.env.*
-!.env.example
-
-.vercel/
-.DS_Store
-
-supabase/.branches/
-supabase/.temp/

@@ -68,6 +68,7 @@ body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif
 .nav-btn.new{color:var(--text)}
 .nav-btn.new:hover{background:var(--accent-soft);color:var(--accent)}
 .nav-icon{font-size:.875rem;width:1.125rem;text-align:center}
+.workspace-locked [data-auth-scope="workspace"],.workspace-locked #athleteNavSection,.workspace-locked #activeAthleteChip,.workspace-locked #tierBanner{display:none!important}
 .sidebar-footer{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--border)}
 .auth-panel{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;margin-bottom:.75rem}
 .auth-status{font-family:'JetBrains Mono',monospace;font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem}
@@ -330,7 +331,7 @@ input.err,select.err{border-color:var(--red)}
 .hidden { display: none; }
 </style>
 </head>
-<body>
+<body class="workspace-locked">
 <div id="toast" role="status" aria-live="polite"></div>
 
 <div class="app">
@@ -340,7 +341,7 @@ input.err,select.err{border-color:var(--red)}
         <div class="brand-logo" aria-hidden="true">S</div>
         <span class="brand-name">STRIDE OS</span>
       </div>
-      <div class="brand-tag">Coaching Workflow Tool</div>
+      <div class="brand-tag" id="brandTag">Free Pace Calculator</div>
     </div>
 
     <nav>
@@ -348,17 +349,17 @@ input.err,select.err{border-color:var(--red)}
         <p class="nav-section-label" id="lbl-ws">Workspace</p>
         <ul class="nav-list" aria-labelledby="lbl-ws" role="list">
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span>Basic Calculator</button></li>
-          <li><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
-          <li><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
-          <li><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
-          <li><button class="nav-btn" data-s="workouts" onclick="goTo('workouts',this)"><span class="nav-icon" aria-hidden="true">⊞</span>Training Log</button></li>
-          <li><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
-          <li><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
-          <li><button class="nav-btn" data-s="profile"  onclick="goTo('profile',this)"><span class="nav-icon" aria-hidden="true">◑</span>Event Profile</button></li>
-          <li><button class="nav-btn" data-s="methodology" onclick="goTo('methodology',this)"><span class="nav-icon" aria-hidden="true">§</span>Sources</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="workouts" onclick="goTo('workouts',this)"><span class="nav-icon" aria-hidden="true">⊞</span>Training Log</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="profile"  onclick="goTo('profile',this)"><span class="nav-icon" aria-hidden="true">◑</span>Event Profile</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="methodology" onclick="goTo('methodology',this)"><span class="nav-icon" aria-hidden="true">§</span>Sources</button></li>
         </ul>
       </div>
-      <div class="nav-section">
+      <div class="nav-section" id="athleteNavSection">
         <p class="nav-section-label" id="lbl-ath">Athlete</p>
         <ul class="nav-list" aria-labelledby="lbl-ath" role="list">
           <li><button class="nav-btn" data-s="edit" onclick="goTo('edit',this)"><span class="nav-icon" aria-hidden="true">✎</span>Edit Profile</button></li>
@@ -372,7 +373,7 @@ input.err,select.err{border-color:var(--red)}
         <div class="auth-status">Local Mode</div>
         <div class="auth-copy">Cloud account sync is waiting for app configuration.</div>
       </div>
-      <div class="chip" tabindex="0" role="button" aria-label="Active athlete — click to edit"
+      <div class="chip" id="activeAthleteChip" tabindex="0" role="button" aria-label="Active athlete — click to edit"
            onclick="goTo('edit',null)" onkeydown="if(event.key==='Enter'||event.key===' ')goTo('edit',null)">
         <div class="chip-lbl">Active Athlete</div>
         <div class="chip-name" id="chipName">No athlete</div>
@@ -461,7 +462,7 @@ input.err,select.err{border-color:var(--red)}
     <!-- PREDICTIONS -->
     <section id="predict" class="screen" aria-labelledby="pd-h">
       <header class="screen-header">
-        <div><p class="eyebrow">95% Confidence Intervals</p><h1 class="screen-title" id="pd-h">Race <em>Forecasts</em></h1></div>
+        <div><p class="eyebrow">Planning Ranges</p><h1 class="screen-title" id="pd-h">Race <em>Forecasts</em></h1></div>
       </header>
       <div id="pd-body"></div>
     </section>
@@ -549,9 +550,11 @@ input.err,select.err{border-color:var(--red)}
                 <option value="">— Select —</option>
                 <option>100m</option><option>200m</option><option>400m</option>
                 <option>800m</option>
+                <option>1500m</option>
                 <option>1600m</option><option>Mile</option>
-                <option>3200m</option><option>2 Mile</option>
-                <option>5K</option><option>10K</option>
+                <option>3000m</option><option>3200m</option><option>2 Mile</option>
+                <option>5K</option><option>8K</option><option>10K</option>
+                <option>Half Marathon</option><option>Marathon</option>
               </select>
               <span class="f-err" id="fPrimary-e">Primary event is required.</span>
             </div>
@@ -562,12 +565,17 @@ input.err,select.err{border-color:var(--red)}
             <label class="ev-label"><input type="checkbox" class="sec" value="200m"> 200m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="400m"> 400m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="800m"> 800m</label>
+            <label class="ev-label"><input type="checkbox" class="sec" value="1500m"> 1500m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="1600m"> 1600m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="Mile"> Mile</label>
+            <label class="ev-label"><input type="checkbox" class="sec" value="3000m"> 3000m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="3200m"> 3200m</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="2 Mile"> 2 Mile</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="5K"> 5K</label>
+            <label class="ev-label"><input type="checkbox" class="sec" value="8K"> 8K</label>
             <label class="ev-label"><input type="checkbox" class="sec" value="10K"> 10K</label>
+            <label class="ev-label"><input type="checkbox" class="sec" value="Half Marathon"> Half Marathon</label>
+            <label class="ev-label"><input type="checkbox" class="sec" value="Marathon"> Marathon</label>
           </div>
         </fieldset>
 
@@ -581,9 +589,11 @@ input.err,select.err{border-color:var(--red)}
                 <option value="">— Select —</option>
                 <option>100m</option><option>200m</option><option>400m</option>
                 <option>800m</option>
+                <option>1500m</option>
                 <option>1600m</option><option>Mile</option>
-                <option>3200m</option><option>2 Mile</option>
-                <option>5K</option><option>10K</option>
+                <option>3000m</option><option>3200m</option><option>2 Mile</option>
+                <option>5K</option><option>8K</option><option>10K</option>
+                <option>Half Marathon</option><option>Marathon</option>
               </select>
               <span class="f-err" id="fRDist-e">Distance is required.</span>
             </div>
@@ -633,12 +643,20 @@ input.err,select.err{border-color:var(--red)}
               <input id="fPR800" type="text" placeholder="e.g. 2:18.4">
             </div>
             <div class="form-group">
+              <label for="fPR1500">1500m time</label>
+              <input id="fPR1500" type="text" placeholder="e.g. 4:48">
+            </div>
+            <div class="form-group">
               <label for="fPR1600">1600m time</label>
               <input id="fPR1600" type="text" placeholder="e.g. 5:12">
             </div>
             <div class="form-group">
               <label for="fPRMile">1 mile time</label>
               <input id="fPRMile" type="text" placeholder="e.g. 5:15">
+            </div>
+            <div class="form-group">
+              <label for="fPR3000">3000m time</label>
+              <input id="fPR3000" type="text" placeholder="e.g. 10:45">
             </div>
             <div class="form-group">
               <label for="fPR3200">3200m time</label>
@@ -653,8 +671,20 @@ input.err,select.err{border-color:var(--red)}
               <input id="fPR5K" type="text" placeholder="e.g. 20:00">
             </div>
             <div class="form-group">
+              <label for="fPR8K">8K time</label>
+              <input id="fPR8K" type="text" placeholder="e.g. 33:30">
+            </div>
+            <div class="form-group">
               <label for="fPR10K">10K time</label>
               <input id="fPR10K" type="text" placeholder="e.g. 42:00">
+            </div>
+            <div class="form-group">
+              <label for="fPRHalf">Half marathon time</label>
+              <input id="fPRHalf" type="text" placeholder="e.g. 1:32:00">
+            </div>
+            <div class="form-group">
+              <label for="fPRMarathon">Marathon time</label>
+              <input id="fPRMarathon" type="text" placeholder="e.g. 3:20:00">
             </div>
           </div>
         </fieldset>
@@ -697,22 +727,89 @@ const BILLING_ANNUAL_PAYMENT_LINK = STRIDE_BILLING_CONFIG.annualPaymentLink || '
 let sbClient = null;
 let sbUser = null;
 let sbCoachReady = false;
+let sbBackendReachable = null;
+let sbHealthCheckedAt = null;
 // Subscription state, populated from the my_subscription view after sign-in.
 // Defaults to "no access" until we've actually read it.
-let sbSubscription = {
-  tier: null,
-  trialEndsAt: null,
-  status: null,
-  interval: null,
-  hasProAccess: false,
-  trialSecondsRemaining: null
-};
+function emptySubscription(){
+  return {
+    tier: null,
+    trialEndsAt: null,
+    status: null,
+    interval: null,
+    hasProAccess: false,
+    trialSecondsRemaining: null
+  };
+}
+let sbSubscription = emptySubscription();
 const FREE_ATHLETE_LIMIT = 3;
 const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
+const PUBLIC_SCREEN_ID = 'paces';
+const WORKSPACE_SCREEN_IDS = new Set([
+  'roster',
+  'import',
+  'overview',
+  'workouts',
+  'multievent',
+  'predict',
+  'profile',
+  'methodology',
+  'edit'
+]);
+
+function hasWorkspaceAccess(){
+  return Boolean(sbUser);
+}
+
+function applyWorkspaceMode(options = {}){
+  const locked = !hasWorkspaceAccess();
+  document.body.classList.toggle('workspace-locked', locked);
+
+  const brandTag = document.getElementById('brandTag');
+  if(brandTag){
+    brandTag.textContent = locked ? 'Free Pace Calculator' : 'Coaching Workflow Tool';
+  }
+  const workspaceLabel = document.getElementById('lbl-ws');
+  if(workspaceLabel){
+    workspaceLabel.textContent = locked ? 'Calculator' : 'Workspace';
+  }
+
+  if(locked){
+    const activeProtected = typeof currentScreen !== 'undefined' && WORKSPACE_SCREEN_IDS.has(currentScreen);
+    if(options.redirect !== false && activeProtected){
+      goTo(PUBLIC_SCREEN_ID, null);
+    }
+  }
+}
+
+function promptForAccount(action){
+  const reason = action || 'save athletes and open the coach workspace';
+  setAuthFeedback('info', `Use the calculator free. Sign in or create an account to ${reason}.`, false);
+  toast('Sign in to unlock workspace');
+  setTimeout(() => {
+    const email = document.getElementById('authEmail');
+    if(email) email.focus();
+  }, 50);
+}
+
+function requireWorkspace(action){
+  if(hasWorkspaceAccess()) return true;
+  promptForAccount(action);
+  if(typeof currentScreen !== 'undefined' && currentScreen !== PUBLIC_SCREEN_ID){
+    goTo(PUBLIC_SCREEN_ID, null);
+  }
+  return false;
+}
+
+function resetSubscriptionState(){
+  sbSubscription = emptySubscription();
+  renderTierBanner();
+}
 
 function setAuthMode(mode){
-  authUiState = { ...authUiState, mode: mode === 'signup' ? 'signup' : 'signin', message: '', type: '' };
+  const nextMode = mode === 'signup' ? 'signup' : mode === 'reset' ? 'reset' : 'signin';
+  authUiState = { ...authUiState, mode: nextMode, message: '', type: '' };
   renderAuthPanel();
 }
 
@@ -730,6 +827,7 @@ function localSnapshot(){
 
 function setAuthFeedback(type, message, sending){
   authUiState = {
+    ...authUiState,
     type: type || '',
     message: message || '',
     sending: Boolean(sending)
@@ -765,7 +863,22 @@ function renderAuthPanel(){
     return;
   }
 
-  if(sbUser){
+  if(sbBackendReachable === false){
+    let host = 'configured Supabase project';
+    try{ host = new URL(STRIDE_SUPABASE_CONFIG.url).host; }catch(_e){}
+    const signedInNote = sbUser && sbUser.email
+      ? `<div class="auth-copy">Signed in as ${esc(sbUser.email)}, but cloud sync cannot currently reach ${esc(host)}.</div>`
+      : `<div class="auth-copy">Cloud sync cannot currently reach ${esc(host)}. Local calculator data still works.</div>`;
+    el.innerHTML = `
+      <div class="auth-status">Sync Offline</div>
+      ${signedInNote}
+      ${sbHealthCheckedAt ? `<div class="auth-note">Last backend check: ${esc(new Date(sbHealthCheckedAt).toLocaleString())}</div>` : ''}
+      ${authFeedbackHtml()}
+    `;
+    return;
+  }
+
+  if(sbUser && authUiState.mode !== 'reset'){
     const tier = sbSubscription && sbSubscription.tier;
     const isPro = ['pro','team','athlete'].includes(tier);
     const tierBadge = tier
@@ -787,7 +900,24 @@ function renderAuthPanel(){
   }
 
   const isSignup = authUiState.mode === 'signup';
+  const isReset = authUiState.mode === 'reset';
   const busy = authUiState.sending;
+
+  if(isReset){
+    el.innerHTML = `
+      <div class="auth-status">Set Password</div>
+      <div class="auth-copy">Enter a new password for this STRIDE OS account.</div>
+      <input class="auth-input" id="authNewPassword" type="password" autocomplete="new-password" placeholder="New password (6+ characters)">
+      <input class="auth-input" id="authPasswordConfirm" type="password" autocomplete="new-password" placeholder="Confirm new password">
+      <div class="auth-actions">
+        <button class="btn btn-primary" onclick="updatePassword()" ${busy ? 'disabled' : ''}>${busy ? 'Saving...' : 'Save Password'}</button>
+      </div>
+      <div class="auth-secondary"><a onclick="setAuthMode('signin')">Back to sign in</a></div>
+      ${authFeedbackHtml()}
+    `;
+    return;
+  }
+
   const tabs = `
     <div class="auth-tabs" role="tablist">
       <button class="auth-tab ${isSignup ? '' : 'active'}" onclick="setAuthMode('signin')" role="tab" aria-selected="${!isSignup}">Sign In</button>
@@ -806,7 +936,7 @@ function renderAuthPanel(){
 
   el.innerHTML = `
     <div class="auth-status">Coach Account</div>
-    <div class="auth-copy">Sign in to your STRIDE OS account and keep your roster synced across devices.</div>
+    <div class="auth-copy">Use the calculator free. Sign in to save athletes and open the coach workspace.</div>
     ${tabs}
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <input class="auth-input" id="authPassword" type="password" autocomplete="${passwordAutocomplete}" placeholder="${passwordPlaceholder}">
@@ -818,6 +948,12 @@ function renderAuthPanel(){
   `;
 }
 
+function isPasswordRecoveryReturn(){
+  const hash = window.location.hash || '';
+  const search = window.location.search || '';
+  return hash.includes('type=recovery') || search.includes('type=recovery');
+}
+
 async function initSupabase(){
   renderAuthPanel();
   if(!hasSupabaseConfig() || !window.supabase || !window.supabase.createClient) return;
@@ -827,20 +963,34 @@ async function initSupabase(){
       STRIDE_SUPABASE_CONFIG.url,
       STRIDE_SUPABASE_CONFIG.anonKey
     );
+    await checkSupabaseHealth();
 
     const { data, error } = await sbClient.auth.getSession();
     if(error) throw error;
     sbUser = data.session ? data.session.user : null;
+    if(isPasswordRecoveryReturn()){
+      authUiState = { ...authUiState, mode: 'reset', type: 'info', message: 'Choose a new password to finish account recovery.', sending: false };
+    }
+    applyWorkspaceMode();
 
     sbClient.auth.onAuthStateChange(async (_event, session) => {
       sbUser = session ? session.user : null;
       sbCoachReady = false;
+      if(_event === 'PASSWORD_RECOVERY'){
+        authUiState = { ...authUiState, mode: 'reset', type: 'info', message: 'Choose a new password to finish account recovery.', sending: false };
+      }
+      if(!sbUser){
+        resetSubscriptionState();
+      }
+      applyWorkspaceMode();
       renderAuthPanel();
       if(sbUser){
         await ensureCoachProfileSilent();
         await loadSubscription();
         await loadAthleteRole();
         await loadRemoteAthletes();
+      } else {
+        refreshCurrentScreen();
       }
     });
 
@@ -850,11 +1000,44 @@ async function initSupabase(){
       await loadSubscription();
       await loadAthleteRole();
       await loadRemoteAthletes();
+    } else {
+      resetSubscriptionState();
+      refreshCurrentScreen();
     }
   }catch(err){
     console.warn('Supabase init failed', err);
     toast('Supabase sync unavailable');
     setAuthFeedback('err', 'Account services could not initialize in this browser session.', false);
+    renderAuthPanel();
+  }
+}
+
+async function checkSupabaseHealth(){
+  if(!hasSupabaseConfig()) return null;
+  const url = String(STRIDE_SUPABASE_CONFIG.url || '').replace(/\/+$/, '');
+  if(!url) return null;
+
+  let timer = null;
+  try{
+    const controller = new AbortController();
+    timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${url}/auth/v1/settings`, {
+      method: 'GET',
+      headers: { apikey: STRIDE_SUPABASE_CONFIG.anonKey || '' },
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    sbBackendReachable = res.ok || res.status === 401 || res.status === 403;
+    sbHealthCheckedAt = new Date().toISOString();
+    return sbBackendReachable;
+  }catch(err){
+    sbBackendReachable = false;
+    sbHealthCheckedAt = new Date().toISOString();
+    console.warn('Supabase health check failed', err);
+    setAuthFeedback('err', 'Cloud backend is configured but unreachable. Check the Supabase project ref/DNS, then refresh.', false);
+    return false;
+  }finally{
+    if(timer) clearTimeout(timer);
     renderAuthPanel();
   }
 }
@@ -886,10 +1069,12 @@ async function sendMagicLink(){
 
 function getAuthInputs(){
   const emailEl = document.getElementById('authEmail');
-  const passwordEl = document.getElementById('authPassword');
+  const passwordEl = document.getElementById('authPassword') || document.getElementById('authNewPassword');
+  const confirmEl = document.getElementById('authPasswordConfirm');
   return {
     email: emailEl ? emailEl.value.trim() : '',
-    password: passwordEl ? passwordEl.value : ''
+    password: passwordEl ? passwordEl.value : '',
+    confirmPassword: confirmEl ? confirmEl.value : ''
   };
 }
 
@@ -970,6 +1155,31 @@ async function forgotPassword(){
   toast('Reset email sent');
 }
 
+async function updatePassword(){
+  if(!sbClient) return toast('Account services are not configured yet');
+  const { password, confirmPassword } = getAuthInputs();
+  if(!password || password.length < 6){
+    setAuthFeedback('err', 'Choose a password with at least 6 characters.', false);
+    return;
+  }
+  if(password !== confirmPassword){
+    setAuthFeedback('err', 'Passwords do not match.', false);
+    return;
+  }
+
+  setAuthFeedback('info', 'Saving new password...', true);
+  const { error } = await sbClient.auth.updateUser({ password });
+  if(error){
+    console.error(error);
+    setAuthFeedback('err', error.message || 'Password update failed', false);
+    return toast(error.message || 'Password update failed');
+  }
+
+  authUiState = { ...authUiState, mode: 'signin', type: 'ok', message: 'Password updated. Sign in with your new password.', sending: false };
+  renderAuthPanel();
+  toast('Password updated');
+}
+
 async function signOutSupabase(){
   if(!sbClient){
     setAuthFeedback('err', 'Account services are not available in this session.', false);
@@ -981,6 +1191,8 @@ async function signOutSupabase(){
     if(error) throw error;
     sbUser = null;
     sbCoachReady = false;
+    resetSubscriptionState();
+    applyWorkspaceMode();
     setAuthFeedback('info', 'Signed out. You can request another magic link anytime.', false);
     toast('Signed out');
   }catch(err){
@@ -989,6 +1201,7 @@ async function signOutSupabase(){
     toast(err.message || 'Sign out failed');
   }finally{
     renderAuthPanel();
+    refreshCurrentScreen();
   }
 }
 
@@ -1027,10 +1240,7 @@ async function ensureCoachProfileSilent(){
 // current signed-in coach's own state.
 async function loadSubscription(){
   if(!sbClient || !sbUser){
-    sbSubscription = {
-      tier: null, trialEndsAt: null, status: null, interval: null,
-      hasProAccess: false, trialSecondsRemaining: null
-    };
+    resetSubscriptionState();
     return;
   }
   try{
@@ -1069,6 +1279,7 @@ async function loadSubscription(){
 // content swaps between locked/unlocked variants without a navigation.
 function refreshCurrentScreen(){
   try{
+    applyWorkspaceMode({ redirect: false });
     switch(currentScreen){
       case 'roster':      renderRoster();      break;
       case 'overview':    renderOverview();    break;
@@ -1078,6 +1289,8 @@ function refreshCurrentScreen(){
       case 'predict':     renderPredict();     break;
       case 'workouts':    renderWorkouts();    break;
       case 'methodology': renderMethodology(); break;
+      case 'edit':        fillForm();          break;
+      case 'import':      renderImport();      break;
     }
   }catch(err){
     console.warn('refreshCurrentScreen failed', err);
@@ -1090,6 +1303,38 @@ function refreshCurrentScreen(){
 // Workouts are stored in Supabase. We cache the current athlete's list
 // in memory to avoid re-fetching on every screen render.
 let workoutCache = { athleteId: null, items: [] };
+
+function isUuid(value){
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || ''));
+}
+
+function knownAthleteCloudId(athlete){
+  if(!athlete) return null;
+  return athlete.supabaseId || (isUuid(athlete.id) ? athlete.id : null);
+}
+
+async function resolveAthleteCloudId(athlete){
+  if(!athlete) return null;
+  if(athlete.supabaseId) return athlete.supabaseId;
+  if(isUuid(athlete.id)) return athlete.id;
+  if(!sbClient || !sbUser || !athlete.id) return null;
+  const { data, error } = await sbClient
+    .from('athletes')
+    .select('id')
+    .eq('client_ref', athlete.id)
+    .maybeSingle();
+  if(error) throw error;
+  if(data && data.id){
+    athlete.supabaseId = data.id;
+    const idx = DB.athletes.findIndex(a => a.id === athlete.id);
+    if(idx >= 0){
+      DB.athletes[idx].supabaseId = data.id;
+      saveDB(DB);
+    }
+    return data.id;
+  }
+  return null;
+}
 
 const WORKOUT_TYPES = [
   { value: 'easy',              label: 'Easy',              zonePct: 65,  zoneLabel: 'Easy 65%' },
@@ -1182,11 +1427,30 @@ function renderWorkouts(){
     return;
   }
 
+  const cloudAthleteId = knownAthleteCloudId(A);
+  if(!cloudAthleteId){
+    resolveAthleteCloudId(A)
+      .then(async id => {
+        if(id){
+          await loadWorkouts(id);
+          renderWorkouts();
+          return;
+        }
+        el.innerHTML = `<div class="info-box">${esc(A.name)} is saved locally but does not have a cloud athlete row yet. Save the athlete while Supabase is reachable before logging workouts.</div>`;
+      })
+      .catch(err => {
+        console.warn('athlete UUID lookup failed', err);
+        el.innerHTML = `<div class="info-box">Could not prepare ${esc(A.name)}'s cloud training log. Check Supabase reachability and try again.</div>`;
+      });
+    el.innerHTML = `<div class="info-box">Preparing ${esc(A.name)}'s cloud training log...</div>`;
+    return;
+  }
+
   // Lazy-load if the cache is empty or for a different athlete.
-  if(workoutCache.athleteId !== A.id){
-    loadWorkouts(A.id).then(() => renderWorkouts());
-    if(A.supabaseId && stravaCache.athleteId !== A.supabaseId){
-      loadStravaStatus(A.supabaseId).then(() => renderWorkouts());
+  if(workoutCache.athleteId !== cloudAthleteId){
+    loadWorkouts(cloudAthleteId).then(() => renderWorkouts());
+    if(stravaCache.athleteId !== cloudAthleteId){
+      loadStravaStatus(cloudAthleteId).then(() => renderWorkouts());
     }
     el.innerHTML = `<div class="info-box">Loading ${esc(A.name)}'s training log...</div>`;
     return;
@@ -1195,7 +1459,7 @@ function renderWorkouts(){
   // Strava status bar (only when integration is configured AND the
   // athlete has a Supabase row).
   let stravaBar = '';
-  if(A.supabaseId && stravaConfigured()){
+  if(cloudAthleteId && stravaConfigured()){
     if(stravaCache.connected){
       const lastSynced = stravaCache.lastSynced
         ? new Date(stravaCache.lastSynced).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
@@ -1206,7 +1470,7 @@ function renderWorkouts(){
             <strong style="color:#fc4c02">Strava connected</strong>
             <span style="color:var(--text-3);margin-left:.5rem">last synced ${esc(lastSynced)}</span>
           </div>
-          <button class="btn" style="font-size:.6875rem;padding:.3125rem .75rem" onclick="stravaSyncNow('${esc(A.supabaseId)}')">Sync Now</button>
+          <button class="btn" style="font-size:.6875rem;padding:.3125rem .75rem" onclick="stravaSyncNow('${esc(cloudAthleteId)}')">Sync Now</button>
         </div>`;
     } else {
       stravaBar = `
@@ -1214,7 +1478,7 @@ function renderWorkouts(){
           <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
             Auto-import workouts from <strong style="color:#fc4c02">Strava</strong>
           </div>
-          <button class="btn btn-primary" style="font-size:.6875rem;padding:.3125rem .75rem;background:#fc4c02;border-color:#fc4c02" onclick="startStravaConnect('${esc(A.supabaseId)}')">Connect Strava</button>
+          <button class="btn btn-primary" style="font-size:.6875rem;padding:.3125rem .75rem;background:#fc4c02;border-color:#fc4c02" onclick="startStravaConnect('${esc(cloudAthleteId)}')">Connect Strava</button>
         </div>`;
     }
   }
@@ -1438,16 +1702,8 @@ async function saveWorkout(){
   const totalDistM = num('wfTotalDist');
   const totalDurSec = parseDurationToSec(v('wfDuration'));
 
-  // We need to find the athlete's UUID in Supabase (not the local A.id which
-  // may be a client-side id). Use the existing athlete row from cache.
-  let supabaseAthleteId = A.id;
-  // If A.id looks like a UUID, assume it's the Supabase id. Otherwise, look up.
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(A.id)){
-    try{
-      const { data } = await sbClient.from('athletes').select('id').eq('client_ref', A.id).maybeSingle();
-      if(data) supabaseAthleteId = data.id;
-    }catch(e){ /* fall back to A.id */ }
-  }
+  const supabaseAthleteId = await resolveAthleteCloudId(A);
+  if(!supabaseAthleteId) return toast('Save athlete to cloud before logging workouts');
 
   const row = {
     athlete_id: supabaseAthleteId,
@@ -1479,7 +1735,7 @@ async function saveWorkout(){
       toast('Workout logged');
     }
     closeWorkoutForm();
-    await loadWorkouts(A.id);
+    await loadWorkouts(supabaseAthleteId);
     renderWorkouts();
   }catch(err){
     console.error('saveWorkout failed', err);
@@ -1524,7 +1780,7 @@ async function loadStravaStatus(athleteSupabaseId){
   }
   try{
     const { data } = await sbClient
-      .from('athlete_strava')
+      .from('athlete_strava_status')
       .select('athlete_id, last_synced_at')
       .eq('athlete_id', athleteSupabaseId)
       .maybeSingle();
@@ -1581,7 +1837,7 @@ async function stravaSyncNow(athleteSupabaseId){
     const data = await res.json();
     toast(`Imported ${data.imported || 0} activities`);
     await loadStravaStatus(athleteSupabaseId);
-    await loadWorkouts(A.id);
+    await loadWorkouts(athleteSupabaseId);
     renderWorkouts();
   }catch(err){
     console.error('stravaSyncNow failed', err);
@@ -1599,9 +1855,12 @@ async function handleStravaReturn(){
   if(stravaState === 'connected'){
     toast('Strava connected — your activities will appear shortly.');
     // Reload the active athlete's Strava state + workouts.
-    if(A && A.supabaseId){
-      await loadStravaStatus(A.supabaseId);
-      await loadWorkouts(A.id);
+    if(A){
+      const cloudAthleteId = await resolveAthleteCloudId(A);
+      if(cloudAthleteId){
+        await loadStravaStatus(cloudAthleteId);
+        await loadWorkouts(cloudAthleteId);
+      }
       refreshCurrentScreen();
     }
   } else if(stravaState === 'denied'){
@@ -1841,7 +2100,7 @@ function showUpgradeModal(){
 
       <ul class="upgrade-perks">
         <li>Unlimited athletes</li>
-        <li>Race predictions across every distance, with confidence ranges</li>
+        <li>Race predictions across every distance, with planning ranges</li>
         <li>Longitudinal performance curve &amp; year-over-year trends</li>
         <li>Event fit analysis, environmental corrections, Speed Reserve Ratio</li>
         <li>Bulk roster import from CSV / Excel</li>
@@ -1995,7 +2254,9 @@ async function syncLocalToSupabase(){
 }
 
 async function syncAthleteToSupabase(athlete){
-  if(!sbClient || !sbUser || !sbCoachReady || !athlete) return;
+  if(!sbClient || !sbUser || !sbCoachReady || !athlete){
+    return { ok: false, skipped: true, reason: 'cloud_not_ready' };
+  }
   try{
     const { error } = await sbClient.rpc('import_local_athlete', { local_athlete: athlete });
     if(error) throw error;
@@ -2009,8 +2270,94 @@ async function syncAthleteToSupabase(athlete){
         .eq('coach_id', sbUser.id);
       if(e2) console.warn('invite_email update failed', e2);
     }
+    return { ok: true };
   }catch(err){
     console.warn('Athlete background sync failed', err);
+    return { ok: false, error: err };
+  }
+}
+
+// ── PREDICTION SNAPSHOT LOGGING ──
+// Fire-and-forget: whenever an athlete is saved with a race anchor, log the
+// engine's full forecast set to Supabase. As real race results accumulate,
+// this becomes the prediction-vs-outcome dataset used to recalibrate the
+// ensemble (the core data flywheel). Deduped per athlete via a signature of
+// the inputs, so re-saving without changes doesn't write duplicate rows.
+const PREDICTION_ENGINE_VERSION = 'ensemble-2026-06-20-source-excluded';
+const PREDICTION_SOURCE_VERSION = 'sources-2026-06-20-norwegian-method-applied';
+
+async function logPredictionSnapshot(athlete){
+  try{
+    if(!sbClient || !sbUser || !athlete || !athlete.raceDistanceM || !athlete.raceTime){
+      return { ok: false, skipped: true, reason: 'cloud_not_ready' };
+    }
+    const anchorSec = parseTime(athlete.raceTime);
+    if(!anchorSec) return { ok: false, skipped: true, reason: 'invalid_anchor' };
+
+    const sig = [
+      PREDICTION_ENGINE_VERSION,
+      PREDICTION_SOURCE_VERSION,
+      athlete.raceDistanceM,
+      anchorSec,
+      athlete.raceDate || '',
+      athlete.weeklyMileage || '',
+      athlete.age || '',
+      JSON.stringify(athlete.additionalPRs || {})
+    ].join('|');
+    let sigs = {};
+    try{ sigs = JSON.parse(localStorage.getItem('strideos_pred_log_sigs') || '{}'); }catch(_e){}
+    if(sigs[athlete.id] === sig) return { ok: true, skipped: true, reason: 'duplicate_signature' };
+
+    const preds = forecastTargets().map(t => raceForecastForTarget(athlete, t)).filter(r => r && !r.isObserved).map(r => {
+      return {
+        distM: r.distM,
+        label: r.label,
+        likelySec: Math.round(r.likely * 10) / 10,
+        rangeLowSec: Math.round(r.aggressive * 10) / 10,
+        rangeHighSec: Math.round(r.conservative * 10) / 10,
+        rangeMethod: r.rangeMethod || 'heuristic_planning_range_uncalibrated',
+        modelLowSec: r.modelLow ? Math.round(r.modelLow * 10) / 10 : null,
+        modelHighSec: r.modelHigh ? Math.round(r.modelHigh * 10) / 10 : null,
+        modelAgreement: r.modelAgreement != null ? Math.round(r.modelAgreement * 1000) / 1000 : null,
+        confidence: Math.round(r.confidence),
+        anchorDistM: r.anchor ? r.anchor.distM : null,
+        anchorEvent: r.anchor ? r.anchor.event : null,
+        anchorSec: r.anchor ? Math.round(r.anchor.sec * 10) / 10 : null,
+        anchorSource: r.anchor ? r.anchor.source : null,
+        anchorFreshness: r.freshness,
+        targetDomain: r.targetDomain ? r.targetDomain.key : null,
+        reasons: r.reasons || []
+      };
+    });
+
+    const { error } = await sbClient.from('prediction_log').insert({
+      athlete_client_ref: String(athlete.id),
+      engine_version: PREDICTION_ENGINE_VERSION,
+      source_version: PREDICTION_SOURCE_VERSION,
+      anchor_event: athlete.raceDistance || null,
+      anchor_dist_m: athlete.raceDistanceM,
+      anchor_sec: anchorSec,
+      weekly_mileage: athlete.weeklyMileage || null,
+      age_years: parseInt(athlete.age, 10) || null,
+      predictions: preds,
+      source_provenance: {
+        model: 'display_forecast_source_excluded',
+        norwegian_method_role: 'training_pace_threshold_readiness_support_not_race_equivalence_formula',
+        local_sources: [
+          'Library/Source Library/01_Source_Files/Training/the norwegian method p.1-102.pdf',
+          'Library/Source Library/01_Source_Files/Training/the norwegian method p.103-204.pdf',
+          'Library/Source Library/01_Source_Files/Training/the norwegian method p.205-307.pdf',
+          'Library/Source Library/01_Source_Files/Training/the norwegian method p.307-327.pdf'
+        ]
+      }
+    });
+    if(error) throw error;
+    sigs[athlete.id] = sig;
+    localStorage.setItem('strideos_pred_log_sigs', JSON.stringify(sigs));
+    return { ok: true };
+  }catch(err){
+    console.warn('Prediction snapshot log failed', err);
+    return { ok: false, error: err };
   }
 }
 
@@ -2148,19 +2495,30 @@ function refreshActiveAthlete(){
 refreshActiveAthlete();
 
 // ── DATA CONSTANTS ──
-const DIST = {'100m':100,'200m':200,'400m':400,'800m':800,'1600m':1600,'Mile':1609,'3200m':3200,'2 Mile':3218,'5K':5000,'10K':10000};
+const DIST = {
+  '100m':100,'200m':200,'400m':400,'800m':800,
+  '1500m':1500,'1600m':1600,'Mile':1609,
+  '3000m':3000,'3200m':3200,'2 Mile':3218,
+  '5K':5000,'8K':8000,'10K':10000,
+  'Half Marathon':21097,'Marathon':42195
+};
 
 const DEMANDS = {
   '100m': {Acceleration:35,'Max Velocity':45,'Speed Endurance':15,'Glycolytic Tolerance':5,'Aerobic Power':0,'Threshold/CV':0,Economy:0},
   '200m': {Acceleration:20,'Max Velocity':35,'Speed Endurance':30,'Glycolytic Tolerance':10,'Aerobic Power':0,'Threshold/CV':0,Economy:5},
   '400m': {Acceleration:10,'Max Velocity':20,'Speed Endurance':30,'Glycolytic Tolerance':25,'Aerobic Power':10,'Threshold/CV':0,Economy:5},
   '800m': {Acceleration:5,'Max Velocity':10,'Speed Endurance':20,'Glycolytic Tolerance':20,'Aerobic Power':25,'Threshold/CV':10,Economy:10},
+  '1500m':{Acceleration:2,'Max Velocity':5,'Speed Endurance':9,'Glycolytic Tolerance':11,'Aerobic Power':31,'Threshold/CV':24,Economy:18},
   '1600m':{Acceleration:2,'Max Velocity':5,'Speed Endurance':8,'Glycolytic Tolerance':10,'Aerobic Power':30,'Threshold/CV':25,Economy:20},
   'Mile': {Acceleration:2,'Max Velocity':5,'Speed Endurance':8,'Glycolytic Tolerance':10,'Aerobic Power':30,'Threshold/CV':25,Economy:20},
+  '3000m':{Acceleration:1,'Max Velocity':3,'Speed Endurance':5,'Glycolytic Tolerance':7,'Aerobic Power':30,'Threshold/CV':30,Economy:24},
   '3200m':{Acceleration:1,'Max Velocity':3,'Speed Endurance':5,'Glycolytic Tolerance':7,'Aerobic Power':30,'Threshold/CV':30,Economy:24},
   '2 Mile':{Acceleration:1,'Max Velocity':3,'Speed Endurance':5,'Glycolytic Tolerance':7,'Aerobic Power':30,'Threshold/CV':30,Economy:24},
   '5K':   {Acceleration:1,'Max Velocity':2,'Speed Endurance':4,'Glycolytic Tolerance':5,'Aerobic Power':25,'Threshold/CV':35,Economy:28},
+  '8K':   {Acceleration:0,'Max Velocity':1,'Speed Endurance':3,'Glycolytic Tolerance':4,'Aerobic Power':22,'Threshold/CV':38,Economy:32},
   '10K':  {Acceleration:0,'Max Velocity':1,'Speed Endurance':2,'Glycolytic Tolerance':3,'Aerobic Power':20,'Threshold/CV':40,Economy:34},
+  'Half Marathon':{Acceleration:0,'Max Velocity':0,'Speed Endurance':1,'Glycolytic Tolerance':2,'Aerobic Power':16,'Threshold/CV':42,Economy:39},
+  'Marathon':{Acceleration:0,'Max Velocity':0,'Speed Endurance':1,'Glycolytic Tolerance':1,'Aerobic Power':14,'Threshold/CV':38,Economy:46},
 };
 
 const MODELS = {
@@ -2177,12 +2535,17 @@ const MODELS = {
   '200m': [['Sprint Model',90],['Power Endurance',50],['Strength Impact',55],['Critical Velocity',10]],
   '400m': [['Power Endurance',95],['Sprint Model',70],['Strength Impact',55],['Anaerobic Hybrid',30],['Critical Velocity',20]],
   '800m': [['Anaerobic Hybrid',95],['Power Endurance',75],['Critical Velocity',55],['Strength Impact',50],['Sprint Model',30]],
+  '1500m':[['Critical Velocity',88],['Anaerobic Hybrid',70],['Strength Impact',50],['Power Endurance',30]],
   '1600m':[['Critical Velocity',90],['Anaerobic Hybrid',65],['Strength Impact',50],['Power Endurance',25]],
   'Mile': [['Critical Velocity',90],['Anaerobic Hybrid',65],['Strength Impact',50],['Power Endurance',25]],
+  '3000m':[['Critical Velocity',95],['Aerobic Endurance',80],['Strength Impact',45],['Anaerobic Hybrid',30]],
   '3200m':[['Critical Velocity',95],['Aerobic Endurance',80],['Strength Impact',45],['Anaerobic Hybrid',30]],
   '2 Mile':[['Critical Velocity',95],['Aerobic Endurance',80],['Strength Impact',45],['Anaerobic Hybrid',30]],
   '5K':   [['Critical Velocity',95],['Aerobic Endurance',90],['Strength Impact',40],['Sprint Model',20]],
+  '8K':   [['Aerobic Endurance',92],['Critical Velocity',88],['Strength Impact',35],['Sprint Model',10]],
   '10K':  [['Aerobic Endurance',95],['Critical Velocity',85],['Strength Impact',35],['Sprint Model',10]],
+  'Half Marathon':[['Aerobic Endurance',98],['Critical Velocity',78],['Strength Impact',30]],
+  'Marathon':[['Aerobic Endurance',98],['Critical Velocity',70],['Strength Impact',25]],
 };
 
 // ── CLASSIFICATION ──
@@ -2192,9 +2555,9 @@ function getType(ev){
   if(ev==='100m')  return 'Power Sprinter';
   if(ev==='400m')  return 'Long Sprint Specialist';
   if(ev==='800m')  return '400/800 Hybrid';
-  if(ev==='1600m'||ev==='Mile') return 'Aerobic-Strength Runner';
-  if(ev==='3200m'||ev==='2 Mile'||ev==='5K') return 'Middle Distance Runner';
-  if(ev==='10K')  return 'Endurance Runner';
+  if(ev==='1500m'||ev==='1600m'||ev==='Mile') return 'Aerobic-Strength Runner';
+  if(ev==='3000m'||ev==='3200m'||ev==='2 Mile'||ev==='5K') return 'Middle Distance Runner';
+  if(ev==='8K'||ev==='10K'||ev==='Half Marathon'||ev==='Marathon')  return 'Endurance Runner';
   return 'Multi-Event';
 }
 
@@ -2211,9 +2574,16 @@ function parseTime(s){
   if(!s||typeof s!=='string') return null;
   const p=s.trim().split(':').map(Number);
   if(p.some(isNaN)||p.some(n=>n<0)) return null;
-  if(p.length===3) return p[0]*3600+p[1]*60+p[2];
-  if(p.length===2) return p[0]*60+p[1];
-  return p[0]>0?p[0]:null;
+  if(p.length===3){
+    if(p[1] >= 60 || p[2] >= 60) return null;
+    return p[0]*3600+p[1]*60+p[2];
+  }
+  if(p.length===2){
+    if(p[1] >= 60) return null;
+    return p[0]*60+p[1];
+  }
+  if(p.length===1) return p[0]>0?p[0]:null;
+  return null;
 }
 
 function fmtT(sec){
@@ -2278,10 +2648,12 @@ function fmtMileRange(spkmLo, spkmHi){
 // Full Daniels-Gilbert formula (from Oxygen Power / LetsRun docs)
 
 function danielsPctVO2(timeSec){
-  // Fraction of VO2max sustained for a given race duration
+  // Fraction of VO2max sustained for a given race duration.
+  // NOTE: the published Daniels-Gilbert constants expect time in MINUTES.
+  const tMin = timeSec / 60;
   return 0.8
-       + 0.1894393 * Math.exp(-0.012778  * timeSec)
-       + 0.2989558 * Math.exp(-0.1932605 * timeSec);
+       + 0.1894393 * Math.exp(-0.012778  * tMin)
+       + 0.2989558 * Math.exp(-0.1932605 * tMin);
 }
 
 function danielsVO2atVelocity(vMperMin){
@@ -2350,6 +2722,12 @@ function fmtPace(spkm){ return fmtMile(spkm); }
 
 // ── NAVIGATION ──
 function goTo(id,btn){
+  if(WORKSPACE_SCREEN_IDS.has(id) && !hasWorkspaceAccess()){
+    promptForAccount('save athletes and open the coach workspace');
+    id = PUBLIC_SCREEN_ID;
+    btn = null;
+  }
+  applyWorkspaceMode({ redirect: false });
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn[data-s]').forEach(b=>b.removeAttribute('aria-current'));
   const sectionEl = document.getElementById(id);
@@ -2402,12 +2780,17 @@ function renderOverview(){
     '200m':  { aerobic: 29, anaerobic: 71, source: 'Spencer & Gastin (2001), measured, n=3' },
     '400m':  { aerobic: 43, anaerobic: 57, source: 'Spencer & Gastin (2001), measured, n=6' },
     '800m':  { aerobic: 66, anaerobic: 34, source: 'Spencer & Gastin (2001), measured, n=5' },
+    '1500m': { aerobic: 84, anaerobic: 16, source: 'Spencer & Gastin (2001), measured at 1500m, n=6' },
     '1600m': { aerobic: 84, anaerobic: 16, source: 'Spencer & Gastin (2001), n=6 at 1500m; ~84% aerobic' },
     'Mile':  { aerobic: 85, anaerobic: 15, source: 'Extrapolated from Spencer & Gastin (2001) trend; ~9 sec longer than 1500m' },
+    '3000m': { aerobic: 89, anaerobic: 11, source: 'Extrapolated from Spencer & Gastin (2001) and Gastin (2001) review trend' },
     '3200m': { aerobic: 89, anaerobic: 11, source: 'Extrapolated from Spencer & Gastin (2001) trend' },
     '2 Mile':{ aerobic: 89, anaerobic: 11, source: 'Extrapolated from Spencer & Gastin (2001) trend' },
     '5K':    { aerobic: 94, anaerobic:  6, source: 'Gastin (2001) review data' },
+    '8K':    { aerobic: 96, anaerobic:  4, source: 'Extrapolated from Gastin (2001) review data' },
     '10K':   { aerobic: 97, anaerobic:  3, source: 'Gastin (2001) review data' },
+    'Half Marathon': { aerobic: 98, anaerobic: 2, source: 'Endurance-event estimate from Gastin (2001) review trend' },
+    'Marathon': { aerobic: 99, anaerobic: 1, source: 'Endurance-event estimate from Gastin (2001) review trend' },
   };
 
   const es = ENERGY_SYSTEMS[A.primaryEvent] || ENERGY_SYSTEMS['800m'];
@@ -2468,7 +2851,7 @@ function renderOverview(){
       <p class="card-title"><span>${esc(A.name)}'s Toolkit</span><span class="card-accent">AVAILABLE NOW</span></p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem">
         ${toolCard('Pace Calculator', 'Every training zone from a single race PR. Slide to any %, get the split.', 'paces', '→')}
-        ${toolCard('Race Predictions', 'Adjacent-distance forecasts with 95% confidence intervals from Riegel.', 'predict', '→')}
+        ${toolCard('Race Predictions', 'Adjacent-distance forecasts from a multi-formula ensemble with honest planning ranges.', 'predict', '→')}
         ${toolCard('Multi-Event Analysis', `${Object.keys(A.additionalPRs||{}).length>0 ? 'Strength vs weakness across logged PRs.' : 'Log 2+ race times to unlock strength mapping.'}`, 'multievent', '→')}
         ${toolCard('Event Profile', 'Demands, models, and training emphasis for the chosen event.', 'profile', '→')}
       </div>
@@ -2538,20 +2921,20 @@ function renderProfile(){
 
 // ── RENDER PACES ──
 // ══════════════════════════════════════
-// CANOVA PERCENTAGE-OF-PR ENGINE
+// STRIDE SPEED-PERCENTAGE-OF-PR ENGINE
 // ══════════════════════════════════════
 // Anchor: athlete's race PR (within 3 months ideal, up to 1 year acceptable).
-// Method: multiplication (Canova-style).
-//   pct =  90 → 10% slower than race  (time × 1.10)
-//   pct = 100 → race pace exactly      (time × 1.00)
-//   pct = 110 → 10% faster than race   (time × 0.90)
-// Formula: targetTime = raceTime × (2 - pct/100)
-// This is the standard percentage-of-pace method used by Canova and his
-// collaborators when prescribing workouts.
+// Method: speed percentage. A lower speed percentage produces a reciprocal
+// increase in time, keeping easy and threshold targets physiologically honest.
+//   pct =  65 → 65% of race speed       (time × 1.538)
+//   pct = 100 → race pace exactly       (time × 1.000)
+//   pct = 110 → 110% of race speed      (time × 0.909)
+// Formula: targetTime = raceTime × (100 / pct)
+// This is intentionally conservative for aerobic work and should be
+// cross-checked with HR/RPE/lactate for threshold sessions.
 
 function pctToMult(pct){
-  // Canova multiplication method
-  return 2 - (pct / 100);
+  return pct > 0 ? 100 / pct : NaN;
 }
 
 // Race PR's pace per meter (seconds)
@@ -2626,13 +3009,14 @@ function displayPace(raceSecPerM, repDistM, pct, unit){
 // 'fresh'   = within 90 days       → green, no warning
 // 'stale'   = 90 days – 1 year      → yellow warning, calculations valid but flagged
 // 'expired' = > 1 year              → red, refuse to calculate confidently
+// 'future'  = invalid future date   → red, refuse to trust as evidence
 function prFreshness(raceDateISO){
   if(!raceDateISO) return 'unknown';
   const race = new Date(raceDateISO);
   if(isNaN(race.getTime())) return 'unknown';
   const now = new Date();
   const days = Math.floor((now - race) / (1000*60*60*24));
-  if(days < 0) return 'fresh';      // future-dated, weird but treat as fresh
+  if(days < 0) return 'future';
   if(days <= 90) return 'fresh';
   if(days <= 365) return 'stale';
   return 'expired';
@@ -2644,21 +3028,68 @@ function freshnessLabel(state, raceDateISO){
     case 'fresh':   return { color:'var(--green)',  icon:'●', label:'CURRENT',   text:`Race result is ${days} days old — paces are reliable.` };
     case 'stale':   return { color:'var(--yellow)', icon:'▲', label:'STALE',     text:`Race result is ${days} days old (>90 days). Paces may be off — recommend a fresh time trial.` };
     case 'expired': return { color:'var(--red)',    icon:'✕', label:'OUTDATED',  text:`Race result is ${days} days old (>1 year). Predictions based on outdated information — log a recent race before training to these paces.` };
+    case 'future':  return { color:'var(--red)',    icon:'✕', label:'INVALID',   text:'Race date is in the future. Use completed races only for forecasts and training paces.' };
     default:        return { color:'var(--dim)',    icon:'?', label:'NO DATE',   text:'No race date logged — cannot assess freshness. Add a date to the athlete profile.' };
   }
 }
 
-// Canova-style "ladder of support" — default custom zones
+function aerobicPaceAnchorWarning(athlete){
+  if(!athlete || !athlete.raceDistanceM || athlete.raceDistanceM >= 1500) return '';
+  return `
+    <div class="warn-box" style="margin-bottom:1rem">
+      <span class="warn-icon" aria-hidden="true">▲</span>
+      <p><strong>Short-race anchor caution:</strong> ${esc(athlete.raceDistance || 'This PR')} is too short to prescribe aerobic mileage or threshold work confidently. Use the race/speed rows for mechanics and event-specific work, but add a 1500m+ result before assigning Easy, Steady, Tempo, Threshold, or CV paces.</p>
+    </div>`;
+}
+
+function zoneAllowedForAnchor(zone, athlete){
+  if(!athlete || !athlete.raceDistanceM) return true;
+  if(zone.pct >= 100) return true;
+  return athlete.raceDistanceM >= 1500;
+}
+
+function vdotPctForZone(zone, athlete){
+  if(!zone || !athlete || !athlete.raceDistanceM || !athlete.raceTime) return null;
+  if(athlete.raceDistanceM < 1500) return null;
+  const sec = parseTime(athlete.raceTime);
+  if(!sec) return null;
+
+  const zones = calcZones(athlete.raceDistanceM, sec, athlete.trainingAge || 0);
+  const map = {
+    'Easy': zones.E && zones.E.mid,
+    'Steady': zones.M && zones.M.mid,
+    'Tempo': zones.T && zones.T.lo,
+    'Threshold': zones.T && zones.T.mid,
+    'Critical Velocity': zones.T && zones.T.hi,
+    'VO2 Max': zones.I && zones.I.mid
+  };
+  const targetSpkm = map[zone.label];
+  if(!targetSpkm || !isFinite(targetSpkm)) return null;
+
+  const raceSecPerM = sec / athlete.raceDistanceM;
+  const targetSecPerM = targetSpkm / 1000;
+  const pct = 100 * raceSecPerM / targetSecPerM;
+  if(!isFinite(pct) || pct <= 0) return null;
+  return Math.max(45, Math.min(120, pct));
+}
+
+function effectiveZonePct(zone, athlete, guardrailKey){
+  const vdotPct = vdotPctForZone(zone, athlete);
+  const basePct = vdotPct || zone.pct;
+  return applyGuardrail(basePct, guardrailKey);
+}
+
+// STRIDE "ladder of support" — default custom zones
 // STRIDE Coach Zones — proprietary naming.
-// These map a percentage of race PR pace to coaching language.
+// These map a percentage of race PR speed to coaching language.
 // Does not use Daniels E/M/T/I/R labels (which would imply Daniels math).
 const STRIDE_ZONES = [
   { pct: 55,  label: 'Recovery',          desc: 'Active recovery between hard sessions. Almost a walk-jog. Used the day after a hard workout.' },
   { pct: 65,  label: 'Easy',              desc: 'True easy mileage. Fully conversational, low heart rate. Bulk of weekly volume lives here.' },
   { pct: 80,  label: 'Steady',            desc: 'Long-run middle miles. Aerobic engine work. You can still talk but it requires breath.' },
-  { pct: 88,  label: 'Tempo',             desc: 'Sub-threshold sustained effort. 4–8 mile tempo runs, cruise miles. Comfortably hard.' },
-  { pct: 93,  label: 'Threshold',         desc: 'Lactate threshold. Mile/2K repeats with short rest. The "engine of distance running" pace.' },
-  { pct: 96,  label: 'Critical Velocity', desc: '~10K race pace. A touch faster than threshold, slightly slower than 5K. The Norwegian LT2 zone.' },
+  { pct: 88,  label: 'Tempo',             desc: 'Sub-threshold sustained effort. Pace is a starting point; HR/RPE/lactate govern the final prescription.' },
+  { pct: 93,  label: 'Threshold',         desc: 'Controlled lactate-threshold work. Adjust by interval length and daily internal load.' },
+  { pct: 96,  label: 'Critical Velocity', desc: '~10K race pace. A touch faster than threshold, slightly slower than 5K. Keep below runaway lactate.' },
   { pct: 100, label: 'Race Pace',         desc: 'Goal race pace exactly. Race-specific endurance reps for the target event.' },
   { pct: 105, label: 'VO2 Max',           desc: '~3K race pace. Hard intervals (400–1200m) to push aerobic ceiling. Maximal aerobic power.' },
   { pct: 112, label: 'Speed',             desc: 'Mile / 800m race pace. Short reps faster than race pace. Sharpening neuromuscular system.' },
@@ -2669,14 +3100,14 @@ const STRIDE_ZONES = [
 const CANOVA_ZONES = STRIDE_ZONES;
 
 // ── DANIELS-NAMED ZONES (common coach language) ──
-// Maps Daniels' five canonical zones to our Canova-percentage anchors,
+// Maps Daniels' five canonical zones to our STRIDE speed-percentage anchors,
 // with rep-distance presets pulled from Daniels' published workouts.
 // These give coaches the familiar "E/M/T/I/R" framework while our
-// underlying math uses the more accurate Canova multiplication method.
+// underlying math uses conservative speed-percentage targets.
 // ── STRIDE COACH SPLIT TABLE ──
 // Proprietary STRIDE-named zones for the quick-view split table.
 // Uses STRIDE naming, NOT Daniels E/M/T/I/R, because the underlying math
-// is the proprietary STRIDE percentage system, not Daniels VDOT math.
+// is the proprietary STRIDE speed-percentage system, not Daniels VDOT math.
 // Each zone shows a percentage range that the table renders at the midpoint.
 const STRIDE_COACH_SPLITS = [
   { label: 'Easy',              pct: 65,  range: '60–70%',
@@ -2686,13 +3117,13 @@ const STRIDE_COACH_SPLITS = [
     desc: 'Steady-state long-run pace. Aerobic engine work.',
     reps: [1609, 3000, 5000, 8000] },
   { label: 'Tempo',             pct: 88,  range: '85–90%',
-    desc: 'Tempo / cruise interval pace. 4–8 mile sustained effort.',
+    desc: 'Tempo / cruise interval pace. Keep internal load below threshold.',
     reps: [1609, 1000, 1200, 800, 600] },
   { label: 'Threshold',         pct: 93,  range: '91–95%',
-    desc: 'Lactate threshold. Norwegian LT1-style mile/2K repeats.',
+    desc: 'Lactate-controlled threshold. Longer reps usually need a slower pace.',
     reps: [1609, 1000, 1200, 800, 600] },
   { label: 'Critical Velocity', pct: 96,  range: '95–97%',
-    desc: 'Just slower than 5K (~10K race pace). LT2 zone.',
+    desc: 'Just slower than 5K (~10K race pace). Verify by HR/RPE/lactate.',
     reps: [1000, 1200, 800, 600] },
   { label: 'Race Pace',         pct: 100, range: '100%',
     desc: 'Goal race pace exactly. Race-specific endurance.',
@@ -3319,7 +3750,7 @@ async function autoFillConditions(){
 
   const result = await lookupRaceConditions(A.raceLocation, A.raceDate, A.raceStartTime);
 
-  if(btn){ btn.disabled = false; btn.textContent = 'Auto-fill from race date & location'; }
+  if(btn){ btn.disabled = false; btn.textContent = 'Use source race conditions'; }
 
   if(result.error){
     if(statusEl){ statusEl.innerHTML = `<span style="color:var(--red)">✕ ${esc(result.error)}</span>`; }
@@ -3406,15 +3837,24 @@ function clearCachedWeather(){
 function renderPaces(){
   const el=document.getElementById('pc-body');
 
-  // FREE TIER: If no athlete, show a simple anonymous calculator
-  if(!A){
+  // Public mode and no-athlete signed-in mode use the anonymous calculator.
+  if(!hasWorkspaceAccess() || !A){
     el.innerHTML = renderFreeTierCalculator();
     wireFreeTierCalc();
     return;
   }
 
   const fresh = prFreshness(A.raceDate);
-  const fColor = fresh==='fresh'?'var(--green)':fresh==='stale'?'var(--yellow)':fresh==='expired'?'var(--red)':'var(--text-3)';
+  const fColor = fresh==='fresh'?'var(--green)':fresh==='stale'?'var(--yellow)':(fresh==='expired'||fresh==='future')?'var(--red)':'var(--text-3)';
+  const guardrailKey = getActiveGuardrail();
+  const pacePresets = STRIDE_ZONES.map(z => {
+    const allowed = zoneAllowedForAnchor(z, A);
+    return {
+      pct: Math.round(effectiveZonePct(z, A, guardrailKey)),
+      label: z.label,
+      allowed
+    };
+  });
 
   el.innerHTML = `
     <!-- TINY ATHLETE CONTEXT STRIP -->
@@ -3431,6 +3871,8 @@ function renderPaces(){
       </div>
     </div>
 
+    ${aerobicPaceAnchorWarning(A)}
+
     <!-- THE PRESCRIPTION — HERO -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
@@ -3440,7 +3882,7 @@ function renderPaces(){
         <span id="build-time">—</span>
       </p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
-        <span id="build-pct" style="color:var(--text);font-weight:600">100%</span> of race pace · <span id="build-offset">—</span>
+        <span id="build-pct" style="color:var(--text);font-weight:600">100%</span> of race speed · <span id="build-offset">—</span>
       </p>
       <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-3);padding-top:1.5rem;border-top:1px solid var(--border)">
         <span><strong style="color:var(--text-2);font-size:1rem" id="build-100">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER 100M</span></span>
@@ -3457,7 +3899,7 @@ function renderPaces(){
             <label for="pcPct" style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin:0">Training Intensity</label>
             <span id="pcPctVal" style="color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1.125rem;font-weight:700">100%</span>
           </div>
-          <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="Percentage of race pace">
+          <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="Percentage of race speed">
           <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);margin-top:.375rem">
             <span>60%</span><span>RACE</span><span>130%</span>
           </div>
@@ -3489,17 +3931,7 @@ function renderPaces(){
       <!-- QUICK PERCENTAGE PRESETS — visual pills not buttons -->
       <div style="display:flex;gap:.375rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
         <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;margin-right:.5rem;align-self:center">Presets</span>
-        ${[
-          [65,  'Easy'],
-          [80,  'Steady'],
-          [88,  'Tempo'],
-          [93,  'Threshold'],
-          [96,  'CV'],
-          [100, 'Race'],
-          [105, 'VO2'],
-          [112, 'Speed'],
-          [118, 'Sprint']
-        ].map(([p,lbl])=>`<button class="preset-btn" data-pct="${p}" onclick="setPct(${p})" style="background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.4rem .75rem;border-radius:999px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.6875rem;transition:all .15s">${p}% <span style="color:var(--text-4);margin-left:.25rem">${esc(lbl)}</span></button>`).join('')}
+        ${pacePresets.map(p => `<button class="preset-btn" data-pct="${p.pct}" onclick="${p.allowed ? `setPct(${p.pct})` : ''}" ${p.allowed ? '' : 'disabled'} style="background:var(--bg-el);border:1px solid var(--border);color:${p.allowed ? 'var(--text-2)' : 'var(--text-4)'};padding:.4rem .75rem;border-radius:999px;cursor:${p.allowed ? 'pointer' : 'not-allowed'};font-family:'JetBrains Mono',monospace;font-size:.6875rem;transition:all .15s;opacity:${p.allowed ? '1' : '.55'}">${p.allowed ? p.pct + '%' : '—'} <span style="color:var(--text-4);margin-left:.25rem">${esc(p.label)}</span></button>`).join('')}
       </div>
     </div>
 
@@ -3540,7 +3972,7 @@ function renderPaces(){
       </summary>
       <div style="padding:0 1.5rem 1.5rem">
         <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);line-height:1.6;margin-bottom:1rem">
-          Adjusts target paces for heat and altitude using published correction tables (Ely 2007, Daniels 2014, Wehrlin &amp; Hallén 2006). Data sources: NOAA Climate Data Online (US) with Open-Meteo fallback. Leave blank for sea-level/cool conditions.
+          Adjusts target workout paces for heat and altitude using published correction tables (Ely 2007, Daniels 2014, Wehrlin &amp; Hallén 2006). Leave blank when you are using the source PR as-is; applying source-race weather here slows the target session, it does not normalize the PR.
         </p>
 
         <!-- AUTO-FILL FROM RACE LOCATION -->
@@ -3548,10 +3980,10 @@ function renderPaces(){
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem">
             <div style="flex:1;min-width:14rem">
               <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.25rem">Auto-Lookup</p>
-              <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${A.raceLocation ? `Will fetch weather for <strong style="color:var(--text-2)">${esc(A.raceLocation)}</strong> on <strong style="color:var(--text-2)">${esc(A.raceDate||'?')}</strong>${A.raceStartTime ? ` at <strong style="color:var(--text-2)">${esc(A.raceStartTime)}</strong>` : ' <span style="color:var(--text-4)">(daily summary)</span>'}` : 'Add a race location to the athlete profile to enable auto-pull.'}</p>
+              <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${A.raceLocation ? `Can fetch the source race conditions for <strong style="color:var(--text-2)">${esc(A.raceLocation)}</strong> on <strong style="color:var(--text-2)">${esc(A.raceDate||'?')}</strong>${A.raceStartTime ? ` at <strong style="color:var(--text-2)">${esc(A.raceStartTime)}</strong>` : ' <span style="color:var(--text-4)">(daily summary)</span>'}. Apply only if you want the target workout adjusted to those same conditions.` : 'Add a race location to the athlete profile to enable source-condition lookup.'}</p>
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              ${A.raceLocation && A.raceDate ? `<button id="weatherFetchBtn" class="btn" onclick="autoFillConditions()" style="font-size:.6875rem;padding:.4rem .75rem">${A.raceWeather && A.raceWeather.success ? '↻ Refresh' : '⤓ Auto-fill from race date &amp; location'}</button>` : `<button class="btn" onclick="goTo('edit',null)" style="font-size:.6875rem;padding:.4rem .75rem">Edit profile</button>`}
+              ${A.raceLocation && A.raceDate ? `<button id="weatherFetchBtn" class="btn" onclick="autoFillConditions()" style="font-size:.6875rem;padding:.4rem .75rem">${A.raceWeather && A.raceWeather.success ? 'Use cached source conditions' : '⤓ Fetch source race conditions'}</button>` : `<button class="btn" onclick="goTo('edit',null)" style="font-size:.6875rem;padding:.4rem .75rem">Edit profile</button>`}
               ${A.raceWeather ? `<button class="btn" onclick="clearCachedWeather()" style="font-size:.6875rem;padding:.4rem .75rem;color:var(--text-3)">Clear</button>` : ''}
             </div>
           </div>
@@ -3562,11 +3994,11 @@ function renderPaces(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
           <div>
             <label for="envTemp" style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Temperature (°F)</label>
-            <input id="envTemp" type="number" min="20" max="120" placeholder="e.g. 75" value="${A.raceWeather && A.raceWeather.success && A.raceWeather.tempF != null ? A.raceWeather.tempF : ''}" oninput="updateBuilder();refreshDanielsTable()">
+            <input id="envTemp" type="number" min="20" max="120" placeholder="e.g. 75" value="" oninput="updateBuilder();refreshDanielsTable()">
           </div>
           <div>
             <label for="envAlt" style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Altitude (ft)</label>
-            <input id="envAlt" type="number" min="0" max="15000" placeholder="e.g. 5280" value="${A.raceWeather && A.raceWeather.success && A.raceWeather.altitudeFt != null ? A.raceWeather.altitudeFt : ''}" oninput="updateBuilder();refreshDanielsTable()">
+            <input id="envAlt" type="number" min="0" max="15000" placeholder="e.g. 5280" value="" oninput="updateBuilder();refreshDanielsTable()">
           </div>
         </div>
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6">
@@ -3608,7 +4040,7 @@ function renderPaces(){
         <span style="color:var(--text-4)">+</span>
       </summary>
       <div style="padding:0 1.5rem 1.5rem;font-size:.875rem;color:var(--text-2);line-height:1.7">
-        <p style="margin-bottom:.75rem">Training paces are calculated as STRIDE-defined percentages of ${esc(A.name)}'s actual race PR. The system does not estimate VO₂max or rely on physiology assumptions — it uses the athlete's measured performance as the anchor.</p>
+        <p style="margin-bottom:.75rem">Training paces start from ${esc(A.name)}'s measured race result. Named aerobic zones use a VDOT-equivalent estimate when the anchor is long enough, but this is not a measured VO₂max, lactate threshold, or running-economy test. Coach adjustment by HR, RPE, lactate, conditions, and interval length still governs the final prescription.</p>
         <p style="margin-bottom:.75rem">Built from peer-reviewed sport science literature. <button onclick="goTo('methodology',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">View sources →</button></p>
       </div>
     </details>
@@ -3619,10 +4051,14 @@ function renderPaces(){
 }
 
 function buildLadderRows(){
-  return CANOVA_ZONES.map(z => `
-    <tr data-pct="${z.pct}" style="transition:background .2s">
+  const guardrailKey = getActiveGuardrail();
+  return CANOVA_ZONES.map(z => {
+    const allowed = !A || zoneAllowedForAnchor(z, A);
+    const pct = allowed && A ? Math.round(effectiveZonePct(z, A, guardrailKey)) : z.pct;
+    return `
+    <tr data-pct="${pct}" data-allowed="${allowed ? '1' : '0'}" style="transition:background .2s">
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:.875rem;font-weight:600;color:var(--text)">${z.pct}%</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.875rem;font-weight:600;color:var(--text)">${allowed ? pct + '%' : '—'}</div>
         <div style="font-family:'Fraunces',serif;font-size:.9375rem;color:var(--text-2);margin-top:.125rem">${esc(z.label)}</div>
       </td>
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.8125rem;color:var(--text-3);line-height:1.5;vertical-align:middle;max-width:18rem">${esc(z.desc)}</td>
@@ -3632,7 +4068,8 @@ function buildLadderRows(){
         <div class="ladder-mile" style="font-size:.75rem;color:var(--text-3);margin-top:.0625rem">—</div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ── STRIDE COACH SPLIT TABLE ──
@@ -3650,20 +4087,25 @@ function buildDanielsTable(){
 
   // Calculate splits per zone × rep distance, with guardrail applied
   const rows = STRIDE_COACH_SPLITS.map(z => {
-    const adjustedPct = applyGuardrail(z.pct, guardrailKey);
+    const allowed = zoneAllowedForAnchor(z, A);
+    const adjustedPct = effectiveZonePct(z, A, guardrailKey);
     const cells = z.reps.map(d => {
+      if(!allowed) return { dist: d, sec: null, blocked: true };
       let split = secPerM * d * pctToMult(adjustedPct);
       split = applyEnvironment(split, env.tempF, env.altitudeFt);
       return { dist: d, sec: split };
     });
 
     // Min/mile pace for headline column
-    const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
-    const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
-    const mileMin = Math.floor(correctedMile/60), mileSec = Math.round(correctedMile - mileMin*60);
-    const mileStr = `${mileMin}:${mileSec<10?'0':''}${mileSec}`;
+    let mileStr = 'Needs 1500m+ PR';
+    if(allowed){
+      const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
+      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
+      const mileMin = Math.floor(correctedMile/60), mileSec = Math.round(correctedMile - mileMin*60);
+      mileStr = `${mileMin}:${mileSec<10?'0':''}${mileSec}`;
+    }
 
-    return { ...z, cells, mileStr, displayPct: adjustedPct.toFixed(0) };
+    return { ...z, cells, mileStr, displayPct: adjustedPct.toFixed(0), allowed };
   });
 
   // Union of all rep distances → table columns
@@ -3684,25 +4126,28 @@ function buildDanielsTable(){
 
   const bodyRows = rows.map(z => {
     const cellsByDist = {};
-    z.cells.forEach(c => cellsByDist[c.dist] = c.sec);
+    z.cells.forEach(c => cellsByDist[c.dist] = c);
+    const vdotDerived = vdotPctForZone(z, A);
     const isGuardrailAdjusted = z.pct < 100 && guardrail.shift !== 0;
-    const subLabel = isGuardrailAdjusted
-      ? `${z.displayPct}% <span style="color:var(--text-4)">· ${guardrail.label}</span>`
-      : z.range;
+    const subLabel = allowed
+      ? `${z.displayPct}% <span style="color:var(--text-4)">· ${vdotDerived ? 'VDOT-eq' : z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
+      : 'Needs 1500m+';
+    const zoneColor = z.allowed ? 'var(--text)' : 'var(--text-4)';
 
     return `
       <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--bg-el)'" onmouseout="this.style.background=''">
         <td style="padding:.875rem .75rem;position:sticky;left:0;background:var(--bg-card);vertical-align:middle">
-          <div style="font-family:'Fraunces',serif;font-size:1rem;color:var(--text);line-height:1.2">${esc(z.label)}</div>
+          <div style="font-family:'Fraunces',serif;font-size:1rem;color:${zoneColor};line-height:1.2">${esc(z.label)}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.125rem">${subLabel}</div>
+          ${z.allowed ? '' : `<div style="font-family:'JetBrains Mono',monospace;font-size:.5625rem;color:var(--yellow);margin-top:.25rem;line-height:1.35">BLOCKED FOR SPRINT ANCHOR</div>`}
         </td>
-        <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text);font-weight:500">${esc(z.mileStr)}</td>
+        <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:${z.allowed ? 'var(--text)' : 'var(--text-4)'};font-weight:500">${esc(z.mileStr)}</td>
         ${allReps.map(d => {
-          const sec = cellsByDist[d];
-          if(sec == null){
+          const cell = cellsByDist[d];
+          if(!cell || cell.blocked || cell.sec == null){
             return `<td style="padding:.875rem .75rem;text-align:right;color:var(--text-4);font-family:'JetBrains Mono',monospace;font-size:.75rem">—</td>`;
           }
-          return `<td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2)">${esc(fmtRepTime(sec))}</td>`;
+          return `<td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2)">${esc(fmtRepTime(cell.sec))}</td>`;
         }).join('')}
       </tr>`;
   }).join('');
@@ -3729,7 +4174,7 @@ function buildDanielsTable(){
       </table>
     </div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · STRIDE percentage zones with workout split targets across rep distances. For custom percentages outside these zones, use the slider above.
+      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · STRIDE speed-percentage zones with workout split targets across rep distances. For custom percentages outside these zones, use the slider above.
     </p>`;
 }
 
@@ -3739,6 +4184,11 @@ function buildDanielsTable(){
 let freeTierState = { distM: 1609, timeSec: null };
 
 function renderFreeTierCalculator(){
+  const signedIn = hasWorkspaceAccess();
+  const ctaText = signedIn ? 'Save athlete to unlock more →' : 'Sign in to save athletes →';
+  const ctaSubhead = signedIn
+    ? 'Save athletes to access Multi-Event Analysis, source-excluded race predictions with planning ranges, and the full STRIDE training intensity ladder.'
+    : 'The calculator is free. Create an account when you want to save athletes, sync across devices, and open the coach workspace.';
   return `
     <!-- WELCOME BANNER (FREE) -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
@@ -3746,7 +4196,7 @@ function renderFreeTierCalculator(){
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem">Free Calculator</p>
         <p style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;letter-spacing:-.0625rem;line-height:1.2">Enter a race time. Get training paces.</p>
       </div>
-      <button class="btn btn-primary" onclick="goTo('edit',null)">Save athlete to unlock more →</button>
+        <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
     </div>
 
     <!-- INPUT -->
@@ -3782,7 +4232,7 @@ function renderFreeTierCalculator(){
         <span id="ft-time">—</span>
       </p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
-        <span id="ft-pct" style="color:var(--text);font-weight:600">100%</span> of race pace · <span id="ft-offset">—</span>
+        <span id="ft-pct" style="color:var(--text);font-weight:600">100%</span> of race speed · <span id="ft-offset">—</span>
       </p>
       <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-3);padding-top:1.5rem;border-top:1px solid var(--border)">
         <span><strong style="color:var(--text-2);font-size:1rem" id="ft-100">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER 100M</span></span>
@@ -3839,11 +4289,19 @@ function renderFreeTierCalculator(){
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Unlock with athlete profile</p>
       <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">
-        Save athletes to access Multi-Event Analysis (compare race times to find hidden strengths), race predictions with 95% confidence intervals, and full Canova reference ladder.
-      </p>
-      <button class="btn btn-primary" onclick="goTo('edit',null)">Save first athlete →</button>
-    </div>
+          ${ctaSubhead}
+        </p>
+        <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
+      </div>
   `;
+}
+
+function publicCalculatorCta(){
+  if(hasWorkspaceAccess()){
+    goTo('edit', null);
+    return;
+  }
+  promptForAccount('save athletes and open the coach workspace');
 }
 
 function wireFreeTierCalc(){
@@ -3873,13 +4331,24 @@ function freeTierUpdate(){
   const rep = repEl ? parseFloat(repEl.value) : 800;
 
   const secPerM = timeSec / distM;
-  const targetSec = secPerM * rep * pctToMult(pct);
-  const racePaceForRep = secPerM * rep;
-
   const set = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
   const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
 
   set('ftPctVal', pct + '%');
+  if(distM < 1500 && pct < 100){
+    set('ft-rep', repLabel);
+    set('ft-time', 'Need 1500m+ PR');
+    set('ft-pct', pct + '%');
+    set('ft-offset', 'aerobic target blocked for short-race anchor');
+    set('ft-100', '—');
+    set('ft-400', '—');
+    set('ft-mile', '—');
+    return;
+  }
+
+  const targetSec = secPerM * rep * pctToMult(pct);
+  const racePaceForRep = secPerM * rep;
+
   set('ft-rep', repLabel);
   set('ft-time', fmtRepTime(targetSec));
   set('ft-pct', pct + '%');
@@ -3970,6 +4439,7 @@ function updateBuilder(){
 
   const pct = parseFloat(pctEl.value);
   const rep = parseFloat(repEl.value);
+  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
 
   // Environmental correction
   const env = getEnvSettings();
@@ -3981,6 +4451,18 @@ function updateBuilder(){
     pctVal.textContent = pct + '%';
   }
 
+  if(A.raceDistanceM < 1500 && pct < 100){
+    const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
+    setEl('build-rep', repLabel);
+    setEl('build-time', 'Need 1500m+ PR');
+    setEl('build-pct', pct + '%');
+    setEl('build-offset', 'aerobic target blocked for short-race anchor');
+    setEl('build-100', '—');
+    setEl('build-400', '—');
+    setEl('build-mile', '—');
+    return;
+  }
+
   // Target rep time — with environmental correction applied
   const rawTargetSec = targetRepTime(secPerM, rep, pct);
   const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt);
@@ -3988,7 +4470,6 @@ function updateBuilder(){
 
   // Build display
   const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
-  const setEl = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
 
   setEl('build-rep',    repLabel);
   setEl('build-time',   fmtRepTime(targetSec));
@@ -4006,6 +4487,7 @@ function updateBuilder(){
   // Update the ladder table (raw pace, no env correction in reference table)
   document.querySelectorAll('#ladder-body tr').forEach(tr => {
     const zPct = parseFloat(tr.dataset.pct);
+    const blocked = tr.dataset.allowed === '0';
     const zSecPerM = secPerM * pctToMult(zPct);
     const zRepSec = zSecPerM * rep;
     const zRaceSec = racePaceForRep;
@@ -4016,6 +4498,16 @@ function updateBuilder(){
     const eMile = tr.querySelector('.ladder-mile');
     const eOff  = tr.querySelector('.ladder-off');
 
+    if(blocked){
+      if(e100) e100.textContent = '—';
+      if(e400) e400.textContent = '—';
+      if(eMile) eMile.textContent = 'Need 1500m+ PR';
+      if(eOff) eOff.textContent = 'Blocked for short-race anchor';
+      tr.style.opacity = '0.55';
+      tr.style.background = Math.abs(zPct - pct) < 2.5 ? 'var(--bg-raised)' : '';
+      return;
+    }
+    tr.style.opacity = '';
     if(e100)  e100.textContent  = (zSecPerM * 100).toFixed(1) + 's/100m';
     if(e400)  e400.textContent  = (zSecPerM * 400).toFixed(1) + 's/400m';
     if(eMile){
@@ -4032,6 +4524,10 @@ function updateBuilder(){
 
 // Backward-compat shim (predictions screen still calls calcPaces)
 function calcPaces(){
+  if(!hasWorkspaceAccess() || !A){
+    freeTierUpdate();
+    return;
+  }
   updateBuilder();
 }
 
@@ -4069,18 +4565,18 @@ function renderPredict(){
     </div>` : ''}
 
     <div class="card">
-      <p class="card-title"><span>Race Predictions · ${esc(A.primaryEvent)} Family</span><span class="card-accent">95% CI</span></p>
+      <p class="card-title"><span>Race Predictions · ${esc(A.primaryEvent)} Family</span><span class="card-accent">SOURCE-EXCLUDED RANGE</span></p>
       <div class="pred-grid">${predCards}</div>
     </div>
 
     <div class="card">
       <p class="card-title"><span>Known Limitations</span><span class="card-accent">PUBLISHED EVIDENCE</span></p>
       <ul style="list-style:none;padding:0">
-        ${limitItem('Marathon predictions from 5K/10K still carry meaningful uncertainty — published validation shows even ensemble methods overestimate marathon time for some recreational runners', 'Vickers & Vertosick (2016), PLOS ONE, n=2,303 runners')}
+        ${limitItem('Marathon predictions from 5K/10K still carry meaningful uncertainty — published validation shows formulas can underestimate finish time for some recreational runners', 'Vickers & Vertosick (2016), BMC Sports Science, Medicine and Rehabilitation, n=2,303 runners')}
         ${limitItem('All prediction formulas — including the ensemble — degrade in accuracy as distance ratio grows. Predictions within 2× the anchor distance are most reliable; beyond 4× becomes unreliable.', 'Multiple validation studies; exponent stability research')}
         ${limitItem('Predictions assume equal training specificity for the target distance — a 5K specialist may not run their predicted marathon time without long-run preparation', 'Daniels (2014); coaching consensus')}
         ${limitItem('Environmental conditions (heat &gt; 60°F, altitude &gt; 3000ft, wind, hills) can shift actual race times by 2–10% with no correction applied here', 'Ely et al. (2007); Maughan et al. (2012)')}
-        ${limitItem('Cross-family predictions (sprint → distance, distance → sprint) have no published validation and are not provided by this system', 'STRIDE OS design decision')}
+        ${limitItem('This Race Forecasts screen only shows adjacent event-family predictions. The Pro all-distance table can show cross-domain exploratory forecasts, but labels them low confidence and excludes observed PRs from their own forecasts.', 'STRIDE OS design decision')}
         ${limitItem('Approximately 1 in 5 runners will miss their predicted time significantly even when the formulas are applied correctly. Individual response is the dominant variable.', 'Hopkins et al. (2009); Bouchard & Rankinen (2001)')}
       </ul>
     </div>
@@ -4122,14 +4618,13 @@ function _formulaRiegel(d1, t1, d2){
 }
 
 function _formulaCameron(d1, t1, d2){
-  // Cameron formula (1998) — refined for marathon predictions
-  // Time = a × (D^b), where the exponent varies subtly with distance
-  // Cameron published an algorithmic version; we use the published constants:
-  // T2/T1 = (D2/D1)^x where x = 1.07731 - 0.00027 × log(d1·d2)
-  // This gives slightly less aggressive scaling than Riegel at long distances
-  const logMean = Math.log10(Math.sqrt(d1 * d2));
-  const exp = 1.07731 - 0.00027 * logMean * 100;
-  return t1 * Math.pow(d2/d1, Math.max(1.04, Math.min(1.09, exp)));
+  // Cameron formula (David Cameron, 1998) — published model:
+  //   f(x) = 13.49681 − 0.048865·x + 2.438936 / x^0.7905   (x = distance in MILES)
+  //   T2 = (T1/D1) · (f(D1)/f(D2)) · D2
+  // Validated 400m–50mi; strongest from 1 mile through the marathon.
+  const f = xMiles => 13.49681 - 0.048865*xMiles + 2.438936/Math.pow(xMiles, 0.7905);
+  const m1 = d1/1609.344, m2 = d2/1609.344;
+  return (t1/d1) * (f(m1)/f(m2)) * d2;
 }
 
 function _formulaVDOT(d1, t1, d2){
@@ -4158,27 +4653,47 @@ function _formulaVDOT(d1, t1, d2){
   return ((lo + hi)/2) * (d2/100);
 }
 
-function _formulaVickersVertosick(d1, t1, d2){
-  // Vickers & Vertosick (2016) found Riegel overestimates marathon by 10+ min
-  // for half of recreational runners. Their refinement uses a softer exponent
-  // at long distances. We implement a simplified version: exponent scales
-  // with target distance category.
+function _formulaVickersVertosick(d1, t1, d2, weeklyMiles){
+  // Vickers & Vertosick (2016, n=2,303): Riegel's 1.06 predicts marathon times
+  // that are TOO FAST (optimistic) for most sub-elite runners — actual times run
+  // 10+ min slower. The effective fatigue exponent at long distances is HIGHER
+  // than 1.06, and their model keys on TRAINING VOLUME: ~1.15 at low weekly
+  // mileage down to ~1.07 at high mileage. When the athlete's weekly mileage is
+  // known we interpolate; otherwise we use moderate developmental-athlete values.
+  const longest = Math.max(d1, d2);
+  const vol = (typeof weeklyMiles === 'number' && weeklyMiles > 0)
+    ? Math.min(Math.max((weeklyMiles - 10) / 60, 0), 1)   // 0 at ≤10 mi/wk → 1 at ≥70
+    : null;
   let exp = 1.06;
-  if(d2 > 21097) exp = 1.04;        // marathon-plus: softer
-  else if(d2 > 10000) exp = 1.05;   // half marathon: slightly softer
-  else if(d2 > 5000) exp = 1.055;   // 10K to half: slight refinement
+  if(longest > 21097)      exp = (vol === null) ? 1.10  : 1.15 - vol * 0.08; // 1.15 → 1.07
+  else if(longest > 10000) exp = (vol === null) ? 1.075 : 1.09 - vol * 0.03; // 1.09 → 1.06
+  else if(longest > 5000)  exp = 1.065;   // 10K band
   return t1 * Math.pow(d2/d1, exp);
 }
 
 function _formulaPurdy(d1, t1, d2){
-  // Purdy points use a velocity-versus-distance curve fitted to world records
-  // Simplified implementation: treat as a power law with empirically-derived
-  // exponent that varies by distance band (closer to Riegel at common ranges)
-  const ratio = d2/d1;
-  let exp = 1.06;
-  // Purdy gives slightly more aggressive scaling for sprints
-  if(d1 < 800) exp = 1.075;
-  return t1 * Math.pow(ratio, exp);
+  // Short-distance speed-endurance curve (Purdy-points-style velocity curve,
+  // segmented). A single Riegel exponent (~1.06) is badly wrong below 3200m:
+  // equivalent-performance charts (Purdy, McMillan, NFHS conversions) show the
+  // fatigue exponent is near 1.0 from 100→200 (start cost dominates), spikes
+  // through the anaerobic→aerobic transition (200→800), then decays to ~1.06.
+  // We integrate banded exponents across log-distance so predictions are
+  // path-consistent (100→400 ≡ 100→200→400).
+  const BANDS = [
+    { lo: 0,    hi: 200,  k: 1.03 },
+    { lo: 200,  hi: 400,  k: 1.16 },
+    { lo: 400,  hi: 800,  k: 1.18 },
+    { lo: 800,  hi: 1600, k: 1.14 },
+    { lo: 1600, hi: 3200, k: 1.10 },
+    { lo: 3200, hi: 1e9,  k: 1.06 },
+  ];
+  const a = Math.min(d1, d2), b = Math.max(d1, d2);
+  let ratio = 1;
+  for(const band of BANDS){
+    const s = Math.max(a, band.lo), e = Math.min(b, band.hi);
+    if(e > s && s > 0) ratio *= Math.pow(e/s, band.k);
+  }
+  return (d2 >= d1) ? t1 * ratio : t1 / ratio;
 }
 
 // ── ENSEMBLE WEIGHTING ──
@@ -4196,14 +4711,18 @@ function _ensembleWeights(d1, d2){
   const isLongTarget     = d2 >= 10000;
   const isUltraTarget    = d2 >= 21097;
 
-  // SPRINT FAMILY (100m–400m) — use sprint-validated formulas only
+  // SPRINT FAMILY (100m–400m) — segmented speed-endurance curve dominates;
+  // flat-exponent formulas (Riegel/Vickers ~1.06) are systematically too
+  // optimistic at 200→400 (true equivalence exponent ≈1.16).
   if(isSprintAnchor && isSprintTarget){
-    return { riegel: 0.20, cameron: 0.10, vdot: 0.00, vickers: 0.10, purdy: 0.60 };
+    return { riegel: 0.10, cameron: 0.00, vdot: 0.00, vickers: 0.10, purdy: 0.80 };
   }
 
-  // HYBRID FAMILY (400m–1500m) — blend with caution
+  // HYBRID FAMILY (400m–1500m) — segmented curve + Cameron (strong at middle
+  // distance); VDOT underweighted because it inflates aerobic ability for
+  // anaerobic specialists.
   if((isSprintAnchor || isHybridAnchor) && (isHybridTarget || (isDistanceTarget && d2 <= 1600))){
-    return { riegel: 0.30, cameron: 0.20, vdot: 0.20, vickers: 0.15, purdy: 0.15 };
+    return { riegel: 0.10, cameron: 0.25, vdot: 0.15, vickers: 0.10, purdy: 0.40 };
   }
 
   // DISTANCE FAMILY (1500m–10K) — sweet spot for VDOT/Riegel
@@ -4228,7 +4747,7 @@ function _ensembleWeights(d1, d2){
 
 // ── EVENT DOMAIN CLASSIFICATION ──
 // Cross-domain predictions (sprint <-> distance) are shown only with explicit
-// low-confidence warnings. Same-domain predictions get the tightest CIs.
+// low-confidence warnings. Same-domain predictions get the tightest ranges.
 const EVENT_DOMAINS = {
   'pure_sprint':       { min: 0,    max: 250,   label: 'Pure Sprint',           order: 1 },
   'long_sprint':       { min: 250,  max: 500,   label: 'Long Sprint',           order: 2 },
@@ -4247,15 +4766,19 @@ function getEventDomain(distM){
   return { key: 'distance', ...EVENT_DOMAINS.distance };
 }
 
-// Observed event-transfer ratios from RunRepeat (35M+ race results).
-// Used as a sanity nudge on Riegel for long-distance predictions.
+// Equivalent-performance time ratios (Daniels' Running Formula tables, VDOT 50
+// reference row — ratios are nearly constant across the 40–65 VDOT range).
+// Used as a sanity nudge on the ensemble for long-distance predictions.
+// NOTE: earlier versions used population-average ratios from mass race data;
+// those compare DIFFERENT populations per event (selection bias) and implied
+// impossible fatigue exponents (<1.0), so they were replaced 2026-06-10.
 const OBSERVED_RATIOS = {
-  '5000_10000':    1.79,
-  '5000_21097':    3.88,
-  '5000_42195':    7.69,
-  '10000_21097':   2.17,
-  '10000_42195':   4.29,
-  '21097_42195':   1.98,
+  '5000_10000':    2.073,
+  '5000_21097':    4.591,
+  '5000_42195':    9.565,
+  '10000_21097':   2.215,
+  '10000_42195':   4.614,
+  '21097_42195':   2.083,
 };
 
 function getObservedRatio(d1M, d2M){
@@ -4275,15 +4798,81 @@ function getObservedRatio(d1M, d2M){
   return (a < b) ? ratio : 1/ratio;
 }
 
+function sameDistanceM(a, b){
+  return Math.abs(Number(a) - Number(b)) < 1;
+}
+
+function forecastTargets(){
+  return [
+    { distM: 100, label: '100m' },
+    { distM: 200, label: '200m' },
+    { distM: 400, label: '400m' },
+    { distM: 800, label: '800m' },
+    { distM: 1500, label: '1500m' },
+    { distM: 1609, label: '1 Mile' },
+    { distM: 1600, label: '1600m' },
+    { distM: 3000, label: '3000m' },
+    { distM: 3200, label: '3200m' },
+    { distM: 3218, label: '2 Mile' },
+    { distM: 5000, label: '5K' },
+    { distM: 8000, label: '8K' },
+    { distM: 10000, label: '10K' },
+    { distM: 21097, label: 'Half Marathon' },
+    { distM: 42195, label: 'Marathon' },
+  ];
+}
+
+function labelForDistance(distM){
+  const hit = forecastTargets().find(t => sameDistanceM(t.distM, distM));
+  return hit ? hit.label : `${Math.round(distM)}m`;
+}
+
+function freshnessPenaltyFor(state){
+  if(state === 'fresh') return 1.0;
+  if(state === 'stale') return 1.3;
+  if(state === 'expired') return 1.7;
+  if(state === 'future') return 2.0;
+  return 1.5;
+}
+
+function confidenceLabel(confidence){
+  if(confidence >= 90) return 'Very High';
+  if(confidence >= 75) return 'High';
+  if(confidence >= 55) return 'Medium';
+  if(confidence >= 35) return 'Low';
+  if(confidence >= 15) return 'Very Low';
+  return 'Exploratory';
+}
+
+function primaryPRForAthlete(athlete){
+  if(!athlete || !athlete.raceTime) return null;
+  const sec = parseTime(athlete.raceTime);
+  const distM = athlete.raceDistanceM || DIST[athlete.raceDistance];
+  if(!sec || !distM) return null;
+  return {
+    event: athlete.raceDistance || labelForDistance(distM),
+    distM,
+    sec,
+    raceDate: athlete.raceDate || null,
+    source: 'primary PR',
+    sourceType: 'primary'
+  };
+}
+
+function observedPRForTarget(athlete, targetDistM){
+  return collectAllPRs(athlete).find(p => sameDistanceM(p.distM, targetDistM)) || null;
+}
+
 // Personalized fatigue exponent: k from athlete's own PRs.
 // When 2+ valid PRs exist (400m+), compute k = ln(T2/T1)/ln(D2/D1) and
 // blend with the population Riegel exponent of 1.06.
-function personalFatigueExponent(athlete){
+function personalFatigueExponent(athlete, opts){
   if(!athlete) return null;
+  const excludeDistM = opts && opts.excludeDistM;
   const prs = collectAllPRs(athlete);
   if(prs.length < 2) return null;
 
-  const distancePRs = prs.filter(p => p.distM >= 400);
+  const distancePRs = prs.filter(p => p.distM >= 400 && !(excludeDistM && sameDistanceM(p.distM, excludeDistM)));
   if(distancePRs.length < 2) return null;
 
   distancePRs.sort((a,b) => a.distM - b.distM);
@@ -4305,6 +4894,130 @@ function personalFatigueExponent(athlete){
   };
 }
 
+function raceForecastForTarget(athlete, target){
+  const primary = primaryPRForAthlete(athlete);
+  if(!primary || !target || !target.distM) return null;
+
+  const targetDistM = target.distM;
+  const targetDomain = getEventDomain(targetDistM);
+  const observed = observedPRForTarget(athlete, targetDistM);
+  if(observed){
+    const isSource = observed.sourceType === 'primary';
+    return {
+      ...target,
+      targetDomain,
+      isSource,
+      isObserved: true,
+      isExploratory: false,
+      likely: observed.sec,
+      conservative: observed.sec,
+      aggressive: observed.sec,
+      modelLow: observed.sec,
+      modelHigh: observed.sec,
+      modelAgreement: 1,
+      rangeMethod: 'observed_result_not_forecast',
+      confidence: 100,
+      confLabel: isSource ? 'Verified PR' : 'Observed PR',
+      reasons: [isSource ? "Athlete's primary logged result" : `Observed ${observed.event} PR, not a forecast`],
+      anchor: observed,
+      freshness: prFreshness(observed.raceDate)
+    };
+  }
+
+  const anchor = _selectBestAnchor(targetDistM, athlete, { excludeTarget: true }) || primary;
+  const anchorDomain = getEventDomain(anchor.distM);
+  const sameDomain = targetDomain.key === anchorDomain.key;
+  const adjacentDomain = Math.abs(targetDomain.order - anchorDomain.order) === 1;
+  const distRatio = Math.max(targetDistM, anchor.distM) / Math.min(targetDistM, anchor.distM);
+  const logRatio = Math.abs(Math.log10(targetDistM / anchor.distM));
+  const freshness = prFreshness(anchor.raceDate);
+  const freshPenalty = freshnessPenaltyFor(freshness);
+
+  const result = strideEnsemble(anchor.distM, anchor.sec, targetDistM, freshPenalty, { weeklyMiles: athlete.weeklyMileage });
+  let likely = result.predSec;
+  let personalW = 0;
+  const personalK = personalFatigueExponent(athlete, { excludeDistM: targetDistM });
+  if(personalK && targetDistM >= 400 && anchor.distM >= 400){
+    const personalPrediction = anchor.sec * Math.pow(targetDistM / anchor.distM, personalK.k);
+    personalW = Math.min(0.8, 0.4 + 0.2 * personalK.nPairs);
+    likely = personalPrediction * personalW + likely * (1 - personalW);
+  }
+
+  const observedRatio = getObservedRatio(anchor.distM, targetDistM);
+  if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000){
+    const observedPrediction = anchor.sec * observedRatio;
+    likely = observedPrediction * 0.3 + likely * 0.7;
+  }
+
+  const isExploratory = Math.abs(targetDomain.order - anchorDomain.order) >= 3;
+  let rangePct;
+  if(sameDomain)             rangePct = 0.015 + logRatio * 0.015;
+  else if(adjacentDomain)    rangePct = 0.030 + logRatio * 0.020;
+  else if(isExploratory)     rangePct = 0.080 + logRatio * 0.040;
+  else                       rangePct = 0.050 + logRatio * 0.025;
+  rangePct *= freshPenalty;
+
+  const ageYears = parseInt(athlete.age, 10) || null;
+  const youthFactor = (ageYears && ageYears < 18) ? (ageYears <= 14 ? 1.5 : 1.25) : 1;
+  rangePct *= youthFactor;
+
+  const conservative = likely * (1 + rangePct);
+  const aggressive = likely * (1 - rangePct);
+
+  let confidence;
+  if(sameDomain && distRatio <= 2.0) confidence = 90 - logRatio * 5;
+  else if(sameDomain)               confidence = 80 - logRatio * 10;
+  else if(adjacentDomain)           confidence = 65 - logRatio * 15;
+  else if(isExploratory)            confidence = Math.max(10, 35 - logRatio * 12);
+  else                              confidence = 45 - logRatio * 10;
+  if(freshness === 'stale')   confidence *= 0.9;
+  if(freshness === 'expired') confidence *= 0.75;
+  if(freshness === 'future')  confidence *= 0.5;
+  if(freshness === 'unknown') confidence *= 0.85;
+  if(personalK && sameDomain) confidence = Math.min(95, confidence + 5);
+  if(youthFactor > 1) confidence *= (youthFactor === 1.5 ? 0.85 : 0.92);
+
+  const reasons = [];
+  if(anchor.sourceType !== 'primary') reasons.push(`Anchored from ${anchor.event} PR`);
+  if(sameDomain) reasons.push('Same event domain');
+  else if(adjacentDomain) reasons.push('Adjacent domain');
+  else reasons.push(`Cross-domain (${anchorDomain.label} → ${targetDomain.label})`);
+  if(distRatio < 2) reasons.push('Distance ratio ≤2×');
+  else if(distRatio < 4) reasons.push(`Distance ratio ${distRatio.toFixed(1)}×`);
+  else reasons.push(`Large distance ratio ${distRatio.toFixed(1)}×`);
+  if(freshness === 'stale') reasons.push('Anchor PR is stale');
+  if(freshness === 'expired') reasons.push('Anchor PR is expired (>1 year)');
+  if(freshness === 'future') reasons.push('Anchor PR date is in the future');
+  if(freshness === 'unknown') reasons.push('Anchor PR date unknown');
+  if(personalW > 0) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)}, ${Math.round(personalW*100)}% weight)`);
+  if(youthFactor > 1) reasons.push(ageYears <= 14 ? 'Youth athlete (≤14) — maturation widens range' : 'Youth athlete — maturation widens range');
+  if(typeof athlete.weeklyMileage === 'number' && athlete.weeklyMileage > 0 && targetDistM > 10000) reasons.push(`Volume-adjusted (${athlete.weeklyMileage} mi/wk)`);
+  if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000) reasons.push('Nudged by equivalent-performance tables');
+  if(isExploratory) reasons.push('Exploratory only — no strong validation across this distance gap');
+
+  return {
+    ...target,
+    targetDomain,
+    isSource: false,
+    isObserved: false,
+    isExploratory,
+    likely,
+    conservative,
+    aggressive,
+    modelLow: result.modelLow,
+    modelHigh: result.modelHigh,
+    modelAgreement: result.agreement,
+    rangeMethod: 'heuristic_planning_range_uncalibrated',
+    confidence: Math.max(5, Math.min(98, confidence)),
+    confLabel: confidenceLabel(Math.max(5, Math.min(98, confidence))),
+    reasons,
+    anchor,
+    freshness,
+    personalK,
+    personalW
+  };
+}
+
 // ── PREDICTIVE RACE TIMES (inline on Paces page) ──
 // Conservative / Likely / Aggressive ranges with confidence labels and
 // reasons. Cross-domain predictions are flagged exploratory.
@@ -4315,98 +5028,11 @@ function buildPredictiveRaceTable(){
   const raceSec = parseTime(A.raceTime);
   if(!raceSec) return '';
 
-  const targets = [
-    { distM: 100, label: '100m' },
-    { distM: 200, label: '200m' },
-    { distM: 400, label: '400m' },
-    { distM: 800, label: '800m' },
-    { distM: 1500, label: '1500m' },
-    { distM: 1609, label: '1 Mile' },
-    { distM: 1600, label: '1600m' },
-    { distM: 3000, label: '3000m' },
-    { distM: 3200, label: '3200m' },
-    { distM: 3218, label: '2 Mile' },
-    { distM: 5000, label: '5K' },
-    { distM: 8000, label: '8K' },
-    { distM: 10000, label: '10K' },
-    { distM: 21097, label: 'Half Marathon' },
-    { distM: 42195, label: 'Marathon' },
-  ];
-
-  const freshness = prFreshness(A.raceDate);
-  const freshPenalty = freshness === 'fresh' ? 1.0 : freshness === 'stale' ? 1.3 : 1.7;
   const sourceDomain = getEventDomain(A.raceDistanceM);
   const personalK = personalFatigueExponent(A);
   const sourceLabel = `${A.raceDistance} in ${A.raceTime}`;
 
-  const rows = targets.map(t => {
-    const isSource = (t.distM === A.raceDistanceM);
-    const targetDomain = getEventDomain(t.distM);
-    const sameDomain = targetDomain.key === sourceDomain.key;
-    const adjacentDomain = Math.abs(targetDomain.order - sourceDomain.order) === 1;
-    const distRatio = Math.max(t.distM, A.raceDistanceM) / Math.min(t.distM, A.raceDistanceM);
-    const logRatio = Math.abs(Math.log10(t.distM / A.raceDistanceM));
-
-    if(isSource){
-      return { ...t, targetDomain, isSource: true, likely: raceSec, conservative: raceSec, aggressive: raceSec, confidence: 100, confLabel: 'Verified PR', reasons: ["Athlete's actual logged result"] };
-    }
-
-    const result = strideEnsemble(A.raceDistanceM, raceSec, t.distM, freshPenalty);
-    let likely = result.predSec;
-    if(personalK && t.distM >= 400 && A.raceDistanceM >= 400){
-      const personalPrediction = raceSec * Math.pow(t.distM / A.raceDistanceM, personalK.k);
-      likely = personalPrediction * 0.6 + likely * 0.4;
-    }
-    const observedRatio = getObservedRatio(A.raceDistanceM, t.distM);
-    if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000){
-      const observedPrediction = raceSec * observedRatio;
-      likely = observedPrediction * 0.3 + likely * 0.7;
-    }
-
-    const isExploratory = Math.abs(targetDomain.order - sourceDomain.order) >= 3;
-    let rangePct;
-    if(sameDomain)        rangePct = 0.015 + logRatio * 0.015;
-    else if(adjacentDomain) rangePct = 0.030 + logRatio * 0.020;
-    else if(isExploratory)  rangePct = 0.080 + logRatio * 0.040;
-    else                    rangePct = 0.050 + logRatio * 0.025;
-    rangePct *= freshPenalty;
-
-    const conservative = likely * (1 + rangePct);
-    const aggressive   = likely * (1 - rangePct);
-
-    let confidence;
-    if(sameDomain && distRatio <= 2.0) confidence = 90 - logRatio * 5;
-    else if(sameDomain)                 confidence = 80 - logRatio * 10;
-    else if(adjacentDomain)             confidence = 65 - logRatio * 15;
-    else if(isExploratory)              confidence = Math.max(10, 35 - logRatio * 12);
-    else                                confidence = 45 - logRatio * 10;
-    if(freshness === 'stale')   confidence *= 0.9;
-    if(freshness === 'expired') confidence *= 0.75;
-    if(personalK && sameDomain) confidence = Math.min(95, confidence + 5);
-
-    let confLabel;
-    if(confidence >= 90) confLabel = 'Very High';
-    else if(confidence >= 75) confLabel = 'High';
-    else if(confidence >= 55) confLabel = 'Medium';
-    else if(confidence >= 35) confLabel = 'Low';
-    else if(confidence >= 15) confLabel = 'Very Low';
-    else confLabel = 'Exploratory';
-
-    const reasons = [];
-    if(sameDomain) reasons.push('Same event domain');
-    else if(adjacentDomain) reasons.push('Adjacent domain');
-    else reasons.push(`Cross-domain (${sourceDomain.label} → ${targetDomain.label})`);
-    if(distRatio < 2) reasons.push('Distance ratio ≤2×');
-    else if(distRatio < 4) reasons.push(`Distance ratio ${distRatio.toFixed(1)}×`);
-    else reasons.push(`Large distance ratio ${distRatio.toFixed(1)}×`);
-    if(freshness === 'stale') reasons.push('PR is stale');
-    if(freshness === 'expired') reasons.push('PR is expired (>1 year)');
-    if(personalK && sameDomain) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)})`);
-    if(observedRatio && A.raceDistanceM >= 3000 && t.distM >= 3000) reasons.push('Cross-validated vs. population data');
-    if(isExploratory) reasons.push('Exploratory only — no published validation across this distance gap');
-
-    return { ...t, targetDomain, isSource: false, isExploratory, likely, conservative, aggressive, confidence, confLabel, reasons };
-  });
+  const rows = forecastTargets().map(t => raceForecastForTarget(A, t)).filter(Boolean);
 
   const confColor = c => {
     if(c >= 75) return 'var(--green)';
@@ -4415,18 +5041,18 @@ function buildPredictiveRaceTable(){
   };
 
   const bodyRows = rows.map(r => {
-    const rowBg = r.isSource ? 'background:var(--accent-soft);' : (r.isExploratory ? 'opacity:0.65;' : '');
-    const rangeText = r.isSource ? '—' : `${fmtT(r.aggressive)} <span style="color:var(--text-4)">·</span> ${fmtT(r.conservative)}`;
+    const rowBg = r.isObserved ? 'background:var(--accent-soft);' : (r.isExploratory ? 'opacity:0.65;' : '');
+    const rangeText = r.isObserved ? '—' : `${fmtT(r.aggressive)} <span style="color:var(--text-4)">·</span> ${fmtT(r.conservative)}`;
     return `
       <tr style="border-bottom:1px solid var(--border);${rowBg}">
-        <td style="padding:.75rem .875rem;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text);font-weight:${r.isSource ? '600' : '500'};vertical-align:middle">
+        <td style="padding:.75rem .875rem;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text);font-weight:${r.isObserved ? '600' : '500'};vertical-align:middle">
           <div>${esc(r.label)}</div>
           <div style="font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-top:.125rem">${esc(r.targetDomain.label)}</div>
         </td>
-        <td style="padding:.75rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:1rem;color:${r.isSource ? 'var(--accent)' : 'var(--text)'};font-weight:${r.isSource ? '600' : '500'};vertical-align:middle">${esc(fmtT(r.likely))}</td>
+        <td style="padding:.75rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:1rem;color:${r.isObserved ? 'var(--accent)' : 'var(--text)'};font-weight:${r.isObserved ? '600' : '500'};vertical-align:middle">${esc(fmtT(r.likely))}</td>
         <td style="padding:.75rem .875rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-3);vertical-align:middle">${rangeText}</td>
         <td style="padding:.75rem .875rem;text-align:right;vertical-align:middle">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:${r.isSource ? 'var(--accent)' : confColor(r.confidence)};font-weight:500">${r.isSource ? 'PR' : Math.round(r.confidence) + '%'}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:${r.isObserved ? 'var(--accent)' : confColor(r.confidence)};font-weight:500">${r.isObserved ? (r.isSource ? 'PR' : 'OBS') : Math.round(r.confidence) + '%'}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-top:.125rem">${esc(r.confLabel)}</div>
         </td>
         <td style="padding:.75rem .875rem;font-size:.6875rem;color:var(--text-3);line-height:1.5;vertical-align:middle;max-width:14rem">${esc(r.reasons.join(' · '))}</td>
@@ -4436,12 +5062,12 @@ function buildPredictiveRaceTable(){
   const personalKBanner = personalK ? `
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:.75rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.25rem">Personalized Fatigue Curve</p>
-      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5">k = <strong style="color:var(--text)">${personalK.k.toFixed(3)}</strong> · <span style="color:${personalK.biasColor};font-weight:500">${personalK.bias}</span> · derived from ${personalK.nPRs} logged PRs (${personalK.nPairs} distance pairs)</p>
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5">k = <strong style="color:var(--text)">${personalK.k.toFixed(3)}</strong> · <span style="color:${personalK.biasColor};font-weight:500">${personalK.bias}</span> · derived from ${personalK.nPRs} logged PRs (${personalK.nPairs} distance pairs) · weighted <strong style="color:var(--text)">${Math.round(Math.min(0.8, 0.4 + 0.2*personalK.nPairs)*100)}%</strong> vs. population formulas — this athlete's own curve, not a generic table</p>
     </div>` : '';
 
   return `
     <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
-    <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-bottom:1rem">Forecast times across every standard distance with confidence ranges based on the source PR.</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-bottom:1rem">Forecast times across every standard distance with source-excluded planning ranges based on the best available PR.</p>
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:.5rem;flex-wrap:wrap">
       <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem">Source</span>
       <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">${esc(sourceLabel)}</span>
@@ -4463,7 +5089,7 @@ function buildPredictiveRaceTable(){
       </table>
     </div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}, cross-validated against population data spanning ages 12–95. Cross-domain predictions are shown but flagged exploratory.
+      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts. Cross-domain predictions are shown but flagged exploratory; validation strength varies by event family.
     </p>`;
 }
 
@@ -4787,7 +5413,7 @@ function _normEvent(v){
   const map = {
     '100m':100, '200m':200, '400m':400,
     '800m':800, '1500m':1500, '1600m':1600,
-    '1mi':1609, '1mile':1609, 'mile':1609,
+    'mi':1609, '1mi':1609, '1mile':1609, 'mile':1609,
     '3000m':3000, '3200m':3200, '2mi':3218, '2mile':3218,
     '5k':5000, '5000m':5000,
     '8k':8000, '10k':10000, '10000m':10000,
@@ -4838,6 +5464,7 @@ async function applyImport(){
   const total = importState.rows.length;
   const failed = [];
   let imported = 0;
+  let cloudFailures = 0;
 
   for(let i = 0; i < total; i++){
     const row = importState.rows[i];
@@ -4871,10 +5498,11 @@ async function applyImport(){
     DB.athletes.push(athlete);
     imported++;
 
-    // Push to Supabase if signed in. Don't await every one — fire and forget
-    // so a slow connection doesn't stall the loop. Failures are logged.
-    if(typeof syncAthleteToSupabase === 'function'){
-      try{ syncAthleteToSupabase(athlete); }catch(e){ console.warn('athlete sync error', e); }
+    // Push to Supabase if signed in. Await so the UI can distinguish a real
+    // cloud import from a local-only import when Supabase is paused/unreachable.
+    if(sbClient && sbUser && typeof syncAthleteToSupabase === 'function'){
+      const syncStatus = await syncAthleteToSupabase(athlete);
+      if(!syncStatus || !syncStatus.ok) cloudFailures++;
     }
 
     importState.importedCount = imported;
@@ -4888,7 +5516,12 @@ async function applyImport(){
 
   importState = { ...importState, stage: 'done', importedCount: imported, failedRows: failed };
   renderImport();
-  toast(`Imported ${imported} athlete${imported===1?'':'s'}`);
+  if(cloudFailures){
+    toast(`Imported ${imported} locally · ${cloudFailures} cloud sync failed`);
+    setAuthFeedback('err', 'Roster import saved locally, but some cloud syncs failed. Check Supabase reachability before relying on cross-device data.', false);
+  } else {
+    toast(`Imported ${imported} athlete${imported===1?'':'s'}`);
+  }
 }
 
 // "Upgrade to unlock" placeholder shown to free-tier users where the predictive
@@ -4898,26 +5531,27 @@ function predictiveRaceTableLocked(){
     <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
     <div style="background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:.5rem;padding:1.5rem;text-align:center">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Race forecasts across every standard distance with confidence ranges. Powered by the STRIDE proprietary ensemble.</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Race forecasts across every standard distance with planning ranges. Powered by the STRIDE proprietary ensemble.</p>
       <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
     </div>`;
 }
 
 // ── THE STRIDE ENSEMBLE ──
-// Returns { predSec, ci95Low, ci95High, agreement, confidence }
+// Returns model-disagreement range, not an empirically calibrated 95% CI.
 // `agreement` = inter-formula agreement (0-1, higher = formulas agree)
 // `confidence` = overall confidence percentage (0-100)
-function strideEnsemble(d1, t1, d2, freshnessPenalty){
-  if(d1 === d2) return { predSec: t1, ci95Low: t1, ci95High: t1, agreement: 1, confidence: 100 };
+function strideEnsemble(d1, t1, d2, freshnessPenalty, opts){
+  if(d1 === d2) return { predSec: t1, modelLow: t1, modelHigh: t1, agreement: 1, confidence: 100 };
 
   const weights = _ensembleWeights(d1, d2);
+  const weeklyMiles = opts && typeof opts.weeklyMiles === 'number' ? opts.weeklyMiles : (opts && opts.weeklyMiles ? parseInt(opts.weeklyMiles, 10) || null : null);
 
   // Get individual predictions (only call formulas with non-zero weight)
   const predictions = {};
   if(weights.riegel  > 0) predictions.riegel  = _formulaRiegel(d1, t1, d2);
   if(weights.cameron > 0) predictions.cameron = _formulaCameron(d1, t1, d2);
   if(weights.vdot    > 0) predictions.vdot    = _formulaVDOT(d1, t1, d2);
-  if(weights.vickers > 0) predictions.vickers = _formulaVickersVertosick(d1, t1, d2);
+  if(weights.vickers > 0) predictions.vickers = _formulaVickersVertosick(d1, t1, d2, weeklyMiles);
   if(weights.purdy   > 0) predictions.purdy   = _formulaPurdy(d1, t1, d2);
 
   // Weighted ensemble prediction
@@ -4941,18 +5575,18 @@ function strideEnsemble(d1, t1, d2, freshnessPenalty){
   const freshnessPenaltyPct = (freshnessPenalty - 1) * 15;
   const confidence = Math.max(20, Math.min(98, distanceConf + agreementBonus - freshnessPenaltyPct));
 
-  // 95% CI: combines formula disagreement with distance-ratio uncertainty
-  // When formulas agree closely, CI is mostly distance uncertainty.
-  // When formulas disagree, the CI widens to reflect that.
+  // Model-disagreement interval: combines formula spread with distance-ratio
+  // uncertainty. This is useful for planning, but it is not yet calibrated
+  // against held-out residuals, so the UI must not call it a 95% CI.
   const ratioUncertaintyPct = (1.5 + logRatio * 2.5) * freshnessPenalty;
   const formulaDisagreementPct = sdPctOfMean; // already a percentage
   const combinedSdPct = Math.sqrt(ratioUncertaintyPct*ratioUncertaintyPct + formulaDisagreementPct*formulaDisagreementPct);
-  const ci95 = predSec * combinedSdPct / 100 * 1.96;
+  const planningRadius = predSec * combinedSdPct / 100 * 1.96;
 
   return {
     predSec: predSec,
-    ci95Low: predSec - ci95,
-    ci95High: predSec + ci95,
+    modelLow: predSec - planningRadius,
+    modelHigh: predSec + planningRadius,
     agreement: agreement,
     confidence: confidence,
     sdPctOfMean: sdPctOfMean
@@ -4965,18 +5599,22 @@ function strideEnsemble(d1, t1, d2, freshnessPenalty){
 //   - Use the closest-by-log-distance race result
 //   - But if multiple are within reasonable range, use the freshest
 // Returns { distM, sec, source }
-function _selectBestAnchor(targetDistM, athlete){
-  const allPRs = collectAllPRs(athlete);
+function _selectBestAnchor(targetDistM, athlete, opts){
+  const excludeTarget = opts && opts.excludeTarget;
+  const allPRs = collectAllPRs(athlete).filter(p => !(excludeTarget && sameDistanceM(p.distM, targetDistM)));
   if(allPRs.length === 0) return null;
   if(allPRs.length === 1) return { ...allPRs[0], source: 'only PR' };
 
-  // Score each PR by closeness to target on log-distance scale
+  // Score each PR by closeness to target on log-distance scale, with a smaller
+  // freshness/provenance adjustment so stale or unknown PRs do not beat a
+  // nearly-equivalent current result.
   const targetLog = Math.log10(targetDistM);
   const scored = allPRs.map(p => ({
     ...p,
     logDist: Math.abs(Math.log10(p.distM) - targetLog),
+    freshnessPenalty: { fresh: 0, stale: 0.06, unknown: 0.10, expired: 0.18, future: 0.30 }[prFreshness(p.raceDate)] ?? 0.12,
   }));
-  scored.sort((a, b) => a.logDist - b.logDist);
+  scored.sort((a, b) => (a.logDist + a.freshnessPenalty) - (b.logDist + b.freshnessPenalty));
 
   return { ...scored[0], source: scored[0].event === athlete.raceDistance ? 'primary PR' : `${scored[0].event} PR` };
 }
@@ -4988,54 +5626,50 @@ function buildPreds(distM, sec, primary){
     '200m':[100,200,400],
     '400m':[200,400,800],
     '800m':[400,800,1500],
+    '1500m':[800,1500,3000],
     '1600m':[800,1600,3200],
     'Mile' :[800,1609,3218],
+    '3000m':[1500,3000,5000],
     '3200m':[1600,3200,5000],
     '2 Mile':[1609,3218,5000],
     '5K':[3200,5000,10000],
-    '10K':[5000,10000,21097]
+    '8K':[5000,8000,10000],
+    '10K':[5000,10000,21097],
+    'Half Marathon':[10000,21097,42195],
+    'Marathon':[21097,42195]
   };
   const names={100:'100m',200:'200m',300:'300m',400:'400m',800:'800m',
-    1500:'1500m',1600:'1600m',1609:'Mile',3200:'3200m',3218:'2 Mile',5000:'5K',10000:'10K',21097:'Half Marathon'};
-
-  const fresh = prFreshness(A.raceDate);
-  const freshnessPenalty = fresh==='fresh' ? 1.0 : fresh==='stale' ? 1.5 : fresh==='expired' ? 2.5 : 1.5;
+    1500:'1500m',1600:'1600m',1609:'Mile',3000:'3000m',3200:'3200m',3218:'2 Mile',
+    5000:'5K',8000:'8K',10000:'10K',21097:'Half Marathon',42195:'Marathon'};
 
   return(families[primary]||[distM]).map(t => {
-    const isSelf = t === distM;
-
-    // Use the best anchor for this target distance (may not be the primary PR)
-    const anchor = _selectBestAnchor(t, A) || { distM: distM, sec: sec, source: 'primary PR' };
-    const usedAlternateAnchor = !isSelf && anchor.distM !== distM;
-
-    let predSec, ci95Low, ci95High, conf, agreement;
-    if(isSelf){
-      predSec = sec; ci95Low = sec; ci95High = sec; conf = 100; agreement = 1;
-    } else {
-      const result = strideEnsemble(anchor.distM, anchor.sec, t, freshnessPenalty);
-      predSec = result.predSec;
-      ci95Low = result.ci95Low;
-      ci95High = result.ci95High;
-      conf = result.confidence;
-      agreement = result.agreement;
-    }
+    const forecast = raceForecastForTarget(A, { distM: t, label: names[t] || labelForDistance(t) });
+    if(!forecast) return '';
+    const isSelf = forecast.isSource;
+    const isObserved = forecast.isObserved;
+    const anchor = forecast.anchor || { distM: distM, sec: sec, source: 'primary PR' };
+    const usedAlternateAnchor = !isObserved && anchor.distM !== distM;
+    const predSec = forecast.likely;
+    const rangeLow = forecast.aggressive;
+    const rangeHigh = forecast.conservative;
+    const conf = forecast.confidence;
 
     const cls = conf >= 75 ? 'hi' : conf >= 50 ? 'md' : 'lo';
-    const spkm = 1000 / (t / predSec * 60);
+    const spkm = predSec / (t / 1000);
     const ratio = t / anchor.distM;
     const outOfRange = ratio > 4 || ratio < 0.25;
 
-    return `<div class="pred-card" ${isSelf?'style="border-top-color:var(--green)"':''}>
-      <p class="pred-event">${esc(names[t]||t+'m')}${isSelf?' · Source PR':''}</p>
+    return `<div class="pred-card" ${isObserved?'style="border-top-color:var(--green)"':''}>
+      <p class="pred-event">${esc(names[t]||t+'m')}${isSelf?' · Source PR':isObserved?' · Observed PR':''}</p>
       <p class="pred-time">${esc(fmtT(predSec))}</p>
-      ${!isSelf ? `<p class="pred-pace" style="color:var(--text)">95% CI: ${esc(fmtT(ci95Low))} – ${esc(fmtT(ci95High))}</p>` : `<p class="pred-pace">Verified result</p>`}
+      ${!isObserved ? `<p class="pred-pace" style="color:var(--text)">Range: ${esc(fmtT(rangeLow))} – ${esc(fmtT(rangeHigh))}</p>` : `<p class="pred-pace">Verified result</p>`}
       <p class="pred-pace">${esc(fmtPace(spkm))}</p>
       <div class="conf-row">
         <span class="conf-lbl">Confidence</span>
         <div class="conf-track"><div class="conf-fill ${cls}" style="width:${conf}%"></div></div>
         <span class="conf-pct ${cls}">${Math.round(conf)}%</span>
       </div>
-      <p class="pred-model">${isSelf ? 'VERIFIED RESULT' : `FORECAST · ${usedAlternateAnchor ? `anchored from ${esc(anchor.source)}` : 'multi-source method'}${outOfRange?' · DISTANCE RATIO > 4× — LOW CONFIDENCE':''}`}</p>
+      <p class="pred-model">${isObserved ? 'VERIFIED RESULT' : `FORECAST · ${usedAlternateAnchor ? `anchored from ${esc(anchor.source)}` : 'source-excluded method'}${outOfRange?' · DISTANCE RATIO > 4× — LOW CONFIDENCE':''}`}</p>
     </div>`;
   }).join('');
 }
@@ -5118,14 +5752,14 @@ function renderMethodology(){
 
   el.innerHTML = `
     <div class="info-box">
-      <strong>Built from peer-reviewed sport science literature.</strong> The specific formulas, weights, and proprietary calculation methods used inside STRIDE OS are not displayed. The peer-reviewed research informing those decisions is listed below. Coaches who want to evaluate the methodology are invited to read the sources directly.
+      <strong>Built from peer-reviewed sport science literature.</strong> Published formula families and source literature are listed below; proprietary blending weights and implementation details remain private. Coaches who want to evaluate the methodology are invited to read the sources directly.
     </div>
 
     <!-- VALIDATION CORPUS -->
     <div class="card">
       <p class="card-title"><span>Validation Datasets</span><span class="card-accent">EMPIRICAL CORPUS</span></p>
       <p style="font-size:.875rem;line-height:1.6;color:var(--text-2);margin-bottom:1rem">
-        Beyond the peer-reviewed sources cited below, STRIDE OS maintains validation corpora of competitive race results used to empirically calibrate ensemble weights, benchmark population-level performance distributions, and validate confidence intervals. These datasets supplement the published literature; they do not replace it.
+        Beyond the peer-reviewed sources cited below, STRIDE OS maintains validation corpora of competitive race results used to benchmark ensemble weights, population-level performance distributions, and planning-range coverage. These datasets supplement the published literature; they do not replace it.
       </p>
 
       <ul style="list-style:none;padding:0">
@@ -5166,7 +5800,7 @@ function renderMethodology(){
 
       <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem 1rem;margin-top:1rem">
         <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.25rem">Total Empirical Corpus</p>
-        <p style="font-size:.875rem;line-height:1.5;color:var(--text-2)">1,817 race records spanning ages 12–95 across three populations (Texas HS, NCAA D1, Masters). Used to validate formula accuracy, benchmark performance distributions, and calibrate confidence intervals.</p>
+        <p style="font-size:.875rem;line-height:1.5;color:var(--text-2)">1,817 race records spanning ages 12–95 across three populations (Texas HS, NCAA D1, Masters). Used to validate formula accuracy, benchmark performance distributions, and audit planning-range coverage.</p>
       </div>
 
       <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:1rem;font-style:italic">
@@ -5195,7 +5829,7 @@ function renderMethodology(){
         ${cite('Riegel, P. S.','1977','Time predicting','Runner\'s World, August 1977','Original publication of the power-law formula T₂ = T₁ × (D₂/D₁)^1.06. The 1.06 exponent was derived from world record analysis. Validated for events lasting 3.5–230 minutes.')}
         ${cite('Riegel, P. S.','1981','Athletic records and human endurance','American Scientist, 69(3):285-290','Theoretical foundation for the power-law endurance model. Connects fatigue resistance to predictable mathematical curves.')}
         ${cite('Cameron, D. F.','1998','Cameron prediction formula','Online publication','Refined power-law prediction with distance-varying exponent. More accurate at marathon than pure Riegel. Used as one ensemble input.')}
-        ${cite('Vickers, A. J. & Vertosick, E. A.','2016','An empirical study of race times in recreational endurance runners','BMC Sports Science, Medicine and Rehabilitation, 8:26 (PMC5000509)','Validation study, n=2,303 runners. Riegel well-calibrated for events up to half-marathon, but systematically overestimates marathon time by 10+ minutes for half of recreational runners. Mean squared error: Riegel 381 vs. multi-race regression 228.')}
+        ${cite('Vickers, A. J. & Vertosick, E. A.','2016','An empirical study of race times in recreational endurance runners','BMC Sports Science, Medicine and Rehabilitation, 8:26 (PMC5000509)','Validation study, n=2,303 runners. Riegel well-calibrated for events up to half-marathon, but can underestimate marathon finish time by 10+ minutes for many recreational runners. Mean squared error: Riegel 381 vs. multi-race regression 228.')}
         ${cite('Purdy, J. G.','1970','Computer-generated track and field scoring tables','Medicine & Science in Sports, 2(4):212-218','Original publication of Purdy points system. Velocity-vs-distance curve fitted to world-record performances. Foundation for sprint-applicable prediction.')}
         ${cite('Mercier, D., Léger, L. & Desjardins, M.','1986','Nomogram to predict performance equivalence for distance runners','Track Technique, 94:3004-3009','Established cross-distance equivalence tables based on physiological scaling.')}
         ${cite('Aftalion, A. & Bonnans, J. F.','2023','Modelling human endurance: power laws vs critical power','European Journal of Applied Physiology','Comparative analysis. Power-law fits well across all durations up to marathon; critical power model valid only in 2–15 min range.')}
@@ -5220,14 +5854,27 @@ function renderMethodology(){
     <!-- PACE PRESCRIPTION -->
     <div class="card">
       <p class="card-title"><span>Pace &amp; Training Prescription</span><span class="card-accent">METHODOLOGICAL ROOTS</span></p>
-      <p style="font-size:.875rem;line-height:1.6;color:var(--text-2);margin-bottom:1rem">The Canova percentage-of-PR pace system draws from elite coaching practice and supporting physiology research.</p>
+      <p style="font-size:.875rem;line-height:1.6;color:var(--text-2);margin-bottom:1rem">STRIDE uses race-speed percentages as starting targets, then expects adjustment by internal load, interval duration, readiness, and environmental context.</p>
       <ul style="list-style:none;padding:0">
-        ${cite('Canova, R.','2000s-2010s','Percentage-of-race-pace training framework','Coaching seminars, athletics conferences, private correspondence (compiled by Davis 2011 and others)','Elite-coaching methodology prescribing training intensities as percentages of race PR. Multiplication convention: 90% pace = race time × 1.10. Not formally peer-reviewed; widely used at world-class level.')}
-        ${cite('Davis, J. J.','2023','A comprehensive overview of Canova-style "full-spectrum" percentage-based training','runningwritings.com','Mathematical treatment of Canova\'s percentage system, including the "ladder of support" 80%–115% structure used in this app.')}
+        ${cite('Canova, R.','2000s-2010s','Percentage-of-race-pace training framework','Coaching seminars and athletics conference material','Elite-coaching methodology using race-pace relationships to structure workout intensities. STRIDE uses this as coaching context, not as direct peer-reviewed validation.')}
+        ${cite('Davis, J. J.','2023','A comprehensive overview of Canova-style "full-spectrum" percentage-based training','runningwritings.com','Mathematical treatment of full-spectrum percentage training and the ladder-of-support concept.')}
         ${cite('Schwartz, T.','2010s','Critical velocity training methodology','Tinman Endurance Project, online publications','Application of CV-based interval training. Practical CV prescription for 800m–10K athletes.')}
         ${cite('Magness, S.','2014','The Science of Running','Origin Press','Synthesis of pace prescription, periodization, and physiology. Bridge between research and coaching practice.')}
         ${cite('Lydiard, A. & Gilmour, G.','1962/2017','Running with Lydiard (revised edition)','Meyer & Meyer Sport','Aerobic-base methodology. Foundation of long-aerobic emphasis still seen in modern marathon training.')}
         ${cite('Hart, C.','1990s-2000s','Speed development methodology','Baylor University coaching materials','Sprint and 400m training framework. Hart extensive tempo and short-to-long progression.')}
+      </ul>
+    </div>
+
+    <!-- NORWEGIAN METHOD -->
+    <div class="card">
+      <p class="card-title"><span>Norwegian Method &amp; Threshold Control</span><span class="card-accent">PACE GUARDRAILS</span></p>
+      <p style="font-size:.875rem;line-height:1.6;color:var(--text-2);margin-bottom:1rem">The Norwegian Method sources support how STRIDE interprets threshold paces, readiness, and confidence. They do not serve as race-equivalence formulas.</p>
+      <ul style="list-style:none;padding:0">
+        ${cite('Bakken, M.','2026','The Norwegian Method Applied, pp. 1-102','Local Source Library PDF: Training/the norwegian method p.1-102.pdf','Defines the Golden Zone and emphasizes controlled threshold work below runaway lactate. Supports using pace as a starting estimate that must be adjusted by internal load.')}
+        ${cite('Bakken, M.','2026','The Norwegian Method Applied, pp. 103-204','Local Source Library PDF: Training/the norwegian method p.103-204.pdf','Applies double-threshold structure, easy-day discipline, workout checkpoints, and race-pace interval variation by target event.')}
+        ${cite('Bakken, M.','2026','The Norwegian Method Applied, pp. 205-307','Local Source Library PDF: Training/the norwegian method p.205-307.pdf','Covers readiness warning signs, lactate/HR drift, traffic-light decisions, and why precision means repeatable internal load over weeks, not blind pace compliance.')}
+        ${cite('Bakken, M.','2026','The Norwegian Method Applied, pp. 307-327','Local Source Library PDF: Training/the norwegian method p.307-327.pdf','Discusses future continuous lactate, dynamic rest, shoe effects, and phenotype observation. STRIDE treats these as roadmap direction, not current measured capability.')}
+        ${cite('Casado, A., Foster, C., Bakken, M. & Tjelta, L. I.','2023','Does Lactate-Guided Threshold Interval Training within a High-Volume Low-Intensity Approach Represent the Next Step in the Evolution of Distance Running Training?','International Journal of Environmental Research and Public Health, 20(5):3782','Peer-reviewed framing for lactate-guided threshold interval training: internal load controls intensity, while pace varies by athlete and day.')}
       </ul>
     </div>
 
@@ -5289,7 +5936,7 @@ function renderMethodology(){
         ${limitItem('Account for environmental conditions (heat, humidity, altitude, wind) automatically. Coaches should adjust prescriptions manually based on conditions.', 'Daniels (2014), Ely (2007), Maughan (2012) provide reference')}
         ${limitItem('Predict performance for athletes whose biological maturation status is changing (typical of athletes under 18). Maturation introduces 20–40% variance in adaptation rates.', 'Lloyd & Oliver (2012); Malina et al. (2004)')}
         ${limitItem('Replace coach judgment for individual response to training. Predictions are statistical averages; your athlete may be the outlier.', 'Hopkins et al. (2009); Bouchard & Rankinen (2001)')}
-        ${limitItem('Validate its own predictions against your athlete\'s actual outcomes. STRIDE OS does not yet collect outcome data; coaches should track predicted vs. actual race times to assess accuracy in their context.', 'Future feature')}
+        ${limitItem('Automatically match every forecast to future race outcomes. STRIDE OS now logs source-excluded forecast snapshots for calibration, but coaches still need to record actual race outcomes before accuracy can be audited in their context.', 'Prediction log v2026-06-20; outcome matching roadmap')}
         ${limitItem('Provide a Durability Index, ACWR, HRV trends, or readiness scores. These require logged workout, heart rate, and recovery data not currently captured by the app.', 'Roadmap items')}
       </ul>
     </div>
@@ -5403,16 +6050,27 @@ function getEventGroup(ev){
   if(!ev) return 'Other';
   if(['100m','200m'].includes(ev)) return 'Sprint';
   if(['400m','800m'].includes(ev)) return 'Hybrid';
-  if(['1600m','Mile','3200m','2 Mile'].includes(ev)) return 'Middle';
-  if(['5K','10K'].includes(ev)) return 'Distance';
+  if(['1500m','1600m','Mile','3000m','3200m','2 Mile'].includes(ev)) return 'Middle';
+  if(['5K','8K','10K','Half Marathon','Marathon'].includes(ev)) return 'Distance';
   return 'Other';
+}
+
+function predictFromFixedAnchor(anchor, targetDistM, athlete){
+  if(!anchor || !anchor.distM || !anchor.sec || !targetDistM) return null;
+  if(sameDistanceM(anchor.distM, targetDistM)) return anchor.sec;
+  const freshnessPenalty = freshnessPenaltyFor(prFreshness(anchor.raceDate));
+  const result = strideEnsemble(anchor.distM, anchor.sec, targetDistM, freshnessPenalty, {
+    weeklyMiles: athlete && athlete.weeklyMileage
+  });
+  return result.predSec;
 }
 
 // ══════════════════════════════════════
 // MULTI-EVENT ANALYSIS
 // ══════════════════════════════════════
 // Anchors to the athlete's primary PR and compares all other logged PRs.
-// Uses Riegel to predict what each other event "should" be from the anchor.
+// Uses the STRIDE ensemble to predict what each other event "should" be from
+// the fixed anchor.
 // Difference between actual and predicted reveals strengths/weaknesses.
 function renderMultiEvent(){
   const el = document.getElementById('me-body');
@@ -5437,9 +6095,9 @@ function renderMultiEvent(){
   // Use primary PR as the anchor
   const anchor = allPRs.find(p => p.distM === A.raceDistanceM) || allPRs[0];
 
-  // For each other PR, compute predicted (from anchor via Riegel) vs actual
+  // For each other PR, compute predicted (from fixed anchor via STRIDE) vs actual
   const comparisons = allPRs.filter(p => p.event !== anchor.event).map(p => {
-    const predictedSec = anchor.sec * Math.pow(p.distM / anchor.distM, 1.06);
+    const predictedSec = predictFromFixedAnchor(anchor, p.distM, A);
     const actualSec = p.sec;
     const diffPct = ((predictedSec - actualSec) / predictedSec) * 100;
     // Positive diffPct = actual faster than predicted = STRONG at this event
@@ -5543,7 +6201,7 @@ function renderMultiEvent(){
 
 // ── PERFORMANCE CURVE CHART ──
 // SVG line chart: X = distance (log scale), Y = pace in sec/meter
-// Orange line = Riegel prediction curve from anchor
+// Orange line = STRIDE ensemble prediction curve from anchor
 // Dots = actual race results
 function buildPerformanceCurve(anchor, allPRs){
   // SVG dimensions — extra padding on left for "PACE (MIN/MILE)" label,
@@ -5554,15 +6212,16 @@ function buildPerformanceCurve(anchor, allPRs){
   const chartH = H - padT - padB;
 
   // X axis: log10(distance in meters)
-  const allDistances = [100, 200, 400, 800, 1500, 1609, 3000, 3200, 5000, 10000];
+  const maxLoggedDist = Math.max(...allPRs.map(p => p.distM), 10000);
+  const curveMaxDist = Math.min(Math.max(maxLoggedDist, 10000), 42195);
   const xMin = Math.log10(80);
-  const xMax = Math.log10(11000);
+  const xMax = Math.log10(curveMaxDist * 1.1);
 
   // Y axis: pace in sec/meter (lower number = faster pace = higher on chart)
   // Compute predicted pace for full range, plus actual paces for all PRs
   const predictedPaces = [];
-  for(let d = 100; d <= 10000; d *= 1.05){
-    const predSec = anchor.sec * Math.pow(d / anchor.distM, 1.06);
+  for(let d = 100; d <= curveMaxDist; d *= 1.05){
+    const predSec = predictFromFixedAnchor(anchor, d, A);
     predictedPaces.push({ d: d, secPerM: predSec / d });
   }
   const actualPaces = allPRs.map(p => ({ d: p.distM, secPerM: p.sec / p.distM, event: p.event, sec: p.sec }));
@@ -5576,14 +6235,14 @@ function buildPerformanceCurve(anchor, allPRs){
   // Invert Y: faster pace (lower secPerM) shows higher on chart
   const yScale = s => padT + ((s - yMin) / (yMax - yMin)) * chartH;
 
-  // Build Riegel curve path
+  // Build STRIDE ensemble curve path
   const curvePath = predictedPaces.map((p, i) => {
     return (i === 0 ? 'M' : 'L') + xScale(p.d).toFixed(1) + ',' + yScale(p.secPerM).toFixed(1);
   }).join(' ');
 
   // X-axis ticks
-  const xTicks = [100, 200, 400, 800, 1600, 3200, 5000, 10000];
-  const xTickLabels = { 100:'100m', 200:'200m', 400:'400m', 800:'800m', 1600:'1600m', 3200:'3200m', 5000:'5K', 10000:'10K' };
+  const xTicks = [100, 200, 400, 800, 1600, 3200, 5000, 10000, 21097, 42195].filter(d => d <= curveMaxDist * 1.05);
+  const xTickLabels = { 100:'100m', 200:'200m', 400:'400m', 800:'800m', 1600:'1600m', 3200:'3200m', 5000:'5K', 10000:'10K', 21097:'Half', 42195:'Mar' };
 
   // Y-axis: show pace in min/mile at a few levels
   const yTickValues = [];
@@ -5604,7 +6263,7 @@ function buildPerformanceCurve(anchor, allPRs){
   // Build dots for actual PRs with strength color
   const dots = actualPaces.map(p => {
     const isAnchor = p.event === anchor.event;
-    const predForDist = anchor.sec * Math.pow(p.d / anchor.distM, 1.06);
+    const predForDist = predictFromFixedAnchor(anchor, p.d, A);
     const diffPct = ((predForDist - p.sec) / predForDist) * 100;
 
     let dotColor = '#f5f5f0'; // balanced
@@ -5699,11 +6358,15 @@ function collectAllPRs(athlete){
   // Primary PR
   if(athlete.raceDistance && athlete.raceTime){
     const sec = parseTime(athlete.raceTime);
-    if(sec){
+    const distM = athlete.raceDistanceM || DIST[athlete.raceDistance];
+    if(sec && distM){
       prs.push({
         event: athlete.raceDistance,
-        distM: DIST[athlete.raceDistance],
-        sec: sec
+        distM,
+        sec,
+        raceDate: athlete.raceDate || null,
+        source: 'primary PR',
+        sourceType: 'primary'
       });
     }
   }
@@ -5715,7 +6378,14 @@ function collectAllPRs(athlete){
     if(key === athlete.raceDistance) return;
     const sec = parseTime(additional[key]);
     if(sec && DIST[key]){
-      prs.push({ event: key, distM: DIST[key], sec: sec });
+      prs.push({
+        event: key,
+        distM: DIST[key],
+        sec,
+        raceDate: null,
+        source: `${key} PR`,
+        sourceType: 'additional'
+      });
     }
   });
 
@@ -5740,7 +6410,7 @@ function classifyStrength(diffPct){
 //
 // Logic:
 //   1. Need at least 2 PRs across different distance families
-//   2. Classify athlete by where their performance peaks (vs Riegel prediction)
+//   2. Classify athlete by where their performance peaks (vs STRIDE prediction)
 //   3. Compare stated primary event to detected ideal range
 //   4. Return: VERDICT + EVIDENCE + RECOMMENDED EVENT FAMILY
 //
@@ -5757,8 +6427,9 @@ function buildEventFit(athlete){
   const performances = allPRs.map(pr => {
     // Predict this PR using EACH other PR as anchor; take the median predicted time
     const predictions = allPRs
-      .filter(other => other.distM !== pr.distM)
-      .map(other => other.sec * Math.pow(pr.distM/other.distM, 1.06));
+      .filter(other => !sameDistanceM(other.distM, pr.distM))
+      .map(other => predictFromFixedAnchor(other, pr.distM, athlete))
+      .filter(v => v && isFinite(v));
 
     if(predictions.length === 0) return null;
     predictions.sort((a,b) => a-b);
@@ -5986,15 +6657,20 @@ function fillForm(){
   set('fPR200',  prs['200m']);
   set('fPR400',  prs['400m']);
   set('fPR800',  prs['800m']);
+  set('fPR1500', prs['1500m']);
   set('fPR1600', prs['1600m']);
   set('fPRMile', prs['Mile']);
+  set('fPR3000', prs['3000m']);
   set('fPR3200', prs['3200m']);
   set('fPR2Mile',prs['2 Mile']);
   set('fPR5K',   prs['5K']);
+  set('fPR8K',   prs['8K']);
   set('fPR10K',  prs['10K']);
+  set('fPRHalf', prs['Half Marathon']);
+  set('fPRMarathon', prs['Marathon']);
 }
 
-function saveAthlete(){
+async function saveAthlete(){
   let ok=true;
 
   function chk(id,errId,test,msg){
@@ -6008,6 +6684,14 @@ function saveAthlete(){
   chk('fRDist',  'fRDist-e',  v=>v.length>0,                  'Race distance is required.');
   chk('fRTime',  'fRTime-e',  v=>parseTime(v)!==null,         'Enter a valid time (e.g. 2:18.4).');
 
+  const raceDateValue = (document.getElementById('fRDate') || {}).value || '';
+  if(raceDateValue && prFreshness(raceDateValue) === 'future'){
+    const el = document.getElementById('fRDate');
+    if(el) el.classList.add('err');
+    toast('Use completed race dates only');
+    ok = false;
+  }
+
   if(!ok) return;
 
   const distKey=document.getElementById('fRDist').value;
@@ -6016,9 +6700,10 @@ function saveAthlete(){
   const additionalPRs = {};
   const prFields = [
     ['fPR100',  '100m'],   ['fPR200',  '200m'],   ['fPR400',  '400m'],
-    ['fPR800',  '800m'],   ['fPR1600', '1600m'],  ['fPRMile', 'Mile'],
-    ['fPR3200', '3200m'],  ['fPR2Mile','2 Mile'],
-    ['fPR5K',   '5K'],     ['fPR10K',  '10K']
+    ['fPR800',  '800m'],   ['fPR1500', '1500m'],  ['fPR1600', '1600m'],
+    ['fPRMile', 'Mile'],   ['fPR3000', '3000m'],  ['fPR3200', '3200m'],
+    ['fPR2Mile','2 Mile'], ['fPR5K',   '5K'],     ['fPR8K',   '8K'],
+    ['fPR10K',  '10K'],    ['fPRHalf', 'Half Marathon'], ['fPRMarathon', 'Marathon']
   ];
   prFields.forEach(([id, key]) => {
     const el = document.getElementById(id);
@@ -6062,13 +6747,26 @@ function saveAthlete(){
   saveDB(DB);
   refreshActiveAthlete();
   updateChip();
-  syncAthleteToSupabase(athleteData);
-  toast('✓ Athlete saved');
+  let cloudStatus = null;
+  let predictionStatus = null;
+  if(sbClient && sbUser){
+    cloudStatus = await syncAthleteToSupabase(athleteData);
+    predictionStatus = await logPredictionSnapshot(athleteData);
+  }
+  if(sbClient && sbUser && (!cloudStatus || !cloudStatus.ok)){
+    toast('Athlete saved locally — cloud sync failed');
+    setAuthFeedback('err', 'Saved locally, but cloud sync failed. Check Supabase reachability before relying on cross-device data.', false);
+  } else if(sbClient && sbUser && predictionStatus && !predictionStatus.ok && !predictionStatus.skipped){
+    toast('Athlete saved — forecast log failed');
+  } else {
+    toast(sbClient && sbUser ? '✓ Athlete saved and synced' : '✓ Athlete saved locally');
+  }
   goTo('overview',null);
 }
 
 // ── NEW ATHLETE (adds to roster, doesn't wipe) ──
 function startNewAthlete(){
+  if(!requireWorkspace('save athletes and open the coach workspace')) return;
   // Free tier is capped at FREE_ATHLETE_LIMIT athletes. Trial and Pro coaches
   // bypass this — only block free-tier users.
   const _lim = athleteLimit();

@@ -85,6 +85,9 @@ as $$
 declare
   parts text[];
   part_count integer;
+  h numeric;
+  m numeric;
+  s numeric;
 begin
   if time_text is null or btrim(time_text) = '' then
     return null;
@@ -94,13 +97,26 @@ begin
   part_count := array_length(parts, 1);
 
   if part_count = 1 then
-    return public.try_numeric(parts[1]);
+    s := public.try_numeric(parts[1]);
+    if s is null or s <= 0 then
+      return null;
+    end if;
+    return s;
   elsif part_count = 2 then
-    return public.try_numeric(parts[1]) * 60 + public.try_numeric(parts[2]);
+    m := public.try_numeric(parts[1]);
+    s := public.try_numeric(parts[2]);
+    if m is null or s is null or m < 0 or s < 0 or s >= 60 then
+      return null;
+    end if;
+    return m * 60 + s;
   elsif part_count = 3 then
-    return public.try_numeric(parts[1]) * 3600
-      + public.try_numeric(parts[2]) * 60
-      + public.try_numeric(parts[3]);
+    h := public.try_numeric(parts[1]);
+    m := public.try_numeric(parts[2]);
+    s := public.try_numeric(parts[3]);
+    if h is null or m is null or s is null or h < 0 or m < 0 or s < 0 or m >= 60 or s >= 60 then
+      return null;
+    end if;
+    return h * 3600 + m * 60 + s;
   end if;
 
   return null;
@@ -124,12 +140,13 @@ insert into public.event_distances (event, distance_m, event_family, sort_order)
   ('1500m', 1500, 'Middle', 45),
   ('1600m', 1600, 'Middle', 50),
   ('Mile', 1609, 'Middle', 60),
-  ('3000m', 3000, 'Distance', 65),
-  ('3200m', 3200, 'Distance', 70),
-  ('2 Mile', 3218, 'Distance', 80),
+  ('3000m', 3000, 'Middle', 65),
+  ('3200m', 3200, 'Middle', 70),
+  ('2 Mile', 3218, 'Middle', 80),
   ('5K', 5000, 'Distance', 90),
+  ('8K', 8000, 'Distance', 95),
   ('10K', 10000, 'Distance', 100),
-  ('Half Marathon', 21097.5, 'Distance', 110),
+  ('Half Marathon', 21097, 'Distance', 110),
   ('Marathon', 42195, 'Distance', 120)
 on conflict (event) do nothing;
 

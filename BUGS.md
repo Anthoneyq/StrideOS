@@ -22,15 +22,17 @@ Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 
 ---
 
-## 🔧 BUG-002 · Stored XSS via `innerHTML` of user-controlled text (P1)
+## ✅ BUG-002 · `innerHTML` XSS surface — REVIEWED, already mitigated (was flagged P1)
 
-**Where:** ~45 `innerHTML =` sites in `index.html`. Highest-risk path: `strava-*` functions store `coach_notes = "Strava: " + activity.name`; the dashboard renders notes via `innerHTML`.
+**Initial hypothesis:** ~45 `innerHTML =` sites; a Strava activity name flowing into `coach_notes` and rendered to the coach looked like a stored-XSS vector.
 
-**Symptom (potential):** A Strava activity named `<img src=x onerror="…">` (attacker controls their own activity names) executes script in the **coach's** browser when they view that athlete's workouts. Athlete-entered notes and athlete names are similar vectors once athlete self-login is live.
+**Verification (this pass):** Traced every HTML sink and every user-controlled field. Result: **not vulnerable.**
 
-**Fix (specified):** Add a small `escapeHtml(str)` helper and apply it to every interpolated user value going into `innerHTML` (athlete `name`, `coach_notes`, `athlete_notes`, Strava `name`, `location`), or switch those nodes to `textContent`. Audit all 45 sites; many interpolate only app-controlled strings and are safe, so do this with a browser open to confirm rendering is unchanged.
+- The only HTML sink is direct `.innerHTML =` — no `insertAdjacentHTML` / `outerHTML` / `document.write` / `innerHTML +=`.
+- A robust `esc()` helper (`index.html:674`; escapes `& < > " '`, so it covers element-content **and** attribute contexts) is applied at **every** user-controlled render site: athlete `name`, `coach_notes` (the Strava path — `index.html:1310`), `prescribed_notes`, `location` / `raceLocation`, `primaryEvent` / `event`, prediction `source` (`esc(anchor.source)` at 5038), the subscription tier badge, etc. Edit-form textareas escape existing notes too (1357, 1390).
+- `toast()` and `updateChip()` write via `textContent` (XSS-safe); athlete deletion uses `confirm()` (a plain dialog, no HTML).
 
-**Why not auto-fixed:** safe remediation needs per-site review + a render test loop, unavailable in this pass.
+**Action:** none — adding more escaping would double-encode. **Maintain the discipline:** any *new* `innerHTML` interpolation of a DB/user string must be wrapped in `esc()`.
 
 ---
 
@@ -46,9 +48,9 @@ Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 
 ## 📝 BUG-004 · Quality / cosmetic (P3)
 
-- Two `console.log` calls left in `index.html` (debug noise).
+- ~~Two `console.log` calls~~ — these are **debug-gated** (`if(WEATHER_CONFIG.debug)`), i.e. intentional. Leave as-is. (Originally mis-flagged as stray noise.)
 - Eight loose `==` comparisons in `index.html` — prefer `===` (don't bulk-change without checking each, since some may rely on coercion).
-- `README.md` states `index.html` is "~4,500 lines"; actual is 6,180 — update.
+- ~~`README.md` line-count drift~~ — **FIXED** this pass (`~4,500` → `~6,180`).
 - Price/trial copy duplicated across `stride-config.js`, edge-function header comments, and `Stripe_Setup_SOP.md`; keep in sync (monthly `$24`, annual `$199`, team `$399`, 14-day trial).
 
 ---
@@ -61,3 +63,21 @@ Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 - No secret keys in client config. No duplicate element IDs. JS parses cleanly.
 - Strava token refresh logic (60 s skew, refresh-token rotation) is correct.
 - RLS policies cover coach-owns-data and athlete-self-access paths consistently.
+
+## 2026-06-10 — Prediction accuracy audit (5 fixes shipped)
+
+1. **P0 — VDOT unit bug** (`danielsPctVO2`): the %VO2max formula expects minutes but was fed seconds, so `pct` collapsed to 0.8 for any race >5 min. A 20:00 5K showed VDOT 59.3 instead of 50.0; every training pace (E/M/T/CV/I/R) was 10–19% too fast. Fixed by converting to minutes inside the function. (`_formulaVDOT` in the ensemble already used minutes and was unaffected.)
+2. **Cameron formula was fake**: the "published constants" exponent always clamped to 1.04. Replaced with Cameron's actual 1998 model `f(x)=13.49681−0.048865x+2.438936/x^0.7905` (x in miles).
+3. **Vickers-Vertosick implemented backwards**: V&V found Riegel is too *optimistic* at the marathon (real times slower), but the code used a *lower* exponent (1.04), making marathon predictions even faster. Now uses 1.065/1.075/1.10 keyed to the longer distance.
+4. **OBSERVED_RATIOS were impossible**: RunRepeat population averages compare different populations per event; the ratios implied fatigue exponents <1.0 (marathon pace faster than 5K pace) and nudged long predictions absurdly fast (30% blend weight). Replaced with Daniels equivalent-performance ratios (VDOT 50 row): 2.073 / 4.591 / 9.565 / 2.215 / 4.614 / 2.083.
+5. **Short-event exponents**: flat ~1.06 power laws underpredict times below 3200m. `_formulaPurdy` is now a segmented speed-endurance curve (k=1.03 at 100–200 → 1.18 at 400–800 → decaying to 1.06 past 3200m), path-consistent across bands, and sprint/hybrid ensemble weights were rebalanced toward it.
+
+Benchmarks after fix (node, extracted inline JS): VDOT(5K 19:57)=50.0, VDOT(10K 41:21)=50.0; 5K 19:57 → 10K 41:35 / HM 1:32:43 / M 3:20:49 (between Daniels equivalence and V&V reality — intended); 400 52s → 800 1:55; 800 2:00 → 1600 4:21; 200 24.0 → 400 53.5.
+
+## 2026-06-10 — Engine upgrades (phase 2)
+
+- **Regression benchmarks**: `Predictive_Model/prediction_benchmarks.js` extracts the live engine from index.html and asserts 26 calibration checks (VDOT tables, equivalence charts, invariants, invalid-time rejection, speed-percentage pace math, expanded event support, and target-result leakage). Run `node Predictive_Model/prediction_benchmarks.js` before any deploy touching the engine. Currently 26/26 pass.
+- **Personal fatigue curve strengthened**: blend weight now scales with evidence — 1 PR pair = 60%, 2+ pairs = 80% (was fixed 60%); applies to any ≥400m pair, surfaced in the UI banner and per-row reasons.
+- **Youth adjustment**: athletes <18 get widened ranges (×1.25; ×1.5 if ≤14) and reduced confidence, with an explicit reason tag. Point estimate unchanged (no validated directional correction).
+- **Volume-aware long predictions**: Vickers exponent now interpolates on weekly mileage (marathon: 1.15 @ ≤10 mi/wk → 1.07 @ ≥70; default 1.10 unknown), per V&V's actual model. Threaded via `strideEnsemble(..., { weeklyMiles })`.
+- **Prediction logging (data flywheel)**: new `prediction_log` table (migration `20260610120000`, append-only, RLS, doc-verified only — apply to staging first). `logPredictionSnapshot()` fires on athlete save, deduped by input signature in localStorage. Current engine version tag: `ensemble-2026-06-20-source-excluded`.

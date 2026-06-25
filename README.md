@@ -17,7 +17,7 @@ STRIDE OS turns a single race time into a complete coaching toolkit:
 - Multi-event analysis when more than one race is logged
 - Speed Reserve Ratio when sprint and distance data both exist
 
-The methodology is proprietary — built on validated sport science but deliberately not displayed formula-by-formula in the app to prevent cognitive bias. Methodology library lives in `Model_Docs/` and `Formulas/`.
+The methodology is proprietary — built on validated sport science, with coach-facing methodology and source summaries exposed in the app's Sources screen. Full methodology library lives in `Model_Docs/`, `Formulas/`, `Data_Validation/`, and `docs/planning/SOURCES_LIBRARY.md`.
 
 ---
 
@@ -89,7 +89,7 @@ The app is a single HTML file (`index.html`) with embedded CSS and JavaScript an
 
 Backend lives in `supabase/`: SQL migrations, edge functions (Stripe billing + Strava OAuth/sync), and auth email templates. Public browser config is in `stride-config.js` (publishable keys only — secrets live in Supabase Edge Function env vars). Billing setup is documented in `Stripe_Setup_SOP.md`; Supabase setup in `docs/SUPABASE_SETUP.md`.
 
-Internal code comments reference specific formulas (Riegel, Cameron, VDOT family, Sandford ASR) for maintenance. These names do not appear in the user-facing UI on purpose.
+Internal code comments reference specific formulas (Riegel, Cameron, VDOT family, Sandford ASR) for maintenance. The user-facing Sources screen also lists the published formulas and evidence base, while keeping proprietary blending weights and implementation details private.
 
 ---
 

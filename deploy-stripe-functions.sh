@@ -4,7 +4,7 @@
 # WHY THIS EXISTS:
 #   The "Upgrade to Pro" / "Get Team" buttons fail because these functions were
 #   never deployed. The Supabase project is live (auth responds), but
-#   https://uvjrflkzgulxwrlrqowp.supabase.co/functions/v1/create-checkout-session
+#   https://njadrabgodqpzpbgkkbs.supabase.co/functions/v1/create-checkout-session
 #   returns {"code":"NOT_FOUND"}. This script deploys the functions and sets
 #   the secrets they need.
 #
@@ -18,7 +18,7 @@
 # secret key + webhook secret are prompted.
 
 set -e
-PROJECT_REF="uvjrflkzgulxwrlrqowp"
+PROJECT_REF="njadrabgodqpzpbgkkbs"
 APP_URL="https://strideos.thecoachlab.app"
 
 # --- VERIFIED LIVE price IDs (Stripe API, 2026-05-29) ---

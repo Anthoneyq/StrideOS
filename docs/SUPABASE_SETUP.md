@@ -4,26 +4,28 @@ This repo now has the backend foundation under `supabase/`.
 
 ## 1. Apply the schema
 
-Fastest path in the Supabase dashboard:
+Recommended path:
+
+```bash
+cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
+supabase login
+supabase link --project-ref njadrabgodqpzpbgkkbs
+supabase db push
+supabase config push
+```
+
+Dashboard fallback if the CLI is unavailable:
 
 1. Open your Supabase project.
 2. Go to **SQL Editor**.
-3. Paste and run `supabase/migrations/20260520173500_initial_stride_schema.sql`.
-
-CLI path, once the Supabase CLI is installed:
-
-```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase db push
-```
+3. Run every file in `supabase/migrations/` in timestamp order, not only the initial schema. The later migrations add subscriptions, workouts, Strava, prediction logs, and production hardening.
 
 ## 2. Configure auth URLs
 
 In Supabase Dashboard -> Authentication -> URL Configuration:
 
-- Site URL: your Vercel production URL.
-- Redirect URLs: your Vercel production URL and any preview URLs you use.
+- Site URL: `https://strideos.thecoachlab.app`.
+- Redirect URLs: `https://strideos.thecoachlab.app`, `https://stride-os-gray.vercel.app`, and local development URLs you use.
 
 Enable email/password and magic links for v1.
 
@@ -61,6 +63,9 @@ Once you know the production domain, add it to Supabase Auth URL Configuration.
 - `races`: primary race result plus additional PRs.
 - `daily_checkins`: future optional readiness/training data.
 - `predictions`: forecast logs for later accuracy tracking.
+- `prediction_log`: source-excluded forecast snapshots for later calibration.
+- `workouts`: coach/athlete/Strava workout history.
+- `athlete_strava_status`: tokenless browser-safe Strava connection status.
 - `validation_corpus`: locked down by default for benchmark CSV imports.
 - `local_imports`: raw localStorage snapshots so imported beta data is not lost.
 - RLS policies: coaches can only read/write their own data.
@@ -97,8 +102,9 @@ That stores the raw snapshot, creates/upserts athletes, and turns the primary ra
 
 The app now has the first static Supabase bridge. Remaining production work:
 
-- Replace the placeholder values in `stride-config.js`.
-- Add the Vercel production domain to Supabase Auth redirects.
+- Keep `stride-config.js` aligned with the active Supabase project ref.
+- Keep both production domains in Supabase Auth redirects.
+- Redeploy Vercel after local changes land on `main`; the public site can otherwise serve a stale cached build.
 - Decide whether to keep static HTML or convert to a build-based app for cleaner env handling.
 - Expand account settings for data export and account deletion.
 - Add CSV import tooling for validation corpus data.

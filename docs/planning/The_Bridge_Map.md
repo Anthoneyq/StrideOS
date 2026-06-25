@@ -72,7 +72,7 @@ The Path B decision means v1 captures these fields silently — useful for futur
 - Target distance
 - Individual formula outputs
 - Ensemble prediction
-- 95% confidence interval
+- Uncalibrated planning range
 - Actual result when logged
 - Prediction error
 - Inference layer used for any flag

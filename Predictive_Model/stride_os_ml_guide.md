@@ -261,7 +261,7 @@ To prevent false precision, Stride OS must display predicted times as a **Confid
 
 ### 7.1 Quantile Regression
 
-To generate dynamic confidence intervals, the Tier 2 Gradient Boosting model is trained using **Quantile Loss (Pinball Loss)** instead of standard Mean Squared Error [2].
+To generate calibrated uncertainty ranges, the Tier 2 Gradient Boosting model is trained using **Quantile Loss (Pinball Loss)** instead of standard Mean Squared Error [2].
 $$\mathcal{L}_q(\hat{y}, y) = \max \left[ q(y - \hat{y}), (q - 1)(y - \hat{y}) \right]$$
 $$\text{Where } q \text{ is the target quantile (e.g., } 0.05, 0.50, 0.95\text{).}$$
 
@@ -326,7 +326,7 @@ To support thousands of concurrent athletes, the Stride OS ML Engine must be dep
     *   Retrieves the athlete's latest feature vector from the Redis Feature Store.
     *   Routes the request to the appropriate model tier based on the user's run count ($N$).
     *   Executes model inference using **ONNX Runtime** (which compiles PyTorch LSTMs and XGBoost models into highly optimized C++ runtimes, reducing inference latency to $< 10\text{ ms}$).
-    *   Computes SHAP explanations and confidence intervals.
+    *   Computes SHAP explanations and calibrated uncertainty ranges.
     *   Returns the JSON payload to the client app.
 
 #### 3. The Retraining Pipeline (Asynchronous Batch)

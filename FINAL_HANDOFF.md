@@ -18,22 +18,25 @@ That was the only confirmed breakage. Everything else found is hardening, produc
 
 - **Strava import.** New migration `supabase/migrations/20260529173000_fix_workouts_upsert_unique_index.sql` replaces the partial index with a full unique index on `(athlete_id, source, source_ref)`. Root-cause fix; no edge-function changes required. NULL `source_ref` (coach manual entries) remain unaffected.
 
-## 4. What was improved (documentation)
+## 4. What was improved / verified
 
-- `PROJECT_AUDIT.md` — full audit: architecture, checks run, findings, tech debt, prioritized roadmap.
-- `BUGS.md` — actionable tracker with severity, location, cause, fix, and verification steps.
-- `FINAL_HANDOFF.md` — this file.
+- **Security review (XSS):** investigated the `innerHTML` surface end-to-end and **confirmed it is already mitigated** — the `esc()` helper is applied at every user-controlled render site and `toast()`/`updateChip()` use `textContent`. A suspected Strava-name vector turned out to be escaped (line 1310). No code change needed; documented the standing rule for new code. (BUG-002.)
+- **`README.md`:** fixed stale line-count (`~4,500` → `~6,180`).
+- Docs produced: `PROJECT_AUDIT.md` (architecture, checks, findings, tech debt, roadmap), `BUGS.md` (tracker with verification), `TESTING_PLAN.md` (repeatable static checks + manual QA + the Strava regression test), `FINAL_HANDOFF.md` (this file).
+- Confirmed the two `console.log`s are debug-gated (`WEATHER_CONFIG.debug`) and intentional — not removed.
 
 ## 5. Files changed
 
 | File | Change |
 |---|---|
 | `supabase/migrations/20260529173000_fix_workouts_upsert_unique_index.sql` | **New** — P0 fix for Strava upsert |
+| `README.md` | Edited — corrected stale `index.html` line-count |
 | `PROJECT_AUDIT.md` | **New** — consolidated audit + tech debt + roadmap |
 | `BUGS.md` | **New** — bug tracker |
+| `TESTING_PLAN.md` | **New** — repeatable checks + manual QA + Strava regression test |
 | `FINAL_HANDOFF.md` | **New** — this handoff |
 
-No existing application code was modified in this pass. (Pre-existing uncommitted edits to `index.html` and `create-checkout-session/index.ts` were left as-is; see §8.)
+No application logic (`index.html`, edge functions) was modified — only the one new migration, the README doc fix, and the new docs. (Pre-existing uncommitted edits to `index.html` and `create-checkout-session/index.ts` were left as-is; see §8.)
 
 ## 6. Tests / checks performed
 
@@ -48,9 +51,9 @@ No `package.json` exists — this is a static site, so npm build/lint/test do no
 
 ## 7. Remaining issues
 
-- **BUG-002 (P1) — XSS via `innerHTML`** of user-controlled text (Strava names, notes, athlete names). Specified, not applied.
-- **BUG-003 (P2) — no distinct team tier** for `team_annual`. Product decision needed.
-- **BUG-004 (P3)** — stray `console.log`s, loose `==`, README line-count drift, duplicated price/trial copy.
+- **BUG-003 (P2) — no distinct team tier** for `team_annual`. Product decision needed (functionally fine today; team purchases just record as annual `pro`).
+- **BUG-004 (P3)** — eight loose `==` comparisons, and duplicated price/trial copy across files. (README line-count fixed; `console.log`s confirmed intentional.)
+- *(BUG-002 / XSS: investigated and closed — already mitigated, no work outstanding.)*
 
 ## 8. Blockers
 
@@ -61,11 +64,10 @@ No `package.json` exists — this is a static site, so npm build/lint/test do no
 ## 9. Recommended next steps (in order)
 
 1. Apply `20260529173000_fix_workouts_upsert_unique_index.sql` to staging → test Strava → promote to prod.
-2. Implement the `escapeHtml` hardening (BUG-002) with a browser open.
-3. Commit the working tree; reconcile price/trial copy across files.
-4. Stand up a minimal QA loop (checklist below, or a Playwright smoke test).
-5. Resolve the team-tier model before broad `team_annual` sales.
-6. Pre-launch performance pass (minify, cache headers, defer non-critical JS).
+2. Commit the working tree; reconcile price/trial copy across files.
+3. Stand up a minimal QA loop — start from `TESTING_PLAN.md` (manual checklist today; a Playwright smoke test later).
+4. Resolve the team-tier model before broad `team_annual` sales.
+5. Pre-launch performance pass (minify, cache headers, defer non-critical JS).
 
 ## 10. Product recommendations
 
@@ -77,7 +79,7 @@ Introduce a test loop before any structural refactor of `index.html`. Once that 
 
 ## 12. Security notes
 
-Good posture overall: no secrets client-side, RLS everywhere, service-role confined to edge functions, Stripe signature verification on the webhook. The one real gap is the `innerHTML` XSS surface (BUG-002) — treat as the top hardening task. CORS `*` is acceptable given JWT/Stripe-signature gating, but you may tighten `Access-Control-Allow-Origin` to your domains for defense-in-depth.
+Strong posture overall: no secrets client-side, RLS everywhere, service-role confined to edge functions, Stripe signature verification on the webhook, and — verified this pass — a consistently-applied `esc()` discipline that closes the `innerHTML` XSS surface (BUG-002 confirmed not vulnerable). CORS `*` is acceptable given JWT/Stripe-signature gating, but you may tighten `Access-Control-Allow-Origin` to your domains for defense-in-depth. No outstanding security gaps found.
 
 ## 13. Performance notes
 
@@ -89,4 +91,8 @@ Confirmed the P0 root cause against authoritative sources: PostgreSQL requires t
 
 ## 15. Next best tasks
 
-`BUG-002` (XSS hardening) is the single highest-value next task — it's a real cross-user vector and the fix is well-scoped. After that, commit hygiene + the QA loop, which unblocks everything else safely.
+1. **Deploy & smoke-test the P0 migration** on a Supabase staging branch (connect Strava → Sync Now → re-sync imports 0), then promote.
+2. **Commit hygiene:** commit/stash the working tree (`index.html`, `create-checkout-session`, `deploy-stripe-functions.sh`) so changes are tracked.
+3. **Stand up a minimal QA loop** (manual checklist or a headless smoke test) — this is the unblocker for any future frontend work, since there's no test harness today.
+
+(No security or correctness fire remains; the above is about safely shipping the fix and enabling future change.)

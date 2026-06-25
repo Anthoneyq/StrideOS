@@ -1,128 +1,77 @@
-# Deploy Steps — STRIDE OS Auth + Branding Fix
+# Deploy Steps — STRIDE OS Production
 
-The sandbox couldn't run git/rm in your Stride OS folder due to macOS file permissions. Run the steps below in Terminal yourself, then verify in the browser.
+Last updated: 2026-06-22
 
----
-
-## 1. Delete the stuck git lock file
-
-Open Terminal and run:
+These steps assume the active repo is:
 
 ```bash
-cd "/Users/anthoney/Stride OS"
-rm -f .git/index.lock
+cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
 ```
 
-If `rm` refuses, use Finder: `Cmd+Shift+G` → paste `/Users/anthoney/Stride OS/.git/` → drag `index.lock` to Trash.
-
----
-
-## 2. Remove duplicate HTML files
-
-There are five HTML files in the repo but only `index.html` is needed for Vercel.
+## 1. Preflight
 
 ```bash
-cd "/Users/anthoney/Stride OS"
-git rm stride-os-1.html
-rm -f stride-os-2.html stride-os-3.html stride-os-4.html
+bash fix-vercel.sh
 ```
 
-(`stride-os-2/3/4.html` are not git-tracked, so plain `rm` is enough.)
+Expected checks:
 
----
+- prediction benchmark passes
+- inline app script parses
+- Supabase project ref resolves before backend flows are tested
+- `git status -sb` shows only intentional changes
 
-## 3. Set the Resend SMTP password as an env var
-
-Get your Resend API key from https://resend.com/api-keys (or wherever you stored it after creating it). Then:
+## 2. Supabase
 
 ```bash
-export SUPABASE_SMTP_PASSWORD='re_your_resend_api_key_here'
+supabase link --project-ref njadrabgodqpzpbgkkbs
+supabase db push
+supabase config push
+supabase functions deploy stripe-webhook --no-verify-jwt
+supabase functions deploy create-checkout-session create-portal-session strava-oauth-callback strava-sync-activities
 ```
 
-Add the same line to your `~/.zshrc` (or `~/.bash_profile`) so it persists.
+Auth URL configuration must include:
 
----
+- `https://strideos.thecoachlab.app`
+- `https://stride-os-gray.vercel.app`
+- `http://localhost:8080`
 
-## 4. Push the new config to Supabase
+## 3. Vercel
 
-```bash
-cd "/Users/anthoney/Stride OS"
-supabase db push                  # picks up the new migration nothing-new state
-supabase config push              # pushes config.toml + templates to remote
-```
+Commit and push the reviewed changes to `main`; Vercel redeploys from GitHub.
 
-If `supabase config push` doesn't pick up the SMTP block (older CLI versions don't), set it manually in the Supabase dashboard:
+Verify both domains after deploy:
 
-1. https://supabase.com/dashboard/project/uvjrflkzgulxwrlrqowp/settings/auth
-2. Scroll to **SMTP Settings** → enable **Custom SMTP**
-3. Host: `smtp.resend.com`
-4. Port: `465`
-5. Username: `resend`
-6. Password: your Resend API key (`re_...`)
-7. Sender email: `admin@thecoachlab.app`
-8. Sender name: `STRIDE OS`
-9. Save.
+- `https://strideos.thecoachlab.app`
+- `https://stride-os-gray.vercel.app`
 
-Then under **Email Templates**, paste the contents of:
-- `supabase/templates/confirmation.html` into "Confirm signup"
-- `supabase/templates/magic_link.html` into "Magic Link"
-- `supabase/templates/invite.html` into "Invite user"
-- `supabase/templates/recovery.html` into "Reset Password"
-- `supabase/templates/email_change.html` into "Change Email Address"
+The deployed `index.html` should match the current local app, not the stale June 11 build.
 
-Set each subject line to what's in `config.toml`.
+## 4. Smoke Test
 
----
+- Create/sign in to a coach account.
+- Save an athlete and confirm the save message says synced, not local-only.
+- Refresh on another browser and confirm the athlete appears.
+- Open Race Forecasts and confirm ranges are labeled planning ranges.
+- Log a workout and confirm it reloads.
+- If Strava is configured, connect a test athlete and confirm `athlete_strava_status` works without exposing token columns.
+- Start Stripe checkout in test mode, return successfully, and confirm `my_subscription.has_pro_access = true`.
 
-## 5. Commit and push to GitHub (triggers Vercel redeploy)
+## Current Feature State
 
-```bash
-cd "/Users/anthoney/Stride OS"
-git add index.html supabase/config.toml supabase/templates/ DEPLOY_STEPS.md
-git status                        # review what's staged
-git commit -m "Auto-sync on login + Resend SMTP + STRIDE OS branded emails
+Implemented:
 
-- ensureCoachProfileSilent() runs on auto-login so athletes sync to
-  Supabase from the very first session, not only after the coach clicks
-  'Sync Local Data'
-- Custom SMTP via Resend in supabase/config.toml so transactional mail
-  comes from admin@thecoachlab.app, not 'Supabase Auth'
-- Five STRIDE OS-branded email templates (confirmation, magic link,
-  invite, recovery, email change) — removes 'powered by Supabase' footer
-- Consolidate to single index.html for Vercel deployment"
-git push origin main
-```
+- Supabase auth and coach profiles
+- subscriptions/trial/pro gating
+- workouts table and UI
+- Strava OAuth/sync scaffolding
+- prediction snapshot logging
+- source-excluded race forecasts
 
-Vercel will redeploy automatically when the push lands on `main`.
+Still needs separate production validation:
 
----
-
-## 6. Verify end-to-end
-
-1. **Open an incognito window** (so no localStorage interference).
-2. Go to https://stride-os-gray.vercel.app
-3. Enter your email → click "Send Magic Link".
-4. **Check inbox:** sender should now say "STRIDE OS" (from admin@thecoachlab.app), not "Supabase Auth". Subject: "Your STRIDE OS sign-in link". Body should be dark with the orange STRIDE OS brand.
-5. Click the link → you should land back in the app, signed in.
-6. Add a test athlete in the roster.
-7. Sign out → sign back in from a **different browser** (e.g., Safari if you used Chrome).
-8. The athlete you added should still be there. If yes, Phase 2 data persistence is real.
-
----
-
-## What this fix actually solves
-
-| Before | After |
-|---|---|
-| Email sender: "Supabase Auth" via Supabase default SMTP | Sender: "STRIDE OS" via Resend, from admin@thecoachlab.app |
-| Email body: stock Supabase copy + "powered by Supabase ⚡" footer | STRIDE OS-branded dark templates |
-| Athletes added in first session silently failed to reach the cloud | Coach profile auto-provisions on login; every save syncs |
-| Five duplicate HTML files in the repo | One `index.html` (canonical for Vercel) |
-
----
-
-## What's NOT done yet (so you know)
-
-- **Workouts.** `DB.workouts` is scaffolded but no UI writes to it yet. When the workouts feature lands, we'll need a `workouts` table + migration + sync wiring. Deferred until the feature exists.
-- **DNS / domain verification in Resend.** If `thecoachlab.app` isn't verified in Resend (DKIM/SPF), delivery to Gmail/Yahoo may go to spam. Check https://resend.com/domains.
-- **Lawyer review** of TOS and Privacy Policy (still marked beta).
+- live Supabase DNS/project-ref health after resume
+- Stripe webhook event replay/idempotency test
+- Strava OAuth with real app credentials
+- browser QA on both production domains

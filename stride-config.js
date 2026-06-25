@@ -4,8 +4,8 @@
 // the client_secret lives only in Supabase Edge Function env vars.)
 
 window.STRIDE_SUPABASE = {
-  url: 'https://uvjrflkzgulxwrlrqowp.supabase.co',
-  anonKey: 'sb_publishable_yFfdOo1goFYr72jagC2YIw_hU5w59JG',
+  url: 'https://njadrabgodqpzpbgkkbs.supabase.co',
+  anonKey: 'sb_publishable_DKBdmhRRqgVSVIVG9e76YA_N0Xk9QMP',
 };
 
 // Strava integration. Paste your client_id after registering the app at
@@ -13,7 +13,7 @@ window.STRIDE_SUPABASE = {
 // Strava" button reads this and hides itself if missing.
 window.STRIDE_STRAVA = {
   clientId: null, // e.g. '123456'
-  redirectUri: 'https://uvjrflkzgulxwrlrqowp.supabase.co/functions/v1/strava-oauth-callback',
+  redirectUri: 'https://njadrabgodqpzpbgkkbs.supabase.co/functions/v1/strava-oauth-callback',
   scope: 'read,activity:read_all',
 };
 

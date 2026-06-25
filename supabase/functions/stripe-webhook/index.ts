@@ -57,6 +57,20 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const { data: existingEvent, error: eventLookupError } = await admin
+      .from('stripe_events')
+      .select('id')
+      .eq('id', event.id)
+      .maybeSingle();
+    if (eventLookupError) {
+      console.error('stripe event idempotency lookup failed', eventLookupError);
+      throw eventLookupError;
+    }
+    if (existingEvent) {
+      console.log(`duplicate stripe event skipped: ${event.id}`);
+      return new Response('ok', { status: 200 });
+    }
+
     switch (event.type) {
       case 'checkout.session.completed':
         await onCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
@@ -84,6 +98,14 @@ Deno.serve(async (req) => {
         // Stripe sends a lot of events; we only care about the few above.
         console.log(`unhandled event type: ${event.type}`);
     }
+
+    const { error: eventInsertError } = await admin
+      .from('stripe_events')
+      .insert({ id: event.id, event_type: event.type });
+    if (eventInsertError && eventInsertError.code !== '23505') {
+      console.error('stripe event idempotency insert failed', eventInsertError);
+      throw eventInsertError;
+    }
   } catch (err) {
     console.error('webhook handler error', err);
     // 500 makes Stripe retry; let it.
@@ -106,20 +128,24 @@ async function onCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription.id;
 
-  // Fetch full subscription to know its price/interval/status.
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  await applySubscriptionState(customerId, subscription);
-
   // If the coach started Checkout before a customer record existed in
   // our coaches table (shouldn't happen, but defensively), make sure
-  // the supabase_coach_id link is set by mapping client_reference_id.
+  // the Stripe customer link is set before the strict subscription RPC runs.
   if (session.client_reference_id) {
-    await admin
+    const { error } = await admin
       .from('coaches')
       .update({ stripe_customer_id: customerId })
       .eq('id', session.client_reference_id)
       .is('stripe_customer_id', null);
+    if (error) {
+      console.error('stripe customer link update failed', error);
+      throw error;
+    }
   }
+
+  // Fetch full subscription to know its price/interval/status.
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  await applySubscriptionState(customerId, subscription);
 }
 
 async function onSubscriptionChanged(subscription: Stripe.Subscription) {
@@ -136,13 +162,17 @@ async function onSubscriptionDeleted(subscription: Stripe.Subscription) {
       ? subscription.customer
       : subscription.customer.id;
   // Subscription canceled / ended. Drop the coach to free.
-  await admin.rpc('apply_stripe_subscription', {
+  const { error } = await admin.rpc('apply_stripe_subscription', {
     stripe_customer: customerId,
     new_tier: 'free',
     new_status: 'canceled',
     new_interval: null,
     subscription_id: subscription.id,
   });
+  if (error) {
+    console.error('apply_stripe_subscription RPC failed', error);
+    throw error;
+  }
 }
 
 async function onInvoicePaid(invoice: Stripe.Invoice) {
@@ -164,10 +194,14 @@ async function onInvoicePaymentFailed(invoice: Stripe.Invoice) {
     typeof invoice.customer === 'string' ? invoice.customer : invoice.customer.id;
   // Don't kick them off pro on first failure — Stripe's smart retries may
   // recover. Just mark the status so the UI can warn them.
-  await admin
+  const { error } = await admin
     .from('coaches')
     .update({ subscription_status: 'past_due', updated_at: new Date().toISOString() })
     .eq('stripe_customer_id', customerId);
+  if (error) {
+    console.error('past_due subscription update failed', error);
+    throw error;
+  }
 }
 
 // --- Helpers ---

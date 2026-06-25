@@ -43,7 +43,7 @@ To build a superior platform, we must first analyze the strengths, weaknesses, a
 
 ## 3. Mathematical Diagnosis of Model Failures
 
-The current Stride OS model (and most online calculators) fails because it relies on the **Riegel Formula** with a fixed exponent of $1.06$ [4]. 
+The original Stride OS baseline (and many online calculators) failed because it relied too heavily on the **Riegel Formula** with a fixed exponent of $1.06$ [4].
 
 ### 3.1 The Fixed Exponent Fallacy
 The Riegel formula is written as:

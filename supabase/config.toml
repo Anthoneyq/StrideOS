@@ -17,11 +17,14 @@ port = 54323
 
 [auth]
 enabled = true
-site_url = "https://stride-os-gray.vercel.app"
+site_url = "https://strideos.thecoachlab.app"
 additional_redirect_urls = [
   "http://127.0.0.1:3000",
+  "http://127.0.0.1:8080",
   "http://localhost:3000",
-  "https://stride-os-gray.vercel.app"
+  "http://localhost:8080",
+  "https://stride-os-gray.vercel.app",
+  "https://strideos.thecoachlab.app"
 ]
 enable_signup = true
 

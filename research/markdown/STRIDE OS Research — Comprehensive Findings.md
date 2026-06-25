@@ -444,8 +444,8 @@
 1. **Backtesting:** Use historical race results (parkrun, NRCD, marathon databases) to test predictions against actual outcomes
 2. **A/B testing:** Compare STRIDE predictions against Riegel, VDOT, McMillan for same athletes
 3. **User feedback loop:** Track predicted vs. actual race times from STRIDE users
-4. **Error reporting:** Show confidence intervals to users, not just point estimates
-5. **Adaptive learning:** If user provides multiple races, narrow confidence interval using individual exponent
+4. **Error reporting:** Show honest planning ranges to users, not just point estimates
+5. **Adaptive learning:** If user provides multiple races, narrow the planning range using individual transfer evidence
 
 
 
@@ -519,4 +519,3 @@ Based on percentile data analysis, the actual ratio between distances at differe
 | HM → Marathon | 2.03× | 1.98× | 1.98× | 1.90× |
 
 **Critical insight:** The ratio is NOT constant across performance levels. Elite runners have HIGHER ratios (they slow down more proportionally going from short to long), while recreational runners have LOWER ratios. This is the opposite of what Riegel predicts and reflects the selection bias in who enters marathons vs. 5Ks.
-

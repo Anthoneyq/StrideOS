@@ -122,7 +122,7 @@ Designed to immediately demonstrate value before any commitment.
 1. **Add athletes** with PRs across distances they've raced
 2. **Anchor athlete** as the basis for pace prescriptions
 3. **View Event Fit Review** — does this athlete's profile match their primary event?
-4. **Generate Race Forecasts** — predict race times across distances with confidence intervals
+4. **Generate Race Forecasts** — predict race times across distances with honest planning ranges
 5. **Apply Environmental Corrections** — adjust paces for heat, altitude, humidity
 6. **Track results over time** — log races, see formula accuracy improve
 
@@ -143,7 +143,7 @@ For coaches who want richer analysis later, optional fields capture:
 STRIDE OS maintains validation corpora used to:
 - Empirically calibrate ensemble weights
 - Benchmark population-level performance distributions
-- Validate confidence intervals
+- Validate planning-range coverage
 - Provide reference points across age and developmental stages
 
 ### Current Corpora (as of v1 launch)
@@ -378,7 +378,7 @@ Even though v1 displays only the pacing calculator surface, the underlying schem
 
 - **Athletes:** demographics, training age, primary/secondary events, all PRs with date/conditions, optional HRV/sleep/recovery, training notes
 - **Races:** event, distance, time, conditions, reliability tier, coach notes
-- **Predictions:** formula outputs, ensemble, confidence intervals, actual results for comparison
+- **Predictions:** formula outputs, ensemble, planning ranges, actual results for comparison
 - **Daily check-ins:** optional, structured fields for future analysis
 - **Coach metadata:** team affiliation, research opt-in status, subscription tier
 

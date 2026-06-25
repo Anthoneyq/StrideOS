@@ -85,7 +85,7 @@ $VO_2max$ (ml/kg/min) represents the maximum volume of oxygen an athlete can uti
 
 Lactate Threshold represents the intensity at which blood lactate begins to accumulate exponentially above baseline. It is divided into:
 *   **LT1 (Aerobic Threshold / VT1):** ~2.0 mmol/L blood lactate. Conversational pace. Sustainable for hours.
-*   **LT2 (Anaerobic Threshold / VT2 / OBLA):** ~4.0 mmol/L blood lactate. Maximum steady state. Sustainable for 45-60 minutes (one-hour race pace).
+*   **LT2 (Anaerobic Threshold / VT2 / OBLA):** Often approximated near 4.0 mmol/L in classic OBLA framing, but the Norwegian Method material treats the practical threshold range as individual and session-dependent. For STRIDE OS, LT2/threshold pace is a starting estimate that must be verified by lactate, HR, RPE, and drift rather than a fixed universal mmol value.
 
 #### Field Test Protocol: The Joe Friel 30-Minute Time Trial
 *   **Protocol:** Warm up. Run a solo, flat 30-minute time trial as hard as possible. Record the workout on a GPS watch with a heart rate chest strap [7].
@@ -291,22 +291,41 @@ To ensure equivalent performances match reality, Stride OS must apply dynamic co
 
 ### 8.1 Temperature and Humidity Correction
 
-High temperatures increase cardiovascular drift (blood is shunted to the skin for cooling, reducing stroke volume and increasing heart rate).
-*   **The Threshold:** Performance begins to degrade at temperatures above **$60^\circ\text{F}$ ($15^\circ\text{C}$)**.
-*   **The Correction Factor:** For every $10^\circ\text{F}$ ($5.5^\circ\text{C}$) increase above $60^\circ\text{F}$, adjust target paces as follows:
+High temperatures increase cardiovascular drift (blood is shunted to the skin for cooling, reducing stroke volume and increasing heart rate). The production calculator should use a conservative step table, not a continuous humidity multiplier that can explode at normal summer values.
 
-$$\text{Pace Adjustment Percentage } (\%) = 0.015 \times (Temp - 60) \times (1 + 0.005 \times Humidity)$$
+| Temperature | Slowdown |
+| :--- | :---: |
+| <= 50F | 0.0% |
+| 51-55F | 0.5% |
+| 56-60F | 1.0% |
+| 61-65F | 2.0% |
+| 66-70F | 3.0% |
+| 71-75F | 4.5% |
+| 76-80F | 6.0% |
+| 81-85F | 8.0% |
+| 86-90F | 10.0% |
+| > 90F | 13.0%+ |
+
+Humidity, dew point, wind, and AQI are useful warning context for coaches, but should not be treated as calibrated pace multipliers until validated against race/workout outcomes.
 
 ### 8.2 Altitude Adjustment Formula
 
-At altitude, the partial pressure of oxygen decreases, reducing $VO_2max$ and aerobic capacity. Stride OS must apply the "Tinman" Schwartz and VDOT altitude correction models for sea-level equivalent predictions [17].
+At altitude, the partial pressure of oxygen decreases, reducing $VO_2max$ and aerobic capacity. Stride OS currently uses a Daniels/Wehrlin-Hallen style step table for planning targets:
 
-$$\text{Altitude Correction Factor } (CF) = 1.0 + 0.000004 \times (\text{Altitude in feet} - 1500)^{1.15}$$
-$$\text{Adjusted Time} = \text{Sea Level Time} \times CF$$
+| Altitude | Slowdown |
+| :--- | :---: |
+| < 500m / 1640ft | 0.0% |
+| 500-999m | 1.0% |
+| 1000-1499m | 1.8% |
+| 1500-1999m | 2.8% |
+| 2000-2499m | 4.0% |
+| 2500-2999m | 5.5% |
+| >= 3000m | 7.0%+ |
 
-*   *Example:* A sea-level 5K time of 15:00 ($900\text{s}$) run at Boulder, CO ($5430\text{ feet}$):
-    $$CF = 1.0 + 0.000004 \times (5430 - 1500)^{1.15} \approx 1.035$$
-    $$\text{Predicted Altitude Time} = 900 \times 1.035 = 931.5\text{s} \quad (15:31.5)$$
+Combined heat and altitude stress is applied as:
+
+$$\text{slowdown} = \text{heat} + \text{altitude} - (0.5 \times \text{heat} \times \text{altitude})$$
+$$\text{Adjusted Time} = \text{Target Time} \times (1 + \text{slowdown})$$
 
 ---
 

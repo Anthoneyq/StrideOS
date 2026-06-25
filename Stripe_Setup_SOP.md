@@ -1,6 +1,6 @@
 ---
 file: Stripe_Setup_SOP.md
-folder: 09_Products/StrideOS
+folder: Projects/Products/StrideOS
 purpose: 30-minute setup so Alex / Doug / other coaches can pay $20/mo via a single Stripe Payment Link
 target: send link in v2 email today or tomorrow
 scope: Payment Link only (no code, no Supabase, no app gating)
