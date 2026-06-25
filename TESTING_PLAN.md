@@ -14,7 +14,7 @@ python3 -m http.server 8080
 # then open http://localhost:8080/index.html
 ```
 
-Anonymous mode works immediately (data in `localStorage`). To exercise sign-in / sync / billing / Strava you need the Supabase backend reachable and DNS resolving for the project in `stride-config.js`. Stripe checkout redirects to real Stripe; use test-mode keys on the Edge Functions for safe end-to-end billing tests.
+Anonymous mode works immediately (data in `localStorage`). To exercise sign-in / sync / billing / Strava you need the Supabase backend reachable and DNS resolving for the project in `stride-config.js`; it points at the live project, so sign-in works from localhost when that project is reachable. Stripe checkout redirects to real Stripe; use test-mode keys on the Edge Functions for safe end-to-end billing tests.
 
 ## 2. Repeatable static checks (no browser, ~seconds)
 

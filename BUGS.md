@@ -76,7 +76,7 @@ Benchmarks after fix (node, extracted inline JS): VDOT(5K 19:57)=50.0, VDOT(10K 
 
 ## 2026-06-10 — Engine upgrades (phase 2)
 
-- **Regression benchmarks**: `Predictive_Model/prediction_benchmarks.js` extracts the live engine from index.html and asserts 26 calibration checks (VDOT tables, equivalence charts, invariants, invalid-time rejection, speed-percentage pace math, expanded event support, and target-result leakage). Run `node Predictive_Model/prediction_benchmarks.js` before any deploy touching the engine. Currently 26/26 pass.
+- **Regression benchmarks**: `Predictive_Model/prediction_benchmarks.js` extracts the live engine from index.html and asserts 29 calibration checks (VDOT tables, equivalence charts, invariants, invalid-time rejection, speed-percentage pace math, expanded event support, and target-result leakage). Run `node Predictive_Model/prediction_benchmarks.js` before any deploy touching the engine. Currently 29/29 pass.
 - **Personal fatigue curve strengthened**: blend weight now scales with evidence — 1 PR pair = 60%, 2+ pairs = 80% (was fixed 60%); applies to any ≥400m pair, surfaced in the UI banner and per-row reasons.
 - **Youth adjustment**: athletes <18 get widened ranges (×1.25; ×1.5 if ≤14) and reduced confidence, with an explicit reason tag. Point estimate unchanged (no validated directional correction).
 - **Volume-aware long predictions**: Vickers exponent now interpolates on weekly mileage (marathon: 1.15 @ ≤10 mi/wk → 1.07 @ ≥70; default 1.10 unknown), per V&V's actual model. Threaded via `strideEnsemble(..., { weeklyMiles })`.
