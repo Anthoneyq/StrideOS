@@ -190,6 +190,25 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .home-paste-area{width:100%;background:#050505;border:1px solid var(--border-s);border-radius:.5rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8125rem;line-height:1.6;padding:.75rem;resize:vertical;margin-bottom:.875rem}
 .home-paste-area:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
 @media(max-width:640px){.home-cta{flex-direction:column;align-items:stretch}.home-cta .btn-lg{width:100%}.btn-text{align-self:center}}
+
+/* AUTH MODAL — readable centered sign-in (form lives here; sidebar is status only) */
+.auth-modal{position:relative;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:27rem;width:100%;padding:2rem 1.75rem 1.75rem;color:var(--text);box-shadow:var(--shadow-card)}
+.auth-modal .auth-copy{font-family:'Inter',sans-serif;font-size:.9375rem;line-height:1.55;color:var(--text-2);margin-bottom:1rem}
+.auth-modal .auth-input{font-family:'Inter',sans-serif;font-size:.9375rem;padding:.75rem .8125rem;border-radius:.5rem;margin-bottom:.625rem}
+.auth-modal .auth-actions{margin-top:.25rem}
+.auth-modal .auth-actions .btn{font-size:.8125rem;padding:.8125rem;border-radius:.5rem}
+.auth-modal .auth-tabs{margin-bottom:1rem;padding:.25rem}
+.auth-modal .auth-tab{font-size:.6875rem;padding:.5625rem .25rem}
+.auth-modal .auth-secondary{font-size:.75rem;margin-top:1rem}
+.auth-modal .auth-feedback{font-family:'Inter',sans-serif;font-size:.8125rem}
+.auth-modal-trust{font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.04em;text-align:center;margin-top:1.125rem}
+@media(max-width:640px){.auth-modal{padding:1.5rem 1.25rem 1.25rem}}
+
+/* Persistent top-right Sign-in (shown only when signed out / workspace locked) */
+.top-signin{position:fixed;top:1rem;right:1.25rem;z-index:50;background:var(--bg-el);border:1px solid var(--border-h);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.05em;text-transform:uppercase;padding:.5rem .9rem;border-radius:.5rem;cursor:pointer;transition:color .2s var(--ease),border-color .2s var(--ease)}
+.top-signin:hover{border-color:var(--accent-line);color:var(--accent)}
+.top-signin{display:none}
+body.workspace-locked .top-signin{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(.5rem)}to{opacity:1;transform:translateY(0)}}
 
 /* SCREEN HEADER */
@@ -424,6 +443,8 @@ input.err,select.err{border-color:var(--red)}
   </aside>
 
   <main id="mainContent" tabindex="-1">
+
+    <button class="top-signin" onclick="showAuthModal('signin')">Sign in</button>
 
     <!-- TIER BANNER (trial countdown / free-plan upgrade CTA) -->
     <div id="tierBanner" aria-live="polite"></div>
@@ -838,12 +859,9 @@ function applyWorkspaceMode(options = {}){
 
 function promptForAccount(action){
   const reason = action || 'save athletes and open the coach workspace';
-  setAuthFeedback('info', `Use the calculator free. Sign in or create an account to ${reason}.`, false);
   toast('Sign in to unlock workspace');
-  setTimeout(() => {
-    const email = document.getElementById('authEmail');
-    if(email) email.focus();
-  }, 50);
+  showAuthModal('signin');
+  setAuthFeedback('info', `Use the calculator free. Sign in or create an account to ${reason}.`, false);
 }
 
 function requireWorkspace(action){
@@ -894,44 +912,28 @@ function authFeedbackHtml(){
   return `<div class="auth-feedback ${cls}">${esc(authUiState.message)}</div>`;
 }
 
-function renderAuthPanel(){
-  const el = document.getElementById('authPanel');
-  if(!el) return;
-
+// Compact sidebar status — NO form inputs (the actual sign-in/up form lives in
+// the modal, so input IDs are never duplicated). Signed-out shows a button that
+// opens the modal. This keeps the sidebar as secondary persistent status only.
+function authStatusHtml(){
   if(!hasSupabaseConfig()){
-    el.innerHTML = `
-      <div class="auth-status">Free Calculator</div>
-      <div class="auth-copy">Every tool here is free to use. Sign-in to save your roster across devices is coming online shortly.</div>
-      ${authFeedbackHtml()}
-    `;
-    return;
+    return `<div class="auth-status">Free Calculator</div>
+      <div class="auth-copy">Every tool here is free. Saving your roster across devices is coming online shortly.</div>${authFeedbackHtml()}`;
   }
-
   if(!sbClient){
-    el.innerHTML = `
-      <div class="auth-status">Working Offline</div>
-      <div class="auth-copy">The calculator runs fine here. Reconnect to sign in and save your athletes.</div>
-      ${authFeedbackHtml()}
-    `;
-    return;
+    return `<div class="auth-status">Working Offline</div>
+      <div class="auth-copy">The calculator runs fine here. Reconnect to sign in and save your athletes.</div>${authFeedbackHtml()}`;
   }
-
   if(sbBackendReachable === false){
     let host = 'configured Supabase project';
     try{ host = new URL(STRIDE_SUPABASE_CONFIG.url).host; }catch(_e){}
-    const signedInNote = sbUser && sbUser.email
-      ? `<div class="auth-copy">Signed in as ${esc(sbUser.email)}, but cloud sync cannot currently reach ${esc(host)}.</div>`
-      : `<div class="auth-copy">You're offline right now — the calculator still works. Reconnect to sign in and save athletes.</div>`;
-    el.innerHTML = `
-      <div class="auth-status">Sync Offline</div>
-      ${signedInNote}
-      ${sbHealthCheckedAt ? `<div class="auth-note">Last backend check: ${esc(new Date(sbHealthCheckedAt).toLocaleString())}</div>` : ''}
-      ${authFeedbackHtml()}
-    `;
-    return;
+    const note = sbUser && sbUser.email
+      ? `<div class="auth-copy">Signed in as ${esc(sbUser.email)}, but cloud sync can't currently reach ${esc(host)}.</div>`
+      : `<div class="auth-copy">You're offline right now — the calculator still works. Reconnect to sign in.</div>`;
+    return `<div class="auth-status">Sync Offline</div>${note}
+      ${sbHealthCheckedAt ? `<div class="auth-note">Last backend check: ${esc(new Date(sbHealthCheckedAt).toLocaleString())}</div>` : ''}${authFeedbackHtml()}`;
   }
-
-  if(sbUser && authUiState.mode !== 'reset'){
+  if(sbUser){
     const tier = sbSubscription && sbSubscription.tier;
     const isPro = ['pro','team','athlete'].includes(tier);
     const tierBadge = tier
@@ -940,25 +942,23 @@ function renderAuthPanel(){
     const manageBtn = isPro
       ? `<button class="btn" onclick="openCustomerPortal()">Manage Subscription</button>`
       : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
-    el.innerHTML = `
-      <div class="auth-status">Signed In ${tierBadge}</div>
+    return `<div class="auth-status">Signed In ${tierBadge}</div>
       <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
-      <div class="auth-actions">
-        ${manageBtn}
-        <button class="btn" onclick="signOutSupabase()">Sign Out</button>
-      </div>
-      ${authFeedbackHtml()}
-    `;
-    return;
+      <div class="auth-actions">${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>${authFeedbackHtml()}`;
   }
+  return `<div class="auth-status">Coach Account</div>
+    <div class="auth-copy">Save athletes &amp; open the coach workspace. <strong style="color:var(--text)">30-day Pro trial</strong> · no card.</div>
+    <div class="auth-actions"><button class="btn btn-primary" onclick="showAuthModal('signin')">Sign in / Create account</button></div>${authFeedbackHtml()}`;
+}
 
+// The full auth form — rendered into the MODAL body only.
+function authFormHtml(){
   const isSignup = authUiState.mode === 'signup';
   const isReset = authUiState.mode === 'reset';
   const busy = authUiState.sending;
 
   if(isReset){
-    el.innerHTML = `
-      <div class="auth-status">Set Password</div>
+    return `
       <div class="auth-copy">Enter a new password for this STRIDE OS account.</div>
       <input class="auth-input" id="authNewPassword" type="password" autocomplete="new-password" placeholder="New password (6+ characters)">
       <input class="auth-input" id="authPasswordConfirm" type="password" autocomplete="new-password" placeholder="Confirm new password">
@@ -966,17 +966,14 @@ function renderAuthPanel(){
         <button class="btn btn-primary" onclick="updatePassword()" ${busy ? 'disabled' : ''}>${busy ? 'Saving...' : 'Save Password'}</button>
       </div>
       <div class="auth-secondary"><a onclick="setAuthMode('signin')">Back to sign in</a></div>
-      ${authFeedbackHtml()}
-    `;
-    return;
+      ${authFeedbackHtml()}`;
   }
 
   const tabs = `
     <div class="auth-tabs" role="tablist">
       <button class="auth-tab ${isSignup ? '' : 'active'}" onclick="setAuthMode('signin')" role="tab" aria-selected="${!isSignup}">Sign In</button>
       <button class="auth-tab ${isSignup ? 'active' : ''}" onclick="setAuthMode('signup')" role="tab" aria-selected="${isSignup}">Create Account</button>
-    </div>
-  `;
+    </div>`;
   const passwordAutocomplete = isSignup ? 'new-password' : 'current-password';
   const passwordPlaceholder = isSignup ? 'Choose a password (6+ characters)' : 'Password';
   const primaryLabel = isSignup
@@ -987,12 +984,11 @@ function renderAuthPanel(){
     ? `<span>Already have an account?</span> <a onclick="setAuthMode('signin')">Sign in</a>`
     : `<a onclick="sendMagicLink()">Email me a magic link</a> <span>&middot;</span> <a onclick="forgotPassword()">Forgot password?</a>`;
 
-  el.innerHTML = `
-    <div class="auth-status">Coach Account</div>
-    <div class="auth-copy">${isSignup
-      ? 'Start free — your <strong style="color:var(--text)">30-day Pro trial</strong> unlocks the full coach workspace. No credit card required.'
-      : 'Use the calculator free. Sign in to save athletes and open the coach workspace.'}</div>
+  return `
     ${tabs}
+    <div class="auth-copy">${isSignup
+      ? 'Your <strong style="color:var(--text)">30-day Pro trial</strong> unlocks the full coach workspace. No credit card required.'
+      : 'Welcome back. Sign in to your roster and coach workspace.'}</div>
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <input class="auth-input" id="authPassword" type="password" autocomplete="${passwordAutocomplete}" placeholder="${passwordPlaceholder}">
     <div class="auth-actions">
@@ -1000,7 +996,49 @@ function renderAuthPanel(){
     </div>
     <div class="auth-secondary">${secondary}</div>
     ${authFeedbackHtml()}
-  `;
+    <p class="auth-modal-trust">Free · no credit card · we never sell athlete data</p>`;
+}
+
+function renderAuthPanel(){
+  const el = document.getElementById('authPanel');
+  if(el) el.innerHTML = authStatusHtml();
+  const modalBody = document.getElementById('authPanelModal');
+  if(modalBody){
+    // Auto-close once signed in (unless mid password-reset); otherwise render the form.
+    if(sbUser && authUiState.mode !== 'reset'){ closeAuthModal(); }
+    else { modalBody.innerHTML = authFormHtml(); }
+  }
+}
+
+// Centered, readable auth modal. Reuses the upgrade-overlay backdrop. The form
+// is rendered into #authPanelModal by renderAuthPanel.
+function ensureAuthModal(){
+  if(document.getElementById('authOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'authOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeAuthModal(); };
+  overlay.innerHTML = `
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+      <button class="upgrade-close" aria-label="Close" onclick="closeAuthModal()">×</button>
+      <p class="upgrade-eyebrow">Coach Account · 30-day Pro trial</p>
+      <h2 class="upgrade-title" id="authModalTitle">Start <em style="font-style:italic;color:var(--accent)">free</em></h2>
+      <div class="auth-modal-body" id="authPanelModal"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.addEventListener('keydown', _authEscHandler);
+}
+function showAuthModal(mode){
+  authUiState = { ...authUiState, mode: (mode === 'signup' || mode === 'reset') ? mode : 'signin', message: '', type: '' };
+  ensureAuthModal();
+  renderAuthPanel();
+  setTimeout(() => { const em = document.getElementById('authEmail') || document.getElementById('authNewPassword'); if(em) em.focus(); }, 60);
+}
+function _authEscHandler(e){ if(e.key === 'Escape') closeAuthModal(); }
+function closeAuthModal(){
+  const el = document.getElementById('authOverlay');
+  if(el) el.remove();
+  document.removeEventListener('keydown', _authEscHandler);
 }
 
 function isPasswordRecoveryReturn(){
@@ -1025,6 +1063,7 @@ async function initSupabase(){
     sbUser = data.session ? data.session.user : null;
     if(isPasswordRecoveryReturn()){
       authUiState = { ...authUiState, mode: 'reset', type: 'info', message: 'Choose a new password to finish account recovery.', sending: false };
+      ensureAuthModal();
     }
     applyWorkspaceMode();
 
@@ -1033,6 +1072,7 @@ async function initSupabase(){
       sbCoachReady = false;
       if(_event === 'PASSWORD_RECOVERY'){
         authUiState = { ...authUiState, mode: 'reset', type: 'info', message: 'Choose a new password to finish account recovery.', sending: false };
+        ensureAuthModal();
       }
       if(!sbUser){
         resetSubscriptionState();
