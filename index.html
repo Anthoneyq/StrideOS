@@ -6,7 +6,7 @@
 <title>STRIDE OS — Pace Calculator for Running Coaches</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -53,7 +53,9 @@
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{font-size:16px}
-body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+/* Display voice — Fraunces, used for headlines + big result numbers (anthoneyq sibling: serif display over Inter body) */
+.display,h1,h2.scr{font-family:'Fraunces',Georgia,serif}
 /* Ambient orange depth field — fixed glow behind all content (anthoneyq DNA, STRIDE orange) */
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
@@ -122,7 +124,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .upgrade-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;padding:.25rem .5rem;border-radius:.25rem}
 .upgrade-close:hover{color:var(--text);background:var(--bg-card)}
 .upgrade-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.375rem}
-.upgrade-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:300;letter-spacing:-.0625rem;margin-bottom:.5rem}
+.upgrade-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.5rem}
 .upgrade-title em{color:var(--accent);font-style:normal}
 .upgrade-sub{font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--dim);margin-bottom:1.5rem}
 .upgrade-plans{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
@@ -174,7 +176,7 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
 .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
 .eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent);margin-right:.5rem;vertical-align:middle;transform:translateY(-1px)}
-.screen-title{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
+.screen-title{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
 .screen-title em{font-style:italic;color:var(--text);font-weight:400}
 .btn-row{display:flex;gap:.75rem;flex-wrap:wrap}
 
@@ -323,7 +325,7 @@ input.err,select.err{border-color:var(--red)}
 /* EMPTY STATE */
 .empty-state{background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:3.75rem 2.5rem;text-align:center;margin-top:1.25rem}
 .empty-icon{font-size:3rem;margin-bottom:1rem;color:var(--text-3)}
-.empty-title{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:300;letter-spacing:-.0625rem;margin-bottom:.75rem}
+.empty-title{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.75rem}
 .empty-sub{font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--dim);margin-bottom:1.5rem;line-height:1.6}
 
 /* TOAST */
@@ -388,8 +390,8 @@ input.err,select.err{border-color:var(--red)}
 
     <div class="sidebar-footer">
       <div class="auth-panel" id="authPanel">
-        <div class="auth-status">Local Mode</div>
-        <div class="auth-copy">Cloud account sync is waiting for app configuration.</div>
+        <div class="auth-status">Free Calculator</div>
+        <div class="auth-copy">Every tool here is free. Sign in to save your roster.</div>
       </div>
       <div class="chip" id="activeAthleteChip" tabindex="0" role="button" aria-label="Active athlete — click to edit"
            onclick="goTo('edit',null)" onkeydown="if(event.key==='Enter'||event.key===' ')goTo('edit',null)">
@@ -865,8 +867,8 @@ function renderAuthPanel(){
 
   if(!hasSupabaseConfig()){
     el.innerHTML = `
-      <div class="auth-status">Local Mode</div>
-      <div class="auth-copy">Cloud account sync is waiting for app configuration.</div>
+      <div class="auth-status">Free Calculator</div>
+      <div class="auth-copy">Every tool here is free to use. Sign-in to save your roster across devices is coming online shortly.</div>
       ${authFeedbackHtml()}
     `;
     return;
@@ -874,8 +876,8 @@ function renderAuthPanel(){
 
   if(!sbClient){
     el.innerHTML = `
-      <div class="auth-status">Sync Offline</div>
-      <div class="auth-copy">Cloud account services did not load. Local calculator still works.</div>
+      <div class="auth-status">Working Offline</div>
+      <div class="auth-copy">The calculator runs fine here. Reconnect to sign in and save your athletes.</div>
       ${authFeedbackHtml()}
     `;
     return;
@@ -886,7 +888,7 @@ function renderAuthPanel(){
     try{ host = new URL(STRIDE_SUPABASE_CONFIG.url).host; }catch(_e){}
     const signedInNote = sbUser && sbUser.email
       ? `<div class="auth-copy">Signed in as ${esc(sbUser.email)}, but cloud sync cannot currently reach ${esc(host)}.</div>`
-      : `<div class="auth-copy">Cloud sync cannot currently reach ${esc(host)}. Local calculator data still works.</div>`;
+      : `<div class="auth-copy">You're offline right now — the calculator still works. Reconnect to sign in and save athletes.</div>`;
     el.innerHTML = `
       <div class="auth-status">Sync Offline</div>
       ${signedInNote}
@@ -955,7 +957,7 @@ function renderAuthPanel(){
   el.innerHTML = `
     <div class="auth-status">Coach Account</div>
     <div class="auth-copy">${isSignup
-      ? 'Start free — your <strong style="color:var(--text)">14-day Pro trial</strong> unlocks the full coach workspace. No credit card required.'
+      ? 'Start free — your <strong style="color:var(--text)">30-day Pro trial</strong> unlocks the full coach workspace. No credit card required.'
       : 'Use the calculator free. Sign in to save athletes and open the coach workspace.'}</div>
     ${tabs}
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
