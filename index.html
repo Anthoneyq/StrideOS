@@ -209,6 +209,17 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .top-signin:hover{border-color:var(--accent-line);color:var(--accent)}
 .top-signin{display:none}
 body.workspace-locked .top-signin{display:block}
+
+/* Tasteful hero accent pulse (landing only; neutralized by the reduced-motion guard) */
+@keyframes dotPulse{0%,100%{box-shadow:0 0 10px 1px var(--accent)}50%{box-shadow:0 0 18px 4px var(--accent)}}
+.home-hero .eyebrow::before{animation:dotPulse 3.2s var(--ease) infinite}
+.auth-tab{transition:background .15s var(--ease),color .15s var(--ease)}
+
+/* Global reduced-motion guard — a first-class render path, not an afterthought:
+   zero every animation/transition, stop infinite loops, disable smooth scroll. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
 @keyframes fadeUp{from{opacity:0;transform:translateY(.5rem)}to{opacity:1;transform:translateY(0)}}
 
 /* SCREEN HEADER */
@@ -5736,6 +5747,17 @@ function renderHome(){
       </div>
       <div id="home-squad-result">${renderSquadTaste(DEMO_SQUAD, {anonymous:true})}</div>
     </div>`;
+  animateHomeHero();
+}
+
+// Premium hero entrance — staggered fade/rise. Progressive enhancement: the
+// content is fully visible if GSAP is absent or the user prefers reduced motion.
+function animateHomeHero(){
+  if(typeof gsap === 'undefined') return;
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const hero = document.querySelector('#home-body .home-hero');
+  if(!hero || !hero.children.length) return;
+  gsap.fromTo(hero.children, {opacity:0, y:18}, {opacity:1, y:0, duration:.55, ease:'power2.out', stagger:.075});
 }
 
 function submitSquadPaste(){
