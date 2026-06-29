@@ -170,6 +170,26 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 /* SCREENS */
 .screen{display:none}
 .screen.active{display:block;animation:fadeUp .35s ease}
+
+/* FRONT DOOR / HOME — the signed-out first impression (compact hero over a live tool) */
+.home-hero{max-width:48rem;padding:1.5rem 0 2.5rem}
+.home-title{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2.25rem,5.2vw,4rem);line-height:1.03;letter-spacing:-.03em;margin:.65rem 0 1.25rem}
+.home-title em{font-style:italic;color:var(--accent)}
+.home-sub{font-size:clamp(1rem,1.55vw,1.1875rem);color:var(--text-2);line-height:1.62;max-width:40rem;margin-bottom:1.85rem}
+.home-cta{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1.05rem}
+.btn-lg{padding:.875rem 1.5rem;font-size:.8125rem;border-radius:.625rem}
+.btn-ghost{background:transparent;border:1px solid var(--border-h);color:var(--text)}
+.btn-ghost:hover{background:var(--bg-el);border-color:var(--border-h)}
+.btn-text{background:none;border:none;color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.03em;text-transform:uppercase;cursor:pointer;padding:.5rem;transition:color .2s var(--ease)}
+.btn-text:hover{color:var(--accent)}
+.home-trust{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);letter-spacing:.03em}
+.home-squad{border-top:1px solid var(--border);padding-top:2rem}
+.home-paste{background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:1.25rem 1.25rem 1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow-card)}
+.home-paste-lbl{display:block;font-size:.8125rem;color:var(--text-2);margin-bottom:.625rem;line-height:1.5}
+.home-paste-lbl code{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent);background:var(--accent-soft);padding:.05rem .3rem;border-radius:.25rem}
+.home-paste-area{width:100%;background:#050505;border:1px solid var(--border-s);border-radius:.5rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8125rem;line-height:1.6;padding:.75rem;resize:vertical;margin-bottom:.875rem}
+.home-paste-area:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+@media(max-width:640px){.home-cta{flex-direction:column;align-items:stretch}.home-cta .btn-lg{width:100%}.btn-text{align-self:center}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(.5rem)}to{opacity:1;transform:translateY(0)}}
 
 /* SCREEN HEADER */
@@ -368,6 +388,7 @@ input.err,select.err{border-color:var(--red)}
       <div class="nav-section">
         <p class="nav-section-label" id="lbl-ws">Workspace</p>
         <ul class="nav-list" aria-labelledby="lbl-ws" role="list">
+          <li><button class="nav-btn" data-s="home"     onclick="goTo('home',this)"><span class="nav-icon" aria-hidden="true">⌂</span>Home</button></li>
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span>Basic Calculator</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
@@ -406,6 +427,11 @@ input.err,select.err{border-color:var(--red)}
 
     <!-- TIER BANNER (trial countdown / free-plan upgrade CTA) -->
     <div id="tierBanner" aria-live="polite"></div>
+
+    <!-- HOME / FRONT DOOR (signed-out cold-start) -->
+    <section id="home" class="screen" aria-labelledby="home-h">
+      <div id="home-body"></div>
+    </section>
 
     <!-- ROSTER -->
     <section id="roster" class="screen" aria-labelledby="ro-h">
@@ -766,7 +792,7 @@ const FREE_ATHLETE_LIMIT = 3;
 const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
 const FREE_SQUAD_CAP = 6;     // Free/anon coaches see real Squad Intelligence on up to this many athletes (view-only)
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
-const PUBLIC_SCREEN_ID = 'paces';
+const PUBLIC_SCREEN_ID = 'home';
 const WORKSPACE_SCREEN_IDS = new Set([
   'roster',
   'import',
@@ -801,6 +827,12 @@ function applyWorkspaceMode(options = {}){
     if(options.redirect !== false && activeProtected){
       goTo(PUBLIC_SCREEN_ID, null);
     }
+  }
+
+  // Keep the front-door CTA in sync when auth resolves (e.g. a returning coach
+  // shouldn't see "Start free" on their own home screen).
+  if(typeof currentScreen !== 'undefined' && currentScreen === 'home' && typeof renderHome === 'function'){
+    renderHome();
   }
 }
 
@@ -2758,6 +2790,7 @@ function goTo(id,btn){
   const match=btn||document.querySelector(`.nav-btn[data-s="${id}"]`);
   if(match) match.setAttribute('aria-current','page');
   currentScreen = id;
+  if(id==='home')     renderHome();
   if(id==='roster')   renderRoster();
   if(id==='overview') renderOverview();
   if(id==='profile')  renderProfile();
@@ -5624,6 +5657,67 @@ function parseSquadPaste(text){
   return out;
 }
 
+// ── FRONT DOOR ─────────────────────────────────────────────────────────────
+// Compact hero + CTA ladder sitting directly above a LIVE free experience: a
+// demo Squad Intelligence read + a 60-second "paste your own roster" box. A cold
+// coach sees genuine value before any ask. CTA adapts for signed-in coaches.
+function renderHome(){
+  const el = document.getElementById('home-body');
+  if(!el) return;
+  const signedIn = (typeof hasWorkspaceAccess === 'function') && hasWorkspaceAccess();
+  const primaryCta = signedIn
+    ? `<button class="btn btn-primary btn-lg" onclick="goTo('overview')">Open Coach Tools →</button>`
+    : `<button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial</button>`;
+  const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · we never sell athlete data.</p>`;
+  el.innerHTML = `
+    <div class="home-hero">
+      <p class="eyebrow">STRIDE OS · built for distance coaches</p>
+      <h1 class="home-title" id="home-h">Race-ready paces for <em>every</em> athlete on your roster — in seconds.</h1>
+      <p class="home-sub">Drop in your team and STRIDE reads the whole squad at once: training-load bias, event-coverage gaps, and the highest-ROI fix for each runner. No spreadsheets, no one-athlete-at-a-time calculators.</p>
+      <div class="home-cta">
+        ${primaryCta}
+        <button class="btn btn-ghost btn-lg" onclick="goTo('paces')">Try the calculator</button>
+        <button class="btn-text" onclick="document.getElementById('home-squad').scrollIntoView({behavior:'smooth',block:'start'})">See a sample squad ↓</button>
+      </div>
+      ${trust}
+    </div>
+
+    <div class="home-squad" id="home-squad">
+      <header class="screen-header" style="margin-bottom:1.25rem">
+        <div><p class="eyebrow">Live demo · real analysis</p><h2 class="screen-title" style="font-size:clamp(1.5rem,3vw,2.25rem)">What a roster <em>tells you</em></h2></div>
+      </header>
+      <div class="home-paste">
+        <label class="home-paste-lbl" for="home-paste-in">Paste your own squad — one athlete per line: <code>Name, event, time</code> (e.g. <code>Maya R, 5k, 18:42</code>). Weekly mileage optional.</label>
+        <textarea id="home-paste-in" class="home-paste-area" rows="4" placeholder="Maya R, 5k, 18:42&#10;Jordan T, 1600, 4:38&#10;Eli W, 3200, 10:21, 16&#10;Andre P, 400, 51.4, 44"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="submitSquadPaste()">Analyze my squad →</button>
+          <button class="btn" onclick="loadDemoSquad()">Use a sample squad</button>
+        </div>
+      </div>
+      <div id="home-squad-result">${renderSquadTaste(DEMO_SQUAD, {anonymous:true})}</div>
+    </div>`;
+}
+
+function submitSquadPaste(){
+  const ta = document.getElementById('home-paste-in');
+  const out = document.getElementById('home-squad-result');
+  if(!ta || !out) return;
+  const athletes = parseSquadPaste(ta.value);
+  if(!athletes.length){
+    out.innerHTML = `<div class="card" style="border-style:dashed;text-align:center;padding:1.5rem"><p style="color:var(--text-2);font-size:.875rem;line-height:1.6">Add at least one line with a name and a time — e.g. <code style="color:var(--accent)">Maya R, 5k, 18:42</code>. The event is optional; mileage is too.</p></div>`;
+    return;
+  }
+  out.innerHTML = renderSquadTaste(athletes, {anonymous:true});
+  out.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function loadDemoSquad(){
+  const ta = document.getElementById('home-paste-in');
+  if(ta) ta.value = DEMO_SQUAD.map(a => `${a.name}, ${a.raceDistance}, ${a.raceTime}, ${a.weeklyMileage}`).join('\n');
+  const out = document.getElementById('home-squad-result');
+  if(out) out.innerHTML = renderSquadTaste(DEMO_SQUAD, {anonymous:true});
+}
+
 function renderImportDone(){
   const el = document.getElementById('im-body');
   if(!el) return;
@@ -7123,12 +7217,12 @@ function toast(msg){
 }
 
 // ── INIT ──
-let currentScreen = 'paces';
+let currentScreen = 'home';
 window.addEventListener('load',()=>{
   refreshActiveAthlete();
-  // Always land on the Calculator. It works free (no athlete) AND with athlete.
-  // This is the home screen — value before signup.
-  goTo('paces', null);
+  // Land on the front door: a compact pitch sitting directly above a live free
+  // experience (calculator + demo Squad Intelligence). Value before any ask.
+  goTo('home', null);
   updateChip();
   initSupabase().then(() => {
     // After Supabase boots, check if the URL signals a return from
