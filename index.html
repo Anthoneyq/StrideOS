@@ -11,30 +11,32 @@
 <!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="./stride-config.js"></script>
 <style>
 :root {
-  /* MONOCHROME BASE — used for 95% of the UI */
-  --bg: #0a0a0a;
-  --bg-el: #161616;
-  --bg-card: #1c1c1c;
-  --bg-raised: #242424;
+  /* DEEP BASE — anthoneyq-family blue-black, more depth than pure black */
+  --bg: #0B0D0F;
+  --bg-el: #14171A;
+  --bg-card: #16191D;
+  --bg-raised: #1f2329;
 
   /* Borders graduate from subtle to defined */
   --border: rgba(255,255,255,.06);
   --border-s: rgba(255,255,255,.12);
-  --border-h: rgba(255,255,255,.20);
+  --border-h: rgba(255,255,255,.22);
 
-  /* Text hierarchy: pure white at top, fading down */
-  --text: #fafafa;
-  --text-2: #b0b0b0;
-  --text-3: #808080;
-  --text-4: #555555;
-  --dim: #b0b0b0;
-  --faint: #555555;
+  /* Text hierarchy: near-white at top, fading down */
+  --text: #F5F7FA;
+  --text-2: #b4bcc6;
+  --text-3: #828a94;
+  --text-4: #565d66;
+  --dim: #b4bcc6;
+  --faint: #565d66;
 
-  /* ACCENT — used only for primary action + active selection */
+  /* ACCENT — STRIDE orange, used only for primary action + active selection */
   --accent: #ff6b35;
+  --accent-2: #ff8a4c;
   --accent-soft: rgba(255,107,53,.10);
   --accent-line: rgba(255,107,53,.35);
 
@@ -43,13 +45,28 @@
   --yellow: #fbbf24;    /* warning / development */
   --red: #ef4444;       /* error / gap / expired */
   --gold: #d4a017;      /* legacy, retained for ceilings only */
+
+  /* DEPTH SYSTEM — premium motion + glass + glow (anthoneyq DNA) */
+  --ease: cubic-bezier(.22,.61,.36,1);
+  --shadow-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 18px 44px -26px rgba(0,0,0,.75);
+  --glow-accent: 0 10px 30px -8px rgba(255,107,53,.45);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{font-size:16px}
 body{background:var(--bg);color:var(--text);font-family:'Fraunces',Georgia,serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+/* Ambient orange depth field — fixed glow behind all content (anthoneyq DNA, STRIDE orange) */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(900px 620px at 80% -10%, rgba(255,107,53,.11), transparent 60%),
+    radial-gradient(760px 560px at 2% 6%, rgba(255,138,76,.06), transparent 55%),
+    radial-gradient(1100px 820px at 50% 122%, rgba(255,107,53,.055), transparent 62%);}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(circle at 60% 18%,#000,transparent 78%);mask-image:radial-gradient(circle at 60% 18%,#000,transparent 78%);}
 
 /* LAYOUT */
-.app{display:grid;grid-template-columns:15rem 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:15rem 1fr;min-height:100vh;position:relative;z-index:1}
 
 /* SIDEBAR */
 .sidebar{background:#050505;border-right:1px solid var(--border);padding:2rem 1.25rem;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow-y:auto}
@@ -156,19 +173,20 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 /* SCREEN HEADER */
 .screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
 .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
+.eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent);margin-right:.5rem;vertical-align:middle;transform:translateY(-1px)}
 .screen-title{font-family:'Fraunces',serif;font-weight:300;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
 .screen-title em{font-style:italic;color:var(--text);font-weight:400}
 .btn-row{display:flex;gap:.75rem;flex-wrap:wrap}
 
 /* BUTTONS */
-.btn{background:var(--bg-el);border:1px solid var(--border-s);color:var(--text);padding:.625rem 1.125rem;border-radius:.375rem;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.0625rem;text-transform:uppercase;font-weight:500;transition:border-color .15s,color .15s}
-.btn:hover{border-color:var(--border-h);background:var(--bg-raised)}
+.btn{background:var(--bg-el);border:1px solid var(--border-s);color:var(--text);padding:.625rem 1.125rem;border-radius:.5rem;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.75rem;letter-spacing:.0625rem;text-transform:uppercase;font-weight:500;transition:transform .25s var(--ease),border-color .2s,background .2s,box-shadow .25s var(--ease)}
+.btn:hover{border-color:var(--border-h);background:var(--bg-raised);transform:translateY(-1px)}
 .btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
-.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-primary:hover{background:#ff7e4d;border-color:#ff7e4d;color:#fff}
+.btn-primary{background:linear-gradient(135deg,#ff7e4d,#ff5a1f);border-color:transparent;color:#fff;box-shadow:var(--glow-accent),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{background:linear-gradient(135deg,#ff8d61,#ff6a30);border-color:transparent;color:#fff;transform:translateY(-2px);box-shadow:0 16px 40px -10px rgba(255,107,53,.6),inset 0 1px 0 rgba(255,255,255,.25)}
 
 /* CARDS */
-.card{background:var(--bg-card);border:1px solid var(--border);border-radius:.625rem;padding:1.75rem;margin-bottom:1.25rem}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0) 140px),var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:1.75rem;margin-bottom:1.25rem;box-shadow:var(--shadow-card)}
 .card-title{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
 .card-accent{color:var(--text-3);font-weight:500}
 
@@ -720,8 +738,8 @@ function clearDB(){ try{ localStorage.removeItem(KEY); }catch(e){} _mem=null; }
 // ── SUPABASE SYNC ──
 const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 const STRIDE_BILLING_CONFIG = window.STRIDE_BILLING || {};
-const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$24/mo';
-const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$199/yr';
+const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$19.99/mo';
+const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$144/yr';
 const BILLING_MONTHLY_PAYMENT_LINK = STRIDE_BILLING_CONFIG.monthlyPaymentLink || '';
 const BILLING_ANNUAL_PAYMENT_LINK = STRIDE_BILLING_CONFIG.annualPaymentLink || '';
 let sbClient = null;
@@ -936,7 +954,9 @@ function renderAuthPanel(){
 
   el.innerHTML = `
     <div class="auth-status">Coach Account</div>
-    <div class="auth-copy">Use the calculator free. Sign in to save athletes and open the coach workspace.</div>
+    <div class="auth-copy">${isSignup
+      ? 'Start free — your <strong style="color:var(--text)">14-day Pro trial</strong> unlocks the full coach workspace. No credit card required.'
+      : 'Use the calculator free. Sign in to save athletes and open the coach workspace.'}</div>
     ${tabs}
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <input class="auth-input" id="authPassword" type="password" autocomplete="${passwordAutocomplete}" placeholder="${passwordPlaceholder}">
@@ -2043,7 +2063,7 @@ function renderTierBanner(){
     host.innerHTML = `
       <div class="tier-banner tier-banner-trial">
         <div class="tier-banner-text">
-          <strong>Pro trial</strong> &middot; ${label} of full STRIDE OS access.
+          <strong>Pro trial</strong> &middot; ${label} of full STRIDE OS access &middot; no card on file.
         </div>
         <button class="btn btn-primary tier-banner-cta" onclick="showUpgradeModal()">Upgrade to Pro</button>
       </div>
@@ -2091,19 +2111,19 @@ function showUpgradeModal(){
           <div class="upgrade-plan-note">Billed monthly. Cancel anytime.</div>
         </button>
         <button class="upgrade-plan upgrade-plan-best" onclick="startCheckout('annual')" id="planAnnualBtn">
-          <div class="upgrade-plan-badge">Best value · save 31%</div>
+          <div class="upgrade-plan-badge">Best value · save 40%</div>
           <div class="upgrade-plan-label">Annual</div>
           <div class="upgrade-plan-price">${BILLING_ANNUAL_LABEL.replace('/yr', '')}<span>/yr</span></div>
-          <div class="upgrade-plan-note">~$16.58/mo billed yearly.</div>
+          <div class="upgrade-plan-note">$12/mo billed yearly.</div>
         </button>
       </div>
 
       <ul class="upgrade-perks">
         <li>Unlimited athletes</li>
+        <li><strong style="color:var(--text)">Squad Intelligence</strong> — drag in a CSV/Excel roster, get instant training-load bias, event-coverage skew &amp; highest-ROI fixes</li>
         <li>Race predictions across every distance, with planning ranges</li>
         <li>Longitudinal performance curve &amp; year-over-year trends</li>
         <li>Event fit analysis, environmental corrections, Speed Reserve Ratio</li>
-        <li>Bulk roster import from CSV / Excel</li>
         <li>All future Phase 3 features (Athlete Profile Engine, etc.)</li>
       </ul>
 
@@ -2768,7 +2788,15 @@ function emptyHTML(msg){
 // ── RENDER OVERVIEW ──
 function renderOverview(){
   const el=document.getElementById('ov-body');
-  if(!A){el.innerHTML=emptyHTML('Create an athlete to see the performance snapshot.');return;}
+  // Squad Intelligence leads Coach Tools whenever the coach has a real roster — but it is a
+  // PRO feature, so free tier gets a locked teaser (matches the import-screen gate).
+  let squadHtml = '';
+  if(DB.athletes && DB.athletes.length >= 2){
+    squadHtml = hasProAccess()
+      ? renderSquadAnalytics(computeSquadAnalytics(DB.athletes))
+      : squadAnalyticsLocked(DB.athletes.length);
+  }
+  if(!A){el.innerHTML = squadHtml + emptyHTML('Create or select an athlete to see the individual snapshot.');return;}
 
   const fresh = prFreshness(A.raceDate);
   const f = freshnessLabel(fresh, A.raceDate);
@@ -2796,6 +2824,7 @@ function renderOverview(){
   const es = ENERGY_SYSTEMS[A.primaryEvent] || ENERGY_SYSTEMS['800m'];
 
   el.innerHTML=`
+    ${squadHtml}
     <div class="hero-stats">
       <div class="hero-primary">
         <p class="hero-name">${esc(A.name)}</p>
@@ -5379,11 +5408,146 @@ function renderImportProgress(){
   el.innerHTML = `<div class="info-box">Importing ${importState.importedCount} of ${importState.rows.length} athletes...</div>`;
 }
 
+// ── Squad Analytics + Training-Bias engine ───────────────────────────────
+// Roster-level intelligence no free calculator gives a coach: composition,
+// event-coverage skew, mileage-vs-event training-load bias, data
+// completeness, and the highest-ROI moves to improve athletes. Deliberately
+// defensible from single-PR imports — no fabricated cross-event VDOT
+// comparisons (those mix populations; see selection-bias note above).
+function eventGroupForM(distM){
+  if(!distM) return 'unknown';
+  if(distM <= 400) return 'sprint';
+  if(distM >= 3000) return 'distance';   // matches the UI's "race 3K+" label; keeps the
+  return 'mid';                          // mile/1600m out of the distance low-mileage flag
+}
+function _avg(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function _med(arr){
+  if(!arr.length) return null;
+  const s = [...arr].sort((a,b)=>a-b); const m = Math.floor(s.length/2);
+  return s.length % 2 ? s[m] : (s[m-1]+s[m])/2;
+}
+
+function computeSquadAnalytics(athletes){
+  const list = (athletes || []).filter(Boolean);
+  const n = list.length;
+  const groups = { sprint:[], mid:[], distance:[], unknown:[] };
+  const sex = { M:0, F:0, unknown:0 };
+  list.forEach(a => {
+    groups[eventGroupForM(a.raceDistanceM)].push(a);
+    if(a.sex === 'M') sex.M++; else if(a.sex === 'F') sex.F++; else sex.unknown++;
+  });
+  const mileageOf = a => (typeof a.weeklyMileage === 'number' && a.weeklyMileage > 0) ? a.weeklyMileage : null;
+  const withMiles = list.map(mileageOf).filter(v => v != null);
+
+  // A PR only counts if it has a distance AND a parseable time. An unparseable cell
+  // ("N/A", "DNF", "5.x") is treated as missing, not a valid PR. parseTime is guarded so
+  // the pure analytics still works in test harnesses where it isn't in scope.
+  const validPR = a => Boolean(a.raceDistanceM) && Boolean(a.raceTime) &&
+    (typeof parseTime !== 'function' || parseTime(String(a.raceTime)) != null);
+  const missingPR = list.filter(a => !validPR(a)).length;
+  const missingMileage = list.filter(a => mileageOf(a) == null).length;
+  const missingDate = list.filter(a => !a.raceDate).length;
+
+  const flags = [];
+  const distLow = groups.distance.filter(a => { const m = mileageOf(a); return m != null && m < 20; });
+  if(distLow.length){
+    flags.push({ sev:'warn',
+      title:`${distLow.length} distance runner${distLow.length===1?'':'s'} below aerobic-rewarding volume`,
+      detail:`Logged under 20 mi/wk while racing 3K+. Endurance events reward aerobic volume — a controlled, gradual mileage build is usually the single highest-ROI change you can make.`,
+      who: distLow.slice(0,6).map(a=>a.name) });
+  }
+  const sprintHigh = groups.sprint.filter(a => { const m = mileageOf(a); return m != null && m > 35; });
+  if(sprintHigh.length){
+    flags.push({ sev:'warn',
+      title:`${sprintHigh.length} sprinter${sprintHigh.length===1?'':'s'} carrying endurance-style mileage`,
+      detail:`Over 35 mi/wk on a ≤400m athlete often signals aerobic "junk miles" displacing speed, power and recovery. Audit whether the volume is actually serving the event.`,
+      who: sprintHigh.slice(0,6).map(a=>a.name) });
+  }
+  const sp = groups.sprint.length, di = groups.distance.length, mi = groups.mid.length, known = sp+di+mi;
+  if(known >= 3){
+    if(sp/known >= 0.6) flags.push({ sev:'info', title:'Speed-skewed roster',
+      detail:`${Math.round(sp/known*100)}% of classified athletes race ≤400m. Distance and 4×800 relay depth is thin — worth recruiting or cross-developing a few mid-distance legs.` });
+    else if(di/known >= 0.6) flags.push({ sev:'info', title:'Endurance-skewed roster',
+      detail:`${Math.round(di/known*100)}% race 3K+. Short-speed depth (4×100/4×200, open 400) is thin — adding leg speed also lifts distance running economy.` });
+  }
+
+  const opps = [];
+  const singlePR = list.filter(a => validPR(a) && (!a.additionalPRs || Object.keys(a.additionalPRs).length===0));
+  if(singlePR.length) opps.push(`Add one more race distance for ${singlePR.length} athlete${singlePR.length===1?'':'s'} → unlocks each athlete's *own* fatigue curve and sharper predictions instead of a generic table.`);
+  if(missingMileage) opps.push(`Log weekly mileage for ${missingMileage} athlete${missingMileage===1?'':'s'} → switches on training-load bias detection across the whole squad.`);
+  if(distLow.length) opps.push(`Build aerobic base for ${distLow.length} under-mileage distance runner${distLow.length===1?'':'s'} → typically the biggest, safest PR lever in high-school distance.`);
+  if(missingDate) opps.push(`Add PR dates for ${missingDate} athlete${missingDate===1?'':'s'} → STRIDE can then flag stale fitness and re-test windows.`);
+
+  return {
+    n, groups, sex,
+    mileage: { avg:_avg(withMiles), med:_med(withMiles), count:withMiles.length },
+    completeness: { missingPR, missingMileage, missingDate,
+      score: Math.round(100*(1 - (missingPR+missingMileage+missingDate)/(Math.max(1,n)*3))) },
+    flags, opps
+  };
+}
+
+function _grpBar(stats){
+  const order = [['sprint','Sprint','var(--accent)'],['mid','Mid','var(--yellow)'],['distance','Distance','var(--green)'],['unknown','Unclassified','var(--text-4)']];
+  const total = Math.max(1, stats.n);
+  const segs = order.map(([k,lbl,c]) => {
+    const v = stats.groups[k].length; if(!v) return '';
+    return `<div title="${lbl}: ${v}" style="width:${(v/total*100).toFixed(1)}%;background:${c}"></div>`;
+  }).join('');
+  const legend = order.filter(([k])=>stats.groups[k].length).map(([k,lbl,c]) =>
+    `<span style="display:inline-flex;align-items:center;gap:.375rem;font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-2)"><i style="width:.5rem;height:.5rem;border-radius:2px;background:${c};display:inline-block"></i>${lbl} ${stats.groups[k].length}</span>`).join('');
+  return `<div style="display:flex;height:.625rem;border-radius:.375rem;overflow:hidden;gap:2px;margin:.5rem 0 .75rem">${segs}</div><div style="display:flex;flex-wrap:wrap;gap:.875rem">${legend}</div>`;
+}
+
+// Free-tier teaser for the PRO Squad Intelligence feature (shown on Coach Tools).
+function squadAnalyticsLocked(n){
+  return `
+    <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Squad Intelligence</h2>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole squad — no other calculator reads your roster at once.</p>
+      <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
+    </div>`;
+}
+
+function renderSquadAnalytics(stats){
+  if(!stats || !stats.n) return '';
+  const sevColor = s => s==='warn' ? 'var(--yellow)' : s==='alert' ? 'var(--red)' : 'var(--accent)';
+  const tile = (lbl,val,note) => `<div class="hero-stat"><p class="stat-lbl">${lbl}</p><p class="stat-val">${val}</p><p class="stat-note">${note||''}</p></div>`;
+  const miAvg = stats.mileage.avg != null ? Math.round(stats.mileage.avg) : '—';
+  const flagsHtml = stats.flags.length ? stats.flags.map(f => `
+    <div style="border:1px solid var(--border-s);border-left:3px solid ${sevColor(f.sev)};border-radius:.5rem;padding:1rem 1.125rem;margin-bottom:.75rem;background:#050505">
+      <p style="font-family:'Fraunces',serif;font-size:1.0625rem;font-weight:500;margin-bottom:.25rem">${esc(f.title)}</p>
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6">${f.detail}</p>
+      ${f.who && f.who.length ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${f.who.map(esc).join(' · ')}</p>` : ''}
+    </div>`).join('')
+    : `<div style="border:1px solid var(--border-s);border-left:3px solid var(--green);border-radius:.5rem;padding:1rem 1.125rem;background:#050505"><p style="font-size:.875rem;color:var(--text-2)">No training-load red flags across the squad. Add weekly mileage and a second race distance to deepen the analysis.</p></div>`;
+  const oppsHtml = stats.opps.length ? `<ol style="margin:0;padding-left:1.1rem;font-size:.8125rem;color:var(--text-2);line-height:1.75">${stats.opps.map(o=>`<li style="margin-bottom:.375rem">${o.replace(/\*([^*]+)\*/g,'<em style="font-style:normal;color:var(--text)">$1</em>')}</li>`).join('')}</ol>` : '';
+  return `
+    <div class="card" style="padding:1.5rem 1.5rem 1.75rem;text-align:left">
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.375rem">Squad Intelligence</p>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.25rem">What your roster is telling you</h2>
+      <p style="font-size:.8125rem;color:var(--text-3);margin-bottom:1.25rem">Across ${stats.n} athlete${stats.n===1?'':'s'} — no other calculator reads your whole squad at once.</p>
+      <div class="hero-stats" style="margin-bottom:1.25rem">
+        ${tile('Athletes', stats.n, `${stats.sex.M||0}M · ${stats.sex.F||0}F`)}
+        ${tile('Avg mileage', miAvg, stats.mileage.count?`${stats.mileage.count} logged`:'none logged')}
+        ${tile('Distance', stats.groups.distance.length, 'race 3K+')}
+        ${tile('Data quality', stats.completeness.score+'%', 'roster completeness')}
+      </div>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.0625rem;text-transform:uppercase;margin-bottom:.25rem">Event coverage</p>
+      ${_grpBar(stats)}
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.0625rem;text-transform:uppercase;margin:1.5rem 0 .625rem">Training-load bias</p>
+      ${flagsHtml}
+      ${stats.opps.length ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.0625rem;text-transform:uppercase;margin:1.25rem 0 .625rem">Highest-ROI next moves</p>${oppsHtml}` : ''}
+    </div>`;
+}
+
 function renderImportDone(){
   const el = document.getElementById('im-body');
   if(!el) return;
+  const stats = computeSquadAnalytics(DB.athletes);
   el.innerHTML = `
-    <div class="card" style="text-align:center;padding:2rem">
+    <div class="card" style="text-align:center;padding:1.75rem 1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--green);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Import complete</p>
       <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.5rem">Added ${importState.importedCount} athlete${importState.importedCount===1?'':'s'}</h2>
       ${importState.failedRows.length > 0 ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--yellow);margin-bottom:1rem">${importState.failedRows.length} row${importState.failedRows.length===1?'':'s'} skipped (missing name or invalid data)</p>` : ''}
@@ -5391,7 +5555,8 @@ function renderImportDone(){
         <button class="btn" onclick="resetImport()">Import another file</button>
         <button class="btn btn-primary" onclick="goTo('roster',null)">View Roster →</button>
       </div>
-    </div>`;
+    </div>
+    ${renderSquadAnalytics(stats)}`;
 }
 
 // Normalise a sex value from the spreadsheet ("M"/"Male"/"Boy"/"Girls" etc.)
@@ -5409,26 +5574,46 @@ function _normSex(v){
 function _normEvent(v){
   if(!v) return { primaryEvent: '', raceDistance: '', raceDistanceM: null };
   const s = String(v).trim();
-  const norm = s.toLowerCase().replace(/\s+/g,'').replace('meters','m').replace('meter','m').replace('mile','mi');
+  // Coaches write "5K XC", "1 Mile", "2 mile", "6k xc", "5000m", etc. Strip
+  // cross-country tags, normalise units, collapse spaces, then map to a distance.
+  let norm = s.toLowerCase()
+    .replace(/cross[\s-]*country/g, '')
+    .replace(/\bxc\b/g, '')
+    .replace(/,/g, '')
+    .replace(/kilometers?/g, 'km')
+    .replace(/meters?/g, 'm')
+    .replace(/\s+/g, '')
+    .replace(/km/g, 'k')          // "5km" / "10 km" → "5k" / "10k"
+    .replace(/miles/g, 'mi')
+    .replace(/mile/g, 'mi');
+  // Bare number with no unit, e.g. a spreadsheet cell "800" or "5000" → read as meters.
+  if(/^\d{2,}$/.test(norm)) norm = norm + 'm';
+  // Only events the app fully supports (DIST / ENERGY_SYSTEMS / event selects /
+  // predictions). We deliberately DON'T map 3-mile or 6K here: they aren't first-class
+  // app events, so emitting them would break individual analysis and edit/save
+  // round-tripping. They fall through to the raw-string branch for the coach to set by hand.
   const map = {
     '100m':100, '200m':200, '400m':400,
     '800m':800, '1500m':1500, '1600m':1600,
-    'mi':1609, '1mi':1609, '1mile':1609, 'mile':1609,
-    '3000m':3000, '3200m':3200, '2mi':3218, '2mile':3218,
+    'mi':1609, '1mi':1609,
+    '3k':3000, '3000m':3000, '3200m':3200, '2mi':3218,
     '5k':5000, '5000m':5000,
-    '8k':8000, '10k':10000, '10000m':10000,
-    'halfmarathon':21097, 'half':21097, 'hm':21097,
-    'marathon':42195
+    '8k':8000, '8000m':8000, '10k':10000, '10000m':10000,
+    'halfmarathon':21097, 'half':21097, 'hm':21097, '13.1mi':21097,
+    'marathon':42195, '26.2mi':42195
   };
   const distM = map[norm];
   if(distM){
-    const label = distM >= 1000 && distM < 5000 ? `${distM}m`
-      : distM === 5000 ? '5K'
-      : distM === 8000 ? '8K'
-      : distM === 10000 ? '10K'
-      : distM === 21097 ? 'Half Marathon'
-      : distM === 42195 ? 'Marathon'
-      : `${distM}m`;
+    // Canonical labels that match the app's DIST / ENERGY_SYSTEMS constants, so an
+    // imported athlete gets correct individual analysis (not a meter-string fallback).
+    const LABEL = {
+      100:'100m',200:'200m',400:'400m',800:'800m',
+      1500:'1500m',1600:'1600m',1609:'Mile',
+      3000:'3000m',3200:'3200m',3218:'2 Mile',
+      5000:'5K',8000:'8K',10000:'10K',
+      21097:'Half Marathon',42195:'Marathon'
+    };
+    const label = LABEL[distM] || `${distM}m`;
     return { primaryEvent: label, raceDistance: label, raceDistanceM: distM };
   }
   return { primaryEvent: s, raceDistance: '', raceDistanceM: null };
@@ -6873,6 +7058,50 @@ window.addEventListener('load',()=>{
     handleStravaReturn();
   });
 });
+</script>
+<script>
+/* Premium motion layer (progressive enhancement). No-ops if GSAP fails to
+   load or the user prefers reduced motion — never blocks the app. */
+(function(){
+  function init(){
+    if(typeof gsap === 'undefined') return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var seen = new WeakSet();
+    function countUp(el){
+      if(el.dataset.counted) return;        // never re-read a value that's already animating
+      var raw = (el.textContent || '').trim();
+      var m = raw.match(/^(\d[\d,]*\.?\d*)(.*)$/);
+      if(!m) return;
+      el.dataset.counted = '1';
+      var suffix = m[2] || '';
+      if(suffix !== '' && suffix !== '%') return;           // skip paces/times like 5:40
+      var target = parseFloat(m[1].replace(/,/g,''));
+      if(!isFinite(target)) return;
+      var dec = m[1].indexOf('.') >= 0 ? 1 : 0;
+      var obj = { v: 0 };
+      gsap.to(obj, { v: target, duration: .9, ease: 'power1.out', onUpdate: function(){
+        el.textContent = (dec ? obj.v.toFixed(1) : Math.round(obj.v).toLocaleString()) + suffix;
+      }});
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(!e.isIntersecting || seen.has(e.target)) return;
+        seen.add(e.target);
+        gsap.fromTo(e.target, { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .5, ease: 'power2.out' });
+        if(e.target.querySelectorAll){ e.target.querySelectorAll('.stat-val').forEach(countUp); }
+        io.unobserve(e.target);
+      });
+    }, { threshold: .12 });
+    function attach(){
+      document.querySelectorAll('.card,.hero-stats').forEach(function(el){ if(!seen.has(el)) io.observe(el); });
+    }
+    attach();
+    var root = document.getElementById('mainContent') || document.body;
+    new MutationObserver(function(){ attach(); }).observe(root, { childList: true, subtree: true });
+  }
+  if(document.readyState === 'complete') init();
+  else window.addEventListener('load', init);
+})();
 </script>
 </body>
 </html>

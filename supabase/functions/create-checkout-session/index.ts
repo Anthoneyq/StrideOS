@@ -8,8 +8,8 @@
 // Required env vars (set in Supabase Dashboard → Project Settings → Edge
 // Functions → secrets):
 //   STRIPE_SECRET_KEY        sk_live_... (or sk_test_... for test mode)
-//   STRIPE_PRICE_MONTHLY     price_... for the $24/mo price
-//   STRIPE_PRICE_ANNUAL      price_... for the $199/yr price
+//   STRIPE_PRICE_MONTHLY     price_... for the $19.99/mo price
+//   STRIPE_PRICE_ANNUAL      price_... for the $144/yr price
 //   STRIPE_PRICE_TEAM_ANNUAL price_... for the $399/yr Program/Team price
 //   APP_BASE_URL             e.g. https://strideos.thecoachlab.app
 //   SUPABASE_URL             auto-provided

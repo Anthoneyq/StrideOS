@@ -23,8 +23,8 @@ window.STRIDE_STRAVA = {
 // - Populate the payment links if you want a direct Stripe Payment Link
 //   fallback or a lightweight launch path before the backend is live.
 window.STRIDE_BILLING = {
-  monthlyLabel: '$24/mo',
-  annualLabel: '$199/yr',
+  monthlyLabel: '$19.99/mo',
+  annualLabel: '$144/yr',
   monthlyPaymentLink: null,
   annualPaymentLink: null,
 };
