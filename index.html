@@ -764,6 +764,7 @@ function emptySubscription(){
 let sbSubscription = emptySubscription();
 const FREE_ATHLETE_LIMIT = 3;
 const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
+const FREE_SQUAD_CAP = 6;     // Free/anon coaches see real Squad Intelligence on up to this many athletes (view-only)
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
 const PUBLIC_SCREEN_ID = 'paces';
 const WORKSPACE_SCREEN_IDS = new Set([
@@ -2790,13 +2791,14 @@ function emptyHTML(msg){
 // ── RENDER OVERVIEW ──
 function renderOverview(){
   const el=document.getElementById('ov-body');
-  // Squad Intelligence leads Coach Tools whenever the coach has a real roster — but it is a
-  // PRO feature, so free tier gets a locked teaser (matches the import-screen gate).
+  // Squad Intelligence leads Coach Tools whenever the coach has a real roster.
+  // Free wedge: free coaches get the REAL analytics (capped + view-only) with a soft
+  // upgrade nudge — NOT a locked card. No free competitor reads a whole roster at once.
   let squadHtml = '';
   if(DB.athletes && DB.athletes.length >= 2){
     squadHtml = hasProAccess()
       ? renderSquadAnalytics(computeSquadAnalytics(DB.athletes))
-      : squadAnalyticsLocked(DB.athletes.length);
+      : renderSquadTaste(DB.athletes);
   }
   if(!A){el.innerHTML = squadHtml + emptyHTML('Create or select an athlete to see the individual snapshot.');return;}
 
@@ -5542,6 +5544,84 @@ function renderSquadAnalytics(stats){
       ${flagsHtml}
       ${stats.opps.length ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.0625rem;text-transform:uppercase;margin:1.25rem 0 .625rem">Highest-ROI next moves</p>${oppsHtml}` : ''}
     </div>`;
+}
+
+// ── FREE SQUAD INTELLIGENCE TASTE ──────────────────────────────────────────
+// The biggest free-tier wedge. No free competitor reads a whole roster at once:
+// McMillan / VDOT / Tinman are single-athlete; athletic.net has rosters but no
+// prediction; MileSplit's team-scoring is paywalled. So free & anonymous coaches
+// get a REAL, capped, view-only taste — not a locked card. Pro unlocks unlimited
+// size, save/sync, environmental adjustment, printable reports, and the optimizer.
+
+// A realistic HS squad so the roster magic renders in seconds with zero typing,
+// tuned to surface a couple of genuine training-load flags (over-mileage sprinter,
+// under-mileage distance runners) so a cold coach instantly sees the "wow".
+const DEMO_SQUAD = [
+  { name:'Maya R.',   sex:'F', primaryEvent:'5K',    raceDistance:'5K',    raceDistanceM:5000, raceTime:'18:42', weeklyMileage:42, raceDate:'2026-05-09' },
+  { name:'Jordan T.', sex:'M', primaryEvent:'1600m', raceDistance:'1600m', raceDistanceM:1600, raceTime:'4:38',  weeklyMileage:35, raceDate:'2026-05-02' },
+  { name:'Eli W.',    sex:'M', primaryEvent:'3200m', raceDistance:'3200m', raceDistanceM:3200, raceTime:'10:21', weeklyMileage:16, raceDate:'2026-04-25' },
+  { name:'Sofia M.',  sex:'F', primaryEvent:'800m',  raceDistance:'800m',  raceDistanceM:800,  raceTime:'2:21',  weeklyMileage:28, raceDate:'2026-05-09' },
+  { name:'Andre P.',  sex:'M', primaryEvent:'400m',  raceDistance:'400m',  raceDistanceM:400,  raceTime:'51.4',  weeklyMileage:44, raceDate:'2026-05-02' },
+  { name:'Grace L.',  sex:'F', primaryEvent:'3200m', raceDistance:'3200m', raceDistanceM:3200, raceTime:'11:48', weeklyMileage:14, raceDate:'2026-04-18' },
+];
+
+// Wrap the real analytics for free/anon users: cap to FREE_SQUAD_CAP, view-only,
+// then append a soft upgrade nudge (never a wall).
+function renderSquadTaste(athletes, opts){
+  opts = opts || {};
+  const list = (athletes || []).filter(Boolean);
+  if(!list.length) return '';
+  const capped = list.slice(0, FREE_SQUAD_CAP);
+  const hidden = Math.max(0, list.length - FREE_SQUAD_CAP);
+  return renderSquadAnalytics(computeSquadAnalytics(capped)) + squadUpgradeNudge(hidden, opts);
+}
+
+function squadUpgradeNudge(hiddenCount, opts){
+  opts = opts || {};
+  const lead = hiddenCount > 0
+    ? `Showing the first ${FREE_SQUAD_CAP} athletes.`
+    : (opts.anonymous ? `This is a live read of the squad above — free, no signup.` : `You're on the free plan.`);
+  const cta = opts.anonymous
+    ? `<button class="btn btn-primary" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial →</button>`
+    : `<button class="btn btn-primary" onclick="showUpgradeModal()">Unlock the full squad →</button>`;
+  return `
+    <div class="card squad-nudge" style="text-align:center;padding:1.5rem;margin-top:1rem;border-style:dashed">
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:38rem;margin:0 auto .35rem">${lead} <strong style="color:var(--text)">Pro</strong> adds unlimited athletes, rosters saved across devices, heat / altitude / XC-course adjustment, printable team reports, and the lineup optimizer.</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem">No other free tool reads your whole roster at once</p>
+      ${cta}
+    </div>`;
+}
+
+// Parse a pasted roster — one athlete per line, tolerant of comma / tab / space:
+//   "Maya R, 5k, 18:42"   "Jordan 1600 4:38"   "Eli, 3200m, 10:21, 16"
+// Needs a name + a PR time; event + weekly mileage optional. Reuses _normEvent +
+// parseTime (both hoisted). Returns athlete-like objects — never saved.
+function parseSquadPaste(text){
+  const out = [];
+  (text || '').split(/\r?\n/).forEach(line => {
+    const raw = line.trim();
+    if(!raw) return;
+    let parts = raw.indexOf('\t') >= 0 ? raw.split('\t')
+              : (raw.indexOf(',') >= 0 ? raw.split(',') : raw.split(/\s+/));
+    parts = parts.map(p => p.trim()).filter(Boolean);
+    if(parts.length < 2) return;
+    let time = null, ev = null, mileage = null;
+    const nameTokens = [];
+    parts.forEach(tok => {
+      if(time === null && /[:.]/.test(tok) && parseTime(tok) != null){ time = tok; return; }
+      const e = _normEvent(tok);
+      if(ev === null && e.raceDistanceM){ ev = e; return; }
+      if(mileage === null && /^\d{1,3}$/.test(tok) && +tok > 0 && +tok <= 150){ mileage = +tok; return; }
+      nameTokens.push(tok);
+    });
+    if(time === null) return;                         // a PR time is required
+    const name = nameTokens.join(' ').replace(/\s+/g,' ').trim() || 'Athlete';
+    const a = { name, raceTime: time };
+    if(ev){ a.primaryEvent = ev.primaryEvent; a.raceDistance = ev.raceDistance; a.raceDistanceM = ev.raceDistanceM; }
+    if(mileage != null) a.weeklyMileage = mileage;
+    out.push(a);
+  });
+  return out;
 }
 
 function renderImportDone(){
