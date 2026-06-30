@@ -423,7 +423,9 @@ input.err,select.err{border-color:var(--red)}
 .empty-sub{font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--dim);margin-bottom:1.5rem;line-height:1.6}
 
 /* TOAST */
-#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#000;font-family:'JetBrains Mono',monospace;font-size:.8125rem;font-weight:600;padding:.875rem 1.25rem;border-radius:.5rem;opacity:0;pointer-events:none;transform:translateY(.5rem);transition:opacity .3s,transform .3s;z-index:9999}
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--green);color:#000;font-family:'JetBrains Mono',monospace;font-size:.8125rem;font-weight:600;padding:.875rem 1.25rem;border-radius:.5rem;opacity:0;pointer-events:none;transform:translateY(.5rem);transition:opacity .3s,transform .3s;z-index:9999;max-width:22rem}
+#toast.toast-error{background:var(--red);color:#fff}
+#toast.toast-info{background:var(--bg-raised);color:var(--text);border:1px solid var(--border-h)}
 #toast.show{opacity:1;transform:translateY(0)}
 
 /* RESPONSIVE */
@@ -1084,7 +1086,7 @@ function ensureAuthModal(){
     <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
       <button class="upgrade-close" aria-label="Close" onclick="closeAuthModal()">×</button>
       <p class="upgrade-eyebrow">Coach Account · 30-day Pro trial</p>
-      <h2 class="upgrade-title" id="authModalTitle">Start <em style="font-style:italic;color:var(--accent)">free</em></h2>
+      <h2 class="upgrade-title" id="authModalTitle">Start <em style="font-style:normal;background:linear-gradient(120deg,#ff8a4c,#ff5a1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent">free</em></h2>
       <div class="auth-modal-body" id="authPanelModal"></div>
     </div>`;
   document.body.appendChild(overlay);
@@ -2303,7 +2305,12 @@ async function startCheckout(plan){
       return;
     }
     if(!sbClient || !sbUser){
-      throw new Error('Sign in first');
+      // Anonymous → don't attempt a doomed checkout; send them to sign up first.
+      if(btn){ btn.disabled = false; if(prev !== null) btn.innerHTML = prev; }
+      closeUpgradeModal();
+      if(typeof showAuthModal === 'function') showAuthModal('signup'); else publicCalculatorCta();
+      toast('Create a free account to start your Pro trial — no card needed.', 'info');
+      return;
     }
     const { data: { session } } = await sbClient.auth.getSession();
     const token = session ? session.access_token : null;
@@ -2326,7 +2333,9 @@ async function startCheckout(plan){
     window.location.href = data.url;
   }catch(err){
     console.error('startCheckout failed', err);
-    toast(err.message || 'Could not start checkout');
+    const raw = (err && err.message) || '';
+    const networkish = /load failed|failed to fetch|networkerror|fetch/i.test(raw);
+    toast(networkish ? "Couldn't reach checkout right now — please try again in a moment." : (raw || 'Could not start checkout'), 'error');
     if(btn){ btn.disabled = false; if(prev !== null) btn.innerHTML = prev; }
   }
 }
@@ -7525,10 +7534,16 @@ function updateChip(){
 }
 
 // ── TOAST ──
-function toast(msg){
+function toast(msg, type){
   const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  if(!t) return;
+  t.textContent=msg;
+  t.classList.remove('toast-error','toast-info');
+  if(type==='error') t.classList.add('toast-error');
+  else if(type==='info') t.classList.add('toast-info');
+  t.classList.add('show');
+  clearTimeout(t._hide);
+  t._hide=setTimeout(()=>t.classList.remove('show'), type==='error'?4200:2500);
 }
 
 // ── INIT ──
