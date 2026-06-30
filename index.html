@@ -189,7 +189,15 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .home-paste-lbl code{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent);background:var(--accent-soft);padding:.05rem .3rem;border-radius:.25rem}
 .home-paste-area{width:100%;background:#050505;border:1px solid var(--border-s);border-radius:.5rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8125rem;line-height:1.6;padding:.75rem;resize:vertical;margin-bottom:.875rem}
 .home-paste-area:focus{outline:none;border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
-@media(max-width:640px){.home-cta{flex-direction:column;align-items:stretch}.home-cta .btn-lg{width:100%}.btn-text{align-self:center}}
+.home-proof{font-size:.875rem;color:var(--text-2);line-height:1.55;max-width:38rem;margin:.5rem 0 0}
+.home-proof strong{color:var(--text);font-weight:600}
+.home-close{border-top:1px solid var(--border);margin-top:2rem;padding-top:1.75rem;max-width:40rem}
+.home-close-q{font-family:'Fraunces',serif;font-size:clamp(1.25rem,2.4vw,1.6rem);font-weight:500;letter-spacing:-.02em;color:var(--text);margin-bottom:1rem}
+.home-close-pts{list-style:none;padding:0;margin:0 0 1.25rem;display:grid;gap:.5rem}
+.home-close-pts li{position:relative;padding-left:1.4rem;font-size:.9375rem;color:var(--text-2);line-height:1.5}
+.home-close-pts li::before{content:'';position:absolute;left:0;top:.55rem;width:7px;height:7px;border-radius:999px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.home-close-foot{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);letter-spacing:.03em;margin-top:.85rem}
+@media(max-width:640px){.home-cta{flex-direction:column;align-items:stretch}.home-cta .btn-lg{width:100%}.btn-text{align-self:center}.home-close .btn-lg{width:100%}}
 
 /* AUTH MODAL — readable centered sign-in (form lives here; sidebar is status only) */
 .auth-modal{position:relative;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:27rem;width:100%;padding:2rem 1.75rem 1.75rem;color:var(--text);box-shadow:var(--shadow-card)}
@@ -4333,7 +4341,8 @@ function renderFreeTierCalculator(){
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:14rem">
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem">Free Calculator</p>
-        <p style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;letter-spacing:-.0625rem;line-height:1.2">Enter a race time. Get training paces.</p>
+        <p style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:500;letter-spacing:-.0625rem;line-height:1.2">One race time → every training pace and zone.</p>
+        ${signedIn ? '' : `<p style="font-size:.875rem;color:var(--text-2);line-height:1.5;margin-top:.5rem;max-width:30rem">Free, no signup. Create a free account to save athletes, sync everywhere, and unlock race forecasts for every event.</p>`}
       </div>
         <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
     </div>
@@ -5742,6 +5751,18 @@ function renderHome(){
     ? `<button class="btn btn-primary btn-lg" onclick="goTo('overview')">Open Coach Tools →</button>`
     : `<button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial</button>`;
   const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · we never sell athlete data.</p>`;
+  const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In testing on 290+ real runners, its race predictions landed <strong>~35% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
+  const closeCta = signedIn ? '' : `
+    <div class="home-close">
+      <p class="home-close-q">Like what your roster just showed you?</p>
+      <ul class="home-close-pts">
+        <li>Save your whole roster once — it syncs on every device, free</li>
+        <li>Race forecasts &amp; training paces for every athlete, every event — in one place</li>
+        <li>Spot the over-raced, the mis-evented, and the highest-ROI fix before your next meet</li>
+      </ul>
+      <button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Create your free account →</button>
+      <p class="home-close-foot">Free account · no credit card · 30-day Pro trial included · we never sell athlete data.</p>
+    </div>`;
   el.innerHTML = `
     <div class="home-hero">
       <p class="eyebrow">STRIDE OS · built for distance coaches</p>
@@ -5753,6 +5774,7 @@ function renderHome(){
         <button class="btn-text" onclick="document.getElementById('home-squad').scrollIntoView({behavior:'smooth',block:'start'})">See a sample roster ↓</button>
       </div>
       ${trust}
+      ${proof}
     </div>
 
     <div class="home-squad" id="home-squad">
@@ -5768,7 +5790,8 @@ function renderHome(){
         </div>
       </div>
       <div id="home-squad-result">${renderSquadTaste(DEMO_SQUAD, {anonymous:true})}</div>
-    </div>`;
+    </div>
+    ${closeCta}`;
   animateHomeHero();
 }
 
