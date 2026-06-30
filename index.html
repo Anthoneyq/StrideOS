@@ -6,7 +6,7 @@
 <title>STRIDE OS — Pace Calculator for Running Coaches</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -46,6 +46,13 @@
   --red: #ef4444;       /* error / gap / expired */
   --gold: #d4a017;      /* legacy, retained for ceilings only */
 
+  /* TYPE — performance-tech voice (athletic, high-end): Archivo display over
+     Inter UI, JetBrains Mono for data/stats only. (Replaces the Fraunces serif.) */
+  --font-display: 'Archivo','Inter',-apple-system,sans-serif;
+  --font-stat: 'Archivo Expanded','Archivo',-apple-system,sans-serif;
+  --font-ui: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono: 'JetBrains Mono',ui-monospace,monospace;
+
   /* DEPTH SYSTEM — premium motion + glass + glow (anthoneyq DNA) */
   --ease: cubic-bezier(.22,.61,.36,1);
   --shadow-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 18px 44px -26px rgba(0,0,0,.75);
@@ -54,8 +61,9 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html{font-size:16px}
 body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
-/* Display voice — Fraunces, used for headlines + big result numbers (anthoneyq sibling: serif display over Inter body) */
-.display,h1,h2.scr{font-family:'Fraunces',Georgia,serif}
+/* Display voice — Archivo (heavy, tight): athletic high-performance headlines + big numbers */
+.display,h1,h2.scr{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em}
+.stat-num,.big-stat{font-family:var(--font-stat);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 /* Ambient orange depth field — fixed glow behind all content (anthoneyq DNA, STRIDE orange) */
 body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
@@ -124,7 +132,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .upgrade-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;padding:.25rem .5rem;border-radius:.25rem}
 .upgrade-close:hover{color:var(--text);background:var(--bg-card)}
 .upgrade-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.375rem}
-.upgrade-title{font-family:'Fraunces',serif;font-size:2rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.5rem}
+.upgrade-title{font-family:var(--font-display);font-size:2rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.5rem}
 .upgrade-title em{color:var(--accent);font-style:normal}
 .upgrade-sub{font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--dim);margin-bottom:1.5rem}
 .upgrade-plans{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
@@ -134,7 +142,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .upgrade-plan-best{border-color:var(--accent);background:var(--accent-soft)}
 .upgrade-plan-badge{position:absolute;top:-.5rem;left:1rem;background:var(--accent);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.5625rem;letter-spacing:.0625rem;text-transform:uppercase;padding:.1875rem .5rem;border-radius:.25rem}
 .upgrade-plan-label{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
-.upgrade-plan-price{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;letter-spacing:-.0625rem;line-height:1}
+.upgrade-plan-price{font-family:var(--font-display);font-size:2rem;font-weight:400;letter-spacing:-.0625rem;line-height:1}
 .upgrade-plan-price span{font-size:.875rem;color:var(--dim);margin-left:.125rem}
 .upgrade-plan-note{font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);margin-top:.625rem;line-height:1.5}
 .upgrade-perks{font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.7;color:var(--text-2);padding-left:1.25rem;margin-bottom:1.25rem}
@@ -145,7 +153,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .import-dropzone{border:2px dashed var(--border);border-radius:.75rem;padding:3rem 1.5rem;text-align:center;background:var(--bg-el);transition:border-color .15s,background .15s;cursor:pointer}
 .import-dropzone:hover,.import-dropzone.drag-over{border-color:var(--accent);background:var(--accent-soft)}
 .import-dropzone-icon{font-family:'JetBrains Mono',monospace;font-size:2.5rem;color:var(--text-3);margin-bottom:.5rem}
-.import-dropzone h3{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:400;margin-bottom:.5rem;color:var(--text)}
+.import-dropzone h3{font-family:var(--font-display);font-size:1.5rem;font-weight:400;margin-bottom:.5rem;color:var(--text)}
 .import-dropzone p{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-3);line-height:1.55;margin-bottom:.75rem}
 .import-dropzone .file-types{font-size:.625rem;letter-spacing:.125rem;text-transform:uppercase;color:var(--text-4)}
 .import-mapping{display:grid;grid-template-columns:1fr 1fr;gap:.75rem 1rem;margin:1rem 0}
@@ -173,8 +181,8 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 
 /* FRONT DOOR / HOME — the signed-out first impression (compact hero over a live tool) */
 .home-hero{max-width:48rem;padding:1.5rem 0 2.5rem}
-.home-title{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2.25rem,5.2vw,4rem);line-height:1.03;letter-spacing:-.03em;margin:.65rem 0 1.25rem}
-.home-title em{font-style:italic;color:var(--accent)}
+.home-title{font-family:var(--font-display);font-weight:800;font-size:clamp(2.25rem,5.2vw,4rem);line-height:1.03;letter-spacing:-.03em;margin:.65rem 0 1.25rem}
+.home-title em{font-style:normal;background:linear-gradient(120deg,#ff8a4c,#ff5a1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .home-sub{font-size:clamp(1rem,1.55vw,1.1875rem);color:var(--text-2);line-height:1.62;max-width:40rem;margin-bottom:1.85rem}
 .home-cta{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-bottom:1.05rem}
 .btn-lg{padding:.875rem 1.5rem;font-size:.8125rem;border-radius:.625rem}
@@ -192,11 +200,39 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .home-proof{font-size:.875rem;color:var(--text-2);line-height:1.55;max-width:38rem;margin:.5rem 0 0}
 .home-proof strong{color:var(--text);font-weight:600}
 .home-close{border-top:1px solid var(--border);margin-top:2rem;padding-top:1.75rem;max-width:40rem}
-.home-close-q{font-family:'Fraunces',serif;font-size:clamp(1.25rem,2.4vw,1.6rem);font-weight:500;letter-spacing:-.02em;color:var(--text);margin-bottom:1rem}
+.home-close-q{font-family:var(--font-display);font-size:clamp(1.25rem,2.4vw,1.6rem);font-weight:500;letter-spacing:-.02em;color:var(--text);margin-bottom:1rem}
 .home-close-pts{list-style:none;padding:0;margin:0 0 1.25rem;display:grid;gap:.5rem}
 .home-close-pts li{position:relative;padding-left:1.4rem;font-size:.9375rem;color:var(--text-2);line-height:1.5}
 .home-close-pts li::before{content:'';position:absolute;left:0;top:.55rem;width:7px;height:7px;border-radius:999px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
 .home-close-foot{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);letter-spacing:.03em;margin-top:.85rem}
+/* Gradient-accent headline word (anthoneyq signature, accent-swapped to orange) */
+.grad-accent{background:linear-gradient(120deg,#ff8a4c,#ff5a1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+/* ARCHETYPE LAB — the interactive demo centerpiece */
+.arch-lab{margin:2.25rem 0;padding:1.75rem;border-radius:1.25rem;background:var(--bg-card);border:1px solid var(--border);backdrop-filter:blur(20px) saturate(140%);box-shadow:var(--shadow-card);position:relative;overflow:hidden}
+.arch-lab::before{content:'';position:absolute;inset:0;background:radial-gradient(120% 80% at 80% -10%,rgba(255,107,53,.10),transparent 55%);pointer-events:none}
+.arch-head{position:relative;max-width:44rem;margin-bottom:1.25rem}
+.arch-title{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em;font-size:clamp(1.6rem,3.4vw,2.5rem);line-height:1.05;margin:.4rem 0 .6rem}
+.arch-sub{font-size:.9375rem;color:var(--text-2);line-height:1.55;max-width:40rem}
+.arch-sub em{color:#fbbf24;font-style:normal;font-weight:600}
+.arch-tabs{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem;position:relative}
+.arch-tab{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.04em;text-transform:uppercase;padding:.5rem .85rem;border-radius:999px;border:1px solid var(--border-s);background:var(--bg-el);color:var(--text-3);cursor:pointer;text-shadow:0 1px 1px rgba(0,0,0,.3);transition:all .18s var(--ease)}
+.arch-tab:hover{color:var(--text-2);border-color:var(--border-h)}
+.arch-tab.active{background:linear-gradient(135deg,#ff7e4d,#ff5a1f);color:#fff;border-color:transparent;box-shadow:var(--glow-accent)}
+.arch-body{display:grid;grid-template-columns:1.35fr .9fr;gap:1.5rem;align-items:start;position:relative}
+.arch-chart{background:#070809;border:1px solid var(--border-s);border-radius:.875rem;padding:1rem .75rem .5rem}
+.arch-readout{display:flex;flex-wrap:wrap;gap:.5rem .9rem;margin-top:.5rem;padding:0 .25rem}
+.arch-pill{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-2);line-height:1.4}
+.arch-pill strong{color:var(--text)}
+.arch-pill-wi{color:#fbbf24}.arch-pill-wi strong{color:#fbbf24}
+.arch-dot{width:8px;height:8px;border-radius:999px;flex-shrink:0}
+.arch-side{align-self:stretch}
+.arch-name{font-family:var(--font-display);font-weight:800;font-size:1.5rem;letter-spacing:-.01em;line-height:1.1}
+.arch-tagline{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:.2rem 0 .85rem}
+.arch-blurb{font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem}
+.arch-prs{display:grid;gap:.4rem}
+.arch-pr{display:flex;justify-content:space-between;align-items:center;padding:.5rem .75rem;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.5rem;font-family:var(--font-mono);font-size:.8125rem}
+.arch-pr span{color:var(--text-3)}.arch-pr strong{color:var(--text);font-weight:600}
+@media(max-width:760px){.arch-body{grid-template-columns:1fr}.arch-lab{padding:1.25rem}}
 @media(max-width:640px){.home-cta{flex-direction:column;align-items:stretch}.home-cta .btn-lg{width:100%}.btn-text{align-self:center}.home-close .btn-lg{width:100%}}
 
 /* AUTH MODAL — readable centered sign-in (form lives here; sidebar is status only) */
@@ -234,7 +270,7 @@ body.workspace-locked .top-signin{display:block}
 .screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
 .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
 .eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent);margin-right:.5rem;vertical-align:middle;transform:translateY(-1px)}
-.screen-title{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
+.screen-title{font-family:var(--font-display);font-weight:700};font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
 .screen-title em{font-style:italic;color:var(--text);font-weight:400}
 .btn-row{display:flex;gap:.75rem;flex-wrap:wrap}
 
@@ -260,7 +296,7 @@ body.workspace-locked .top-signin{display:block}
 .hero-primary{padding:2.25rem;background:linear-gradient(135deg,rgba(255,255,255,.02) 0%,transparent 60%);border-right:1px solid var(--border)}
 .hero-stat{padding:1.75rem 1.5rem;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center}
 .hero-stat:last-child{border-right:none}
-.hero-name{font-family:'Fraunces',serif;font-size:clamp(1.75rem,3vw,2.625rem);font-weight:400;letter-spacing:-.09375rem;line-height:1;margin-bottom:.5rem}
+.hero-name{font-family:var(--font-display);font-size:clamp(1.75rem,3vw,2.625rem);font-weight:400;letter-spacing:-.09375rem;line-height:1;margin-bottom:.5rem}
 .hero-meta{font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--dim);margin-bottom:1.5rem}
 .tag-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem}
 .tag{background:var(--bg-el);border:1px solid var(--border);padding:.375rem .75rem;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-2)}
@@ -278,7 +314,7 @@ body.workspace-locked .top-signin{display:block}
 .ring-bg{fill:none;stroke:var(--bg-el);stroke-width:8}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-dasharray:188.5;stroke-dashoffset:calc(188.5 - 188.5 * var(--pct,0) / 100);transition:stroke-dashoffset .8s ease}
 .ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring-num{font-family:'Fraunces',serif;font-size:1.625rem;font-weight:400;letter-spacing:-.0625rem;line-height:1}
+.ring-num{font-family:var(--font-display);font-size:1.625rem;font-weight:400;letter-spacing:-.0625rem;line-height:1}
 .ring-den{font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--faint);margin-top:.125rem}
 .ring-lbl{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.0625rem;color:var(--dim);text-transform:uppercase}
 
@@ -301,7 +337,7 @@ body.workspace-locked .top-signin{display:block}
 /* MODEL ROWS */
 .model-row{display:grid;grid-template-columns:1fr 6.25rem 5rem;align-items:center;padding:.875rem 0;border-bottom:1px solid var(--border);gap:.75rem}
 .model-row:last-child{border-bottom:none}
-.model-name{font-family:'Fraunces',serif;font-size:1rem}
+.model-name{font-family:var(--font-display);font-size:1rem}
 .model-desc{font-size:.6875rem;color:var(--dim);font-family:'JetBrains Mono',monospace;margin-top:.125rem}
 .wt-bar{height:.25rem;background:var(--bg-el);border-radius:.125rem;overflow:hidden}
 .wt-fill{height:100%;background:var(--text)}
@@ -320,7 +356,7 @@ body.workspace-locked .top-signin{display:block}
 /* PACE ROWS */
 .pace-row{display:grid;grid-template-columns:12.5rem 1fr 8.75rem 7.5rem;gap:1.25rem;padding:1.125rem 0;align-items:center;border-bottom:1px solid var(--border)}
 .pace-row:last-child{border-bottom:none}
-.pz-name{font-family:'Fraunces',serif;font-size:1.1875rem;font-weight:400;margin-bottom:.125rem}
+.pz-name{font-family:var(--font-display);font-size:1.1875rem;font-weight:400;margin-bottom:.125rem}
 .pz-tag{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.0625rem;color:var(--text-3);text-transform:uppercase}
 .p-desc{font-size:.8125rem;color:var(--dim);line-height:1.5}
 .p-tgt{font-family:'JetBrains Mono',monospace;font-size:1.375rem;font-weight:500;color:var(--text);text-align:right}
@@ -364,7 +400,7 @@ body.workspace-locked .top-signin{display:block}
 fieldset{border:none;margin:0;padding:0}
 .fs-eye{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.25rem;margin-top:1.5rem;display:block}
 .fs-eye:first-of-type{margin-top:0}
-legend{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:400;margin-bottom:1.25rem;float:left;width:100%}
+legend{font-family:var(--font-display);font-size:1.5rem;font-weight:400;margin-bottom:1.25rem;float:left;width:100%}
 .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;clear:both}
 .form-group{display:flex;flex-direction:column}
 label{font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;margin-bottom:.375rem}
@@ -383,7 +419,7 @@ input.err,select.err{border-color:var(--red)}
 /* EMPTY STATE */
 .empty-state{background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:3.75rem 2.5rem;text-align:center;margin-top:1.25rem}
 .empty-icon{font-size:3rem;margin-bottom:1rem;color:var(--text-3)}
-.empty-title{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.75rem}
+.empty-title{font-family:var(--font-display);font-size:1.75rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.75rem}
 .empty-sub{font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--dim);margin-bottom:1.5rem;line-height:1.6}
 
 /* TOAST */
@@ -1673,7 +1709,7 @@ function workoutCard(w){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem">
         <div>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase">${esc(date)}${sourceBadge}</p>
-          <p style="font-family:'Fraunces',serif;font-size:1.125rem;margin-top:.125rem">${esc(typeLabel)}${rpeBadge}</p>
+          <p style="font-family:var(--font-display);font-size:1.125rem;margin-top:.125rem">${esc(typeLabel)}${rpeBadge}</p>
         </div>
         <div style="display:flex;gap:.375rem">
           <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem" onclick="openWorkoutForm('${esc(w.id)}')">Edit</button>
@@ -3011,7 +3047,7 @@ function toolCard(label, desc, route, arrow){
   return `
     <button onclick="goTo('${route}',null)" style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1.25rem;text-align:left;cursor:pointer;transition:all .15s;width:100%;display:flex;flex-direction:column;gap:.5rem" onmouseover="this.style.borderColor='var(--border-h)';this.style.background='var(--bg-raised)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-el)'">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <p style="font-family:'Fraunces',serif;font-size:1.0625rem;font-weight:400;color:var(--text);margin:0">${esc(label)}</p>
+        <p style="font-family:var(--font-display);font-size:1.0625rem;font-weight:400;color:var(--text);margin:0">${esc(label)}</p>
         <span style="font-family:'JetBrains Mono',monospace;color:var(--text-3);font-size:1rem">${arrow}</span>
       </div>
       <p style="font-size:.8125rem;color:var(--text-3);line-height:1.5;margin:0">${esc(desc)}</p>
@@ -3048,7 +3084,7 @@ function renderProfile(){
           <p class="card-title"><span>Classification</span><span class="card-accent">PRIMARY: ${esc(A.primaryEvent)}</span></p>
           <div style="text-align:center;padding:1.25rem 0">
             <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.125rem;color:var(--accent);margin-bottom:.75rem">ATHLETE TYPE</p>
-            <p style="font-family:'Fraunces',serif;font-size:2.25rem;font-weight:300;letter-spacing:-.0625rem;line-height:1.2">${esc(getType(A.primaryEvent))}</p>
+            <p style="font-family:var(--font-display);font-size:2.25rem;font-weight:700;letter-spacing:-.0625rem;line-height:1.2">${esc(getType(A.primaryEvent))}</p>
           </div>
         </div>
         <div class="card">
@@ -4023,7 +4059,7 @@ function renderPaces(){
     <!-- THE PRESCRIPTION — HERO -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
-      <p style="font-family:'Fraunces',serif;font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:300;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
+      <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
         <span id="build-rep">800m</span>
         <span style="color:var(--text-3);font-style:italic">in</span>
         <span id="build-time">—</span>
@@ -4206,7 +4242,7 @@ function buildLadderRows(){
     <tr data-pct="${pct}" data-allowed="${allowed ? '1' : '0'}" style="transition:background .2s">
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle">
         <div style="font-family:'JetBrains Mono',monospace;font-size:.875rem;font-weight:600;color:var(--text)">${allowed ? pct + '%' : '—'}</div>
-        <div style="font-family:'Fraunces',serif;font-size:.9375rem;color:var(--text-2);margin-top:.125rem">${esc(z.label)}</div>
+        <div style="font-family:var(--font-display);font-size:.9375rem;color:var(--text-2);margin-top:.125rem">${esc(z.label)}</div>
       </td>
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-size:.8125rem;color:var(--text-3);line-height:1.5;vertical-align:middle;max-width:18rem">${esc(z.desc)}</td>
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;text-align:right;vertical-align:middle">
@@ -4284,7 +4320,7 @@ function buildDanielsTable(){
     return `
       <tr style="border-bottom:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--bg-el)'" onmouseout="this.style.background=''">
         <td style="padding:.875rem .75rem;position:sticky;left:0;background:var(--bg-card);vertical-align:middle">
-          <div style="font-family:'Fraunces',serif;font-size:1rem;color:${zoneColor};line-height:1.2">${esc(z.label)}</div>
+          <div style="font-family:var(--font-display);font-size:1rem;color:${zoneColor};line-height:1.2">${esc(z.label)}</div>
           <div style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.125rem">${subLabel}</div>
           ${z.allowed ? '' : `<div style="font-family:'JetBrains Mono',monospace;font-size:.5625rem;color:var(--yellow);margin-top:.25rem;line-height:1.35">BLOCKED FOR SPRINT ANCHOR</div>`}
         </td>
@@ -4341,7 +4377,7 @@ function renderFreeTierCalculator(){
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:14rem">
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem">Free Calculator</p>
-        <p style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:500;letter-spacing:-.0625rem;line-height:1.2">One race time → every training pace and zone.</p>
+        <p style="font-family:var(--font-display);font-size:1.5rem;font-weight:500;letter-spacing:-.0625rem;line-height:1.2">One race time → every training pace and zone.</p>
         ${signedIn ? '' : `<p style="font-size:.875rem;color:var(--text-2);line-height:1.5;margin-top:.5rem;max-width:30rem">Free, no signup. Create a free account to save athletes, sync everywhere, and unlock race forecasts for every event.</p>`}
       </div>
         <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
@@ -4374,7 +4410,7 @@ function renderFreeTierCalculator(){
     <!-- THE PRESCRIPTION — HERO -->
     <div id="ft-result" style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem;display:none">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
-      <p style="font-family:'Fraunces',serif;font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:300;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
+      <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
         <span id="ft-rep">800m</span>
         <span style="color:var(--text-3);font-style:italic">in</span>
         <span id="ft-time">—</span>
@@ -5214,7 +5250,7 @@ function buildPredictiveRaceTable(){
     </div>` : '';
 
   return `
-    <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
+    <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-bottom:1rem">Forecast times across every standard distance with source-excluded planning ranges based on the best available PR.</p>
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.5rem .75rem;margin-bottom:.75rem;display:inline-flex;align-items:center;gap:.5rem;flex-wrap:wrap">
       <span style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem">Source</span>
@@ -5281,7 +5317,7 @@ function renderImport(){
     el.innerHTML = `
       <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
-        <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Bulk roster import</h2>
+        <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Bulk roster import</h2>
         <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:32rem;margin:0 auto 1.5rem">Drag a CSV or XLSX file (Google Sheets export, Excel, etc.) and bring your whole roster in with column mapping and validation. Upgrade to unlock.</p>
         <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
       </div>`;
@@ -5623,7 +5659,7 @@ function squadAnalyticsLocked(n){
   return `
     <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
-      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Team IQ</h2>
+      <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Team IQ</h2>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole roster — no other calculator reads your roster at once.</p>
       <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
     </div>`;
@@ -5636,7 +5672,7 @@ function renderSquadAnalytics(stats){
   const miAvg = stats.mileage.avg != null ? Math.round(stats.mileage.avg) : '—';
   const flagsHtml = stats.flags.length ? stats.flags.map(f => `
     <div style="border:1px solid var(--border-s);border-left:3px solid ${sevColor(f.sev)};border-radius:.5rem;padding:1rem 1.125rem;margin-bottom:.75rem;background:#050505">
-      <p style="font-family:'Fraunces',serif;font-size:1.0625rem;font-weight:500;margin-bottom:.25rem">${esc(f.title)}</p>
+      <p style="font-family:var(--font-display);font-size:1.0625rem;font-weight:500;margin-bottom:.25rem">${esc(f.title)}</p>
       <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6">${f.detail}</p>
       ${f.who && f.who.length ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${f.who.map(esc).join(' · ')}</p>` : ''}
     </div>`).join('')
@@ -5645,7 +5681,7 @@ function renderSquadAnalytics(stats){
   return `
     <div class="card" style="padding:1.5rem 1.5rem 1.75rem;text-align:left">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.375rem">Team IQ</p>
-      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.25rem">What your roster is telling you</h2>
+      <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.25rem">What your roster is telling you</h2>
       <p style="font-size:.8125rem;color:var(--text-3);margin-bottom:1.25rem">Across ${stats.n} athlete${stats.n===1?'':'s'} — no other calculator reads your whole roster at once.</p>
       <div class="hero-stats" style="margin-bottom:1.25rem">
         ${tile('Athletes', stats.n, `${stats.sex.M||0}M · ${stats.sex.F||0}F`)}
@@ -5743,6 +5779,115 @@ function parseSquadPaste(text){
 // Compact hero + CTA ladder sitting directly above a LIVE free experience: a
 // demo Team IQ read + a 60-second "paste your own roster" box. A cold
 // coach sees genuine value before any ask. CTA adapts for signed-in coaches.
+// ══════════════════════════════════════════════════════════════════════
+// ARCHETYPE LAB — the interactive demo centerpiece (free-site wow + signup hook).
+// 6 made-up athletes across the event spectrum, each with real multi-event PRs.
+// Coaches click an archetype and SEE the engine forecast a curve across all
+// distances — including a "what-if" event the athlete never races (sprinter→800,
+// marathoner→10K). Numbers are uneditable: this is a taste, not the tool.
+// ══════════════════════════════════════════════════════════════════════
+const ARCHETYPES = [
+  { key:'sprint',  name:'Marcus T.',  tag:'Pure Sprinter',     sex:'M',
+    prs:{ '100m':'10.62', '200m':'21.40', '400m':'48.9' }, anchor:'200m', whatIf:'800m',
+    blurb:'Explosive speed, no aerobic base. The engine converts his sprint times into 800m potential — and flags lower confidence because it is reaching outside his range. That honesty is the point: it shows you a move to test, not a promise.' },
+  { key:'half',    name:'Devin R.',   tag:'400 / 800 Hybrid',  sex:'M',
+    prs:{ '400m':'49.4', '800m':'1:52.3' }, anchor:'800m', whatIf:'1600m',
+    blurb:'Speed-endurance type. The engine reads his short-to-mid curve and projects a credible mile he has never raced.' },
+  { key:'mile',    name:'Hannah K.',  tag:'Miler',             sex:'F',
+    prs:{ '800m':'2:13.5', '1600m':'4:54.0', '3200m':'10:48.0' }, anchor:'1600m', whatIf:'5K',
+    blurb:'Three logged events lock her aerobic curve. The 5K projection rides the same line — no single-formula guesswork.' },
+  { key:'xc',      name:'Eli W.',     tag:'XC / 5K',           sex:'M',
+    prs:{ '1600m':'4:19.0', '3200m':'9:21.0', '5K':'15:12' }, anchor:'5K', whatIf:'10K',
+    blurb:'Distance engine. From three marks the curve forecasts a 10K he can chase next season.' },
+  { key:'tenk',    name:'Sofia M.',   tag:'10K Specialist',    sex:'F',
+    prs:{ '5K':'16:38', '10K':'34:31' }, anchor:'10K', whatIf:'Half Marathon',
+    blurb:'Pure aerobic. The half-marathon projection is volume-aware — the engine knows long-range fatigue, not just a fixed exponent.' },
+  { key:'mar',     name:'James O.',   tag:'Marathoner',        sex:'M',
+    prs:{ '10K':'30:12', 'Half Marathon':'1:05:10', 'Marathon':'2:18:30' }, anchor:'Half Marathon', whatIf:'5K',
+    blurb:'Built for distance. Ask for the 5K he never races and the engine reasons down from his whole long-range curve — a credible target a marathon-only log would never surface.' },
+];
+let _archActive = 0;
+
+// Self-contained forecast curve for one archetype. Three colors:
+//   green = real PRs · orange = STRIDE forecast curve · yellow = the "what-if" event.
+function archetypeCurveSVG(a){
+  const DISTMAP = { '100m':100,'200m':200,'400m':400,'800m':800,'1500m':1500,'1600m':1600,'Mile':1609.34,'3000m':3000,'3200m':3200,'5K':5000,'8K':8000,'10K':10000,'Half Marathon':21097.5,'Marathon':42195 };
+  const prList = Object.keys(a.prs).map(k => ({ event:k, distM:DISTMAP[k], sec:parseTime(a.prs[k]) })).filter(p => p.distM && p.sec).sort((x,y)=>x.distM-y.distM);
+  const anc = prList.find(p => p.event === a.anchor) || prList[Math.floor(prList.length/2)];
+  const targetD = DISTMAP[a.whatIf];
+  const fc = strideEnsemble(anc.distM, anc.sec, targetD, 1.0, {});
+  const targetSec = fc.predSec, targetConf = Math.round(fc.confidence != null ? fc.confidence : 0);
+
+  const W=520, H=300, padL=58, padR=20, padT=22, padB=46;
+  const cW=W-padL-padR, cH=H-padT-padB;
+  const curveMax = Math.max(targetD, ...prList.map(p=>p.distM));
+  const curveMin = Math.min(targetD, ...prList.map(p=>p.distM));
+  const xMin=Math.log10(curveMin*0.85), xMax=Math.log10(curveMax*1.15);
+  const xS = d => padL + ((Math.log10(d)-xMin)/(xMax-xMin))*cW;
+
+  const curve=[];
+  for(let d=curveMin*0.9; d<=curveMax*1.12; d*=1.06){ const s=strideEnsemble(anc.distM,anc.sec,d,1.0,{}).predSec; curve.push({d, spm:s/d}); }
+  const spmAll=[...curve.map(p=>p.spm), ...prList.map(p=>p.sec/p.distM), targetSec/targetD];
+  const yMin=Math.min(...spmAll)*0.94, yMax=Math.max(...spmAll)*1.06;
+  const yS = s => padT + ((s-yMin)/(yMax-yMin))*cH;
+
+  const path = curve.map((p,i)=>(i?'L':'M')+xS(p.d).toFixed(1)+','+yS(p.spm).toFixed(1)).join(' ');
+  const area = path+` L${xS(curve[curve.length-1].d).toFixed(1)},${(padT+cH).toFixed(1)} L${xS(curve[0].d).toFixed(1)},${(padT+cH).toFixed(1)} Z`;
+  const xticks=[100,200,400,800,1600,3200,5000,10000,21097,42195].filter(d=>d>=curveMin*0.85&&d<=curveMax*1.15);
+  const xlab={100:'100',200:'200',400:'400',800:'800',1600:'16',3200:'32',5000:'5K',10000:'10K',21097:'HM',42195:'Mar'};
+  const fmtPaceMi = spm => { const t=spm*1609.34; const m=Math.floor(t/60), s=Math.round(t-m*60); return (s===60?(m+1)+':00':m+':'+(s<10?'0':'')+s); };
+  const dots = prList.map(p=>`<circle cx="${xS(p.distM).toFixed(1)}" cy="${yS(p.sec/p.distM).toFixed(1)}" r="5" fill="#4ade80" stroke="#0B0D0F" stroke-width="2"><title>${esc(p.event)} — ${esc(fmtT(p.sec))} (real PR)</title></circle>`).join('');
+  const tx=xS(targetD), ty=yS(targetSec/targetD);
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Forecast curve for ${esc(a.name)}">
+    <defs>
+      <linearGradient id="archFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,107,53,.28)"/><stop offset="1" stop-color="rgba(255,107,53,0)"/></linearGradient>
+      <linearGradient id="archLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff8a4c"/><stop offset="1" stop-color="#ff5a1f"/></linearGradient>
+    </defs>
+    ${[0,1,2,3,4].map(i=>{const y=padT+cH*i/4; const v=yMin+(yMax-yMin)*i/4; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.05)"/><text x="${padL-8}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="#6B7178" font-family="'JetBrains Mono',monospace" font-size="9">${fmtPaceMi(v)}</text>`;}).join('')}
+    ${xticks.map(d=>`<text x="${xS(d).toFixed(1)}" y="${H-padB+18}" text-anchor="middle" fill="#6B7178" font-family="'JetBrains Mono',monospace" font-size="9">${xlab[d]||''}</text>`).join('')}
+    <path d="${area}" fill="url(#archFill)"/>
+    <path d="${path}" fill="none" stroke="url(#archLine)" stroke-width="2.5" stroke-linecap="round"/>
+    ${dots}
+    <line x1="${tx.toFixed(1)}" y1="${padT}" x2="${tx.toFixed(1)}" y2="${(padT+cH).toFixed(1)}" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3" opacity=".5"/>
+    <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6.5" fill="#fbbf24" stroke="#0B0D0F" stroke-width="2"><title>${esc(a.whatIf)} — projected ${esc(fmtT(targetSec))} (${targetConf}% confidence)</title></circle>
+    <text x="${Math.min(tx, W-padR-4).toFixed(1)}" y="${Math.max(ty-12,14).toFixed(1)}" text-anchor="middle" fill="#fbbf24" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600">${esc(a.whatIf)} ${esc(fmtT(targetSec))}</text>
+  </svg>
+  <div class="arch-readout">
+    <div class="arch-pill arch-pill-real"><span class="arch-dot" style="background:#4ade80"></span>${prList.length} real PRs</div>
+    <div class="arch-pill arch-pill-fc"><span class="arch-dot" style="background:#ff6b35"></span>STRIDE forecast</div>
+    <div class="arch-pill arch-pill-wi"><span class="arch-dot" style="background:#fbbf24"></span>${esc(a.whatIf)} potential (never raced) → <strong>${esc(fmtT(targetSec))}</strong> · ${targetConf}% conf</div>
+  </div>`;
+}
+
+function renderArchetypeLab(){
+  const a = ARCHETYPES[_archActive];
+  const tabs = ARCHETYPES.map((x,i)=>`<button class="arch-tab ${i===_archActive?'active':''}" onclick="selectArchetype(${i})">${esc(x.tag)}</button>`).join('');
+  return `
+    <div class="arch-lab glass">
+      <div class="arch-head">
+        <p class="eyebrow">Live engine · sample athletes</p>
+        <h2 class="arch-title">See the <span class="grad-accent">whole athlete</span>, not one race.</h2>
+        <p class="arch-sub">Click an athlete. STRIDE reads their real marks (green) and forecasts a full performance curve (orange) — including the equivalent potential for an event they've <em>never raced</em> (yellow), with an honest confidence read. The cross-event picture no single-formula calculator gives you.</p>
+      </div>
+      <div class="arch-tabs">${tabs}</div>
+      <div class="arch-body">
+        <div class="arch-chart" id="arch-chart">${archetypeCurveSVG(a)}</div>
+        <div class="arch-side">
+          <p class="arch-name">${esc(a.name)}</p>
+          <p class="arch-tagline">${esc(a.tag)} · ${a.sex==='F'?'F':'M'}</p>
+          <p class="arch-blurb">${esc(a.blurb)}</p>
+          <div class="arch-prs">${Object.keys(a.prs).map(k=>`<div class="arch-pr"><span>${esc(k)}</span><strong>${esc(a.prs[k])}</strong></div>`).join('')}</div>
+        </div>
+      </div>
+    </div>`;
+}
+function selectArchetype(i){
+  _archActive = i;
+  const el = document.getElementById('home-arch');
+  if(el) el.innerHTML = renderArchetypeLab();
+}
+
 function renderHome(){
   const el = document.getElementById('home-body');
   if(!el) return;
@@ -5776,6 +5921,8 @@ function renderHome(){
       ${trust}
       ${proof}
     </div>
+
+    <div id="home-arch">${renderArchetypeLab()}</div>
 
     <div class="home-squad" id="home-squad">
       <header class="screen-header" style="margin-bottom:1.25rem">
@@ -5832,7 +5979,7 @@ function renderImportDone(){
   el.innerHTML = `
     <div class="card" style="text-align:center;padding:1.75rem 1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--green);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Import complete</p>
-      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.5rem">Added ${importState.importedCount} athlete${importState.importedCount===1?'':'s'}</h2>
+      <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.5rem">Added ${importState.importedCount} athlete${importState.importedCount===1?'':'s'}</h2>
       ${importState.failedRows.length > 0 ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--yellow);margin-bottom:1rem">${importState.failedRows.length} row${importState.failedRows.length===1?'':'s'} skipped (missing name or invalid data)</p>` : ''}
       <div class="btn-row" style="justify-content:center;margin-top:1rem">
         <button class="btn" onclick="resetImport()">Import another file</button>
@@ -5996,7 +6143,7 @@ async function applyImport(){
 // table would normally be.
 function predictiveRaceTableLocked(){
   return `
-    <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
+    <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;letter-spacing:-.03125rem;margin:2rem 0 .5rem">Predictive <em>Race Times</em></h2>
     <div style="background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:.5rem;padding:1.5rem;text-align:center">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Race forecasts across every standard distance with planning ranges. Powered by the STRIDE proprietary ensemble.</p>
@@ -6175,21 +6322,21 @@ function buildScenarios(sec, tAge){
         </thead>
         <tbody>
           <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:.875rem .75rem;font-family:'Fraunces',serif;font-size:1rem">Conservative</td>
+            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem">Conservative</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--dim)">${bands.c}%</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem">${esc(fmtT(month3(bands.c)))}</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem">${esc(fmtT(month6(bands.c)))}</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem">${esc(fmtT(year1(bands.c)))}</td>
           </tr>
           <tr style="border-bottom:1px solid var(--border);background:var(--accent-soft)">
-            <td style="padding:.875rem .75rem;font-family:'Fraunces',serif;font-size:1rem;color:var(--accent)">Realistic</td>
+            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem;color:var(--accent)">Realistic</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--accent)">${bands.r}%</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--accent)">${esc(fmtT(month3(bands.r)))}</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--accent)">${esc(fmtT(month6(bands.r)))}</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--accent)">${esc(fmtT(year1(bands.r)))}</td>
           </tr>
           <tr>
-            <td style="padding:.875rem .75rem;font-family:'Fraunces',serif;font-size:1rem">Aggressive</td>
+            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem">Aggressive</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--dim)">${bands.a}%</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem">${esc(fmtT(month3(bands.a)))}</td>
             <td style="padding:.875rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.875rem">${esc(fmtT(month6(bands.a)))}</td>
@@ -6213,7 +6360,7 @@ function renderMethodology(){
 
   const cite = (authors, year, title, journal, finding) => `
     <li style="padding:1rem 0;border-bottom:1px solid var(--border)">
-      <p style="font-family:'Fraunces',serif;font-size:1rem;line-height:1.5;margin-bottom:.375rem">${esc(title)}</p>
+      <p style="font-family:var(--font-display);font-size:1rem;line-height:1.5;margin-bottom:.375rem">${esc(title)}</p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.5rem">${esc(authors)} · ${esc(year)} · ${esc(journal)}</p>
       <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6">${esc(finding)}</p>
     </li>`;
@@ -6232,7 +6379,7 @@ function renderMethodology(){
 
       <ul style="list-style:none;padding:0">
         <li style="padding:1rem 0;border-bottom:1px solid var(--border)">
-          <p style="font-family:'Fraunces',serif;font-size:1rem;line-height:1.5;margin-bottom:.375rem">UIL Texas State Meet Results (2023–2025)</p>
+          <p style="font-family:var(--font-display);font-size:1rem;line-height:1.5;margin-bottom:.375rem">UIL Texas State Meet Results (2023–2025)</p>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.5rem">University Interscholastic League · Public Records · n = 1,299 results, 647 unique athletes</p>
           <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-bottom:.625rem">
             Aggregate dataset of validated Texas high school state-meet results compiled from official UIL timing systems (uil.tfresult.com), MyChipTime (XC), and uiltexas.org. Used as an empirical validation set for STRIDE Ensemble predictions across the 800m–3200m distance band. Coverage: 2025 Track (n=632, fully verified), 2024 Track + XC (n=617, mixed verification), 2023 XC (n=50, fully verified).
@@ -6245,7 +6392,7 @@ function renderMethodology(){
           </p>
         </li>
         <li style="padding:1rem 0;border-bottom:1px solid var(--border)">
-          <p style="font-family:'Fraunces',serif;font-size:1rem;line-height:1.5;margin-bottom:.375rem">NCAA Division I Track & Field (2024)</p>
+          <p style="font-family:var(--font-display);font-size:1rem;line-height:1.5;margin-bottom:.375rem">NCAA Division I Track & Field (2024)</p>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.5rem">TFRRS / NCAA · Public Records · n = 284 results, ~250 unique athletes</p>
           <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-bottom:.625rem">
             NCAA Division I outdoor and indoor championship qualifiers (2024). Used as a peak-performance reference and development benchmark for post-HS college athletes. Coverage: 100m through 10,000m + 6K/10K XC. Provides performance distribution for ages 18–22 (Freshman through Senior).
@@ -6255,7 +6402,7 @@ function renderMethodology(){
           </p>
         </li>
         <li style="padding:1rem 0">
-          <p style="font-family:'Fraunces',serif;font-size:1rem;line-height:1.5;margin-bottom:.375rem">WMA / USATF Masters (2024)</p>
+          <p style="font-family:var(--font-display);font-size:1rem;line-height:1.5;margin-bottom:.375rem">WMA / USATF Masters (2024)</p>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.0625rem;margin-bottom:.5rem">World Masters Athletics + USATF Masters · Public Records · n = 234 results, ~230 unique athletes</p>
           <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-bottom:.625rem">
             Masters (age 35+) athletes competing in World Masters Athletics and USATF Masters championships (2024). Used as a performance decline reference and aging-curve validation. Coverage: 100m through Half Marathon. Includes 5-year age groups (M35–M95, W35–W90).
@@ -6490,7 +6637,7 @@ function athleteCard(a){
   return `
     <div style="background:${isActive?'var(--accent-soft)':'var(--bg-el)'};border:1px solid ${isActive?'var(--accent)':'var(--border)'};border-radius:.5rem;padding:1.25rem;position:relative">
       ${isActive ? '<div style="position:absolute;top:.5rem;right:.5rem;font-family:\'JetBrains Mono\',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.0625rem">● ACTIVE</div>' : ''}
-      <p style="font-family:'Fraunces',serif;font-size:1.375rem;font-weight:400;letter-spacing:-.0625rem;margin-bottom:.25rem;padding-right:4rem">${esc(a.name)} ${inviteBadge}</p>
+      <p style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:-.0625rem;margin-bottom:.25rem;padding-right:4rem">${esc(a.name)} ${inviteBadge}</p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin-bottom:.875rem">${esc(a.age||'?')}${esc(a.sex||'')} · ${esc(a.primaryEvent)} · ${(a.trainingAge||0).toFixed(1)}yr</p>
 
       <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-bottom:.625rem">
@@ -6584,7 +6731,7 @@ function renderMultiEvent(){
   // Build the table
   const tableRows = comparisons.map(c => `
     <tr>
-      <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:'Fraunces',serif;font-size:1rem">${esc(c.event)}</td>
+      <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-display);font-size:1rem">${esc(c.event)}</td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.875rem;text-align:right">${esc(fmtT(c.actual))}</td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.875rem;text-align:right;color:var(--dim)">${esc(fmtT(c.predicted))}</td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.875rem;text-align:right;color:${c.diffPct>0?'var(--green)':c.diffPct<0?'var(--red)':'var(--text)'}">${c.diffPct>0?'+':''}${c.diffSec.toFixed(1)}s<br><span style="font-size:.6875rem">(${c.diffPct>0?'+':''}${c.diffPct.toFixed(1)}%)</span></td>
@@ -6981,7 +7128,7 @@ function buildEventFit(athlete){
     const cls = classifyStrength(p.diffPct);
     return `
       <tr>
-        <td style="padding:.5rem .75rem;border-bottom:1px solid var(--border);font-family:'Fraunces',serif;font-size:.9375rem">${esc(p.event)}</td>
+        <td style="padding:.5rem .75rem;border-bottom:1px solid var(--border);font-family:var(--font-display);font-size:.9375rem">${esc(p.event)}</td>
         <td style="padding:.5rem .75rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.8125rem;text-align:right">${esc(fmtT(p.actual))}</td>
         <td style="padding:.5rem .75rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.8125rem;text-align:right;color:${p.diffPct>0?'var(--green)':p.diffPct<0?'var(--red)':'var(--text-2)'}">${p.diffPct>0?'+':''}${p.diffPct.toFixed(1)}%</td>
         <td style="padding:.5rem .75rem;border-bottom:1px solid var(--border)">
@@ -7005,11 +7152,11 @@ function buildEventFit(athlete){
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
           <div>
             <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:${color};text-transform:uppercase;margin-bottom:.375rem">Event Fit Review</p>
-            <p style="font-family:'Fraunces',serif;font-size:1.5rem;font-weight:400;letter-spacing:-.03125rem">${esc(verdict)}</p>
+            <p style="font-family:var(--font-display);font-size:1.5rem;font-weight:400;letter-spacing:-.03125rem">${esc(verdict)}</p>
           </div>
           <div style="text-align:right">
             <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.25rem">Strongest Distance</p>
-            <p style="font-family:'Fraunces',serif;font-size:1.25rem">${esc(best.event)}</p>
+            <p style="font-family:var(--font-display);font-size:1.25rem">${esc(best.event)}</p>
           </div>
         </div>
 
@@ -7047,7 +7194,7 @@ function eventFitInsufficientData(athlete){
   return `
     <div style="background:var(--bg-card);border:1px solid var(--border);border-left:.25rem solid var(--text-3);border-radius:.5rem;padding:1.25rem 1.5rem;margin-bottom:1rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem">Event Fit Review</p>
-      <p style="font-family:'Fraunces',serif;font-size:1.25rem;font-weight:400;margin-bottom:.75rem">Needs More Race Data</p>
+      <p style="font-family:var(--font-display);font-size:1.25rem;font-weight:400;margin-bottom:.75rem">Needs More Race Data</p>
       <p style="font-size:.9375rem;line-height:1.65;color:var(--text-2);margin-bottom:1rem">
         Event Fit Review determines whether ${esc(athlete.name)}'s stated primary event matches their physiological strengths. This requires <strong style="color:var(--text)">at least 2 race times across different distances</strong>. Currently logged: <strong style="color:var(--text)">${count} PR${count!==1?'s':''}</strong>.
       </p>
@@ -7091,16 +7238,16 @@ function buildProfileSummary(anchor, comparisons, athlete){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
       <div>
         <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.5rem">Profile Type</p>
-        <p style="font-family:'Fraunces',serif;font-size:1.875rem;font-weight:300;letter-spacing:-.0625rem;line-height:1.1">${esc(bias)}</p>
+        <p style="font-family:var(--font-display);font-size:1.875rem;font-weight:700;letter-spacing:-.0625rem;line-height:1.1">${esc(bias)}</p>
       </div>
       <div style="display:flex;gap:1.5rem">
         <div>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--green);text-transform:uppercase;margin-bottom:.5rem">Strengths</p>
-          <p style="font-family:'Fraunces',serif;font-size:2rem;font-weight:400">${strengths.length}</p>
+          <p style="font-family:var(--font-display);font-size:2rem;font-weight:400">${strengths.length}</p>
         </div>
         <div>
           <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--yellow);text-transform:uppercase;margin-bottom:.5rem">To Develop</p>
-          <p style="font-family:'Fraunces',serif;font-size:2rem;font-weight:400">${weaknesses.length}</p>
+          <p style="font-family:var(--font-display);font-size:2rem;font-weight:400">${weaknesses.length}</p>
         </div>
       </div>
     </div>
