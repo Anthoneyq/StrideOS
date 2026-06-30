@@ -270,8 +270,8 @@ body.workspace-locked .top-signin{display:block}
 .screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
 .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
 .eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent);margin-right:.5rem;vertical-align:middle;transform:translateY(-1px)}
-.screen-title{font-family:var(--font-display);font-weight:700};font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.125rem;line-height:1}
-.screen-title em{font-style:italic;color:var(--text);font-weight:400}
+.screen-title{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.03em;line-height:1}
+.screen-title em{font-style:normal;font-weight:800;background:linear-gradient(120deg,#ff8a4c,#ff5a1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .btn-row{display:flex;gap:.75rem;flex-wrap:wrap}
 
 /* BUTTONS */
@@ -463,7 +463,7 @@ input.err,select.err{border-color:var(--red)}
         <p class="nav-section-label" id="lbl-ws">Workspace</p>
         <ul class="nav-list" aria-labelledby="lbl-ws" role="list">
           <li><button class="nav-btn" data-s="home"     onclick="goTo('home',this)"><span class="nav-icon" aria-hidden="true">⌂</span>Home</button></li>
-          <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span>Basic Calculator</button></li>
+          <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span><span id="navCalcLabel">Basic Calculator</span></button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
@@ -897,6 +897,12 @@ function applyWorkspaceMode(options = {}){
   const workspaceLabel = document.getElementById('lbl-ws');
   if(workspaceLabel){
     workspaceLabel.textContent = locked ? 'Calculator' : 'Workspace';
+  }
+  // Calculator nav label reflects access tier: Basic → Advanced → Pro.
+  const calcLabelEl = document.getElementById('navCalcLabel');
+  if(calcLabelEl){
+    const t = (typeof calcTier === 'function') ? calcTier() : 'basic';
+    calcLabelEl.textContent = t==='pro' ? 'Pro Calculator' : t==='advanced' ? 'Advanced Calculator' : 'Basic Calculator';
   }
 
   if(locked){
@@ -4061,7 +4067,7 @@ function renderPaces(){
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
       <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
         <span id="build-rep">800m</span>
-        <span style="color:var(--text-3);font-style:italic">in</span>
+        <span style="color:var(--text-4);font-weight:400">in</span>
         <span id="build-time">—</span>
       </p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
@@ -4366,21 +4372,29 @@ function buildDanielsTable(){
 // Saves nothing. Just calculates from any race time.
 let freeTierState = { distM: 1609, timeSec: null };
 
+function calcTier(){
+  if(!hasWorkspaceAccess()) return 'basic';
+  return ((typeof hasProAccess === 'function') && hasProAccess()) ? 'pro' : 'advanced';
+}
 function renderFreeTierCalculator(){
-  const signedIn = hasWorkspaceAccess();
-  const ctaText = signedIn ? 'Save athlete to unlock more →' : 'Sign in to save athletes →';
-  const ctaSubhead = signedIn
-    ? 'Save athletes to access Multi-Event Analysis, source-excluded race predictions with planning ranges, and the full STRIDE training intensity ladder.'
-    : 'The calculator is free. Create an account when you want to save athletes, sync across devices, and open the coach workspace.';
+  const tier = calcTier();
+  const tierLabel = tier==='pro' ? 'Pro Calculator' : tier==='advanced' ? 'Advanced Calculator' : 'Basic Calculator';
+  const ctaText   = tier==='basic' ? 'Sign in to save athletes →' : 'Create an athlete →';
+  const ctaAction = tier==='basic' ? 'publicCalculatorCta()' : "goTo('edit',null)";
+  const subhead = tier==='basic'
+      ? 'Free, no signup. Create a free account to save athletes, sync everywhere, and unlock race forecasts for every event.'
+    : tier==='pro'
+      ? 'Pro is unlocked. Add an athlete to run Race Forecasts, the Performance Curve, and Team IQ across your roster.'
+      : 'You are signed in. Add an athlete to unlock Multi-Event Analysis, race forecasts, and the Performance Curve.';
   return `
-    <!-- WELCOME BANNER (FREE) -->
+    <!-- WELCOME BANNER (tier-aware) -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:14rem">
-        <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem">Free Calculator</p>
-        <p style="font-family:var(--font-display);font-size:1.5rem;font-weight:500;letter-spacing:-.0625rem;line-height:1.2">One race time → every training pace and zone.</p>
-        ${signedIn ? '' : `<p style="font-size:.875rem;color:var(--text-2);line-height:1.5;margin-top:.5rem;max-width:30rem">Free, no signup. Create a free account to save athletes, sync everywhere, and unlock race forecasts for every event.</p>`}
+        <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:${tier==='pro'?'var(--accent)':'var(--text-3)'};text-transform:uppercase;margin-bottom:.375rem">${tierLabel}</p>
+        <p style="font-family:var(--font-display);font-weight:700;font-size:1.5rem;letter-spacing:-.02em;line-height:1.15">One race time → every training pace and zone.</p>
+        <p style="font-size:.875rem;color:var(--text-2);line-height:1.5;margin-top:.5rem;max-width:32rem">${subhead}</p>
       </div>
-        <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
+        <button class="btn btn-primary" onclick="${ctaAction}">${ctaText}</button>
     </div>
 
     <!-- INPUT -->
@@ -4412,7 +4426,7 @@ function renderFreeTierCalculator(){
       <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
       <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
         <span id="ft-rep">800m</span>
-        <span style="color:var(--text-3);font-style:italic">in</span>
+        <span style="color:var(--text-4);font-weight:400">in</span>
         <span id="ft-time">—</span>
       </p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
@@ -4469,14 +4483,12 @@ function renderFreeTierCalculator(){
       </div>
     </div>
 
-    <!-- UPGRADE PROMPT -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Unlock with athlete profile</p>
-      <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">
-          ${ctaSubhead}
-        </p>
-        <button class="btn btn-primary" onclick="publicCalculatorCta()">${ctaText}</button>
-      </div>
+    <!-- BOTTOM CONVERSION (anonymous only — show-then-ask after results) -->
+    ${tier==='basic' ? `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
+      <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Unlock with a free account</p>
+      <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">Save athletes, sync across devices, and open the coach workspace — Multi-Event Analysis, race forecasts, and the Performance Curve. Free, no card.</p>
+      <button class="btn btn-primary" onclick="publicCalculatorCta()">Create your free account →</button>
+    </div>` : ''}
   `;
 }
 
@@ -5808,6 +5820,21 @@ const ARCHETYPES = [
 ];
 let _archActive = 0;
 
+// Catmull-Rom → cubic-bézier: turns a list of {x,y} into ONE smooth SVG path.
+// Used by every curve so lines render smooth, never jagged/segmented.
+function smoothPath(pts){
+  if(!pts || pts.length < 2) return '';
+  if(pts.length === 2) return `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} L${pts[1].x.toFixed(1)},${pts[1].y.toFixed(1)}`;
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for(let i=0; i<pts.length-1; i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||pts[i+1];
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+
 // Self-contained forecast curve for one archetype. Three colors:
 //   green = real PRs · orange = STRIDE forecast curve · yellow = the "what-if" event.
 function archetypeCurveSVG(a){
@@ -5831,15 +5858,17 @@ function archetypeCurveSVG(a){
   const yMin=Math.min(...spmAll)*0.94, yMax=Math.max(...spmAll)*1.06;
   const yS = s => padT + ((s-yMin)/(yMax-yMin))*cH;
 
-  const path = curve.map((p,i)=>(i?'L':'M')+xS(p.d).toFixed(1)+','+yS(p.spm).toFixed(1)).join(' ');
+  const path = smoothPath(curve.map(p=>({x:xS(p.d), y:yS(p.spm)})));
   const area = path+` L${xS(curve[curve.length-1].d).toFixed(1)},${(padT+cH).toFixed(1)} L${xS(curve[0].d).toFixed(1)},${(padT+cH).toFixed(1)} Z`;
   const xticks=[100,200,400,800,1600,3200,5000,10000,21097,42195].filter(d=>d>=curveMin*0.85&&d<=curveMax*1.15);
   const xlab={100:'100',200:'200',400:'400',800:'800',1600:'16',3200:'32',5000:'5K',10000:'10K',21097:'HM',42195:'Mar'};
   const fmtPaceMi = spm => { const t=spm*1609.34; const m=Math.floor(t/60), s=Math.round(t-m*60); return (s===60?(m+1)+':00':m+':'+(s<10?'0':'')+s); };
   const dots = prList.map(p=>`<circle cx="${xS(p.distM).toFixed(1)}" cy="${yS(p.sec/p.distM).toFixed(1)}" r="5" fill="#4ade80" stroke="#0B0D0F" stroke-width="2"><title>${esc(p.event)} — ${esc(fmtT(p.sec))} (real PR)</title></circle>`).join('');
   const tx=xS(targetD), ty=yS(targetSec/targetD);
+  // Stash scale params so the hover-crosshair can recompute any distance live.
+  window._archChart = { W, H, padL, padR, padT, cH, cW, xMin, xMax, yMin, yMax, ancD:anc.distM, ancT:anc.sec, curveMin, curveMax };
 
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Forecast curve for ${esc(a.name)}">
+  return `<svg id="archSvg" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Forecast curve for ${esc(a.name)}" style="cursor:crosshair" onmousemove="archHover(event)" onmouseleave="archHoverHide()">
     <defs>
       <linearGradient id="archFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(255,107,53,.28)"/><stop offset="1" stop-color="rgba(255,107,53,0)"/></linearGradient>
       <linearGradient id="archLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff8a4c"/><stop offset="1" stop-color="#ff5a1f"/></linearGradient>
@@ -5852,11 +5881,17 @@ function archetypeCurveSVG(a){
     <line x1="${tx.toFixed(1)}" y1="${padT}" x2="${tx.toFixed(1)}" y2="${(padT+cH).toFixed(1)}" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3" opacity=".5"/>
     <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6.5" fill="#fbbf24" stroke="#0B0D0F" stroke-width="2"><title>${esc(a.whatIf)} — projected ${esc(fmtT(targetSec))} (${targetConf}% confidence)</title></circle>
     <text x="${Math.min(tx, W-padR-4).toFixed(1)}" y="${Math.max(ty-12,14).toFixed(1)}" text-anchor="middle" fill="#fbbf24" font-family="'JetBrains Mono',monospace" font-size="10" font-weight="600">${esc(a.whatIf)} ${esc(fmtT(targetSec))}</text>
+    <g id="archCrossG" opacity="0" pointer-events="none">
+      <line id="archCross" x1="0" y1="${padT}" x2="0" y2="${(padT+cH).toFixed(1)}" stroke="#F5F7FA" stroke-width="1" opacity=".4"/>
+      <circle id="archCrossDot" cx="0" cy="0" r="4" fill="#F5F7FA"/>
+      <text id="archCrossLbl" x="0" y="${(padT-5).toFixed(1)}" text-anchor="middle" fill="#F5F7FA" font-family="'JetBrains Mono',monospace" font-size="10.5" font-weight="700"></text>
+    </g>
   </svg>
   <div class="arch-readout">
     <div class="arch-pill arch-pill-real"><span class="arch-dot" style="background:#4ade80"></span>${prList.length} real PRs</div>
     <div class="arch-pill arch-pill-fc"><span class="arch-dot" style="background:#ff6b35"></span>STRIDE forecast</div>
     <div class="arch-pill arch-pill-wi"><span class="arch-dot" style="background:#fbbf24"></span>${esc(a.whatIf)} potential (never raced) → <strong>${esc(fmtT(targetSec))}</strong> · ${targetConf}% conf</div>
+    <div class="arch-pill" style="color:var(--text-3)">↔ hover the chart to read any distance</div>
   </div>`;
 }
 
@@ -5887,6 +5922,34 @@ function selectArchetype(i){
   const el = document.getElementById('home-arch');
   if(el) el.innerHTML = renderArchetypeLab();
 }
+// Friendly label for an arbitrary distance (snaps to named events when close).
+function distLabel(d){
+  const known={100:'100m',200:'200m',300:'300m',400:'400m',600:'600m',800:'800m',1000:'1000m',1500:'1500m',1609:'mile',1600:'1600m',3000:'3000m',3200:'3200m',5000:'5K',8000:'8K',10000:'10K',21097:'HM',42195:'Mar'};
+  for(const k in known){ if(Math.abs(d-+k)/+k < 0.025) return known[k]; }
+  if(d>=1000) return (d/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return Math.round(d/10)*10+'m';
+}
+// Live hover crosshair: read the engine's equivalent time at ANY distance.
+function archHover(e){
+  const c = window._archChart, svg = document.getElementById('archSvg');
+  if(!c || !svg || typeof strideEnsemble!=='function') return;
+  const rect = svg.getBoundingClientRect();
+  let mx = (e.clientX - rect.left) * (c.W / rect.width);
+  mx = Math.max(c.padL, Math.min(c.W - c.padR, mx));
+  let d = Math.pow(10, c.xMin + ((mx - c.padL)/c.cW)*(c.xMax - c.xMin));
+  d = Math.max(c.curveMin*0.9, Math.min(c.curveMax*1.12, d));
+  const predSec = strideEnsemble(c.ancD, c.ancT, d, 1.0, {}).predSec;
+  const x = c.padL + ((Math.log10(d)-c.xMin)/(c.xMax-c.xMin))*c.cW;
+  const y = c.padT + ((predSec/d - c.yMin)/(c.yMax - c.yMin))*c.cH;
+  const g=document.getElementById('archCrossG'), ln=document.getElementById('archCross'), dot=document.getElementById('archCrossDot'), lbl=document.getElementById('archCrossLbl');
+  if(!g) return;
+  ln.setAttribute('x1',x.toFixed(1)); ln.setAttribute('x2',x.toFixed(1));
+  dot.setAttribute('cx',x.toFixed(1)); dot.setAttribute('cy',y.toFixed(1));
+  lbl.setAttribute('x', Math.max(42, Math.min(c.W-42, x)).toFixed(1));
+  lbl.textContent = distLabel(d)+'  '+fmtT(predSec);
+  g.setAttribute('opacity','1');
+}
+function archHoverHide(){ const g=document.getElementById('archCrossG'); if(g) g.setAttribute('opacity','0'); }
 
 function renderHome(){
   const el = document.getElementById('home-body');
@@ -6851,9 +6914,7 @@ function buildPerformanceCurve(anchor, allPRs){
   const yScale = s => padT + ((s - yMin) / (yMax - yMin)) * chartH;
 
   // Build STRIDE ensemble curve path
-  const curvePath = predictedPaces.map((p, i) => {
-    return (i === 0 ? 'M' : 'L') + xScale(p.d).toFixed(1) + ',' + yScale(p.secPerM).toFixed(1);
-  }).join(' ');
+  const curvePath = smoothPath(predictedPaces.map(p => ({ x: xScale(p.d), y: yScale(p.secPerM) })));
 
   // X-axis ticks
   const xTicks = [100, 200, 400, 800, 1600, 3200, 5000, 10000, 21097, 42195].filter(d => d <= curveMaxDist * 1.05);
