@@ -73,8 +73,13 @@ inRange('parseTime("4:59.9") seconds', ctx.parseTime('4:59.9'), 299.8, 300.0);
 isEqual('parseTime rejects 4:75', ctx.parseTime('4:75'), null);
 isEqual('parseTime rejects 1:02:75', ctx.parseTime('1:02:75'), null);
 isEqual('prFreshness rejects future-dated PRs', ctx.prFreshness('2999-01-01'), 'future');
-inRange('pctToMult(65) uses speed percentage', ctx.pctToMult(65), 1.53, 1.55);
-inRange('pctToMult(105) faster-than-race speed', ctx.pctToMult(105), 0.94, 0.96);
+// Canova "% of race pace" multiplier (2 − pct/100): Easy 65% = 1.35 → ~7:16/mi
+// for a 16:43 5K runner, the coach-validated value (Muntefering/Framke). The old
+// reciprocal speed-% model (1.538) made aerobic zones ~1 min/mi too slow.
+inRange('pctToMult(65) Canova race-pace mult', ctx.pctToMult(65), 1.34, 1.36);
+inRange('pctToMult(55) recovery slower than easy', ctx.pctToMult(55), 1.44, 1.46);
+inRange('pctToMult(93) threshold ~unchanged vs reciprocal', ctx.pctToMult(93), 1.06, 1.08);
+inRange('pctToMult(105) faster-than-race', ctx.pctToMult(105), 0.94, 0.96);
 
 // ── 1. VDOT calibration (Daniels' Running Formula tables) ──
 inRange('VDOT(5K 19:57) ≈ 50',  ctx.calcVDOT(5000, 1197),  49.5, 50.5);

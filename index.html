@@ -799,7 +799,8 @@ function clearDB(){ try{ localStorage.removeItem(KEY); }catch(e){} _mem=null; }
 const STRIDE_SUPABASE_CONFIG = window.STRIDE_SUPABASE || {};
 const STRIDE_BILLING_CONFIG = window.STRIDE_BILLING || {};
 const BILLING_MONTHLY_LABEL = STRIDE_BILLING_CONFIG.monthlyLabel || '$19.99/mo';
-const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$144/yr';
+const BILLING_ANNUAL_LABEL = STRIDE_BILLING_CONFIG.annualLabel || '$199/yr';
+const BILLING_FOUNDING_LABEL = STRIDE_BILLING_CONFIG.foundingLabel || '$149/yr';
 const BILLING_MONTHLY_PAYMENT_LINK = STRIDE_BILLING_CONFIG.monthlyPaymentLink || '';
 const BILLING_ANNUAL_PAYMENT_LINK = STRIDE_BILLING_CONFIG.annualPaymentLink || '';
 let sbClient = null;
@@ -822,7 +823,7 @@ function emptySubscription(){
 let sbSubscription = emptySubscription();
 const FREE_ATHLETE_LIMIT = 3;
 const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
-const FREE_SQUAD_CAP = 6;     // Free/anon coaches see real Squad Intelligence on up to this many athletes (view-only)
+const FREE_SQUAD_CAP = 6;     // Free/anon coaches see real Team IQ on up to this many athletes (view-only)
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
 const PUBLIC_SCREEN_ID = 'home';
 const WORKSPACE_SCREEN_IDS = new Set([
@@ -2197,16 +2198,23 @@ function showUpgradeModal(){
           <div class="upgrade-plan-note">Billed monthly. Cancel anytime.</div>
         </button>
         <button class="upgrade-plan upgrade-plan-best" onclick="startCheckout('annual')" id="planAnnualBtn">
-          <div class="upgrade-plan-badge">Best value · save 40%</div>
+          <div class="upgrade-plan-badge">Best value · save ~17%</div>
           <div class="upgrade-plan-label">Annual</div>
           <div class="upgrade-plan-price">${BILLING_ANNUAL_LABEL.replace('/yr', '')}<span>/yr</span></div>
-          <div class="upgrade-plan-note">$12/mo billed yearly.</div>
+          <div class="upgrade-plan-note">$16.58/mo billed yearly.</div>
         </button>
+      </div>
+
+      <div style="border:1px dashed var(--accent-line);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.5;color:var(--text-2)">
+          <strong style="color:var(--accent)">Founding Coach</strong> · first 25 seats · <span style="color:var(--text)">${BILLING_FOUNDING_LABEL}</span>, price locked for life while active.
+        </div>
+        <button class="btn" id="planFoundingBtn" onclick="closeUpgradeModal();(window.showAuthModal?showAuthModal('signup'):goTo('paces'))" style="white-space:nowrap">Claim a founding seat &rarr;</button>
       </div>
 
       <ul class="upgrade-perks">
         <li>Unlimited athletes</li>
-        <li><strong style="color:var(--text)">Squad Intelligence</strong> — drag in a CSV/Excel roster, get instant training-load bias, event-coverage skew &amp; highest-ROI fixes</li>
+        <li><strong style="color:var(--text)">Team IQ</strong> — drag in a CSV/Excel roster, get instant training-load bias, event-coverage skew &amp; highest-ROI fixes</li>
         <li>Race predictions across every distance, with planning ranges</li>
         <li>Longitudinal performance curve &amp; year-over-year trends</li>
         <li>Event fit analysis, environmental corrections, Speed Reserve Ratio</li>
@@ -2216,7 +2224,7 @@ function showUpgradeModal(){
       <div style="border-top:1px solid var(--border-s);margin-top:.25rem;margin-bottom:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--text-2)">
           <strong style="color:var(--text)">Coaching a team or program?</strong><br>
-          STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; your whole staff, unlimited athletes, program admin &middot; <span style="color:var(--accent)">$399/yr</span>.
+          STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; multi-coach staff, roster bands &amp; program admin &middot; <span style="color:var(--accent)">from $399/yr</span> (Starter 1–25 · Plus 26–75 · Program 76–200).
         </div>
         <button class="btn" id="planTeamBtn" onclick="startCheckout('team_annual')" style="white-space:nowrap">Get Team &rarr;</button>
       </div>
@@ -2695,8 +2703,8 @@ function parseTime(s){
 function fmtT(sec){
   if(sec==null||isNaN(sec)) return '—';
   if(sec<60) return sec.toFixed(2);
-  const m=Math.floor(sec/60), s=sec-m*60;
-  if(m<60){ const ss=s<10?'0'+s.toFixed(1):s.toFixed(1); return `${m}:${ss}`; }
+  const m=Math.floor(sec/60);
+  if(m<60){ return _mmss(sec,1); }
   const h=Math.floor(m/60), mm=m-h*60;
   return `${h}:${String(mm).padStart(2,'0')}:${String(Math.floor(sec%60)).padStart(2,'0')}`;
 }
@@ -2716,6 +2724,19 @@ function fmtT(sec){
 // ══════════════════════════════════════
 
 // ── FORMAT HELPERS ──
+
+// total seconds → "M:SS" / "M:SS.s" with carry-safe rounding.
+// Rounds the seconds component FIRST, then carries 60→00 into the minute,
+// so 6:59.96 renders 7:00 (not the "6:60" coaches flagged). dec = decimal places on seconds.
+function _mmss(sec, dec){
+  dec = dec || 0;
+  const f = Math.pow(10, dec);
+  let m = Math.floor(sec/60);
+  let s = Math.round((sec - m*60)*f)/f;
+  if(s >= 60){ m += 1; s -= 60; }
+  const ss = dec ? (s<10?'0':'')+s.toFixed(dec) : (s<10?'0':'')+Math.round(s);
+  return `${m}:${ss}`;
+}
 
 // sec/km  →  "M:SS/mi" string
 function fmtMile(spkm){
@@ -2739,8 +2760,7 @@ function fmtSplit(spkm, distM){
   if(!spkm||isNaN(spkm)||spkm<=0) return '—';
   const s = spkm * (distM/1000);
   if(s < 60) return s.toFixed(1) + 's';
-  const m = Math.floor(s/60), ss = s - m*60;
-  return `${m}:${ss<10?'0':''}${ss.toFixed(1)}`;
+  return _mmss(s,1);
 }
 
 // Range string:  "7:44 – 8:20/mi"
@@ -2875,7 +2895,7 @@ function emptyHTML(msg){
 // ── RENDER OVERVIEW ──
 function renderOverview(){
   const el=document.getElementById('ov-body');
-  // Squad Intelligence leads Coach Tools whenever the coach has a real roster.
+  // Team IQ leads Coach Tools whenever the coach has a real roster.
   // Free wedge: free coaches get the REAL analytics (capped + view-only) with a soft
   // upgrade nudge — NOT a locked card. No free competitor reads a whole roster at once.
   let squadHtml = '';
@@ -3041,17 +3061,24 @@ function renderProfile(){
 // STRIDE SPEED-PERCENTAGE-OF-PR ENGINE
 // ══════════════════════════════════════
 // Anchor: athlete's race PR (within 3 months ideal, up to 1 year acceptable).
-// Method: speed percentage. A lower speed percentage produces a reciprocal
-// increase in time, keeping easy and threshold targets physiologically honest.
-//   pct =  65 → 65% of race speed       (time × 1.538)
-//   pct = 100 → race pace exactly       (time × 1.000)
-//   pct = 110 → 110% of race speed      (time × 0.909)
-// Formula: targetTime = raceTime × (100 / pct)
-// This is intentionally conservative for aerobic work and should be
-// cross-checked with HR/RPE/lactate for threshold sessions.
+// Method: Canova "percentage of race pace" framework (linear), NOT reciprocal
+// speed-%. The reciprocal model (100/pct) made aerobic zones far too slow —
+// Easy 65% came out ~8:17/mi for a 16:43 5K runner, when coaches (Muntefering,
+// Framke) want ~7:15/mi. Canova's 2 − pct/100 gives 7:16/mi at 65% and matches
+// coach intuition; the two models converge above ~88%, so threshold/CV/rep
+// targets are essentially unchanged. (This is the fix promised in the v2 coach
+// email — Canova multiplier 2 − pct/100.)
+//   pct =  55 → recovery                 (time × 1.45)
+//   pct =  65 → easy                     (time × 1.35)
+//   pct = 100 → race pace exactly        (time × 1.00)
+//   pct = 118 → sprint / strides         (time × 0.82)
+// Formula: targetTime = raceTime × (2 − pct/100), bounded for safety.
+// Still cross-check threshold sessions with HR/RPE/lactate.
 
 function pctToMult(pct){
-  return pct > 0 ? 100 / pct : NaN;
+  if(!(pct > 0)) return NaN;
+  // Canova linear race-pace multiplier, clamped to a sane [0.5, 2.0] band.
+  return Math.min(2, Math.max(0.5, 2 - pct/100));
 }
 
 // Race PR's pace per meter (seconds)
@@ -3071,9 +3098,7 @@ function fmtRepTime(sec){
   if(sec < 60){
     return sec.toFixed(1) + 's';
   }
-  const m = Math.floor(sec / 60);
-  const s = sec - m*60;
-  return `${m}:${s<10?'0':''}${s.toFixed(1)}`;
+  return _mmss(sec,1);
 }
 
 // Show signed offset vs race pace (negative = faster, positive = slower)
@@ -3086,9 +3111,7 @@ function fmtOffset(targetSec, raceSec){
   if(abs < 60){
     return `${sign}${abs.toFixed(1)}s`;
   }
-  const m = Math.floor(abs/60);
-  const s = abs - m*60;
-  return `${sign}${m}:${s<10?'0':''}${s.toFixed(1)}`;
+  return `${sign}${_mmss(abs,1)}`;
 }
 
 // Auto-pick the best output unit based on REP DISTANCE
@@ -3113,8 +3136,7 @@ function displayPace(raceSecPerM, repDistM, pct, unit){
   }
   if(unit === 'mile'){
     const secPerMi = secPerM * 1609.34;
-    const m = Math.floor(secPerMi/60), s = Math.round(secPerMi - m*60);
-    return `${m}:${s<10?'0':''}${s}/mi`;
+    return _mmss(secPerMi,0)+'/mi';
   }
   if(unit === 'rep'){
     return fmtRepTime(secPerM * repDistM);
@@ -5496,7 +5518,7 @@ function renderImportProgress(){
   el.innerHTML = `<div class="info-box">Importing ${importState.importedCount} of ${importState.rows.length} athletes...</div>`;
 }
 
-// ── Squad Analytics + Training-Bias engine ───────────────────────────────
+// ── Team IQ + Training-Bias engine ───────────────────────────────
 // Roster-level intelligence no free calculator gives a coach: composition,
 // event-coverage skew, mileage-vs-event training-load bias, data
 // completeness, and the highest-ROI moves to improve athletes. Deliberately
@@ -5562,7 +5584,7 @@ function computeSquadAnalytics(athletes){
   const opps = [];
   const singlePR = list.filter(a => validPR(a) && (!a.additionalPRs || Object.keys(a.additionalPRs).length===0));
   if(singlePR.length) opps.push(`Add one more race distance for ${singlePR.length} athlete${singlePR.length===1?'':'s'} → unlocks each athlete's *own* fatigue curve and sharper predictions instead of a generic table.`);
-  if(missingMileage) opps.push(`Log weekly mileage for ${missingMileage} athlete${missingMileage===1?'':'s'} → switches on training-load bias detection across the whole squad.`);
+  if(missingMileage) opps.push(`Log weekly mileage for ${missingMileage} athlete${missingMileage===1?'':'s'} → switches on training-load bias detection across the whole roster.`);
   if(distLow.length) opps.push(`Build aerobic base for ${distLow.length} under-mileage distance runner${distLow.length===1?'':'s'} → typically the biggest, safest PR lever in high-school distance.`);
   if(missingDate) opps.push(`Add PR dates for ${missingDate} athlete${missingDate===1?'':'s'} → STRIDE can then flag stale fitness and re-test windows.`);
 
@@ -5587,13 +5609,13 @@ function _grpBar(stats){
   return `<div style="display:flex;height:.625rem;border-radius:.375rem;overflow:hidden;gap:2px;margin:.5rem 0 .75rem">${segs}</div><div style="display:flex;flex-wrap:wrap;gap:.875rem">${legend}</div>`;
 }
 
-// Free-tier teaser for the PRO Squad Intelligence feature (shown on Coach Tools).
+// Free-tier teaser for the PRO Team IQ feature (shown on Coach Tools).
 function squadAnalyticsLocked(n){
   return `
     <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
       <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
-      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Squad Intelligence</h2>
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole squad — no other calculator reads your roster at once.</p>
+      <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Team IQ</h2>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole roster — no other calculator reads your roster at once.</p>
       <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
     </div>`;
 }
@@ -5609,13 +5631,13 @@ function renderSquadAnalytics(stats){
       <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6">${f.detail}</p>
       ${f.who && f.who.length ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${f.who.map(esc).join(' · ')}</p>` : ''}
     </div>`).join('')
-    : `<div style="border:1px solid var(--border-s);border-left:3px solid var(--green);border-radius:.5rem;padding:1rem 1.125rem;background:#050505"><p style="font-size:.875rem;color:var(--text-2)">No training-load red flags across the squad. Add weekly mileage and a second race distance to deepen the analysis.</p></div>`;
+    : `<div style="border:1px solid var(--border-s);border-left:3px solid var(--green);border-radius:.5rem;padding:1rem 1.125rem;background:#050505"><p style="font-size:.875rem;color:var(--text-2)">No training-load red flags across the roster. Add weekly mileage and a second race distance to deepen the analysis.</p></div>`;
   const oppsHtml = stats.opps.length ? `<ol style="margin:0;padding-left:1.1rem;font-size:.8125rem;color:var(--text-2);line-height:1.75">${stats.opps.map(o=>`<li style="margin-bottom:.375rem">${o.replace(/\*([^*]+)\*/g,'<em style="font-style:normal;color:var(--text)">$1</em>')}</li>`).join('')}</ol>` : '';
   return `
     <div class="card" style="padding:1.5rem 1.5rem 1.75rem;text-align:left">
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.375rem">Squad Intelligence</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.375rem">Team IQ</p>
       <h2 style="font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;margin-bottom:.25rem">What your roster is telling you</h2>
-      <p style="font-size:.8125rem;color:var(--text-3);margin-bottom:1.25rem">Across ${stats.n} athlete${stats.n===1?'':'s'} — no other calculator reads your whole squad at once.</p>
+      <p style="font-size:.8125rem;color:var(--text-3);margin-bottom:1.25rem">Across ${stats.n} athlete${stats.n===1?'':'s'} — no other calculator reads your whole roster at once.</p>
       <div class="hero-stats" style="margin-bottom:1.25rem">
         ${tile('Athletes', stats.n, `${stats.sex.M||0}M · ${stats.sex.F||0}F`)}
         ${tile('Avg mileage', miAvg, stats.mileage.count?`${stats.mileage.count} logged`:'none logged')}
@@ -5630,14 +5652,14 @@ function renderSquadAnalytics(stats){
     </div>`;
 }
 
-// ── FREE SQUAD INTELLIGENCE TASTE ──────────────────────────────────────────
+// ── FREE TEAM IQ TASTE ──────────────────────────────────────────
 // The biggest free-tier wedge. No free competitor reads a whole roster at once:
 // McMillan / VDOT / Tinman are single-athlete; athletic.net has rosters but no
 // prediction; MileSplit's team-scoring is paywalled. So free & anonymous coaches
 // get a REAL, capped, view-only taste — not a locked card. Pro unlocks unlimited
 // size, save/sync, environmental adjustment, printable reports, and the optimizer.
 
-// A realistic HS squad so the roster magic renders in seconds with zero typing,
+// A realistic HS roster so the team magic renders in seconds with zero typing,
 // tuned to surface a couple of genuine training-load flags (over-mileage sprinter,
 // under-mileage distance runners) so a cold coach instantly sees the "wow".
 const DEMO_SQUAD = [
@@ -5664,10 +5686,10 @@ function squadUpgradeNudge(hiddenCount, opts){
   opts = opts || {};
   const lead = hiddenCount > 0
     ? `Showing the first ${FREE_SQUAD_CAP} athletes.`
-    : (opts.anonymous ? `This is a live read of the squad above — free, no signup.` : `You're on the free plan.`);
+    : (opts.anonymous ? `This is a live read of the roster above — free, no signup.` : `You're on the free plan.`);
   const cta = opts.anonymous
     ? `<button class="btn btn-primary" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial →</button>`
-    : `<button class="btn btn-primary" onclick="showUpgradeModal()">Unlock the full squad →</button>`;
+    : `<button class="btn btn-primary" onclick="showUpgradeModal()">Unlock the full roster →</button>`;
   return `
     <div class="card squad-nudge" style="text-align:center;padding:1.5rem;margin-top:1rem;border-style:dashed">
       <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:38rem;margin:0 auto .35rem">${lead} <strong style="color:var(--text)">Pro</strong> adds unlimited athletes, rosters saved across devices, heat / altitude / XC-course adjustment, printable team reports, and the lineup optimizer.</p>
@@ -5710,7 +5732,7 @@ function parseSquadPaste(text){
 
 // ── FRONT DOOR ─────────────────────────────────────────────────────────────
 // Compact hero + CTA ladder sitting directly above a LIVE free experience: a
-// demo Squad Intelligence read + a 60-second "paste your own roster" box. A cold
+// demo Team IQ read + a 60-second "paste your own roster" box. A cold
 // coach sees genuine value before any ask. CTA adapts for signed-in coaches.
 function renderHome(){
   const el = document.getElementById('home-body');
@@ -5724,11 +5746,11 @@ function renderHome(){
     <div class="home-hero">
       <p class="eyebrow">STRIDE OS · built for distance coaches</p>
       <h1 class="home-title" id="home-h">Race-ready paces for <em>every</em> athlete on your roster — in seconds.</h1>
-      <p class="home-sub">Drop in your team and STRIDE reads the whole squad at once: training-load bias, event-coverage gaps, and the highest-ROI fix for each runner. No spreadsheets, no one-athlete-at-a-time calculators.</p>
+      <p class="home-sub">Drop in your team and STRIDE reads the whole roster at once: training-load bias, event-coverage gaps, and the highest-ROI fix for each runner. No spreadsheets, no one-athlete-at-a-time calculators.</p>
       <div class="home-cta">
         ${primaryCta}
         <button class="btn btn-ghost btn-lg" onclick="goTo('paces')">Try the calculator</button>
-        <button class="btn-text" onclick="document.getElementById('home-squad').scrollIntoView({behavior:'smooth',block:'start'})">See a sample squad ↓</button>
+        <button class="btn-text" onclick="document.getElementById('home-squad').scrollIntoView({behavior:'smooth',block:'start'})">See a sample roster ↓</button>
       </div>
       ${trust}
     </div>
@@ -5738,11 +5760,11 @@ function renderHome(){
         <div><p class="eyebrow">Live demo · real analysis</p><h2 class="screen-title" style="font-size:clamp(1.5rem,3vw,2.25rem)">What a roster <em>tells you</em></h2></div>
       </header>
       <div class="home-paste">
-        <label class="home-paste-lbl" for="home-paste-in">Paste your own squad — one athlete per line: <code>Name, event, time</code> (e.g. <code>Maya R, 5k, 18:42</code>). Weekly mileage optional.</label>
+        <label class="home-paste-lbl" for="home-paste-in">Paste your own roster — one athlete per line: <code>Name, event, time</code> (e.g. <code>Maya R, 5k, 18:42</code>). Weekly mileage optional.</label>
         <textarea id="home-paste-in" class="home-paste-area" rows="4" placeholder="Maya R, 5k, 18:42&#10;Jordan T, 1600, 4:38&#10;Eli W, 3200, 10:21, 16&#10;Andre P, 400, 51.4, 44"></textarea>
         <div class="btn-row">
-          <button class="btn btn-primary" onclick="submitSquadPaste()">Analyze my squad →</button>
-          <button class="btn" onclick="loadDemoSquad()">Use a sample squad</button>
+          <button class="btn btn-primary" onclick="submitSquadPaste()">Analyze my roster →</button>
+          <button class="btn" onclick="loadDemoSquad()">Use a sample roster</button>
         </div>
       </div>
       <div id="home-squad-result">${renderSquadTaste(DEMO_SQUAD, {anonymous:true})}</div>
@@ -7283,7 +7305,7 @@ let currentScreen = 'home';
 window.addEventListener('load',()=>{
   refreshActiveAthlete();
   // Land on the front door: a compact pitch sitting directly above a live free
-  // experience (calculator + demo Squad Intelligence). Value before any ask.
+  // experience (calculator + demo Team IQ). Value before any ask.
   goTo('home', null);
   updateChip();
   initSupabase().then(() => {

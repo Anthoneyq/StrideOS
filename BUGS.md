@@ -55,6 +55,12 @@ Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 
 ---
 
+## 2026-06-30 — Wave 1 trust fixes (coach-credibility pass)
+
+**✅ BUG-005 · Easy/aerobic zones ~1 min/mi too slow — Canova multiplier never shipped (P0).** The v2 coach email promised Easy 65% ≈ 7:16/mi via Canova `2 − pct/100`, but `pctToMult` (index.html ~3065) still used the reciprocal speed-% model `100/pct`, producing Easy ≈ **8:17/mi** for a 16:43 5K runner — over-corrected to too slow (opposite of the original 6:27 too-fast complaint). **Fix:** `pctToMult` now returns `2 − pct/100`, clamped to [0.5, 2.0]. Zone ladder for a 16:43 runner is now Recovery 7:48 / Easy 7:16 / Long 7:00 / Steady 6:27 / Tempo 6:02 / Threshold 5:45 / CV 5:36 / Race 5:23 / VO2 5:07 / Sprint 4:25. The two models converge above ~88%, so threshold/CV/rep targets barely moved. `pctToMult` is isolated to training-pace display — not in the prediction path. Benchmark assertions updated (`prediction_benchmarks.js:76`) to lock the new values; **31/31 pass.** ⚠️ Still needs browser QA + a re-check with Alex/Doug before it counts as their validated number.
+
+**✅ BUG-006 · "6:60" rounding bug (P3).** `fmtMile` already guarded the seconds→60 carry, but its siblings did not: `displayPace` mile branch (the per-rep pace coaches see), `fmtT`, `fmtSplit`, `fmtRepTime`, `fmtOffset` all let `toFixed(1)` turn 59.96 into "60.0" or `Math.round` hit 60 with no carry. **Fix:** added a carry-safe `_mmss(sec, dec)` helper (index.html ~2718) and routed all of them through it. Unit-tested (9 cases incl. 6:59.96→7:00); inline JS parses; 31/31 engine benchmarks pass.
+
 ## Notes on things that are **correct** (checked, no bug)
 
 - All 4 frontend `.rpc()` names exist as migration functions; all 6 `.from()` targets exist.
