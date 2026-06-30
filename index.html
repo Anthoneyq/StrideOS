@@ -3268,7 +3268,15 @@ function vdotPctForZone(zone, athlete){
   const targetSecPerM = targetSpkm / 1000;
   const pct = 100 * raceSecPerM / targetSecPerM;
   if(!isFinite(pct) || pct <= 0) return null;
-  return Math.max(45, Math.min(120, pct));
+  // Sanity guards — reject implausible VDOT-equivalents (e.g. a short-race anchor
+  // where calcZones over-runs) so the clean speed-% zone (zone.pct) is used instead.
+  if(zone.pct < 100){
+    if(pct >= 99) return null;                 // an aerobic zone can't reach race pace
+    return Math.max(45, Math.min(99, pct));
+  }
+  // supra-race zone (VO2 Max): must stay faster than race pace, within reason
+  if(pct < 100 || pct > 120) return null;
+  return pct;
 }
 
 function effectiveZonePct(zone, athlete, guardrailKey){
@@ -4274,19 +4282,20 @@ function buildLadderRows(){
 // Quick-view splits-at-every-rep-distance grid using STRIDE-owned naming.
 // Shows percentage RANGE beside each zone (e.g. "Easy · 78–82%") so coaches
 // see the math being applied without assuming we're using Daniels VDOT.
-function buildDanielsTable(){
-  if(!A || !A.raceDistanceM || !A.raceTime) return '';
-  const raceSec = parseTime(A.raceTime);
+function buildDanielsTable(ath){
+  ath = ath || A;   // defaults to the active athlete; a temp anchor (free calc) also works
+  if(!ath || !ath.raceDistanceM || !ath.raceTime) return '';
+  const raceSec = parseTime(ath.raceTime);
   if(!raceSec) return '';
-  const secPerM = raceSec / A.raceDistanceM;
+  const secPerM = raceSec / ath.raceDistanceM;
   const env = getEnvSettings();
   const guardrailKey = getActiveGuardrail();
   const guardrail = GUARDRAIL_LEVELS[guardrailKey];
 
   // Calculate splits per zone × rep distance, with guardrail applied
   const rows = STRIDE_COACH_SPLITS.map(z => {
-    const allowed = zoneAllowedForAnchor(z, A);
-    const adjustedPct = effectiveZonePct(z, A, guardrailKey);
+    const allowed = zoneAllowedForAnchor(z, ath);
+    const adjustedPct = effectiveZonePct(z, ath, guardrailKey);
     const cells = z.reps.map(d => {
       if(!allowed) return { dist: d, sec: null, blocked: true };
       let split = secPerM * d * pctToMult(adjustedPct);
@@ -4325,9 +4334,9 @@ function buildDanielsTable(){
   const bodyRows = rows.map(z => {
     const cellsByDist = {};
     z.cells.forEach(c => cellsByDist[c.dist] = c);
-    const vdotDerived = vdotPctForZone(z, A);
+    const vdotDerived = vdotPctForZone(z, ath);
     const isGuardrailAdjusted = z.pct < 100 && guardrail.shift !== 0;
-    const subLabel = allowed
+    const subLabel = z.allowed
       ? `${z.displayPct}% <span style="color:var(--text-4)">· ${vdotDerived ? 'VDOT-eq' : z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
       : 'Needs 1500m+';
     const zoneColor = z.allowed ? 'var(--text)' : 'var(--text-4)';
@@ -4492,6 +4501,15 @@ function renderFreeTierCalculator(){
       </div>
     </div>
 
+    <!-- FULL PACE MATRIX — every zone × rep distance (Advanced + Pro) -->
+    ${tier!=='basic' ? `<div id="ft-matrix-section" style="margin-bottom:1.5rem;display:none">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em">Full pace table${tier==='pro'?'':''}</h3>
+        <span style="font-size:.8125rem;color:var(--text-3)">Every training zone × rep distance, computed from your race time.</span>
+      </div>
+      <div id="ft-pace-table"></div>
+    </div>` : ''}
+
     <!-- BOTTOM CONVERSION (anonymous only — show-then-ask after results) -->
     ${tier==='basic' ? `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
       <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Unlock with a free account</p>
@@ -4529,6 +4547,16 @@ function freeTierUpdate(){
 
   document.getElementById('ft-result').style.display = 'block';
   document.getElementById('ft-controls').style.display = 'block';
+
+  // Full pace matrix (Advanced + Pro): every zone × rep distance from this race time.
+  const matrixSec = document.getElementById('ft-matrix-section');
+  const matrixMount = document.getElementById('ft-pace-table');
+  if(matrixSec && matrixMount){
+    const anchor = { name:'Anchor', raceDistanceM:distM, raceDistance:(dEl.options[dEl.selectedIndex]?dEl.options[dEl.selectedIndex].text:distM+'m'), raceTime:tEl.value.trim(), age:null, trainingAge:0, additionalPRs:{}, guardrail:null };
+    const html = buildDanielsTable(anchor);
+    matrixMount.innerHTML = html;
+    matrixSec.style.display = html ? 'block' : 'none';
+  }
 
   const pctEl = document.getElementById('ftPct');
   const repEl = document.getElementById('ftRep');
