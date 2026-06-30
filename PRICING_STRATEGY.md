@@ -133,6 +133,19 @@ If you later need a usage-based model, use it behind the scenes:
 - Additional roster bands can be calculated internally.
 - Do not expose nickel-and-dime line items until Team demand is proven.
 
+### Public school purchasing
+
+Team and Program plans should be sold to public schools as **annual school/team software licenses**, not as consumer subscriptions. The pricing can stay the same, but the payment path needs to support school buying behavior:
+
+- Quote before purchase
+- Purchase order support
+- Invoice support
+- W-9/vendor packet
+- Check, ACH, school card, or booster-supported payment where allowed
+- Privacy/security summary for ADs, business offices, and district technology reviewers
+
+Use `SCHOOL_PURCHASING_PLAYBOOK.md` as the operating guide for school-funded Team/Program sales.
+
 ---
 
 ## 5. Product differentiation by plan

@@ -45,7 +45,7 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 ## C. VALIDATION & DATA — make the moat claim true (P1)
 *The "superior predictor" claim currently rests on published equivalence tables + coach intuition, and the coaches' intuition rejected it. Confidence bands are self-labeled `uncalibrated`.*
 
-- **C1 · Backtest the engine against held-out real races** (not equivalence tables). Produce real error metrics; this is the only thing that converts "plausible" into "proven."
+- **C1 · ✅ FIRST PASS DONE 2026-06-30.** Built `Predictive_Model/moat_backtest.js` — held-out backtest on **292 real-athlete pairs**: StrideOS median error **1.2% vs Riegel 1.9% (35% better)**, beats Riegel on **73%** of pairs, advantage widest at far event gaps (0.5% vs 2.2%). **Real, defensible moat evidence.** See `MOAT_EVIDENCE.md`. Caveats: same-season cross-event (not next-race), elite-skewed sample, n=292. *Full C1 = scale it via C3 on everyday rosters.*
 - **C2 · Calibrate the confidence intervals** against observed accuracy (currently `rangeMethod: heuristic_..._uncalibrated`). Honest, well-calibrated bands are themselves a differentiator — no competitor signals uncertainty.
 - **C3 · Rebuild data ingestion to MileSplit (HS) + TFRRS (college).** Current data is thin and state-PR-only; Doug flagged it inaccurate and pointed to MileSplit as the accurate HS source. This data is also what *enables* C1.
 
