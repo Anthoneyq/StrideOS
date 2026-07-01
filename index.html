@@ -5505,6 +5505,31 @@ const IMPORT_FIELDS = [
   { key: 'mileage',      label: 'Weekly Miles',  required: false, hints: ['mileage','miles','weekly','volume','weekly miles','weekly mileage'] },
 ];
 
+// Optional per-event PR columns. When a roster has event-named columns
+// ("800m", "1600m", "3200m", ...) these populate the athlete's additionalPRs
+// so a bulk-imported roster can use Multi-Event Analysis without hand-editing
+// each athlete. Event labels MUST match the manual form's event keys exactly
+// (they key into additionalPRs / DIST). Auto-detected by EXACT header match
+// only — substring matching would mis-map "Half Marathon" onto "Marathon" and
+// "3200m" onto "200m". Coaches can still map any column by hand.
+const EVENT_PR_FIELDS = [
+  { key: 'pr_100m',     event: '100m',          label: '100m PR',          hints: ['100m','100 m','100 meter','100 meters','100 dash'] },
+  { key: 'pr_200m',     event: '200m',          label: '200m PR',          hints: ['200m','200 m','200 meter','200 meters'] },
+  { key: 'pr_400m',     event: '400m',          label: '400m PR',          hints: ['400m','400 m','400 meter','400 meters'] },
+  { key: 'pr_800m',     event: '800m',          label: '800m PR',          hints: ['800m','800 m','800 meter','800 meters','half mile'] },
+  { key: 'pr_1500m',    event: '1500m',         label: '1500m PR',         hints: ['1500m','1500','1500 m','1.5k'] },
+  { key: 'pr_1600m',    event: '1600m',         label: '1600m PR',         hints: ['1600m','1600','1600 m'] },
+  { key: 'pr_mile',     event: 'Mile',          label: 'Mile PR',          hints: ['mile','1 mile','1mile','1609m'] },
+  { key: 'pr_3000m',    event: '3000m',         label: '3000m PR',         hints: ['3000m','3000','3000 m','3k'] },
+  { key: 'pr_3200m',    event: '3200m',         label: '3200m PR',         hints: ['3200m','3200','3200 m'] },
+  { key: 'pr_2mile',    event: '2 Mile',        label: '2 Mile PR',        hints: ['2 mile','2mile','two mile','2mi'] },
+  { key: 'pr_5k',       event: '5K',            label: '5K PR',            hints: ['5k','5000m','5000','5,000','5 k'] },
+  { key: 'pr_8k',       event: '8K',            label: '8K PR',            hints: ['8k','8000m','8000'] },
+  { key: 'pr_10k',      event: '10K',           label: '10K PR',           hints: ['10k','10000m','10000'] },
+  { key: 'pr_half',     event: 'Half Marathon', label: 'Half Marathon PR', hints: ['half marathon','half','13.1','half-marathon','hm'] },
+  { key: 'pr_marathon', event: 'Marathon',      label: 'Marathon PR',      hints: ['marathon','full marathon','26.2'] },
+];
+
 function renderImport(){
   const el = document.getElementById('im-body');
   if(!el) return;
@@ -5552,6 +5577,7 @@ function renderImportDropzone(){
       <div style="padding:0 1.25rem 1.25rem;font-size:.8125rem;color:var(--text-2);line-height:1.7">
         <p style="margin-bottom:.5rem"><strong style="color:var(--text)">Headers in row 1.</strong> One row per athlete after that.</p>
         <p style="margin-bottom:.5rem"><strong style="color:var(--text)">Common columns we auto-detect:</strong> Name, Age, Sex, Grade, Event, PR Time, PR Date, Mileage. We'll show you the mapping and you can override before import.</p>
+        <p style="margin-bottom:.5rem"><strong style="color:var(--text)">Multiple events per athlete?</strong> Add event-named columns (e.g. <em>800m</em>, <em>1600m</em>, <em>3200m</em>) and we'll import each as a PR for Multi-Event Analysis.</p>
         <p style="margin-bottom:.5rem"><strong style="color:var(--text)">From Google Sheets:</strong> File → Download → Comma Separated Values (.csv).</p>
         <p><strong style="color:var(--text)">From Excel:</strong> Save As → CSV UTF-8 or use the .xlsx file directly.</p>
       </div>
@@ -5674,6 +5700,13 @@ function autoDetectColumns(headers){
     }
     if(matchIdx >= 0) mapping[field.key] = headers[matchIdx];
   });
+  // Event-PR columns: EXACT header match only (see EVENT_PR_FIELDS note).
+  EVENT_PR_FIELDS.forEach(field => {
+    for(const hint of field.hints){
+      const idx = normalized.indexOf(hint.toLowerCase());
+      if(idx >= 0){ mapping[field.key] = headers[idx]; break; }
+    }
+  });
   return mapping;
 }
 
@@ -5688,7 +5721,7 @@ function renderImportMapping(){
     .concat(headers.map(h => `<option value="${esc(h)}" ${'' /* selected handled below */}>${esc(h)}</option>`))
     .join('');
 
-  const mappingHtml = IMPORT_FIELDS.map(field => {
+  const selectFor = field => {
     const current = mapping[field.key] || '';
     const opts = ['<option value="">— skip —</option>']
       .concat(headers.map(h => `<option value="${esc(h)}" ${h===current?'selected':''}>${esc(h)}</option>`))
@@ -5698,12 +5731,16 @@ function renderImportMapping(){
         <span class="field-name">${esc(field.label)}${field.required ? ' *' : ''}</span>
         <select onchange="setImportMapping('${field.key}', this.value)">${opts}</select>
       </label>`;
-  }).join('');
+  };
+  const mappingHtml = IMPORT_FIELDS.map(selectFor).join('');
+  const eventMappingHtml = EVENT_PR_FIELDS.map(selectFor).join('');
+  const mappedEventCount = EVENT_PR_FIELDS.filter(f => mapping[f.key]).length;
 
-  // Preview table — first 5 rows, mapped values
-  const previewHeaders = IMPORT_FIELDS.filter(f => mapping[f.key]).map(f => f.label);
+  // Preview table — first 5 rows, mapped values (core fields + any event PRs)
+  const previewFields = IMPORT_FIELDS.concat(EVENT_PR_FIELDS).filter(f => mapping[f.key]);
+  const previewHeaders = previewFields.map(f => f.label);
   const previewRows = rows.slice(0, 5).map(row => {
-    const cells = IMPORT_FIELDS.filter(f => mapping[f.key]).map(f => esc(String(row[mapping[f.key]] ?? '').trim() || '—'));
+    const cells = previewFields.map(f => esc(String(row[mapping[f.key]] ?? '').trim() || '—'));
     const hasName = !!(row[mapping.name] && String(row[mapping.name]).trim());
     return `<tr class="${hasName ? '' : 'invalid'}"><td style="color:var(--text-4);width:2rem">${cells.length ? '' : '—'}</td>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
   }).join('');
@@ -5721,6 +5758,13 @@ function renderImportMapping(){
         We auto-detected the columns below. Change any of them if a column should map to a different field. Required fields are marked with *.
       </p>
       <div class="import-mapping">${mappingHtml}</div>
+      <details style="margin-top:1rem" ${mappedEventCount ? 'open' : ''}>
+        <summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.6875rem;letter-spacing:.1rem;color:var(--text-2);text-transform:uppercase">Additional event PRs (optional)${mappedEventCount ? ` &middot; <span style="color:var(--accent)">${mappedEventCount} matched</span>` : ''}</summary>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);line-height:1.55;margin:.75rem 0 1rem">
+          Map any event-named columns (e.g. <strong>800m</strong>, <strong>1600m</strong>, <strong>3200m</strong>) so imported athletes can use Multi-Event Analysis right away. Leave blank to skip — the athlete still imports with their primary PR.
+        </p>
+        <div class="import-mapping">${eventMappingHtml}</div>
+      </details>
     </div>
     ${previewHeaders.length ? `
       <div class="card">
@@ -6338,6 +6382,19 @@ async function applyImport(){
     if(!name){ failed.push({ index: i, reason: 'no name' }); continue; }
 
     const evt = _normEvent(m.primaryEvent ? row[m.primaryEvent] : '');
+
+    // Additional event PRs (multi-event analysis). Only keep values that parse
+    // as a time and aren't a duplicate of the primary event.
+    const additionalPRs = {};
+    for(const ef of EVENT_PR_FIELDS){
+      const col = m[ef.key];
+      if(!col) continue;
+      const val = String(row[col] || '').trim();
+      if(val && parseTime(val) !== null && ef.event !== evt.raceDistance && ef.event !== evt.primaryEvent){
+        additionalPRs[ef.event] = val;
+      }
+    }
+
     const athlete = {
       id: 'a_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8) + '_' + i,
       name,
@@ -6355,7 +6412,7 @@ async function applyImport(){
       raceLocation: '',
       raceStartTime: '',
       raceWeather: null,
-      additionalPRs: {},
+      additionalPRs: additionalPRs,
       guardrail: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
