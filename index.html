@@ -5951,7 +5951,7 @@ function archetypeCurveSVG(a){
   const path = smoothPath(curve.map(p=>({x:xS(p.d), y:yS(p.spm)})));
   const area = path+` L${xS(curve[curve.length-1].d).toFixed(1)},${(padT+cH).toFixed(1)} L${xS(curve[0].d).toFixed(1)},${(padT+cH).toFixed(1)} Z`;
   const xticks=[100,200,400,800,1600,3200,5000,10000,21097,42195].filter(d=>d>=curveMin*0.85&&d<=curveMax*1.15);
-  const xlab={100:'100',200:'200',400:'400',800:'800',1600:'16',3200:'32',5000:'5K',10000:'10K',21097:'HM',42195:'Mar'};
+  const xlab={100:'100',200:'200',400:'400',800:'800',1600:'1.6K',3200:'3.2K',5000:'5K',10000:'10K',21097:'HM',42195:'Mar'};
   const fmtPaceMi = spm => { const t=spm*1609.34; const m=Math.floor(t/60), s=Math.round(t-m*60); return (s===60?(m+1)+':00':m+':'+(s<10?'0':'')+s); };
   const dots = prList.map(p=>`<circle cx="${xS(p.distM).toFixed(1)}" cy="${yS(p.sec/p.distM).toFixed(1)}" r="5" fill="#4ade80" stroke="#0B0D0F" stroke-width="2"><title>${esc(p.event)} — ${esc(fmtT(p.sec))} (real PR)</title></circle>`).join('');
   const tx=xS(targetD), ty=yS(targetSec/targetD);
@@ -5965,6 +5965,9 @@ function archetypeCurveSVG(a){
     </defs>
     ${[0,1,2,3,4].map(i=>{const y=padT+cH*i/4; const v=yMin+(yMax-yMin)*i/4; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.05)"/><text x="${padL-8}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="#6B7178" font-family="'JetBrains Mono',monospace" font-size="9">${fmtPaceMi(v)}</text>`;}).join('')}
     ${xticks.map(d=>`<text x="${xS(d).toFixed(1)}" y="${H-padB+18}" text-anchor="middle" fill="#6B7178" font-family="'JetBrains Mono',monospace" font-size="9">${xlab[d]||''}</text>`).join('')}
+    <!-- Axis titles: Y is min/mile pace, X is race distance (log). Without these the pace axis reads as race time. -->
+    <text x="13" y="${(padT+cH/2).toFixed(1)}" transform="rotate(-90 13 ${(padT+cH/2).toFixed(1)})" text-anchor="middle" fill="#8A9099" font-family="'JetBrains Mono',monospace" font-size="8" letter-spacing="1.3">PACE · MIN / MILE</text>
+    <text x="${(padL+cW/2).toFixed(1)}" y="${(H-5).toFixed(1)}" text-anchor="middle" fill="#8A9099" font-family="'JetBrains Mono',monospace" font-size="8" letter-spacing="1.3">RACE DISTANCE</text>
     <path d="${area}" fill="url(#archFill)"/>
     <path d="${path}" fill="none" stroke="url(#archLine)" stroke-width="2.5" stroke-linecap="round"/>
     ${dots}
