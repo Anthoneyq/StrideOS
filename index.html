@@ -128,6 +128,14 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .tier-banner-cta{flex-shrink:0;padding:.5rem .9rem;font-size:.6875rem}
 @media(max-width:700px){.tier-banner{flex-direction:column;align-items:stretch;text-align:center;margin:1rem 1rem 0}.tier-banner-cta{width:100%}}
 .upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+/* Basic-tier pace-matrix lead magnet: real taste on top, blurred + gated below */
+.matrix-lock-wrap{position:relative;user-select:none}
+.matrix-lock-overlay{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:center;padding:1.25rem;border-radius:.5rem;z-index:2;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.45) 22%,var(--bg-card) 82%);
+  -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,#000 9%);mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,#000 9%)}
+.matrix-lock-card{max-width:26rem;text-align:center;padding:1.25rem 1.25rem 1.5rem}
+.matrix-lock-card .btn{margin-top:.25rem}
 .upgrade-modal{position:relative;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:42rem;width:100%;padding:2rem 2rem 1.75rem;color:var(--text);font-family:inherit}
 .upgrade-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;padding:.25rem .5rem;border-radius:.25rem}
 .upgrade-close:hover{color:var(--text);background:var(--bg-card)}
@@ -4511,7 +4519,7 @@ function renderFreeTierCalculator(){
     </div>
 
     <!-- BOTTOM CONVERSION (anonymous only — show-then-ask after results) -->
-    ${tier==='basic' ? `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
+    ${tier==='basic' ? `<div id="ft-bottom-cta" style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
       <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Unlock with a free account</p>
       <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">Save athletes, sync across devices, and open the coach workspace — Multi-Event Analysis, race forecasts, and the Performance Curve. Free, no card.</p>
       <button class="btn btn-primary" onclick="publicCalculatorCta()">Create your free account →</button>
@@ -4531,6 +4539,40 @@ function wireFreeTierCalc(){
   // No-op: handlers wired via oninput/onchange inline
 }
 
+// Lead-magnet card floated over the blurred lower zones of the basic-tier pace table.
+function matrixLockCardHTML(){
+  return `<div class="matrix-lock-card">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.15rem;color:var(--accent);text-transform:uppercase;margin-bottom:.5rem">🔒 6 more zones locked</p>
+    <p style="font-family:var(--font-display);font-weight:700;font-size:1.35rem;letter-spacing:-.01em;line-height:1.2;margin-bottom:.5rem">Unlock the full pace table</p>
+    <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">You're seeing 3 of 9 training zones. Create a free account to reveal Threshold, Critical Velocity, VO2 Max, Speed &amp; Sprint splits at every rep distance — computed from this race time.</p>
+    <button class="btn btn-primary" onclick="publicCalculatorCta()">Create free account →</button>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.075rem;color:var(--text-4);text-transform:uppercase;margin-top:.75rem">Free · no card · 20 seconds</p>
+  </div>`;
+}
+
+// Position the blur/CTA overlay so the first 3 zone rows stay crisp and rows 4+ blur.
+function positionMatrixLock(mount){
+  const wrap = mount.querySelector('.matrix-lock-wrap');
+  const overlay = mount.querySelector('.matrix-lock-overlay');
+  const rows = mount.querySelectorAll('.matrix-lock-wrap table tbody tr');
+  if(!wrap || !overlay || rows.length <= 3){ if(overlay) overlay.style.display='none'; return; }
+  const measure = () => {
+    if(!wrap.isConnected) return;   // stale after a re-render — let its listener be replaced
+    const wr = wrap.getBoundingClientRect();
+    const rr = rows[3].getBoundingClientRect();
+    overlay.style.top = Math.max(0, rr.top - wr.top) + 'px';
+    overlay.style.display = 'flex';
+  };
+  // Measure now (layout is already available), then again after fonts/reflow settle.
+  measure();
+  requestAnimationFrame(measure);
+  // Single shared resize handler — the matrix is re-rendered on every keystroke, so
+  // swap it out each time rather than accumulating listeners on detached wrappers.
+  if(window._matrixLockResize) window.removeEventListener('resize', window._matrixLockResize);
+  window._matrixLockResize = measure;
+  window.addEventListener('resize', measure);
+}
+
 function freeTierUpdate(){
   const dEl = document.getElementById('ftD');
   const tEl = document.getElementById('ftT');
@@ -4548,13 +4590,24 @@ function freeTierUpdate(){
   document.getElementById('ft-result').style.display = 'block';
   document.getElementById('ft-controls').style.display = 'block';
 
-  // Full pace matrix (all tiers): every zone × rep distance from this race time.
+  // Full pace matrix (all tiers). Signed-out (basic) gets a real 3-zone taste with
+  // the rest blurred behind a sign-in lead magnet; Advanced/Pro see the full table.
   const matrixSec = document.getElementById('ft-matrix-section');
   const matrixMount = document.getElementById('ft-pace-table');
+  const bottomCta = document.getElementById('ft-bottom-cta');
   if(matrixSec && matrixMount){
     const anchor = { name:'Anchor', raceDistanceM:distM, raceDistance:(dEl.options[dEl.selectedIndex]?dEl.options[dEl.selectedIndex].text:distM+'m'), raceTime:tEl.value.trim(), age:null, trainingAge:0, additionalPRs:{}, guardrail:null };
     const html = buildDanielsTable(anchor);
-    matrixMount.innerHTML = html;
+    const locked = (typeof calcTier === 'function') && calcTier() === 'basic';
+    if(html && locked){
+      matrixMount.innerHTML = `<div class="matrix-lock-wrap">${html}<div class="matrix-lock-overlay" style="display:none">${matrixLockCardHTML()}</div></div>`;
+      positionMatrixLock(matrixMount);
+      // The overlay now carries the conversion — retire the redundant page-bottom CTA.
+      if(bottomCta) bottomCta.style.display = 'none';
+    }else{
+      matrixMount.innerHTML = html;
+      if(bottomCta) bottomCta.style.display = '';
+    }
     matrixSec.style.display = html ? 'block' : 'none';
   }
 
