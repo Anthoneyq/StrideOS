@@ -1546,9 +1546,7 @@ function fmtDistance(m){
 function fmtPaceFromTotals(distM, durSec){
   if(!distM || !durSec) return '—';
   const secPerKm = durSec / (distM/1000);
-  const m = Math.floor(secPerKm/60);
-  const s = Math.round(secPerKm % 60);
-  return `${m}:${s.toString().padStart(2,'0')}/km`;
+  return _mmss(secPerKm, 0) + '/km';
 }
 
 async function loadWorkouts(athleteId){
@@ -2451,6 +2449,32 @@ async function syncAthleteToSupabase(athlete){
         .eq('coach_id', sbUser.id);
       if(e2) console.warn('invite_email update failed', e2);
     }
+    // Reconcile stale PR rows: import_local_athlete is upsert-only, so a changed
+    // primary event or a cleared additional PR leaves orphan 'primary:<old>' /
+    // 'additional:<event>' race rows that would resurrect as phantom PRs on the
+    // next cloud reload. Remove any local-import race not in the current PR set.
+    try{
+      const { data: aRow } = await sbClient
+        .from('athletes').select('id')
+        .eq('client_ref', athlete.id).eq('coach_id', sbUser.id).maybeSingle();
+      if(aRow && aRow.id){
+        const validRefs = new Set();
+        if(athlete.raceDistance) validRefs.add('primary:' + athlete.raceDistance);
+        Object.keys(athlete.additionalPRs || {}).forEach(k => validRefs.add('additional:' + k));
+        const { data: existing } = await sbClient
+          .from('races').select('id, source_ref')
+          .eq('athlete_id', aRow.id)
+          .eq('source', 'local_storage_import')
+          .is('deleted_at', null);
+        const stale = (existing || [])
+          .filter(r => r.source_ref && !validRefs.has(r.source_ref))
+          .map(r => r.id);
+        if(stale.length){
+          const { error: e3 } = await sbClient.from('races').delete().in('id', stale);
+          if(e3) console.warn('stale race cleanup failed', e3);
+        }
+      }
+    }catch(reconErr){ console.warn('race reconciliation skipped', reconErr); }
     return { ok: true };
   }catch(err){
     console.warn('Athlete background sync failed', err);
@@ -2559,7 +2583,11 @@ function remoteAthleteToLocal(row, raceRows){
   const races = (raceRows || []).filter(r => r.athlete_id === row.id);
   const additionalPRs = {};
   races.forEach(r => {
-    if(r.event && r.time_text && r.event !== row.race_distance){
+    // Classify by provenance (source_ref), NOT by name. A stale 'primary:<old>'
+    // race left behind when the coach changed the primary event must not be
+    // re-hydrated as a phantom additional PR.
+    const isPrimaryRef = r.source_ref && r.source_ref.indexOf('primary:') === 0;
+    if(r.event && r.time_text && !isPrimaryRef && r.event !== row.race_distance){
       additionalPRs[r.event] = r.time_text;
     }
   });
@@ -2769,7 +2797,7 @@ function parseTime(s){
 
 function fmtT(sec){
   if(sec==null||isNaN(sec)) return '—';
-  if(sec<60) return sec.toFixed(2);
+  if(Math.round(sec*100)/100 < 60) return (Math.round(sec*100)/100).toFixed(2);
   const m=Math.floor(sec/60);
   if(m<60){ return _mmss(sec,1); }
   const h=Math.floor(m/60), mm=m-h*60;
@@ -2826,7 +2854,7 @@ function fmt400(spkm){
 function fmtSplit(spkm, distM){
   if(!spkm||isNaN(spkm)||spkm<=0) return '—';
   const s = spkm * (distM/1000);
-  if(s < 60) return s.toFixed(1) + 's';
+  if(Math.round(s*10)/10 < 60) return (Math.round(s*10)/10).toFixed(1) + 's';
   return _mmss(s,1);
 }
 
@@ -3162,8 +3190,9 @@ function targetRepTime(raceSecPerM, repDistM, pct){
 // Format a rep time intelligently
 function fmtRepTime(sec){
   if(!sec || isNaN(sec) || sec <= 0) return '—';
-  if(sec < 60){
-    return sec.toFixed(1) + 's';
+  const r = Math.round(sec*10)/10;
+  if(r < 60){
+    return r.toFixed(1) + 's';
   }
   return _mmss(sec,1);
 }
@@ -3252,6 +3281,17 @@ function zoneAllowedForAnchor(zone, athlete){
   if(!athlete || !athlete.raceDistanceM) return true;
   if(zone.pct >= 100) return true;
   return athlete.raceDistanceM >= 1500;
+}
+
+// For a short (sub-1500m) anchor, even the race/supra-race zones must not be
+// linearly extrapolated to distances beyond the race itself — a 400m PR cannot
+// prescribe a "mile at 118%" (that produced sub-world-record miles) or an 800m
+// rep faster than the athlete's own 800. Cap rep distances at ~the race length;
+// distance anchors (≥1500m) are unrestricted.
+function repAllowedForAnchor(repDistM, athlete){
+  if(!athlete || !athlete.raceDistanceM) return true;
+  if(athlete.raceDistanceM >= 1500) return true;
+  return repDistM <= athlete.raceDistanceM * 1.25;
 }
 
 function vdotPctForZone(zone, athlete){
@@ -4254,7 +4294,7 @@ function renderPaces(){
         <span style="color:var(--text-4)">+</span>
       </summary>
       <div style="padding:0 1.5rem 1.5rem;font-size:.875rem;color:var(--text-2);line-height:1.7">
-        <p style="margin-bottom:.75rem">Training paces start from ${esc(A.name)}'s measured race result. Named aerobic zones use a VDOT-equivalent estimate when the anchor is long enough, but this is not a measured VO₂max, lactate threshold, or running-economy test. Coach adjustment by HR, RPE, lactate, conditions, and interval length still governs the final prescription.</p>
+        <p style="margin-bottom:.75rem">Training paces start from ${esc(A.name)}'s measured race result. Each named zone is a percentage of that race PR's <em>pace</em> (Canova race-pace framework) — <strong>not</strong> a percentage of VO₂max or heart rate, and not a measured lactate-threshold or running-economy test. Coach adjustment by HR, RPE, lactate, conditions, and interval length still governs the final prescription.</p>
         <p style="margin-bottom:.75rem">Built from peer-reviewed sport science literature. <button onclick="goTo('methodology',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">View sources →</button></p>
       </div>
     </details>
@@ -4305,19 +4345,21 @@ function buildDanielsTable(ath){
     const allowed = zoneAllowedForAnchor(z, ath);
     const adjustedPct = effectiveZonePct(z, ath, guardrailKey);
     const cells = z.reps.map(d => {
-      if(!allowed) return { dist: d, sec: null, blocked: true };
+      if(!allowed || !repAllowedForAnchor(d, ath)) return { dist: d, sec: null, blocked: true };
       let split = secPerM * d * pctToMult(adjustedPct);
       split = applyEnvironment(split, env.tempF, env.altitudeFt);
       return { dist: d, sec: split };
     });
 
-    // Min/mile pace for headline column
+    // Min/mile pace for headline column. Only meaningful for a distance anchor —
+    // a sub-1500m PR must not be extrapolated to a full mile at any zone.
     let mileStr = 'Needs 1500m+ PR';
-    if(allowed){
+    if(allowed && ath.raceDistanceM >= 1500){
       const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
       const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
-      const mileMin = Math.floor(correctedMile/60), mileSec = Math.round(correctedMile - mileMin*60);
-      mileStr = `${mileMin}:${mileSec<10?'0':''}${mileSec}`;
+      mileStr = _mmss(correctedMile, 0);
+    } else if(allowed){
+      mileStr = '—';
     }
 
     return { ...z, cells, mileStr, displayPct: adjustedPct.toFixed(0), allowed };
@@ -4334,7 +4376,7 @@ function buildDanielsTable(ath){
 
   const header = `
     <tr style="border-bottom:1px solid var(--border-s)">
-      <th style="padding:.625rem .75rem;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600;position:sticky;left:0;background:var(--bg-card);min-width:10rem">Zone · %</th>
+      <th style="padding:.625rem .75rem;text-align:left;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600;position:sticky;left:0;background:var(--bg-card);min-width:10rem">Zone · % of race pace</th>
       <th style="padding:.625rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Per Mile</th>
       ${allReps.map(d => `<th style="padding:.625rem .75rem;text-align:right;font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">${esc(repLabel(d))}</th>`).join('')}
     </tr>`;
@@ -4342,10 +4384,9 @@ function buildDanielsTable(ath){
   const bodyRows = rows.map(z => {
     const cellsByDist = {};
     z.cells.forEach(c => cellsByDist[c.dist] = c);
-    const vdotDerived = vdotPctForZone(z, ath);
     const isGuardrailAdjusted = z.pct < 100 && guardrail.shift !== 0;
     const subLabel = z.allowed
-      ? `${z.displayPct}% <span style="color:var(--text-4)">· ${vdotDerived ? 'VDOT-eq' : z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
+      ? `${z.displayPct}% of race pace <span style="color:var(--text-4)">· ${z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
       : 'Needs 1500m+';
     const zoneColor = z.allowed ? 'var(--text)' : 'var(--text-4)';
 
@@ -4681,8 +4722,7 @@ function freeTierUpdate(){
   set('ft-100', (targetSecPerM * 100).toFixed(1) + 's');
   set('ft-400', (targetSecPerM * 400).toFixed(1) + 's');
   const targetMileSec = targetSecPerM * 1609.34;
-  const mm = Math.floor(targetMileSec/60), ms = Math.round(targetMileSec - mm*60);
-  set('ft-mile', `${mm}:${ms<10?'0':''}${ms}`);
+  set('ft-mile', _mmss(targetMileSec, 0));
 }
 
 function ftSetPct(p){
@@ -4804,8 +4844,7 @@ function updateBuilder(){
   setEl('build-100',  (targetSecPerM * 100).toFixed(1) + 's');
   setEl('build-400',  (targetSecPerM * 400).toFixed(1) + 's');
   const targetMileSec = targetSecPerM * 1609.34;
-  const mm = Math.floor(targetMileSec/60), ms = Math.round(targetMileSec - mm*60);
-  setEl('build-mile', `${mm}:${ms<10?'0':''}${ms}`);
+  setEl('build-mile', _mmss(targetMileSec, 0));
 
   // Update the ladder table (raw pace, no env correction in reference table)
   document.querySelectorAll('#ladder-body tr').forEach(tr => {
@@ -4834,9 +4873,7 @@ function updateBuilder(){
     if(e100)  e100.textContent  = (zSecPerM * 100).toFixed(1) + 's/100m';
     if(e400)  e400.textContent  = (zSecPerM * 400).toFixed(1) + 's/400m';
     if(eMile){
-      const ms = zSecPerM * 1609.34;
-      const m = Math.floor(ms/60), s = Math.round(ms - m*60);
-      eMile.textContent = `${m}:${s<10?'0':''}${s}/mi`;
+      eMile.textContent = _mmss(zSecPerM * 1609.34, 0) + '/mi';
     }
     if(eOff) eOff.textContent = fmtOffset(zTargetForRep, zRaceSec);
 
@@ -5217,7 +5254,7 @@ function personalFatigueExponent(athlete, opts){
   };
 }
 
-function raceForecastForTarget(athlete, target){
+function raceForecastForTarget(athlete, target, opts){
   const primary = primaryPRForAthlete(athlete);
   if(!primary || !target || !target.distM) return null;
 
@@ -5247,7 +5284,15 @@ function raceForecastForTarget(athlete, target){
     };
   }
 
-  const anchor = _selectBestAnchor(targetDistM, athlete, { excludeTarget: true }) || primary;
+  // A caller (e.g. the full forecast table) can pin ONE anchor for every row so
+  // the whole distance curve follows a single fatigue model instead of stitching
+  // together per-target anchors — which produced the incoherent pace jumps
+  // between adjacent distances that the coaches flagged. The athlete's own
+  // multi-PR data still personalizes the curve via personalFatigueExponent below.
+  const fixedAnchor = opts && opts.fixedAnchor;
+  const anchor = (fixedAnchor && !sameDistanceM(fixedAnchor.distM, targetDistM))
+    ? fixedAnchor
+    : (_selectBestAnchor(targetDistM, athlete, { excludeTarget: true }) || primary);
   const anchorDomain = getEventDomain(anchor.distM);
   const sameDomain = targetDomain.key === anchorDomain.key;
   const adjacentDomain = Math.abs(targetDomain.order - anchorDomain.order) === 1;
@@ -5355,7 +5400,20 @@ function buildPredictiveRaceTable(){
   const personalK = personalFatigueExponent(A);
   const sourceLabel = `${A.raceDistance} in ${A.raceTime}`;
 
-  const rows = forecastTargets().map(t => raceForecastForTarget(A, t)).filter(Boolean);
+  // Pin one anchor (the athlete's primary PR) for the whole table so the forecast
+  // curve is internally consistent across distances (no per-target anchor flips).
+  const tableAnchor = primaryPRForAthlete(A);
+  const rows = forecastTargets()
+    .map(t => raceForecastForTarget(A, t, { fixedAnchor: tableAnchor }))
+    .filter(Boolean)
+    // Coach feedback (Alex + Doug): don't surface far cross-domain forecasts
+    // (e.g. a 100m time for a distance runner). Real PRs always show.
+    .filter(r => {
+      if(r.isObserved) return true;
+      if(r.isExploratory) return false;                            // ≥3 event-domains away
+      if(A.raceDistanceM >= 1500 && r.distM <= 400) return false;  // no sprint rows for mid/distance primaries
+      return true;
+    });
 
   const confColor = c => {
     if(c >= 75) return 'var(--green)';
@@ -5412,7 +5470,7 @@ function buildPredictiveRaceTable(){
       </table>
     </div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts. Cross-domain predictions are shown but flagged exploratory; validation strength varies by event family.
+      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts. Forecasts more than two event-families away from the athlete's PR (e.g. a 100m for a 5K runner) are hidden as unreliable; validation strength varies by event family.
     </p>`;
 }
 
@@ -6450,8 +6508,9 @@ function buildPreds(distM, sec, primary){
     1500:'1500m',1600:'1600m',1609:'Mile',3000:'3000m',3200:'3200m',3218:'2 Mile',
     5000:'5K',8000:'8K',10000:'10K',21097:'Half Marathon',42195:'Marathon'};
 
+  const familyAnchor = primaryPRForAthlete(A);
   return(families[primary]||[distM]).map(t => {
-    const forecast = raceForecastForTarget(A, { distM: t, label: names[t] || labelForDistance(t) });
+    const forecast = raceForecastForTarget(A, { distM: t, label: names[t] || labelForDistance(t) }, { fixedAnchor: familyAnchor });
     if(!forecast) return '';
     const isSelf = forecast.isSource;
     const isObserved = forecast.isObserved;
@@ -7059,12 +7118,7 @@ function buildPerformanceCurve(anchor, allPRs){
   }
 
   // Format Y-axis pace label (sec/m → min/mile for readability)
-  const fmtYLabel = secPerM => {
-    const secPerMile = secPerM * 1609.34;
-    const m = Math.floor(secPerMile / 60);
-    const s = Math.round(secPerMile - m * 60);
-    return `${m}:${s<10?'0':''}${s}`;
-  };
+  const fmtYLabel = secPerM => _mmss(secPerM * 1609.34, 0);
 
   // Build dots for actual PRs with strength color
   const dots = actualPaces.map(p => {

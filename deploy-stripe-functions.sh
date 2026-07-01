@@ -97,13 +97,13 @@ if ! command -v curl >/dev/null 2>&1; then
   echo "  ⚠ curl not found — cannot auto-validate prices."; PRICE_OK=0
 else
   validate_price "$PRICE_MONTHLY" 1999  month "Monthly \$19.99" || PRICE_OK=0
-  validate_price "$PRICE_ANNUAL"  14400 year  "Annual \$144"    || PRICE_OK=0
+  validate_price "$PRICE_ANNUAL"  19900 year  "Annual \$199"    || PRICE_OK=0
 fi
 if [ "$PRICE_OK" != "1" ]; then
   echo "⚠ Prices were NOT auto-confirmed against Stripe (network down, or amounts mismatch)."
-  echo "   Override only if you have personally verified these IDs are the live \$19.99 + \$144 prices."
-  read -rp "   To override, type exactly: DEPLOY 19.99/144  → " CONFIRM
-  [ "$CONFIRM" = "DEPLOY 19.99/144" ] || { echo "Aborted — fix the price IDs and re-run."; exit 1; }
+  echo "   Override only if you have personally verified these IDs are the live \$19.99 + \$199 prices."
+  read -rp "   To override, type exactly: DEPLOY 19.99/199  → " CONFIRM
+  [ "$CONFIRM" = "DEPLOY 19.99/199" ] || { echo "Aborted — fix the price IDs and re-run."; exit 1; }
 fi
 
 supabase secrets set STRIPE_SECRET_KEY="$STRIPE_KEY"

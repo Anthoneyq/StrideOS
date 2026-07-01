@@ -75,3 +75,26 @@ content_path = "./supabase/templates/email_change.html"
 [auth.mfa.totp]
 enroll_enabled = true
 verify_enabled = true
+
+# ── Edge function JWT policy (declarative, so deploys are correct regardless
+# of CLI --no-verify-jwt flags). Two endpoints are called by third parties
+# that cannot present a Supabase JWT and MUST run unauthenticated:
+#   - stripe-webhook: authenticated by the Stripe signature, not a JWT.
+#   - strava-oauth-callback: Strava's browser redirect carries only ?code&state
+#     (the state is the athlete UUID); no Supabase JWT is present, so leaving
+#     verify_jwt on would 401 every "Connect Strava" before the handler runs.
+# The remaining functions are called by the signed-in app and keep JWT auth.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.strava-oauth-callback]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.create-portal-session]
+verify_jwt = true
+
+[functions.strava-sync-activities]
+verify_jwt = true

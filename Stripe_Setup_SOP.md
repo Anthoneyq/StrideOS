@@ -9,6 +9,8 @@ revisit: after first paid signup, evaluate full subscription gating (Scope B)
 
 # Stripe Setup — Stride OS $20/mo Payment Link
 
+> ⚠️ **SUPERSEDED (2026-07-01).** This "Scope A" single-Payment-Link path is no longer how billing works. Live billing runs through the Supabase Edge Function checkout (`create-checkout-session` / `stripe-webhook`) with real subscription gating, and the launch prices are **$19.99/mo · $199/yr · $149/yr Founding** (see `PRICING_STRATEGY.md`). Do **not** create a $20.00 price from this doc — use `deploy-stripe-functions.sh`, which validates the Stripe price IDs against $19.99 (1999¢) and $199 (19900¢). Kept for historical reference only.
+
 > The whole point of this doc: smallest possible path from "two warm coaches" to "first paid customer." No code. No Supabase wiring. No app changes. Just a URL you paste in the email.
 
 ## What you'll have when this is done

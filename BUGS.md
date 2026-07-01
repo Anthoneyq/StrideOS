@@ -61,6 +61,21 @@ Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 
 **✅ BUG-006 · "6:60" rounding bug (P3).** `fmtMile` already guarded the seconds→60 carry, but its siblings did not: `displayPace` mile branch (the per-rep pace coaches see), `fmtT`, `fmtSplit`, `fmtRepTime`, `fmtOffset` all let `toFixed(1)` turn 59.96 into "60.0" or `Math.round` hit 60 with no carry. **Fix:** added a carry-safe `_mmss(sec, dec)` helper (index.html ~2718) and routed all of them through it. Unit-tested (9 cases incl. 6:59.96→7:00); inline JS parses; 31/31 engine benchmarks pass.
 
+## 2026-07-01 — Full review + fix pass (multi-agent, 23 findings verified)
+
+Full writeup + open decisions in `REVIEW_2026-07-01.md`. Fixed + verified (31/31 benchmarks, JS parses):
+
+- **✅ BUG-007 · "6:60" rounding still live in 9 primary formatters (P1, coach-flagged).** The carry-safe `_mmss` existed but the split-table per-mile (4319), free-tier/builder hero mile, interval-ladder, perf-curve Y-axis, Strava `/km`, plus `fmtRepTime`/`fmtSplit`/`fmtT` sub-minute paths all re-rolled `Math.round` with no 60→00 carry. Routed all through carry-safe rounding.
+- **✅ BUG-008 · Forecast table incoherent across distances (P1, coach-flagged).** Per-target `_selectBestAnchor` flipped anchors between adjacent rows → implausible pace steps. `buildPredictiveRaceTable`/`buildPreds` now pin ONE anchor (primary PR) via new `raceForecastForTarget(…, {fixedAnchor})`; multi-PR still personalizes via `personalFatigueExponent`.
+- **✅ BUG-009 · Sprint rows shown for distance runners (P2, coach-flagged).** Forecast table now drops non-observed exploratory rows + all ≤400m rows for a ≥1500m primary (was only dimmed).
+- **✅ BUG-010 · Short-anchor race/supra-race extrapolation (P2, coach-flagged).** New `repAllowedForAnchor` caps reps at ~1.25× a sub-1500m anchor and hides per-mile → no more sub-WR mile / VO2-faster-than-PR.
+- **✅ BUG-011 · Cloud reload phantom + resurrecting PRs (P2).** `remoteAthleteToLocal` now classifies additional PRs by `source_ref` provenance (not name); `syncAthleteToSupabase` reconciles/deletes stale local-import race rows. Client-side only, no migration.
+- **✅ BUG-012 · Strava callback would 401 (P1).** Added declarative `[functions.*] verify_jwt` to `config.toml` (`strava-oauth-callback`/`stripe-webhook` = false).
+- **✅ BUG-013 · Annual price drift $199 vs $144 (P2).** Aligned `deploy-stripe-functions.sh` (19900¢), checkout comment, and superseded `Stripe_Setup_SOP.md`.
+- **✅ BUG-014 · Dead VDOT subsystem + false "VDOT-equivalent" claim (P3).** `vToSpkm` units bug made the whole reconciliation return null for every athlete; corrected the misleading copy and labeled the split table "% of race pace".
+
+**Open (need Anthoney / decision / deploy):** team-tier billing unpurchasable (BUG-003 family), founding-seat button doesn't charge, age-based zone recalibration, deploy + Stripe price IDs + pg_cron + Strava migration, legal review. See `REVIEW_2026-07-01.md` §NEEDS YOU.
+
 ## Notes on things that are **correct** (checked, no bug)
 
 - All 4 frontend `.rpc()` names exist as migration functions; all 6 `.from()` targets exist.
