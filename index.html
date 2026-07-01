@@ -4501,14 +4501,14 @@ function renderFreeTierCalculator(){
       </div>
     </div>
 
-    <!-- FULL PACE MATRIX — every zone × rep distance (Advanced + Pro) -->
-    ${tier!=='basic' ? `<div id="ft-matrix-section" style="margin-bottom:1.5rem;display:none">
+    <!-- FULL PACE MATRIX — every zone × rep distance (all tiers) -->
+    <div id="ft-matrix-section" style="margin-bottom:1.5rem;display:none">
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
-        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em">Full pace table${tier==='pro'?'':''}</h3>
+        <h3 style="font-family:var(--font-display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em">Full pace table</h3>
         <span style="font-size:.8125rem;color:var(--text-3)">Every training zone × rep distance, computed from your race time.</span>
       </div>
       <div id="ft-pace-table"></div>
-    </div>` : ''}
+    </div>
 
     <!-- BOTTOM CONVERSION (anonymous only — show-then-ask after results) -->
     ${tier==='basic' ? `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-top:1.5rem">
@@ -4548,7 +4548,7 @@ function freeTierUpdate(){
   document.getElementById('ft-result').style.display = 'block';
   document.getElementById('ft-controls').style.display = 'block';
 
-  // Full pace matrix (Advanced + Pro): every zone × rep distance from this race time.
+  // Full pace matrix (all tiers): every zone × rep distance from this race time.
   const matrixSec = document.getElementById('ft-matrix-section');
   const matrixMount = document.getElementById('ft-pace-table');
   if(matrixSec && matrixMount){
