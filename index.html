@@ -2324,7 +2324,7 @@ function showPrivacyModal(){
 
       <div style="border:1px solid var(--accent-line);border-radius:.5rem;padding:1rem 1.25rem">
         <div style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:.35rem;color:var(--red)">Delete my account</div>
-        <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2);line-height:1.55;margin-bottom:.85rem">Permanently removes your account and every athlete, race &amp; record. This can't be undone — export first if you want a copy. Type <strong style="color:var(--text)">DELETE</strong> to confirm.</p>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2);line-height:1.55;margin-bottom:.85rem">Permanently deletes every athlete, race, workout &amp; Strava connection — from the cloud and this device — and closes your account. This can't be undone; export first if you want a copy. <strong style="color:var(--text)">An active subscription is not cancelled by deleting</strong> — use Manage subscription first. Type <strong style="color:var(--text)">DELETE</strong> to confirm.</p>
         <input class="auth-input" id="privDeleteConfirm" type="text" autocomplete="off" placeholder="Type DELETE"
                oninput="var b=document.getElementById('privDeleteBtn');if(b)b.disabled=(this.value.trim()!=='DELETE')">
         <div class="auth-actions" style="margin-top:.5rem">
@@ -2372,9 +2372,17 @@ async function requestAccountDeletion(){
   try{
     const { error } = await sbClient.rpc('request_account_deletion');
     if(error) throw error;
+    // Wipe the local copy too — leaving the roster in localStorage after
+    // "delete my account" keeps minors' PII on the device and would silently
+    // re-upload every "deleted" athlete on the next sign-in.
+    clearDB();
+    DB = newDB();
+    refreshActiveAthlete();
+    updateChip();
     closePrivacyModal();
     toast('Account deleted. Signing you out…');
     if(typeof signOutSupabase === 'function'){ await signOutSupabase(); }
+    if(currentScreen === 'roster' && typeof renderRoster === 'function') renderRoster();
   }catch(err){
     console.error('request_account_deletion failed', err);
     toast('Deletion failed — try again or contact support');
@@ -2573,7 +2581,7 @@ async function syncAthleteToSupabase(athlete){
 // this becomes the prediction-vs-outcome dataset used to recalibrate the
 // ensemble (the core data flywheel). Deduped per athlete via a signature of
 // the inputs, so re-saving without changes doesn't write duplicate rows.
-const PREDICTION_ENGINE_VERSION = 'ensemble-2026-06-20-source-excluded';
+const PREDICTION_ENGINE_VERSION = 'ensemble-2026-07-01-nearest-anchor';
 const PREDICTION_SOURCE_VERSION = 'sources-2026-06-20-norwegian-method-applied';
 
 async function logPredictionSnapshot(athlete){
@@ -2598,7 +2606,10 @@ async function logPredictionSnapshot(athlete){
     try{ sigs = JSON.parse(localStorage.getItem('strideos_pred_log_sigs') || '{}'); }catch(_e){}
     if(sigs[athlete.id] === sig) return { ok: true, skipped: true, reason: 'duplicate_signature' };
 
-    const preds = forecastTargets().map(t => raceForecastForTarget(athlete, t)).filter(r => r && !r.isObserved).map(r => {
+    // Must anchor identically to the displayed forecast table (nearest observed
+    // PR per target) — this log exists to compare what the coach SAW against
+    // eventual real results, so a divergent anchor poisons the calibration set.
+    const preds = forecastTargets().map(t => raceForecastForTarget(athlete, t, { fixedAnchor: nearestAnchorForTarget(athlete, t.distM) })).filter(r => r && !r.isObserved).map(r => {
       return {
         distM: r.distM,
         label: r.label,
@@ -2882,11 +2893,13 @@ function parseTime(s){
 
 function fmtT(sec){
   if(sec==null||isNaN(sec)) return '—';
-  if(Math.round(sec*100)/100 < 60) return (Math.round(sec*100)/100).toFixed(2);
-  const m=Math.floor(sec/60);
-  if(m<60){ return _mmss(sec,1); }
-  const h=Math.floor(m/60), mm=m-h*60;
-  return `${h}:${String(mm).padStart(2,'0')}:${String(Math.floor(sec%60)).padStart(2,'0')}`;
+  const c = Math.round(sec*100)/100;
+  if(c < 60) return c.toFixed(2);
+  // Branch on the rounded value so 3599.96 carries into 1:00:00, not "60:00.0".
+  const r = Math.round(sec*10)/10;
+  if(r < 3600){ return _mmss(sec,1); }
+  const h=Math.floor(r/3600), rem=r-h*3600, mm=Math.floor(rem/60);
+  return `${h}:${String(mm).padStart(2,'0')}:${String(Math.floor(rem-mm*60)).padStart(2,'0')}`;
 }
 
 // ══════════════════════════════════════
@@ -4430,7 +4443,13 @@ function buildDanielsTable(ath){
     const allowed = zoneAllowedForAnchor(z, ath);
     const adjustedPct = effectiveZonePct(z, ath, guardrailKey);
     const cells = z.reps.map(d => {
-      if(!allowed || !repAllowedForAnchor(d, ath)) return { dist: d, sec: null, blocked: true };
+      // Sub-1500m anchors: also block supra-race paces at/beyond the race
+      // distance itself — a rep >= the PR distance prescribed FASTER than PR
+      // pace is physically impossible (the "VO2 breaks the world record" case).
+      if(!allowed || !repAllowedForAnchor(d, ath) ||
+         (ath.raceDistanceM < 1500 && adjustedPct > 100 && d >= ath.raceDistanceM)){
+        return { dist: d, sec: null, blocked: true };
+      }
       let split = secPerM * d * pctToMult(adjustedPct);
       split = applyEnvironment(split, env.tempF, env.altitudeFt);
       return { dist: d, sec: split };
@@ -4784,11 +4803,13 @@ function freeTierUpdate(){
   const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
 
   set('ftPctVal', pct + '%');
-  if(distM < 1500 && pct < 100){
+  // Same short-anchor rules as the coach builder: no aerobic zones, no reps
+  // meaningfully beyond the race distance, no supra-race pace at/beyond it.
+  if(distM < 1500 && (pct < 100 || rep > distM * 1.25 || (pct > 100 && rep >= distM))){
     set('ft-rep', repLabel);
-    set('ft-time', 'Need 1500m+ PR');
+    set('ft-time', pct < 100 ? 'Need 1500m+ PR' : 'Pick a shorter rep');
     set('ft-pct', pct + '%');
-    set('ft-offset', 'aerobic target blocked for short-race anchor');
+    set('ft-offset', pct < 100 ? 'aerobic target blocked for short-race anchor' : 'rep beyond this PR’s valid range');
     set('ft-100', '—');
     set('ft-400', '—');
     set('ft-mile', '—');
@@ -4806,8 +4827,7 @@ function freeTierUpdate(){
   const targetSecPerM = targetSec / rep;
   set('ft-100', (targetSecPerM * 100).toFixed(1) + 's');
   set('ft-400', (targetSecPerM * 400).toFixed(1) + 's');
-  const targetMileSec = targetSecPerM * 1609.34;
-  set('ft-mile', _mmss(targetMileSec, 0));
+  set('ft-mile', distM >= 1500 ? _mmss(targetSecPerM * 1609.34, 0) : '—');
 }
 
 function ftSetPct(p){
@@ -4899,12 +4919,15 @@ function updateBuilder(){
     pctVal.textContent = pct + '%';
   }
 
-  if(A.raceDistanceM < 1500 && pct < 100){
+  // Short-race anchors can't prescribe aerobic zones, reps meaningfully beyond
+  // the race distance, or supra-race pace AT/BEYOND the race distance (faster
+  // than the athlete's own PR) — same rules as the Coach Split Table.
+  if(A.raceDistanceM < 1500 && (pct < 100 || !repAllowedForAnchor(rep, A) || (pct > 100 && rep >= A.raceDistanceM))){
     const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
     setEl('build-rep', repLabel);
-    setEl('build-time', 'Need 1500m+ PR');
+    setEl('build-time', pct < 100 ? 'Need 1500m+ PR' : 'Pick a shorter rep');
     setEl('build-pct', pct + '%');
-    setEl('build-offset', 'aerobic target blocked for short-race anchor');
+    setEl('build-offset', pct < 100 ? 'aerobic target blocked for short-race anchor' : 'rep beyond this PR’s valid range');
     setEl('build-100', '—');
     setEl('build-400', '—');
     setEl('build-mile', '—');
@@ -4928,8 +4951,9 @@ function updateBuilder(){
   const targetSecPerM = targetSec / rep;
   setEl('build-100',  (targetSecPerM * 100).toFixed(1) + 's');
   setEl('build-400',  (targetSecPerM * 400).toFixed(1) + 's');
-  const targetMileSec = targetSecPerM * 1609.34;
-  setEl('build-mile', _mmss(targetMileSec, 0));
+  // Mile view only for distance anchors — a sub-1500m PR pace extrapolated to
+  // a full mile is not a real training target.
+  setEl('build-mile', A.raceDistanceM >= 1500 ? _mmss(targetSecPerM * 1609.34, 0) : '—');
 
   // Update the ladder table (raw pace, no env correction in reference table)
   document.querySelectorAll('#ladder-body tr').forEach(tr => {
@@ -4958,7 +4982,7 @@ function updateBuilder(){
     if(e100)  e100.textContent  = (zSecPerM * 100).toFixed(1) + 's/100m';
     if(e400)  e400.textContent  = (zSecPerM * 400).toFixed(1) + 's/400m';
     if(eMile){
-      eMile.textContent = _mmss(zSecPerM * 1609.34, 0) + '/mi';
+      eMile.textContent = A.raceDistanceM >= 1500 ? _mmss(zSecPerM * 1609.34, 0) + '/mi' : '—';
     }
     if(eOff) eOff.textContent = fmtOffset(zTargetForRep, zRaceSec);
 
@@ -5485,11 +5509,12 @@ function buildPredictiveRaceTable(){
   const personalK = personalFatigueExponent(A);
   const sourceLabel = `${A.raceDistance} in ${A.raceTime}`;
 
-  // Pin one anchor (the athlete's primary PR) for the whole table so the forecast
-  // curve is internally consistent across distances (no per-target anchor flips).
-  const tableAnchor = primaryPRForAthlete(A);
+  // Anchor each row from the athlete's nearest observed PR (monotone across
+  // the table — see nearestAnchorForTarget) so the curve is coherent without
+  // extrapolating a short primary into distance forecasts the athlete's own
+  // longer PRs contradict.
   const rows = forecastTargets()
-    .map(t => raceForecastForTarget(A, t, { fixedAnchor: tableAnchor }))
+    .map(t => raceForecastForTarget(A, t, { fixedAnchor: nearestAnchorForTarget(A, t.distM) }))
     .filter(Boolean)
     // Coach feedback (Alex + Doug): don't surface far cross-domain forecasts
     // (e.g. a 100m time for a distance runner). Real PRs always show.
@@ -5555,7 +5580,7 @@ function buildPredictiveRaceTable(){
       </table>
     </div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts. Forecasts more than two event-families away from the athlete's PR (e.g. a 100m for a 5K runner) are hidden as unreliable; validation strength varies by event family.
+      <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts; each forecast anchors from the athlete's nearest PR. Forecasts more than two event-families from any PR (e.g. a 100m for a 5K-only runner) are hidden as unreliable; validation strength varies by event family.
     </p>`;
 }
 
@@ -5598,21 +5623,21 @@ const IMPORT_FIELDS = [
 // only — substring matching would mis-map "Half Marathon" onto "Marathon" and
 // "3200m" onto "200m". Coaches can still map any column by hand.
 const EVENT_PR_FIELDS = [
-  { key: 'pr_100m',     event: '100m',          label: '100m PR',          hints: ['100m','100 m','100 meter','100 meters','100 dash'] },
-  { key: 'pr_200m',     event: '200m',          label: '200m PR',          hints: ['200m','200 m','200 meter','200 meters'] },
-  { key: 'pr_400m',     event: '400m',          label: '400m PR',          hints: ['400m','400 m','400 meter','400 meters'] },
-  { key: 'pr_800m',     event: '800m',          label: '800m PR',          hints: ['800m','800 m','800 meter','800 meters','half mile'] },
-  { key: 'pr_1500m',    event: '1500m',         label: '1500m PR',         hints: ['1500m','1500','1500 m','1.5k'] },
-  { key: 'pr_1600m',    event: '1600m',         label: '1600m PR',         hints: ['1600m','1600','1600 m'] },
-  { key: 'pr_mile',     event: 'Mile',          label: 'Mile PR',          hints: ['mile','1 mile','1mile','1609m'] },
-  { key: 'pr_3000m',    event: '3000m',         label: '3000m PR',         hints: ['3000m','3000','3000 m','3k'] },
-  { key: 'pr_3200m',    event: '3200m',         label: '3200m PR',         hints: ['3200m','3200','3200 m'] },
-  { key: 'pr_2mile',    event: '2 Mile',        label: '2 Mile PR',        hints: ['2 mile','2mile','two mile','2mi'] },
-  { key: 'pr_5k',       event: '5K',            label: '5K PR',            hints: ['5k','5000m','5000','5,000','5 k'] },
-  { key: 'pr_8k',       event: '8K',            label: '8K PR',            hints: ['8k','8000m','8000'] },
-  { key: 'pr_10k',      event: '10K',           label: '10K PR',           hints: ['10k','10000m','10000'] },
-  { key: 'pr_half',     event: 'Half Marathon', label: 'Half Marathon PR', hints: ['half marathon','half','13.1','half-marathon','hm'] },
-  { key: 'pr_marathon', event: 'Marathon',      label: 'Marathon PR',      hints: ['marathon','full marathon','26.2'] },
+  { key: 'pr_100m',     event: '100m',          label: '100m PR',          hints: ['100m','100 m','100 meter','100 meters','100 dash','100m pr'] },
+  { key: 'pr_200m',     event: '200m',          label: '200m PR',          hints: ['200m','200 m','200 meter','200 meters','200m pr'] },
+  { key: 'pr_400m',     event: '400m',          label: '400m PR',          hints: ['400m','400 m','400 meter','400 meters','400m pr'] },
+  { key: 'pr_800m',     event: '800m',          label: '800m PR',          hints: ['800m','800','800 m','800 meter','800 meters','half mile','800m pr'] },
+  { key: 'pr_1500m',    event: '1500m',         label: '1500m PR',         hints: ['1500m','1500','1500 m','1500 meters','1.5k','1500m pr'] },
+  { key: 'pr_1600m',    event: '1600m',         label: '1600m PR',         hints: ['1600m','1600','1600 m','1600 meters','1600m pr'] },
+  { key: 'pr_mile',     event: 'Mile',          label: 'Mile PR',          hints: ['mile','1 mile','1mile','1609m','mile pr'] },
+  { key: 'pr_3000m',    event: '3000m',         label: '3000m PR',         hints: ['3000m','3000','3000 m','3000 meters','3k','3000m pr'] },
+  { key: 'pr_3200m',    event: '3200m',         label: '3200m PR',         hints: ['3200m','3200','3200 m','3200 meters','3200m pr'] },
+  { key: 'pr_2mile',    event: '2 Mile',        label: '2 Mile PR',        hints: ['2 mile','2mile','two mile','2mi','2 miles','two miles','2 mile pr'] },
+  { key: 'pr_5k',       event: '5K',            label: '5K PR',            hints: ['5k','5000m','5000','5,000','5 k','5k pr'] },
+  { key: 'pr_8k',       event: '8K',            label: '8K PR',            hints: ['8k','8000m','8000','8k pr'] },
+  { key: 'pr_10k',      event: '10K',           label: '10K PR',           hints: ['10k','10000m','10000','10k pr'] },
+  { key: 'pr_half',     event: 'Half Marathon', label: 'Half Marathon PR', hints: ['half marathon','half','13.1','half-marathon','hm','half marathon pr'] },
+  { key: 'pr_marathon', event: 'Marathon',      label: 'Marathon PR',      hints: ['marathon','full marathon','26.2','marathon pr'] },
 ];
 
 function renderImport(){
@@ -5769,27 +5794,35 @@ async function parseImportXLSX(file){
 function autoDetectColumns(headers){
   const mapping = {};
   const normalized = headers.map(h => (h || '').toLowerCase().trim());
-  IMPORT_FIELDS.forEach(field => {
-    let matchIdx = -1;
-    // Exact-match hints first
+  const claimed = new Set(); // column indexes already matched to a field
+
+  // Pass 1 — EXACT hint matches, all fields (core + event PRs), each column
+  // claimable once. Exact must win before any substring runs: otherwise a
+  // "2 Miles" column is grabbed by mileage's 'miles' substring, "800m PR" by
+  // raceTime's 'pr' substring, and "Mileage" by age's 'age' substring.
+  IMPORT_FIELDS.concat(EVENT_PR_FIELDS).forEach(field => {
     for(const hint of field.hints){
       const idx = normalized.indexOf(hint.toLowerCase());
-      if(idx >= 0){ matchIdx = idx; break; }
-    }
-    // Substring fallback
-    if(matchIdx < 0){
-      for(const hint of field.hints){
-        const idx = normalized.findIndex(h => h.includes(hint.toLowerCase()));
-        if(idx >= 0){ matchIdx = idx; break; }
+      if(idx >= 0 && !claimed.has(idx)){
+        mapping[field.key] = headers[idx];
+        claimed.add(idx);
+        break;
       }
     }
-    if(matchIdx >= 0) mapping[field.key] = headers[matchIdx];
   });
-  // Event-PR columns: EXACT header match only (see EVENT_PR_FIELDS note).
-  EVENT_PR_FIELDS.forEach(field => {
+
+  // Pass 2 — substring fallback for still-unmatched CORE fields only, over
+  // unclaimed columns. Event-PR fields stay exact-only (see EVENT_PR_FIELDS
+  // note: substring would mis-map "3200m" onto "200m").
+  IMPORT_FIELDS.forEach(field => {
+    if(mapping[field.key]) return;
     for(const hint of field.hints){
-      const idx = normalized.indexOf(hint.toLowerCase());
-      if(idx >= 0){ mapping[field.key] = headers[idx]; break; }
+      const idx = normalized.findIndex((h, i) => !claimed.has(i) && h.includes(hint.toLowerCase()));
+      if(idx >= 0){
+        mapping[field.key] = headers[idx];
+        claimed.add(idx);
+        break;
+      }
     }
   });
   return mapping;
@@ -6468,17 +6501,33 @@ async function applyImport(){
 
     const evt = _normEvent(m.primaryEvent ? row[m.primaryEvent] : '');
 
-    // Additional event PRs (multi-event analysis). Only keep values that parse
-    // as a time and aren't a duplicate of the primary event.
+    // Additional event PRs (multi-event analysis). A time must parse AND be
+    // humanly possible for the distance (slower than 12 m/s — faster than any
+    // WR): this rejects "0:00" (which would abort the whole cloud RPC on the
+    // races time_sec > 0 check and lose the athlete on the next reload) and
+    // Excel-decimalized values like "2.05" importing as a 2-second 800m.
+    // A column matching the athlete's own primary event isn't discarded — it
+    // becomes the primary race time when no PR Time column supplied one.
+    const plausibleTime = (val, event) => {
+      const sec = parseTime(val);
+      return sec !== null && sec > (DIST[event] || 0) / 12;
+    };
     const additionalPRs = {};
+    let primaryFromEventCol = '';
     for(const ef of EVENT_PR_FIELDS){
       const col = m[ef.key];
       if(!col) continue;
       const val = String(row[col] || '').trim();
-      if(val && parseTime(val) !== null && ef.event !== evt.raceDistance && ef.event !== evt.primaryEvent){
+      if(!val || !plausibleTime(val, ef.event)) continue;
+      if(ef.event === evt.raceDistance || ef.event === evt.primaryEvent){
+        primaryFromEventCol = val;
+      } else {
         additionalPRs[ef.event] = val;
       }
     }
+    let raceTime = m.raceTime ? String(row[m.raceTime] || '').trim() : '';
+    if(raceTime && evt.raceDistance && !plausibleTime(raceTime, evt.raceDistance)) raceTime = '';
+    if(!raceTime) raceTime = primaryFromEventCol;
 
     const athlete = {
       id: 'a_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8) + '_' + i,
@@ -6492,7 +6541,7 @@ async function applyImport(){
       weeklyMileage: m.mileage ? (parseFloat(String(row[m.mileage]).trim()) || null) : null,
       raceDistance: evt.raceDistance,
       raceDistanceM: evt.raceDistanceM,
-      raceTime: m.raceTime ? String(row[m.raceTime] || '').trim() : '',
+      raceTime: raceTime,
       raceDate: m.raceDate ? _normDate(row[m.raceDate]) : '',
       raceLocation: '',
       raceStartTime: '',
@@ -6517,8 +6566,8 @@ async function applyImport(){
     if(i % 5 === 0) renderImport(); // throttled progress updates
   }
 
-  saveDB(DB);
   if(DB.athletes.length > 0 && !DB.activeAthleteId) DB.activeAthleteId = DB.athletes[0].id;
+  saveDB(DB);
   refreshActiveAthlete();
   updateChip();
 
@@ -6627,6 +6676,29 @@ function _selectBestAnchor(targetDistM, athlete, opts){
   return { ...scored[0], source: scored[0].event === athlete.raceDistance ? 'primary PR' : `${scored[0].event} PR` };
 }
 
+// Anchor for one forecast row: the athlete's nearest observed PR by pure
+// log-distance (the target's own distance excluded so observed rows stay
+// source-excluded). Freshness must NOT reorder this choice — letting it
+// re-rank anchors made adjacent rows flip anchors (the coaches' incoherence
+// bug), while pinning ONE table-wide anchor extrapolated a sprint primary
+// into absurd distance forecasts right next to the athlete's real distance
+// PRs. Nearest-by-distance is monotone across the table: each PR anchors a
+// contiguous span of targets, so the curve is piecewise-coherent and every
+// span is anchored by the athlete's own closest real result. Freshness still
+// applies downstream as a range/confidence penalty in raceForecastForTarget.
+function nearestAnchorForTarget(athlete, targetDistM){
+  const prs = collectAllPRs(athlete).filter(p => !sameDistanceM(p.distM, targetDistM));
+  if(!prs.length) return null;
+  const tLog = Math.log10(targetDistM);
+  prs.sort((a, b) => {
+    const d = Math.abs(Math.log10(a.distM) - tLog) - Math.abs(Math.log10(b.distM) - tLog);
+    if(Math.abs(d) > 1e-9) return d;
+    if((a.sourceType === 'primary') !== (b.sourceType === 'primary')) return a.sourceType === 'primary' ? -1 : 1;
+    return a.distM - b.distM;
+  });
+  return prs[0];
+}
+
 function buildPreds(distM, sec, primary){
   // Within-family only — refuse cross-family predictions per design
   const families={
@@ -6650,9 +6722,8 @@ function buildPreds(distM, sec, primary){
     1500:'1500m',1600:'1600m',1609:'Mile',3000:'3000m',3200:'3200m',3218:'2 Mile',
     5000:'5K',8000:'8K',10000:'10K',21097:'Half Marathon',42195:'Marathon'};
 
-  const familyAnchor = primaryPRForAthlete(A);
   return(families[primary]||[distM]).map(t => {
-    const forecast = raceForecastForTarget(A, { distM: t, label: names[t] || labelForDistance(t) }, { fixedAnchor: familyAnchor });
+    const forecast = raceForecastForTarget(A, { distM: t, label: names[t] || labelForDistance(t) }, { fixedAnchor: nearestAnchorForTarget(A, t) });
     if(!forecast) return '';
     const isSelf = forecast.isSource;
     const isObserved = forecast.isObserved;
