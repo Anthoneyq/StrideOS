@@ -1016,7 +1016,8 @@ function authStatusHtml(){
       : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
     return `<div class="auth-status">Signed In ${tierBadge}</div>
       <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
-      <div class="auth-actions">${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>${authFeedbackHtml()}`;
+      <div class="auth-actions">${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
+      <div class="auth-note" style="margin-top:.5rem"><a onclick="showPrivacyModal()" style="cursor:pointer;text-decoration:underline">Data &amp; privacy</a></div>${authFeedbackHtml()}`;
   }
   return `<div class="auth-status">Coach Account</div>
     <div class="auth-copy">Save athletes &amp; open the coach workspace. <strong style="color:var(--text)">30-day Pro trial</strong> · no card.</div>
@@ -2295,6 +2296,90 @@ function showUpgradeModal(){
 function closeUpgradeModal(){
   const el = document.getElementById('upgradeOverlay');
   if(el) el.remove();
+}
+
+// --- Data & Privacy (GDPR/CCPA + minors' PII) -----------------------------
+// Coach-facing UI for the export_coach_data() and request_account_deletion()
+// RPCs, which already exist server-side. Export downloads a JSON copy; delete
+// soft-deletes the coach + athletes + races (deleted_at) then signs out.
+function showPrivacyModal(){
+  if(!sbUser){ setAuthFeedback('info', 'Sign in to manage your data.', false); return; }
+  closePrivacyModal();
+  const overlay = document.createElement('div');
+  overlay.id = 'privacyOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closePrivacyModal(); };
+  overlay.innerHTML = `
+    <div class="upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="privTitle">
+      <button class="upgrade-close" aria-label="Close" onclick="closePrivacyModal()">×</button>
+      <p class="upgrade-eyebrow">Data &amp; Privacy</p>
+      <h2 class="upgrade-title" id="privTitle">Your <em>data</em></h2>
+      <p class="upgrade-sub">Signed in as ${esc(sbUser.email || 'your account')}. Export or permanently delete everything tied to your coach account.</p>
+
+      <div style="border:1px solid var(--border);border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1rem">
+        <div style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:.35rem">Export my data</div>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2);line-height:1.55;margin-bottom:.85rem">Download a JSON file with your coach profile, athletes, races, check-ins &amp; predictions.</p>
+        <button class="btn btn-primary" id="privExportBtn" onclick="exportMyData()">Download my data (JSON)</button>
+      </div>
+
+      <div style="border:1px solid var(--accent-line);border-radius:.5rem;padding:1rem 1.25rem">
+        <div style="font-family:var(--font-display);font-size:1.05rem;margin-bottom:.35rem;color:var(--red)">Delete my account</div>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2);line-height:1.55;margin-bottom:.85rem">Permanently removes your account and every athlete, race &amp; record. This can't be undone — export first if you want a copy. Type <strong style="color:var(--text)">DELETE</strong> to confirm.</p>
+        <input class="auth-input" id="privDeleteConfirm" type="text" autocomplete="off" placeholder="Type DELETE"
+               oninput="var b=document.getElementById('privDeleteBtn');if(b)b.disabled=(this.value.trim()!=='DELETE')">
+        <div class="auth-actions" style="margin-top:.5rem">
+          <button class="btn" id="privDeleteBtn" onclick="requestAccountDeletion()" disabled style="border-color:var(--red);color:var(--red)">Delete my account permanently</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closePrivacyModal(){
+  const el = document.getElementById('privacyOverlay');
+  if(el) el.remove();
+}
+
+async function exportMyData(){
+  if(!sbClient || !sbUser){ toast('Sign in first'); return; }
+  const btn = document.getElementById('privExportBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Preparing…'; }
+  try{
+    const { data, error } = await sbClient.rpc('export_coach_data');
+    if(error) throw error;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url; a.download = `strideos-data-${stamp}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast('Your data downloaded');
+  }catch(err){
+    console.error('export_coach_data failed', err);
+    toast('Export failed — try again in a moment');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = 'Download my data (JSON)'; }
+  }
+}
+
+async function requestAccountDeletion(){
+  if(!sbClient || !sbUser){ toast('Sign in first'); return; }
+  const input = document.getElementById('privDeleteConfirm');
+  if(!input || input.value.trim() !== 'DELETE'){ toast('Type DELETE to confirm'); return; }
+  const btn = document.getElementById('privDeleteBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Deleting…'; }
+  try{
+    const { error } = await sbClient.rpc('request_account_deletion');
+    if(error) throw error;
+    closePrivacyModal();
+    toast('Account deleted. Signing you out…');
+    if(typeof signOutSupabase === 'function'){ await signOutSupabase(); }
+  }catch(err){
+    console.error('request_account_deletion failed', err);
+    toast('Deletion failed — try again or contact support');
+    if(btn){ btn.disabled = false; btn.textContent = 'Delete my account permanently'; }
+  }
 }
 
 // Kicks off Stripe Checkout for the chosen plan.
