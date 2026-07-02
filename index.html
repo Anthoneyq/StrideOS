@@ -453,6 +453,52 @@ input.err,select.err{border-color:var(--red)}
 }
 
 .hidden { display: none; }
+
+/* ══════════════════════════════════════════════════════════════
+   PRINT — track-side pace sheets (Feature 1)
+   The app is a dark on-screen SPA. For print we render a clean,
+   ink-cheap, black-on-white sheet into #print-root on demand and
+   hide the live app. Coaches live on paper at the track: one pace
+   card per athlete, one practice sheet per training group.
+   ══════════════════════════════════════════════════════════════ */
+#print-root{ display:none; }
+@media print{
+  @page{ size:letter; margin:0.5in; }
+  html, body{ background:#fff !important; }
+  body.printing .app,
+  body.printing #toast,
+  body.printing #tierBanner,
+  body.printing .top-signin,
+  body.printing #authOverlay,
+  body.printing #upgradeOverlay,
+  body.printing #workoutFormOverlay,
+  body.printing #privacyOverlay{ display:none !important; }
+  body.printing #print-root{ display:block !important; }
+  #print-root{ color:#111; font-family:'Inter',Arial,Helvetica,sans-serif; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  #print-root .ps-page{ page-break-after:always; break-after:page; }
+  #print-root .ps-page:last-child{ page-break-after:auto; break-after:auto; }
+  #print-root .ps-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #111; padding-bottom:6px; margin-bottom:12px; }
+  #print-root .ps-brand{ font-family:'Archivo','Inter',sans-serif; font-weight:800; font-size:12pt; letter-spacing:.02em; }
+  #print-root h1.ps-title{ font-family:'Archivo','Inter',sans-serif; font-weight:800; font-size:22pt; margin:0 0 2px; letter-spacing:-.01em; }
+  #print-root .ps-sub{ font-size:9.5pt; color:#444; }
+  #print-root .ps-meta{ text-align:right; font-size:9pt; color:#333; line-height:1.5; }
+  #print-root .ps-badge{ display:inline-block; border:1px solid #111; border-radius:3px; padding:1px 6px; font-size:8pt; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  #print-root table{ width:100%; border-collapse:collapse; margin:8px 0 14px; }
+  #print-root th{ text-align:left; font-size:7.5pt; letter-spacing:.06em; text-transform:uppercase; color:#333; border-bottom:1.5px solid #111; padding:5px 6px; }
+  #print-root td{ font-size:10pt; border-bottom:.75px solid #ccc; padding:5px 6px; }
+  #print-root td.num, #print-root th.num{ text-align:right; font-variant-numeric:tabular-nums; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  #print-root tr.ps-zone-race td{ background:#eee; font-weight:700; }
+  #print-root .ps-section{ font-family:'Archivo','Inter',sans-serif; font-weight:700; font-size:12pt; margin:14px 0 2px; }
+  #print-root .ps-note{ font-size:8pt; color:#555; line-height:1.5; margin-top:4px; }
+  #print-root .ps-foot{ margin-top:14px; padding-top:6px; border-top:.75px solid #999; font-size:7.5pt; color:#666; line-height:1.5; }
+  #print-root .ps-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:10px 0; }
+  #print-root .ps-stat{ border:.75px solid #ccc; border-radius:4px; padding:6px 8px; }
+  #print-root .ps-stat .k{ font-size:7.5pt; text-transform:uppercase; letter-spacing:.05em; color:#666; }
+  #print-root .ps-stat .v{ font-family:'JetBrains Mono',monospace; font-size:13pt; font-weight:700; }
+  #print-root .ps-callout{ border:1px solid #111; border-left:4px solid #111; border-radius:3px; padding:6px 9px; margin:8px 0; font-size:9pt; line-height:1.5; }
+}
+/* On-screen "Print / PDF" trigger button, matches .btn but always visible */
+.btn-print::before{ content:"⎙ "; }
 </style>
 </head>
 <body class="workspace-locked">
@@ -474,9 +520,13 @@ input.err,select.err{border-color:var(--red)}
         <ul class="nav-list" aria-labelledby="lbl-ws" role="list">
           <li><button class="nav-btn" data-s="home"     onclick="goTo('home',this)"><span class="nav-icon" aria-hidden="true">⌂</span>Home</button></li>
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span><span id="navCalcLabel">Basic Calculator</span></button></li>
+          <li><button class="nav-btn" data-s="eventfit" onclick="goTo('eventfit',this)"><span class="nav-icon" aria-hidden="true">◎</span>Event Finder</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="squads" onclick="goTo('squads',this)"><span class="nav-icon" aria-hidden="true">◍</span>Training Groups</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="lineup" onclick="goTo('lineup',this)"><span class="nav-icon" aria-hidden="true">⁘</span>Lineup Optimizer</button></li>
+          <li data-auth-scope="workspace"><button class="nav-btn" data-s="proof" onclick="goTo('proof',this)"><span class="nav-icon" aria-hidden="true">✓</span>Proof Ledger</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="workouts" onclick="goTo('workouts',this)"><span class="nav-icon" aria-hidden="true">⊞</span>Training Log</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
@@ -524,6 +574,7 @@ input.err,select.err{border-color:var(--red)}
       <header class="screen-header">
         <div><p class="eyebrow">Coach Workspace</p><h1 class="screen-title" id="ro-h">Athlete <em>Roster</em></h1></div>
         <div class="btn-row">
+          <button class="btn btn-print" onclick="printAllPaceCards()">Print cards</button>
           <button class="btn" onclick="goTo('import',null)">↥ Import</button>
           <button class="btn btn-primary" onclick="startNewAthlete()">+ New Athlete</button>
         </div>
@@ -605,6 +656,39 @@ input.err,select.err{border-color:var(--red)}
         <div><p class="eyebrow">Peer-Reviewed Foundations</p><h1 class="screen-title" id="mt-h">Sources &amp; <em>Literature</em></h1></div>
       </header>
       <div id="mt-body"></div>
+    </section>
+
+    <!-- EVENT FINDER (free, public) -->
+    <section id="eventfit" class="screen" aria-labelledby="ef-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Free · No signup</p><h1 class="screen-title" id="ef-h">Event <em>Finder</em></h1></div>
+      </header>
+      <div id="ef-body"></div>
+    </section>
+
+    <!-- TRAINING GROUPS -->
+    <section id="squads" class="screen" aria-labelledby="sq-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Auto-clustered pace groups</p><h1 class="screen-title" id="sq-h">Training <em>Groups</em></h1></div>
+        <div class="btn-row"><button class="btn btn-print" onclick="printGroupSheets()">Print group sheets</button></div>
+      </header>
+      <div id="sq-body"></div>
+    </section>
+
+    <!-- LINEUP OPTIMIZER -->
+    <section id="lineup" class="screen" aria-labelledby="ln-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Points-maximizing entries</p><h1 class="screen-title" id="ln-h">Lineup <em>Optimizer</em></h1></div>
+      </header>
+      <div id="ln-body"></div>
+    </section>
+
+    <!-- PROOF LEDGER -->
+    <section id="proof" class="screen" aria-labelledby="pf-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">Forecast accuracy on your roster</p><h1 class="screen-title" id="pf-h">Proof <em>Ledger</em></h1></div>
+      </header>
+      <div id="pf-body"></div>
     </section>
 
     <!-- EDIT -->
@@ -884,6 +968,9 @@ const WORKSPACE_SCREEN_IDS = new Set([
   'roster',
   'import',
   'overview',
+  'squads',
+  'lineup',
+  'proof',
   'workouts',
   'multievent',
   'predict',
@@ -3063,6 +3150,10 @@ function goTo(id,btn){
   if(id==='predict')  renderPredict();
   if(id==='workouts') renderWorkouts();
   if(id==='methodology') renderMethodology();
+  if(id==='eventfit') renderEventFinder();
+  if(id==='squads')   renderSquads();
+  if(id==='lineup')   renderLineup();
+  if(id==='proof')    renderProof();
   if(id==='edit')     fillForm();
   if(id==='import')   renderImport();
   // Scroll the destination section into view rather than just the top of
@@ -3184,6 +3275,21 @@ function renderOverview(){
         ${toolCard('Race Predictions', 'Adjacent-distance forecasts from a multi-formula ensemble with honest planning ranges.', 'predict', '→')}
         ${toolCard('Multi-Event Analysis', `${Object.keys(A.additionalPRs||{}).length>0 ? 'Strength vs weakness across logged PRs.' : 'Log 2+ race times to unlock strength mapping.'}`, 'multievent', '→')}
         ${toolCard('Event Profile', 'Demands, models, and training emphasis for the chosen event.', 'profile', '→')}
+      </div>
+    </div>
+
+    <!-- TEAM TOOLKIT — roster-wide coaching workflow -->
+    <div class="card">
+      <p class="card-title"><span>Team Toolkit</span><span class="card-accent">WHOLE ROSTER</span></p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin-bottom:1rem">
+        ${toolCard('Training Groups', 'Auto-cluster distance athletes into pace groups with today’s rep targets — printable per group.', 'squads', '→')}
+        ${toolCard('Lineup Optimizer', 'Points-maximizing meet entries across the roster under your entry caps. The Monday ritual.', 'lineup', '→')}
+        ${toolCard('Proof Ledger', 'STRIDE backtested against Riegel & VDOT on your own athletes. See how close we are.', 'proof', '→')}
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;padding-top:.5rem;border-top:1px solid var(--border)">
+        <button class="btn btn-print" onclick="printPaceCard()">Print this athlete’s pace card</button>
+        <button class="btn btn-print" onclick="printAllPaceCards()">Print all pace cards</button>
+        <button class="btn btn-print" onclick="printGroupSheets()">Print group practice sheets</button>
       </div>
     </div>
 
@@ -4218,11 +4324,13 @@ function renderPaces(){
         </span>
       </div>
       <div style="display:flex;gap:.5rem">
+        <button class="btn btn-print" style="font-size:.6875rem;padding:.4rem .75rem" onclick="printPaceCard()">Print pace card</button>
         <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="goTo('edit',null)">Edit PR</button>
         <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="goTo('roster',null)">Switch athlete</button>
       </div>
     </div>
 
+    ${youthGuardrailBanner(A)}
     ${aerobicPaceAnchorWarning(A)}
 
     <!-- THE PRESCRIPTION — HERO -->
@@ -4242,6 +4350,8 @@ function renderPaces(){
         <span><strong style="color:var(--text-2);font-size:1rem" id="build-mile">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER MILE</span></span>
       </div>
     </div>
+
+    ${pacesProvenance(A)}
 
     <!-- CONTROLS -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1rem">
@@ -5036,6 +5146,28 @@ function renderPredict(){
     <div class="card">
       <p class="card-title"><span>Race Predictions · ${esc(A.primaryEvent)} Family</span><span class="card-accent">SOURCE-EXCLUDED RANGE</span></p>
       <div class="pred-grid">${predCards}</div>
+      ${(() => {
+        const pk = personalFatigueExponent(A);
+        const fresh = prFreshness(A.raceDate);
+        const ageY = parseInt(A.age, 10) || null;
+        const adj = [
+          pk ? `Personal fatigue curve k=${pk.k.toFixed(3)} (${pk.nPairs} PR pair${pk.nPairs===1?'':'s'})` : 'Population fatigue exponent (add a 2nd PR to personalize)',
+          fresh && fresh !== 'fresh' ? `PR freshness: ${fresh}` : '',
+          ageY && ageY < 18 ? `Youth (${ageY}) — ranges widened` : ''
+        ];
+        return provenancePanel({
+          subtitle: 'these forecasts',
+          anchor: `${A.raceDistance || '?'} in ${A.raceTime}${A.raceDate ? ` · ${A.raceDate}` : ''}`,
+          model: 'STRIDE ensemble — Riegel · Cameron · VDOT · Vickers · Purdy, distance-weighted',
+          adjustments: adj,
+          reasons: [
+            'Each event is anchored to the athlete’s nearest observed PR by distance, so the whole curve stays coherent.',
+            'The observed/source PR is excluded from its own forecast.',
+            'The shown range is model-disagreement for planning — not a calibrated 95% confidence interval.'
+          ],
+          note: `<button onclick="goTo('methodology',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">View sources →</button> · See the <button onclick="goTo('proof',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">Proof Ledger</button> for how STRIDE scores against Riegel & VDOT on your roster.`
+        });
+      })()}
     </div>
 
     <div class="card">
@@ -5581,7 +5713,8 @@ function buildPredictiveRaceTable(){
     </div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
       <strong style="color:var(--text-3)">PREDICTIVE RACE TIMES</strong> · STRIDE proprietary ensemble${personalK ? " (includes this athlete's personal fatigue curve)" : ''}. Observed PRs are labeled as observed and excluded from their own forecasts; each forecast anchors from the athlete's nearest PR. Forecasts more than two event-families from any PR (e.g. a 100m for a 5K-only runner) are hidden as unreliable; validation strength varies by event family.
-    </p>`;
+    </p>
+    ${(() => { const f = rows.find(r => !r.isObserved); return f ? forecastProvenance(f) : ''; })()}`;
 }
 
 // ── BULK ATHLETE IMPORT (CSV / XLSX) ──
@@ -5656,6 +5789,9 @@ function renderImport(){
     return;
   }
 
+  // Meet-results paste is its own flow (updates existing athletes, no mapping).
+  if(importMode === 'meet' && importState.stage === 'idle'){ return renderMeetResults(); }
+
   switch(importState.stage){
     case 'idle':      return renderImportDropzone();
     case 'parsing':   return renderImportParsing();
@@ -5669,7 +5805,27 @@ function renderImport(){
 function renderImportDropzone(){
   const el = document.getElementById('im-body');
   if(!el) return;
+
+  // Paste-a-roster mode — the top activation fix. Reuses the file mapping+
+  // validation flow: parse the paste into { headers, rows } then hand off.
+  if(importMode === 'paste'){
+    el.innerHTML = `
+      ${importModeTabs()}
+      <div class="card">
+        <p style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:.35rem">Paste your roster</p>
+        <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Copy rows straight from Athletic.net, MileSplit, a Google Sheet, or Excel and paste below — headers or no headers. Or type one athlete per line: <span style="font-family:var(--font-mono);color:var(--text)">Maya R, 5k, 18:42, 42</span>. You’ll confirm the column mapping next.</p>
+        <textarea id="importPasteArea" rows="10" placeholder="Name	Event	Time	Mileage&#10;Maya Robinson	5K	18:42	42&#10;Jordan T	1600m	4:38	35&#10;— or —&#10;Eli W, 3200m, 10:21, 16" style="width:100%;font-family:var(--font-mono);font-size:.8125rem;background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;color:var(--text);resize:vertical"></textarea>
+        ${importState.error ? `<div class="import-error" style="margin-top:.75rem">${esc(importState.error)}</div>` : ''}
+        <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="applyPastedRoster()">Parse &amp; map columns →</button>
+          <button class="btn" onclick="(function(){var t=document.getElementById('importPasteArea');if(t)t.value=DEMO_SQUAD.map(function(a){return a.name+', '+a.raceDistance+', '+a.raceTime+', '+a.weeklyMileage}).join('\\n');})()">Fill sample</button>
+        </div>
+      </div>`;
+    return;
+  }
+
   el.innerHTML = `
+    ${importModeTabs()}
     <div class="import-dropzone" id="importDropzone"
          tabindex="0"
          onclick="document.getElementById('importFileInput').click()"
@@ -6119,8 +6275,13 @@ function parseSquadPaste(text){
     const nameTokens = [];
     parts.forEach(tok => {
       if(time === null && /[:.]/.test(tok) && parseTime(tok) != null){ time = tok; return; }
-      const e = _normEvent(tok);
-      if(ev === null && e.raceDistanceM){ ev = e; return; }
+      // Only read a token as an event if it looks like one (has a digit, or is
+      // an exact word-event) — otherwise a kid named "Miles" gets consumed as
+      // the Mile and mangles the name.
+      if(ev === null && (/\d/.test(tok) || /^(mile|1 mile|2 mile|two mile|half|half marathon|hm|marathon)$/i.test(tok))){
+        const e = _normEvent(tok);
+        if(e.raceDistanceM){ ev = e; return; }
+      }
       if(mileage === null && /^\d{1,3}$/.test(tok) && +tok > 0 && +tok <= 150){ mileage = +tok; return; }
       nameTokens.push(tok);
     });
@@ -6132,6 +6293,1090 @@ function parseSquadPaste(text){
     out.push(a);
   });
   return out;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// COACH VALUE PACK (2026-07-01) — the eight features coaches actually asked for.
+// Shared helpers first, then each feature. All pure-additive: nothing above is
+// rewired except thin call-sites (nav, goTo, renderOverview, renderPaces hero,
+// renderPredict, renderImport) wired further below.
+// ════════════════════════════════════════════════════════════════════════════
+
+// Resolve an athlete's effective guardrail WITHOUT relying on the global A
+// (getActiveGuardrail() reads A; print/group/proof run over arbitrary athletes).
+function _athGuardrail(a){ return (a && a.guardrail) || smartGuardrailDefault(a); }
+
+// Compute zone × rep-distance split seconds for ONE athlete. Mirrors the exact
+// math in buildDanielsTable (guardrail + environment + short-anchor blocking) so
+// the printable card and the group sheet stay identical to the on-screen table.
+function computeZoneSplits(athlete, opts){
+  opts = opts || {};
+  if(!athlete || !athlete.raceDistanceM || !athlete.raceTime) return null;
+  const raceSec = parseTime(String(athlete.raceTime));
+  if(!raceSec) return null;
+  const secPerM = raceSec / athlete.raceDistanceM;
+  const gk = opts.guardrailKey || _athGuardrail(athlete);
+  const env = opts.env || { tempF:null, altitudeFt:null };
+  const zones = STRIDE_COACH_SPLITS.map(z => {
+    const allowed = zoneAllowedForAnchor(z, athlete);
+    const pct = effectiveZonePct(z, athlete, gk);
+    const mult = pctToMult(pct);
+    const mile = (allowed && athlete.raceDistanceM >= 1500)
+      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
+    const repList = opts.repDists || z.reps;
+    const reps = {};
+    repList.forEach(d => {
+      if(!allowed || !repAllowedForAnchor(d, athlete) ||
+         (athlete.raceDistanceM < 1500 && pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
+      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
+    });
+    return { label:z.label, range:z.range, pct:Math.round(pct), rawPct:pct, allowed, mile, reps, repDists:repList };
+  });
+  return { athlete, secPerM, guardrailKey:gk, zones };
+}
+
+// ── FEATURE 3 · SHOW-THE-MATH PROVENANCE PANEL ──────────────────────────────
+// Reusable "why is this number what it is" expander. Coaches (Alex & Doug) both
+// rejected outputs live when a number looked off and there was no reasoning.
+function provenancePanel(p){
+  p = p || {};
+  const row = (k, v) => (v != null && v !== '')
+    ? `<div style="display:flex;justify-content:space-between;gap:1rem;padding:.4rem 0;border-bottom:1px solid var(--border)"><span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">${esc(k)}</span><span style="font-size:.8125rem;color:var(--text);text-align:right">${esc(String(v))}</span></div>`
+    : '';
+  const adj = (p.adjustments || []).filter(Boolean);
+  const reasons = (p.reasons || []).filter(Boolean);
+  return `
+    <details class="prov-panel" style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;margin:.75rem 0">
+      <summary style="cursor:pointer;list-style:none;padding:.7rem 1rem;display:flex;justify-content:space-between;align-items:center;font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">
+        <span>▸ Show the math${p.subtitle ? ` · <span style="color:var(--text-4)">${esc(p.subtitle)}</span>` : ''}</span>
+        <span style="color:var(--accent)">why?</span>
+      </summary>
+      <div style="padding:.25rem 1rem 1rem">
+        ${row('Anchor PR', p.anchor)}
+        ${row('Model', p.model)}
+        ${p.confidence != null ? row('Confidence', p.confidence) : ''}
+        ${adj.length ? `<div style="padding:.5rem 0;border-bottom:1px solid var(--border)"><span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em">Adjustments applied</span><div style="display:flex;flex-wrap:wrap;gap:.375rem;margin-top:.5rem">${adj.map(a=>`<span style="display:inline-block;padding:.2rem .55rem;border:1px solid var(--border-s);border-radius:999px;font-family:var(--font-mono);font-size:.625rem;color:var(--text-2)">${esc(a)}</span>`).join('')}</div></div>` : ''}
+        ${reasons.length ? `<ul style="margin:.6rem 0 0;padding-left:1.1rem;font-size:.75rem;color:var(--text-3);line-height:1.65">${reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>` : ''}
+        ${p.note ? `<p style="font-size:.6875rem;color:var(--text-4);line-height:1.6;margin-top:.7rem">${p.note}</p>` : ''}
+      </div>
+    </details>`;
+}
+
+// Provenance for a training-pace prescription (Paces view).
+function pacesProvenance(athlete){
+  if(!athlete || !athlete.raceTime) return '';
+  const gk = _athGuardrail(athlete);
+  const gl = GUARDRAIL_LEVELS[gk] || GUARDRAIL_LEVELS.standard;
+  const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
+  const adjustments = [];
+  if(gl.shift !== 0) adjustments.push(`Guardrail: ${gl.label} (${gl.shift>0?'+':''}${gl.shift}% sub-race)`);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
+  const fresh = prFreshness(athlete.raceDate);
+  if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
+  const age = parseInt(athlete.age, 10) || null;
+  if(age && age < 18) adjustments.push(`Youth (${age}) — conservative aerobic default`);
+  const reasons = [
+    'Training paces are a percentage of this athlete’s race-PR pace (STRIDE speed-% zones) — not %VO₂max, not heart rate, not a lab test.',
+    athlete.raceDistanceM < 1500
+      ? 'Short anchor (<1500m): Easy–CV aerobic zones are withheld until a 1500m+ result exists.'
+      : 'Distance anchor (1500m+) supports the full aerobic ladder.'
+  ];
+  return provenancePanel({
+    subtitle: 'this prescription',
+    anchor: `${athlete.raceDistance || '?'} in ${athlete.raceTime}${athlete.raceDate ? ` · ${athlete.raceDate}` : ''}`,
+    model: 'STRIDE speed-percentage zones (Canova race-pace framework)',
+    adjustments, reasons,
+    note: `Coach judgment (HR, RPE, lactate, interval length, conditions) still governs the final call. <button onclick="goTo('methodology',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">View sources →</button>`
+  });
+}
+
+// Provenance for a single race-forecast row (from raceForecastForTarget).
+function forecastProvenance(f){
+  if(!f) return '';
+  const adj = [];
+  if(f.personalW > 0 && f.personalK) adj.push(`Personal fatigue curve k=${f.personalK.k.toFixed(3)} (${Math.round(f.personalW*100)}% weight)`);
+  if(f.freshness && f.freshness !== 'fresh') adj.push(`Anchor freshness: ${f.freshness}`);
+  if(f.isExploratory) adj.push('Exploratory (large distance gap)');
+  return provenancePanel({
+    subtitle: f.label,
+    anchor: f.anchor ? `${f.anchor.event} in ${fmtT(f.anchor.sec)} (${f.anchor.source || 'PR'})` : '—',
+    model: 'STRIDE ensemble — Riegel · Cameron · VDOT · Vickers · Purdy, distance-weighted',
+    confidence: `${Math.round(f.confidence)} · ${f.confLabel || confidenceLabel(f.confidence)}`,
+    adjustments: adj,
+    reasons: f.reasons,
+    note: `The range is model-disagreement for planning — not a calibrated 95% confidence interval.`
+  });
+}
+
+// ── FEATURE 2 · YOUTH GUARDRAIL, SURFACED ───────────────────────────────────
+// Doug's exact ask (D3a): the age-adjustment logic already exists but is buried
+// in the Paces advanced settings. Surface it up front so every HS/MS coach sees
+// "these paces are adjusted for a 14-year-old, and here's why."
+function youthGuardrailBanner(athlete){
+  if(!athlete) return '';
+  const age = parseInt(athlete.age, 10) || null;
+  const gk = _athGuardrail(athlete);
+  const gl = GUARDRAIL_LEVELS[gk] || GUARDRAIL_LEVELS.standard;
+  const isYouth = age != null && age < 18;
+  const isConservative = gl.shift < 0;
+  // Show when the athlete is a minor OR the active guardrail is easing sub-race
+  // paces — the two cases where a coach must know the number was softened.
+  if(!isYouth && !isConservative) return '';
+  const usingDefault = !athlete.guardrail;
+  const why = [];
+  if(age != null && age < 15) why.push(`At ${age}, ${esc(athlete.name || 'this athlete')} is still maturing — too-fast easy paces are the #1 driver of youth running injury, so sub-race zones start conservative.`);
+  else if(age != null && age < 17) why.push(`At ${age}, aerobic zones are eased to protect a still-developing athlete.`);
+  else if(isYouth) why.push(`At ${age}, forecast ranges widen and aerobic paces stay measured for a still-maturing athlete.`);
+  else if(isConservative) why.push(`Sub-race (Easy–Threshold) paces are eased by ${Math.abs(gl.shift)}% for a beginner / returning athlete; race and speed work are unchanged.`);
+  const color = isConservative ? gl.color : 'var(--accent)';
+  return `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-left:.25rem solid ${color};border-radius:.5rem;padding:1rem 1.25rem;margin-bottom:1.25rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:15rem">
+          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.1em;color:${color};text-transform:uppercase;margin-bottom:.35rem">${isYouth ? `Youth-adjusted · age ${age}` : 'Guardrail active'}</p>
+          <p style="font-size:.9375rem;line-height:1.55;color:var(--text);margin-bottom:.25rem"><strong>Paces are set to <span style="color:${color}">${esc(gl.label)}</span>.</strong> ${why.join(' ')}</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${usingDefault ? 'This is STRIDE’s smart default for this athlete. A coach can override it below.' : 'Set manually by the coach.'} Race pace and faster reps are never softened — only Easy through Threshold shift.</p>
+        </div>
+        <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem;white-space:nowrap" onclick="(function(){var t=document.getElementById('advanced-toggle');if(t){t.classList.remove('hidden');t.scrollIntoView({behavior:'smooth',block:'center'});}})()">Adjust guardrail</button>
+      </div>
+    </div>`;
+}
+
+// ── FEATURE 1 · PRINTABLE PACE SHEETS ───────────────────────────────────────
+// Advertised in the app but never existed. Coaches live on paper at the track.
+// We render a clean black-on-white sheet into #print-root and print that, so the
+// dark on-screen theme never bleeds onto the page.
+function printSheet(innerHtml){
+  let root = document.getElementById('print-root');
+  if(!root){ root = document.createElement('div'); root.id = 'print-root'; document.body.appendChild(root); }
+  root.innerHTML = innerHtml;
+  document.body.classList.add('printing');
+  const cleanup = () => { document.body.classList.remove('printing'); };
+  if(window.matchMedia){
+    const mql = window.matchMedia('print');
+    const handler = m => { if(!m.matches){ cleanup(); try{ mql.removeListener(handler); }catch(_e){} } };
+    try{ mql.addListener(handler); }catch(_e){}
+  }
+  const onAfter = () => { cleanup(); window.removeEventListener('afterprint', onAfter); };
+  window.addEventListener('afterprint', onAfter);
+  window.print();
+}
+
+function _psStamp(){
+  try{ return new Date().toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }
+  catch(_e){ return ''; }
+}
+
+function _psHead(kind, title, subHtml, metaLines){
+  return `<div class="ps-head">
+    <div><div class="ps-brand">STRIDE OS · ${esc(kind)}</div><h1 class="ps-title">${esc(title)}</h1><div class="ps-sub">${subHtml || ''}</div></div>
+    <div class="ps-meta">${(metaLines || []).map(m => esc(m)).join('<br>')}</div>
+  </div>`;
+}
+
+// One athlete → one page: full zone ladder + race even-splits.
+function paceCardPrintHTML(athlete){
+  if(!athlete || !athlete.raceDistanceM || !athlete.raceTime){
+    return `<div class="ps-page">${_psHead('Pace Card', athlete && athlete.name ? athlete.name : 'Athlete', 'No valid race PR on file.', [_psStamp()])}<div class="ps-callout">Add a race distance and time to generate this athlete’s pace card.</div></div>`;
+  }
+  const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
+  const repCols = [400, 800, 1000, 1200, 1600];
+  const cs = computeZoneSplits(athlete, { repDists: repCols, env });
+  // A raceTime that parses to 0 ("0:00") passes the truthiness guard above but
+  // yields no splits — placeholder page, never a throw that kills a batch print.
+  if(!cs){
+    return `<div class="ps-page">${_psHead('Pace Card', athlete.name || 'Athlete', 'Race PR on file is not a usable time.', [_psStamp()])}<div class="ps-callout">Fix this athlete’s race time to generate their pace card.</div></div>`;
+  }
+  const gl = GUARDRAIL_LEVELS[cs.guardrailKey] || GUARDRAIL_LEVELS.standard;
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  const age = parseInt(athlete.age, 10) || null;
+
+  const repHdr = repCols.map(d => `<th class="num">${d === 1600 ? '1600m' : d + 'm'}</th>`).join('');
+  const bodyRows = cs.zones.map(z => {
+    if(!z.allowed){
+      return `<tr><td>${esc(z.label)}</td><td class="num">—</td><td class="num">—</td>${repCols.map(()=>'<td class="num">—</td>').join('')}</tr>`;
+    }
+    const mile = z.mile != null ? _mmss(z.mile, 0) : '—';
+    const cells = repCols.map(d => { const s = z.reps[d]; return `<td class="num">${s != null ? esc(fmtRepTime(s)) : '—'}</td>`; }).join('');
+    const cls = z.pct === 100 ? ' class="ps-zone-race"' : '';
+    return `<tr${cls}><td>${esc(z.label)} · ${z.pct}%</td><td class="num">${esc(mile)}</td>${cells}</tr>`;
+  }).join('');
+
+  // Goal race even-splits — hand this straight to the athlete. Segment unit is
+  // chosen so the table stays ≤10 columns (a marathon at 1k splits = 42 columns
+  // off the page), and the final segment is the exact remainder so the last
+  // cumulative cell IS the goal time (1500m, 2 Mile, Half, Full aren't unit
+  // multiples).
+  const rd = athlete.raceDistanceM;
+  const unit = rd <= 400 ? 100 : (rd <= 1600 ? 400 : (rd <= 3200 ? 800 : (rd <= 10000 ? 1000 : 5000)));
+  const nFull = Math.floor(rd / unit);
+  const rem = rd - nFull * unit;
+  const segs = [];
+  for(let i = 1; i <= nFull; i++) segs.push({ at: i * unit, len: unit });
+  if(rem > unit * 0.05) segs.push({ at: rd, len: rem });
+  else if(segs.length){ segs[segs.length - 1].at = rd; segs[segs.length - 1].len = unit + rem; }
+  let cum = 0; const segCells = [], segHdr = [];
+  segs.forEach(s => {
+    cum += cs.secPerM * s.len;
+    segHdr.push(`<th class="num">${s.at === rd ? 'Finish' : (s.at % 1000 === 0 ? (s.at / 1000) + 'k' : s.at + 'm')}</th>`);
+    segCells.push(`<td class="num">${esc(fmtRepTime(cs.secPerM * s.len))}<div style="font-size:8pt;color:#777">${fmtT(cum)}</div></td>`);
+  });
+
+  const badges = [
+    gl.shift !== 0 ? `<span class="ps-badge">Guardrail: ${esc(gl.label)}</span>` : '',
+    envF > 0 ? `<span class="ps-badge">Conditions +${(envF*100).toFixed(1)}%</span>` : '',
+    age != null && age < 18 ? `<span class="ps-badge">Youth-adjusted · age ${age}</span>` : ''
+  ].filter(Boolean).join(' ');
+
+  const meta = [
+    _psStamp(),
+    athlete.primaryEvent ? 'Primary: ' + athlete.primaryEvent : '',
+    athlete.weeklyMileage ? athlete.weeklyMileage + ' mi/wk' : ''
+  ].filter(Boolean);
+
+  const sub = `${esc(athlete.raceDistance)} PR ${esc(athlete.raceTime)}${athlete.raceDate ? ' · ' + esc(athlete.raceDate) : ''}${badges ? '<div style="margin-top:5px">' + badges + '</div>' : ''}`;
+
+  return `<div class="ps-page">
+    ${_psHead('Pace Card', athlete.name || 'Athlete', sub, meta)}
+    <div class="ps-section">Training paces — seconds per rep (per-mile at left)</div>
+    <table><thead><tr><th>Zone · % of race pace</th><th class="num">Per mile</th>${repHdr}</tr></thead><tbody>${bodyRows}</tbody></table>
+    <div class="ps-section">Goal race even-splits · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}</div>
+    <table><thead><tr>${segHdr.join('')}</tr></thead><tbody><tr>${segCells.join('')}</tr></tbody></table>
+    <div class="ps-note">Even-effort splits at goal pace; the second (grey) line is elapsed time at that point.${rd < 1500 ? ' Aerobic zones are intentionally blank — a sub-1500m PR can’t prescribe easy mileage or threshold work.' : ''}</div>
+    <div class="ps-foot">STRIDE speed-percentage zones from ${esc(athlete.name || 'the athlete')}’s race PR. Paces are a starting point — adjust by HR, RPE, lactate, interval length, and conditions. Guardrail eases Easy–Threshold only; race pace and faster are anchored to the actual result.</div>
+  </div>`;
+}
+
+function printPaceCard(athleteId){
+  const ath = athleteId ? (DB.athletes || []).find(a => a.id === athleteId) : A;
+  if(!ath){ toast('Select an athlete first'); return; }
+  printSheet(paceCardPrintHTML(ath));
+}
+
+function printAllPaceCards(){
+  const all = (DB.athletes || []).filter(Boolean);
+  const list = all.filter(a => a.raceDistanceM && a.raceTime);
+  if(!list.length){ toast('No athletes with a race PR to print'); return; }
+  const skipped = all.length - list.length;
+  if(skipped) toast(`Printing ${list.length} card${list.length===1?'':'s'} · ${skipped} athlete${skipped===1?'':'s'} skipped (no race PR)`);
+  printSheet(list.map(paceCardPrintHTML).join(''));
+}
+
+// ── FEATURE 8 · TRAINING-GROUP CLUSTERING ───────────────────────────────────
+// "Here are your 3 pace groups and each group's rep targets for today's workout."
+// Cluster distance-capable athletes by current fitness (projected 5K-equivalent
+// pace), split at the largest natural gaps so grouped athletes are genuinely
+// close in pace.
+function computeTrainingGroups(athletes, opts){
+  opts = opts || {};
+  const refDistM = 5000;
+  const scored = [], excluded = [];
+  (athletes || []).filter(Boolean).forEach(a => {
+    if(!a.raceDistanceM || !a.raceTime){ excluded.push({ athlete:a, reason:'no PR' }); return; }
+    const prs = collectAllPRs(a);
+    const distanceCapable = a.raceDistanceM >= 1500 || prs.some(p => p.distM >= 1500);
+    if(!distanceCapable){ excluded.push({ athlete:a, reason:'sprint anchor' }); return; }
+    let refSec;
+    const obs = prs.find(p => sameDistanceM(p.distM, refDistM));
+    if(obs){ refSec = obs.sec; }
+    else {
+      const f = raceForecastForTarget(a, { distM:refDistM, label:'5K' }, { fixedAnchor: nearestAnchorForTarget(a, refDistM) });
+      if(!f || !isFinite(f.likely)){ excluded.push({ athlete:a, reason:'no 5K projection' }); return; }
+      refSec = f.likely;
+    }
+    scored.push({ athlete:a, refSec, paceMileSec: refSec / (refDistM / 1609.34) });
+  });
+  if(!scored.length) return { groups:[], excluded, refDistM };
+  scored.sort((x, y) => x.paceMileSec - y.paceMileSec); // fastest first
+
+  const k = scored.length >= 6 ? 3 : (scored.length >= 3 ? 2 : 1);
+  const gaps = [];
+  for(let i = 1; i < scored.length; i++) gaps.push({ i, gap: scored[i].paceMileSec - scored[i-1].paceMileSec });
+  gaps.sort((a, b) => b.gap - a.gap);
+  const cuts = new Set(gaps.slice(0, k - 1).map(g => g.i));
+  const buckets = []; let cur = [];
+  scored.forEach((s, idx) => { if(cuts.has(idx)){ buckets.push(cur); cur = []; } cur.push(s); });
+  buckets.push(cur);
+
+  const names = ['A', 'B', 'C', 'D'];
+  const groups = buckets.map((members, i) => {
+    const refs = members.map(m => m.refSec).sort((a, b) => a - b);
+    const medianRefSec = refs[Math.floor(refs.length / 2)];
+    const paceLo = members[0].paceMileSec, paceHi = members[members.length - 1].paceMileSec;
+    return {
+      id: 'grp_' + names[i],
+      label: `Group ${names[i]}`,
+      tag: i === 0 ? 'Fastest' : (i === buckets.length - 1 ? 'Developing' : 'Middle'),
+      members, medianRefSec, paceLo, paceHi
+    };
+  });
+  return { groups, excluded, refDistM };
+}
+
+// A sprint-primary athlete qualifies for a group via a 1500m+ additional PR —
+// their zone targets must come from that distance PR, not the sprint anchor
+// (which blocks every aerobic zone and would print an all-dash row).
+function _distanceAthleteView(a){
+  if(!a || a.raceDistanceM >= 1500) return a;
+  const prs = collectAllPRs(a).filter(p => p.distM >= 1500);
+  if(!prs.length) return a;
+  const tLog = Math.log10(5000);
+  prs.sort((x, y) => Math.abs(Math.log10(x.distM) - tLog) - Math.abs(Math.log10(y.distM) - tLog));
+  const p = prs[0];
+  return { ...a, primaryEvent: p.event, raceDistance: p.event, raceDistanceM: p.distM, raceTime: fmtT(p.sec), raceDate: p.raceDate || null };
+}
+
+// Session target table for a group's median fitness (5K-equivalent yardstick).
+function groupSessionZones(medianRefSec, repDists){
+  const temp = { name:'Group median', raceDistance:'5K', primaryEvent:'5K', raceDistanceM:5000, raceTime: fmtT(medianRefSec), guardrail:'standard' };
+  // Same env correction as the on-screen split table and the printed pace card
+  // — the same athlete must never get contradictory targets across surfaces.
+  const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
+  const cs = computeZoneSplits(temp, { repDists: repDists || [400, 800, 1000, 1200, 1600], guardrailKey:'standard', env });
+  // Coaches want the working zones for a session, not recovery jog rows.
+  const keep = new Set(['Steady', 'Tempo', 'Threshold', 'Critical Velocity', 'Race Pace', 'VO2 Max']);
+  return cs.zones.filter(z => keep.has(z.label));
+}
+
+function renderSquads(){
+  const el = document.getElementById('sq-body');
+  if(!el) return;
+  const roster = DB.athletes || [];
+  if(roster.length < 2){
+    el.innerHTML = emptyStateCard('Training groups need a roster', 'Import or add at least 2 distance athletes (a 1500m+ PR) and STRIDE will cluster them into pace groups with today’s rep targets.', 'Import roster', "goTo('import',null)");
+    return;
+  }
+  const pro = hasProAccess();
+  const source = pro ? roster : roster.slice(0, FREE_SQUAD_CAP);
+  const res = computeTrainingGroups(source);
+  if(!res.groups.length){
+    el.innerHTML = emptyStateCard('No distance athletes to group yet', 'Clustering runs on athletes with a 1500m+ result (it groups by projected 5K-equivalent pace). Add a distance PR to a few athletes to switch this on.', 'Back to Coach Tools', "goTo('overview',null)");
+    return;
+  }
+  const repCols = [400, 800, 1000, 1200, 1600];
+  const groupCards = res.groups.map(g => {
+    const zones = groupSessionZones(g.medianRefSec, repCols);
+    const zoneRows = zones.map(z => {
+      const cells = repCols.map(d => `<td style="text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2);padding:.4rem .6rem">${z.reps[d] != null ? esc(fmtRepTime(z.reps[d])) : '—'}</td>`).join('');
+      const mile = z.mile != null ? _mmss(z.mile, 0) : '—';
+      return `<tr><td style="padding:.4rem .6rem;font-family:var(--font-display);font-size:.9375rem">${esc(z.label)} <span style="color:var(--text-4);font-family:var(--font-mono);font-size:.6875rem">${z.pct}%</span></td><td style="text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text);padding:.4rem .6rem">${esc(mile)}</td>${cells}</tr>`;
+    }).join('');
+    const chips = g.members.map(m => `<span style="display:inline-flex;align-items:center;gap:.4rem;background:var(--bg-el);border:1px solid var(--border);border-radius:999px;padding:.25rem .6rem;font-size:.75rem;color:var(--text-2)"><strong style="color:var(--text)">${esc(m.athlete.name)}</strong><span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3)">${esc(m.athlete.raceDistance||'')} ${esc(m.athlete.raceTime||'')}</span></span>`).join(' ');
+    return `
+      <div class="card" style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+          <h3 style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;margin:0">${esc(g.label)} <span style="font-size:.75rem;font-family:var(--font-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.06em">${esc(g.tag)}</span></h3>
+          <span style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${g.members.length} athlete${g.members.length===1?'':'s'} · ~${_mmss(g.paceLo,0)}–${_mmss(g.paceHi,0)}/mi at 5K effort</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem">${chips}</div>
+        <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Today’s rep targets · group median</p>
+        <div style="overflow-x:auto;border:1px solid var(--border);border-radius:.5rem">
+          <table style="width:100%;border-collapse:collapse;min-width:34rem">
+            <thead><tr style="border-bottom:1px solid var(--border-s)"><th style="text-align:left;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Zone</th><th style="text-align:right;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">/mi</th>${repCols.map(d=>`<th style="text-align:right;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">${d===1600?'1600':d}</th>`).join('')}</tr></thead>
+            <tbody>${zoneRows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+
+  const excludedNote = res.excluded.length
+    ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${res.excluded.length} athlete${res.excluded.length===1?'':'s'} not grouped (sprint anchor or no distance PR): ${esc(res.excluded.slice(0,8).map(e=>e.athlete.name).join(', '))}${res.excluded.length>8?'…':''}</p>`
+    : '';
+  const capNote = (!pro && roster.length > FREE_SQUAD_CAP)
+    ? `<div class="card squad-nudge" style="text-align:center;padding:1.25rem;border-style:dashed;margin-top:1rem"><p style="font-size:.875rem;color:var(--text-2);margin-bottom:.75rem">Grouping the first ${FREE_SQUAD_CAP} of ${roster.length} athletes. <strong style="color:var(--text)">Pro</strong> clusters your whole roster and prints a practice sheet per group.</p><button class="btn btn-primary" onclick="showUpgradeModal()">Unlock full roster →</button></div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
+      <div>
+        <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem">Training Groups</p>
+        <p style="font-size:.875rem;color:var(--text-2);line-height:1.5;max-width:40rem">STRIDE clustered your distance athletes into pace groups by current fitness (projected 5K-equivalent pace), splitting at the biggest natural gaps. Each group’s median rep targets are ready for today’s workout.</p>
+      </div>
+      <button class="btn btn-print" onclick="printGroupSheets()">Print group sheets</button>
+    </div>
+    ${groupCards}
+    ${excludedNote}
+    ${capNote}`;
+}
+
+// Group practice sheet — one page per group, one row per athlete with that
+// athlete's own targets for the session (default: Threshold + CV reps).
+function groupSheetPrintHTML(group, opts){
+  opts = opts || {};
+  const repCols = opts.repDists || [400, 800, 1000, 1200, 1600];
+  const zoneLabel = opts.zoneLabel || 'Threshold';
+  const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
+  const rows = group.members.map(m => {
+    const cs = computeZoneSplits(_distanceAthleteView(m.athlete), { repDists: repCols, env });
+    const z = cs ? cs.zones.find(x => x.label === zoneLabel && x.allowed) : null;
+    const cells = repCols.map(d => `<td class="num">${z && z.reps[d] != null ? esc(fmtRepTime(z.reps[d])) : '—'}</td>`).join('');
+    const mile = z && z.mile != null ? _mmss(z.mile, 0) : '—';
+    return `<tr><td>${esc(m.athlete.name)}</td><td class="num">${esc(m.athlete.raceDistance||'')} ${esc(m.athlete.raceTime||'')}</td><td class="num">${esc(mile)}</td>${cells}</tr>`;
+  }).join('');
+  const repHdr = repCols.map(d => `<th class="num">${d===1600?'1600m':d+'m'}</th>`).join('');
+  const sub = `${group.members.length} athletes · ~${_mmss(group.paceLo,0)}–${_mmss(group.paceHi,0)}/mi at 5K effort`;
+  return `<div class="ps-page">
+    ${_psHead('Practice Sheet', `${group.label} — ${zoneLabel} reps`, sub, [_psStamp()])}
+    <div class="ps-callout"><strong>Session:</strong> ${esc(zoneLabel)} intervals. Columns are the target time for each rep distance, computed from each athlete’s own PR.</div>
+    <table><thead><tr><th>Athlete</th><th class="num">PR</th><th class="num">/mile</th>${repHdr}</tr></thead><tbody>${rows}</tbody></table>
+    <div class="ps-foot">STRIDE OS training groups · grouped by projected 5K-equivalent pace. Targets are starting points — adjust by HR / RPE / interval length. Each athlete’s guardrail is applied to their own row.</div>
+  </div>`;
+}
+
+function printGroupSheets(){
+  // Mirror renderSquads exactly (same tier cap, same input set) — the printed
+  // groups must match the on-screen groups, and full-roster printing is the
+  // thing the free-tier upsell sells.
+  const roster = DB.athletes || [];
+  const source = hasProAccess() ? roster : roster.slice(0, FREE_SQUAD_CAP);
+  const res = computeTrainingGroups(source);
+  if(!res.groups.length){ toast('No distance groups to print'); return; }
+  printSheet(res.groups.map(g => groupSheetPrintHTML(g)).join(''));
+}
+
+// ── FEATURE 5 · PROOF LEDGER ────────────────────────────────────────────────
+// "On YOUR roster, we were within X%; VDOT was off Y%." A live leave-one-out
+// backtest over every athlete with 2+ PRs: hold out each result, predict it from
+// the athlete's other PRs with the STRIDE ensemble, and score it against the
+// Riegel and Daniels-Gilbert VDOT baselines from the identical anchor. Always
+// available (no cloud dependency); prediction_log keeps accumulating real
+// forecast-vs-outcome rows for future calibration.
+function _athleteWithoutPR(a, targetDistM){
+  const prs = collectAllPRs(a).filter(p => !sameDistanceM(p.distM, targetDistM));
+  if(!prs.length) return null;
+  const primary = prs[0];
+  const additionalPRs = {};
+  prs.slice(1).forEach(p => { additionalPRs[p.event] = fmtT(p.sec); });
+  return {
+    name:a.name, age:a.age, sex:a.sex, trainingAge:a.trainingAge, weeklyMileage:a.weeklyMileage,
+    primaryEvent:primary.event, raceDistance:primary.event, raceDistanceM:primary.distM,
+    raceTime: fmtT(primary.sec), raceDate: primary.raceDate || null, additionalPRs, guardrail:a.guardrail
+  };
+}
+
+function computeProofLedger(athletes){
+  const rows = [];
+  (athletes || []).filter(Boolean).forEach(a => {
+    const prs = collectAllPRs(a);
+    if(prs.length < 2) return;
+    prs.forEach(target => {
+      const temp = _athleteWithoutPR(a, target.distM);
+      if(!temp) return;
+      const anchor = nearestAnchorForTarget(temp, target.distM);
+      if(!anchor) return;
+      // Near-duplicate distances (1600m↔Mile, 3200m↔2 Mile) are ~free self-tests
+      // that would inflate the headline accuracy — an honest ledger skips them.
+      if(Math.max(anchor.distM, target.distM) / Math.min(anchor.distM, target.distM) < 1.1) return;
+      const f = raceForecastForTarget(temp, { distM:target.distM, label:target.event }, { fixedAnchor: anchor });
+      if(!f || f.isObserved || !isFinite(f.likely)) return;
+      const stride = f.likely;
+      const riegel = _formulaRiegel(anchor.distM, anchor.sec, target.distM);
+      const vdot = _formulaVDOT(anchor.distM, anchor.sec, target.distM);
+      // A fair three-way comparison needs all three models to produce a time —
+      // VDOT returns nothing for sprint pairs, which would NaN the averages.
+      if(![stride, riegel, vdot].every(v => v != null && isFinite(v))) return;
+      const e = s => Math.abs(s - target.sec) / target.sec * 100;
+      rows.push({
+        name:a.name, event:target.event, distM:target.distM, anchorEvent:anchor.event,
+        actual:target.sec, stride, riegel, vdot,
+        strideErr:e(stride), riegelErr:e(riegel), vdotErr:e(vdot)
+      });
+    });
+  });
+  const mean = k => rows.length ? rows.reduce((s, r) => s + r[k], 0) / rows.length : null;
+  const wins = rows.filter(r => r.strideErr <= r.riegelErr && r.strideErr <= r.vdotErr).length;
+  return { rows, n:rows.length, athletes:new Set(rows.map(r => r.name)).size,
+    strideMape:mean('strideErr'), riegelMape:mean('riegelErr'), vdotMape:mean('vdotErr'), wins };
+}
+
+function renderProof(){
+  const el = document.getElementById('pf-body');
+  if(!el) return;
+  const p = computeProofLedger(DB.athletes || []);
+  if(!p.n){
+    el.innerHTML = emptyStateCard('Not enough data to backtest yet',
+      'The proof ledger scores STRIDE against Riegel and VDOT on your OWN athletes — by holding out each PR and predicting it from the others. Add a second race distance to at least one athlete to switch it on.',
+      'Add a PR', "goTo('roster',null)");
+    return;
+  }
+  const fmtPct = v => v == null ? '—' : v.toFixed(1) + '%';
+  const maxMape = Math.max(p.strideMape, p.riegelMape, p.vdotMape, 0.01);
+  const bar = (label, val, color, best) => `
+    <div style="margin-bottom:.85rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem"><span style="font-family:var(--font-mono);font-size:.75rem;color:${best?'var(--text)':'var(--text-2)'}">${esc(label)}${best?' ★':''}</span><span style="font-family:var(--font-mono);font-size:.8125rem;font-weight:700;color:${color}">${fmtPct(val)}</span></div>
+      <div style="background:var(--bg-el);height:.55rem;border-radius:.3rem;overflow:hidden"><div style="height:100%;background:${color};width:${Math.max(3, val/maxMape*100).toFixed(1)}%"></div></div>
+    </div>`;
+  const strideBest = p.strideMape <= p.riegelMape && p.strideMape <= p.vdotMape;
+  const edgeVsVdot = (p.vdotMape != null && p.strideMape != null) ? (p.vdotMape - p.strideMape) : null;
+  const rowsHtml = p.rows.sort((a,b)=>a.strideErr-b.strideErr).map(r => `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.5rem .6rem;font-family:var(--font-display);font-size:.875rem">${esc(r.name)}</td>
+      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${esc(r.event)}<span style="color:var(--text-4)"> ← ${esc(r.anchorEvent)}</span></td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem">${esc(fmtT(r.actual))}</td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:${r.strideErr<=r.riegelErr&&r.strideErr<=r.vdotErr?'var(--green)':'var(--text-2)'}">${esc(fmtT(r.stride))} <span style="color:var(--text-4)">${r.strideErr.toFixed(1)}%</span></td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-3)">${r.riegelErr.toFixed(1)}%</td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-3)">${r.vdotErr.toFixed(1)}%</td>
+    </tr>`).join('');
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:1rem">
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Proof Ledger · backtested on your roster</p>
+      <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.5rem">${strideBest ? 'STRIDE was the most accurate model on your athletes.' : 'Here’s how STRIDE scored on your athletes.'}</h2>
+      <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1.25rem">Across <strong style="color:var(--text)">${p.n}</strong> hold-out test${p.n===1?'':'s'} on <strong style="color:var(--text)">${p.athletes}</strong> athlete${p.athletes===1?'':'s'} with multiple PRs, STRIDE’s average error was <strong style="color:var(--green)">${fmtPct(p.strideMape)}</strong>${edgeVsVdot!=null&&edgeVsVdot>0?` — VDOT was off by ${(edgeVsVdot).toFixed(1)} points more`:''}. Each test hides one real result and predicts it from that athlete’s other times.</p>
+      ${bar('STRIDE ensemble', p.strideMape, 'var(--green)', strideBest)}
+      ${bar('Riegel (1977)', p.riegelMape, 'var(--yellow)', p.riegelMape<p.strideMape&&p.riegelMape<=p.vdotMape)}
+      ${bar('Daniels-Gilbert VDOT', p.vdotMape, 'var(--text-3)', p.vdotMape<p.strideMape&&p.vdotMape<p.riegelMape)}
+      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.75rem">STRIDE was closest in ${p.wins} of ${p.n} tests. Lower is better (mean absolute % error vs the athlete’s real time).</p>
+    </div>
+    <div class="card">
+      <p class="card-title"><span>Every hold-out test</span><span class="card-accent">LEAVE-ONE-OUT</span></p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:34rem">
+          <thead><tr style="border-bottom:1px solid var(--border-s)">
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Athlete</th>
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Predicted ← from</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Actual</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">STRIDE</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Riegel</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">VDOT</th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">Honest backtest, not marketing: STRIDE gets its edge from each athlete’s personal fatigue curve (multiple PRs), which the single-formula baselines can’t use. STRIDE also logs every live forecast to validate against real race results as your season unfolds.</p>
+    </div>`;
+}
+
+// ── FEATURE 7 · MEET LINEUP OPTIMIZER ───────────────────────────────────────
+// The Monday ritual. Points-maximizing entries from the roster under a
+// per-athlete event cap and a per-event entry cap. "Strength" normalizes each
+// projected time against a solid-varsity benchmark so events are comparable;
+// a greedy assignment fills the strongest athlete-event slots first.
+const LINEUP_EVENTS = [
+  { label:'100m', distM:100 }, { label:'200m', distM:200 }, { label:'400m', distM:400 },
+  { label:'800m', distM:800 }, { label:'1600m', distM:1600 }, { label:'3200m', distM:3200 }
+];
+const LINEUP_BENCHMARK = {
+  M: { 100:11.5, 200:23.5, 400:52, 800:120, 1600:270, 3200:600 },
+  F: { 100:13.3, 200:27.5, 400:61, 800:145, 1600:330, 3200:720 }
+};
+let lineupState = { entriesPerEvent: 3, maxPerAthlete: 2 };
+
+function computeLineup(athletes, opts){
+  opts = opts || {};
+  const entriesPerEvent = opts.entriesPerEvent || 3;
+  const maxPerAthlete = opts.maxPerAthlete || 2;
+  const cands = [];
+  (athletes || []).filter(Boolean).forEach(a => {
+    if(!a.id || !a.raceDistanceM || !a.raceTime) return;
+    const sex = a.sex === 'F' ? 'F' : 'M';
+    const prs = collectAllPRs(a);
+    LINEUP_EVENTS.forEach(ev => {
+      let sec = null, conf = 100, source = 'forecast';
+      const obs = prs.find(p => sameDistanceM(p.distM, ev.distM));
+      if(obs){ sec = obs.sec; conf = 100; source = 'PR'; }
+      else {
+        const anchor = nearestAnchorForTarget(a, ev.distM);
+        if(!anchor) return;
+        // Never enter an athlete in an event we can only reach by a wild
+        // extrapolation: a 400m sprinter must not be projected into an "elite"
+        // 3200m and steal his sprint slots. Cap the anchor→target distance
+        // ratio and require real confidence; observed PRs above bypass this.
+        const ratio = Math.max(anchor.distM, ev.distM) / Math.min(anchor.distM, ev.distM);
+        if(ratio > 3.2) return;
+        const f = raceForecastForTarget(a, { distM:ev.distM, label:ev.label }, { fixedAnchor: anchor });
+        if(!f || !isFinite(f.likely) || f.isExploratory || f.confidence < 40) return;
+        sec = f.likely; conf = f.confidence;
+      }
+      const bench = (LINEUP_BENCHMARK[sex] || LINEUP_BENCHMARK.M)[ev.distM];
+      const value = (bench && sec) ? Math.max(0, Math.round(bench / sec * 100)) : 0;
+      // Assignment strength: forecasts are discounted by confidence so an
+      // athlete's OBSERVED event never loses their cap slot to a near-tie
+      // projection (a 51.4 400m kid must not be benched from the 400 because
+      // his extrapolated 800 scores a hair higher).
+      const effValue = source === 'PR' ? value : value * (0.7 + 0.3 * conf / 100);
+      cands.push({ id:a.id, name:a.name, sex, ev:ev.label, distM:ev.distM, sec, conf:Math.round(conf), value, effValue, source });
+    });
+  });
+  cands.sort((x, y) => (y.effValue - x.effValue) || (x.source === 'PR' ? -1 : 1) - (y.source === 'PR' ? -1 : 1) || x.sec - y.sec);
+  const athEvents = {}, lineup = {};
+  LINEUP_EVENTS.forEach(ev => lineup[ev.label] = []);
+  cands.forEach(c => {
+    if(lineup[c.ev].length >= entriesPerEvent) return;
+    if((athEvents[c.id] || 0) >= maxPerAthlete) return;
+    lineup[c.ev].push(c);
+    athEvents[c.id] = (athEvents[c.id] || 0) + 1;
+  });
+  const assigned = Object.values(lineup).flat();
+  const totalStrength = assigned.reduce((s, c) => s + c.value, 0);
+  const covered = LINEUP_EVENTS.filter(ev => lineup[ev.label].length).length;
+  const unassigned = (athletes || []).filter(a => a && a.id && a.raceDistanceM && a.raceTime && !athEvents[a.id]);
+  return { lineup, totalStrength, covered, entriesPerEvent, maxPerAthlete, unassigned, count: assigned.length };
+}
+
+function setLineupOpt(key, val){
+  lineupState[key] = parseInt(val, 10) || lineupState[key];
+  renderLineup();
+}
+
+function renderLineup(){
+  const el = document.getElementById('ln-body');
+  if(!el) return;
+  if(!hasProAccess()){
+    el.innerHTML = proGateCard('Meet Lineup Optimizer',
+      'Enter your strongest athletes in the right events automatically. STRIDE projects every athlete across the running events, then fills the lineup to maximize team strength under your entry caps — the Monday-before-the-meet ritual, in one click.');
+    return;
+  }
+  const roster = (DB.athletes || []).filter(a => a && a.raceDistanceM && a.raceTime);
+  if(roster.length < 1){
+    el.innerHTML = emptyStateCard('Add athletes to build a lineup', 'The optimizer needs a roster with race PRs. Import or add athletes first.', 'Import roster', "goTo('import',null)");
+    return;
+  }
+  const r = computeLineup(roster, lineupState);
+  const eventBlocks = LINEUP_EVENTS.map(ev => {
+    const entries = r.lineup[ev.label];
+    const rows = entries.length ? entries.map((c, i) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.4rem .6rem;border-bottom:1px solid var(--border)">
+        <span style="font-size:.875rem"><span style="color:var(--text-4);font-family:var(--font-mono);font-size:.75rem">${i+1}.</span> ${esc(c.name)}</span>
+        <span style="font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2)">${esc(fmtT(c.sec))} <span style="color:${c.value>=100?'var(--green)':'var(--text-4)'};font-size:.6875rem">· ${c.value}${c.source==='PR'?' PR':''}</span></span>
+      </div>`).join('') : `<div style="padding:.6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-4)">No projected entries</div>`;
+    return `
+      <div class="card" style="padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem"><h3 style="font-family:var(--font-display);font-size:1.125rem;font-weight:500;margin:0">${esc(ev.label)}</h3><span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">${entries.length}/${r.entriesPerEvent}</span></div>
+        ${rows}
+      </div>`;
+  }).join('');
+  const unassignedNote = r.unassigned.length
+    ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.75rem">Not entered (cap reached or stronger elsewhere): ${esc(r.unassigned.slice(0,10).map(a=>a.name).join(', '))}${r.unassigned.length>10?'…':''}</p>`
+    : '';
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+        <div class="hero-stat"><p class="stat-lbl">Team strength</p><p class="stat-val">${r.totalStrength}</p><p class="stat-note">${r.count} entries</p></div>
+        <div class="hero-stat"><p class="stat-lbl">Events covered</p><p class="stat-val">${r.covered}/${LINEUP_EVENTS.length}</p><p class="stat-note">running events</p></div>
+      </div>
+      <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap">
+        <label style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);text-transform:uppercase">Entries / event<br><select onchange="setLineupOpt('entriesPerEvent',this.value)" style="margin-top:.25rem">${[1,2,3,4].map(n=>`<option value="${n}" ${n===r.entriesPerEvent?'selected':''}>${n}</option>`).join('')}</select></label>
+        <label style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);text-transform:uppercase">Max events / athlete<br><select onchange="setLineupOpt('maxPerAthlete',this.value)" style="margin-top:.25rem">${[1,2,3].map(n=>`<option value="${n}" ${n===r.maxPerAthlete?'selected':''}>${n}</option>`).join('')}</select></label>
+        <button class="btn btn-print" onclick="printLineup()">Print lineup</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem">${eventBlocks}</div>
+    ${unassignedNote}
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:1rem">Heuristic assignment: each athlete’s projected time is scored against a solid-varsity benchmark (higher = stronger), then the strongest athlete-event slots are filled first under your caps. Forecast entries below 40% confidence are excluded; observed PRs always qualify. Benchmarks are sex-specific — set each athlete’s sex for accurate scoring (unset defaults to male benchmarks). This is a starting lineup — you know your athletes, meet format, and relays; adjust freely.</p>`;
+}
+
+function printLineup(){
+  const roster = (DB.athletes || []).filter(a => a && a.raceDistanceM && a.raceTime);
+  const r = computeLineup(roster, lineupState);
+  const blocks = LINEUP_EVENTS.map(ev => {
+    const rows = r.lineup[ev.label].map((c, i) => `<tr><td>${i+1}. ${esc(c.name)}</td><td class="num">${esc(fmtT(c.sec))}</td></tr>`).join('') || '<tr><td colspan="2">—</td></tr>';
+    return `<div style="break-inside:avoid;margin-bottom:10px"><div class="ps-section">${esc(ev.label)}</div><table><tbody>${rows}</tbody></table></div>`;
+  }).join('');
+  printSheet(`<div class="ps-page">${_psHead('Meet Lineup', DB.coach && DB.coach.team ? DB.coach.team : 'Meet Lineup', `${r.count} entries · ${r.covered}/${LINEUP_EVENTS.length} events · strength ${r.totalStrength}`, [_psStamp()])}${blocks}<div class="ps-foot">STRIDE OS projected lineup · entries chosen to maximize team strength under your caps. Adjust for relays, meet format, and athlete availability.</div></div>`);
+}
+
+// ── FEATURE 6 · FREE "WHICH EVENT SHOULD YOU RUN?" CALCULATOR ────────────────
+// No login. Screenshottable. Reuses buildEventFit. The distribution answer no
+// competitor ships: a runner enters 2+ PRs and gets their strongest event.
+let finderState = { rows: [ { dist:'1600m', time:'' }, { dist:'800m', time:'' } ], name:'', result:null };
+
+function eventFinderAddRow(){
+  if(finderState.rows.length >= 6) return;
+  finderState.rows.push({ dist:'', time:'' });
+  renderEventFinder();
+}
+function eventFinderSetRow(i, key, val){
+  if(finderState.rows[i]) finderState.rows[i][key] = val;
+}
+function eventFinderRemoveRow(i){
+  finderState.rows.splice(i, 1);
+  renderEventFinder();
+}
+function eventFinderReset(){
+  finderState = { rows:[ { dist:'1600m', time:'' }, { dist:'800m', time:'' } ], name:'', result:null };
+  renderEventFinder();
+}
+function eventFinderRun(){
+  // pull live values from the DOM (inputs are uncontrolled)
+  finderState.rows.forEach((r, i) => {
+    const d = document.getElementById('ef-dist-' + i);
+    const t = document.getElementById('ef-time-' + i);
+    if(d) r.dist = d.value;
+    if(t) r.time = t.value.trim();
+  });
+  const nameEl = document.getElementById('ef-name');
+  if(nameEl) finderState.name = nameEl.value.trim();
+  const valid = finderState.rows.filter(r => r.dist && r.time && DIST[r.dist] && parseTime(r.time) != null);
+  const seen = new Set(); const uniq = [];
+  valid.forEach(r => { if(!seen.has(r.dist)){ seen.add(r.dist); uniq.push(r); } });
+  if(uniq.length < 2){ finderState.result = { error: 'Enter at least two different events with valid times (e.g. 5:20 or 2:14.5).' }; renderEventFinder(); return; }
+  const primary = uniq[0];
+  const additionalPRs = {};
+  uniq.slice(1).forEach(r => { additionalPRs[r.dist] = r.time; });
+  const temp = {
+    name: finderState.name || 'You',
+    primaryEvent: primary.dist, raceDistance: primary.dist, raceDistanceM: DIST[primary.dist],
+    raceTime: primary.time, additionalPRs, age: null, trainingAge: 0, guardrail:null
+  };
+  const fit = buildEventFit(temp);
+  finderState.result = fit ? { fit } : { error: 'Could not assess these times — try two events in different distance ranges.' };
+  renderEventFinder();
+}
+
+// Clean black-on-white print of the event-fit verdict — the on-screen card
+// uses dark-theme CSS variables that turn invisible on paper.
+function printEventFitCard(){
+  const res = finderState.result;
+  if(!res || !res.fit){ toast('Run the finder first'); return; }
+  const fit = res.fit;
+  const rows = finderState.rows
+    .filter(r => r.dist && r.time && DIST[r.dist] && parseTime(r.time) != null)
+    .map(r => `<tr><td>${esc(r.dist)}</td><td class="num">${esc(r.time)}</td></tr>`).join('');
+  printSheet(`<div class="ps-page">
+    ${_psHead('Event Finder', finderState.name || 'Which event should you run?', esc(fit.verdict), [_psStamp()])}
+    <div class="ps-callout"><strong>Strongest event: ${esc(fit.bestEvent)}</strong> · ${esc(fit.bestFamily)} family</div>
+    <p style="font-size:10pt;line-height:1.6">${fit.primaryReasoning}</p>
+    <div class="ps-section">The times behind it</div>
+    <table><thead><tr><th>Event</th><th class="num">Time</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="ps-foot">STRIDE OS Event Finder — each time is compared to what the athlete’s other results predict; the event farthest ahead of prediction is where the athlete naturally excels.</div>
+  </div>`);
+}
+
+function renderEventFinder(){
+  const el = document.getElementById('ef-body');
+  if(!el) return;
+  const distKeys = Object.keys(DIST);
+  const rowInputs = finderState.rows.map((r, i) => `
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem">
+      <select id="ef-dist-${i}" style="flex:1" onchange="eventFinderSetRow(${i},'dist',this.value)">
+        <option value="">Event…</option>
+        ${distKeys.map(k => `<option value="${esc(k)}" ${r.dist===k?'selected':''}>${esc(k)}</option>`).join('')}
+      </select>
+      <input id="ef-time-${i}" type="text" placeholder="Time e.g. 5:20" value="${esc(r.time||'')}" style="flex:1" oninput="eventFinderSetRow(${i},'time',this.value)">
+      ${finderState.rows.length > 2 ? `<button class="btn" style="padding:.4rem .6rem" onclick="eventFinderRemoveRow(${i})" aria-label="Remove">×</button>` : '<span style="width:2rem"></span>'}
+    </div>`).join('');
+
+  let resultHtml = '';
+  const res = finderState.result;
+  if(res && res.error){
+    resultHtml = `<div class="warn-box" style="margin-top:1rem"><span class="warn-icon" aria-hidden="true">▲</span><p>${esc(res.error)}</p></div>`;
+  } else if(res && res.fit){
+    const fit = res.fit;
+    resultHtml = `
+      <div id="ef-card" style="margin-top:1.5rem;background:var(--bg-card);border:1px solid var(--border);border-left:.25rem solid ${fit.color};border-radius:.75rem;padding:1.5rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem">
+          <div>
+            <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.1em;color:${fit.color};text-transform:uppercase;margin-bottom:.35rem">Your strongest event</p>
+            <p style="font-family:var(--font-stat);font-size:2.5rem;font-weight:800;line-height:1;letter-spacing:-.02em">${esc(fit.bestEvent)}</p>
+            <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-3);margin-top:.35rem">${esc(fit.bestFamily)} family · ${esc(fit.verdict)}</p>
+          </div>
+          <div style="text-align:right;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">STRIDE OS<br>strideos event finder</div>
+        </div>
+        <p style="font-size:.9375rem;line-height:1.6;color:var(--text-2)">${fit.primaryReasoning}</p>
+        <details style="margin-top:1rem"><summary style="cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);text-transform:uppercase;list-style:none">▸ See the per-event evidence</summary><div style="margin-top:.5rem">${fit.html}</div></details>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn" onclick="eventFinderReset()">Try other times</button>
+        <button class="btn btn-print" onclick="printEventFitCard()">Save as PDF</button>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem;margin-top:1rem;border-style:dashed">
+        <p style="font-size:.9375rem;color:var(--text-2);line-height:1.55;max-width:36rem;margin:0 auto .75rem">Coaches: STRIDE runs this across your <strong style="color:var(--text)">whole roster</strong> automatically — and flags the athlete quietly in the wrong event before the season slips away.</p>
+        <button class="btn btn-primary" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces',null)">Start free — 30-day Pro trial →</button>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:1.25rem">
+      <p style="font-family:var(--font-display);font-weight:700;font-size:1.5rem;letter-spacing:-.02em;line-height:1.15;margin-bottom:.35rem">Which event should you run?</p>
+      <p style="font-size:.9375rem;color:var(--text-2);line-height:1.55;max-width:38rem">Enter two or more of your race times. STRIDE compares each result to what your other times predict and tells you the event your body is actually built for. Free, no signup.</p>
+    </div>
+    <div class="card">
+      <label for="ef-name" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Your name (optional)</label>
+      <input id="ef-name" type="text" placeholder="e.g. Jordan" value="${esc(finderState.name||'')}" style="margin-bottom:1.25rem">
+      <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.1em;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem">Your race times (2+)</p>
+      ${rowInputs}
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem">
+        ${finderState.rows.length < 6 ? '<button class="btn" onclick="eventFinderAddRow()">+ Add another time</button>' : ''}
+        <button class="btn btn-primary" onclick="eventFinderRun()">Find my event →</button>
+      </div>
+    </div>
+    ${resultHtml}`;
+}
+
+// ── Small shared UI helpers for the new screens ─────────────────────────────
+function emptyStateCard(title, body, btnLabel, btnAction){
+  return `
+    <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
+      <h2 style="font-family:var(--font-display);font-size:1.5rem;font-weight:400;margin-bottom:.5rem">${esc(title)}</h2>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.25rem">${esc(body)}</p>
+      ${btnLabel ? `<button class="btn btn-primary" onclick="${btnAction}">${esc(btnLabel)}</button>` : ''}
+    </div>`;
+}
+function proGateCard(title, body){
+  return `
+    <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
+      <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.75rem">${esc(title)}</h2>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">${esc(body)}</p>
+      <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
+    </div>`;
+}
+
+// ── FEATURE 4 · PASTE-A-ROSTER + WEEKLY MEET RESULTS ────────────────────────
+// Activation dies on retyping 40 kids. Paste raw rows from Athletic.net /
+// MileSplit / a spreadsheet straight into the existing mapping+validation flow.
+// Weekly variant: paste a meet's results, match by name, update PRs, and show a
+// "who improved" report the coach can drop in the team channel Monday morning.
+let importMode = 'file'; // 'file' | 'paste' | 'meet'
+let meetState = { text:'', preview:null };
+
+function setImportMode(mode){
+  importMode = mode;
+  meetState = { text:'', preview:null };
+  if(importState.stage !== 'idle'){ importState = { ...importState, stage:'idle', error:'' }; }
+  renderImport();
+}
+
+function importModeTabs(){
+  const tab = (mode, label) => `<button onclick="setImportMode('${mode}')" style="background:${importMode===mode?'var(--bg-raised)':'var(--bg-el)'};border:1px solid ${importMode===mode?'var(--border-h)':'var(--border)'};color:${importMode===mode?'var(--text)':'var(--text-3)'};padding:.5rem 1rem;border-radius:.5rem;cursor:pointer;font-family:var(--font-mono);font-size:.75rem;transition:all .15s">${esc(label)}</button>`;
+  return `<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem">${tab('file','↑ Upload file')}${tab('paste','⌘ Paste roster')}${tab('meet','⛳ Paste meet results')}</div>`;
+}
+
+// Turn pasted text into the same { headers, rows } shape a CSV yields.
+function parsePastedTable(text){
+  const lines = (text || '').split(/\r?\n/).filter(l => l.trim());
+  if(!lines.length) return null;
+  const delim = lines[0].indexOf('\t') >= 0 ? '\t'
+              : (lines[0].indexOf(',') >= 0 ? ',' : (/\s{2,}/.test(lines[0]) ? 'MULTISPACE' : null));
+  if(delim){
+    const split = l => delim === 'MULTISPACE' ? l.trim().split(/\s{2,}/) : l.split(delim);
+    const rowsArr = lines.map(l => split(l).map(c => c.trim()));
+    const first = rowsArr[0];
+    const firstHasTime = first.some(c => /[:.]/.test(c) && parseTime(c) != null);
+    // The first row is a HEADER only if a cell exactly matches a known column
+    // name — "Maya Robinson  12" (name+grade roster, no time column anywhere)
+    // must import as data, not vanish as a phantom header. A weird custom
+    // header failing this test shows up visibly in the mapping preview; a
+    // swallowed athlete never would.
+    const knownHeaders = new Set();
+    IMPORT_FIELDS.concat(EVENT_PR_FIELDS).forEach(f => f.hints.forEach(h => knownHeaders.add(h.toLowerCase())));
+    const firstLooksHeader = first.some(c => knownHeaders.has(String(c).toLowerCase().trim()));
+    let headers, dataRows;
+    if(!firstHasTime && firstLooksHeader){ headers = first.map((h, i) => h || ('Column ' + (i+1))); dataRows = rowsArr.slice(1); }
+    else { headers = first.map((_, i) => 'Column ' + (i+1)); dataRows = rowsArr; }
+    const rows = dataRows.filter(r => r.some(c => c)).map(r => {
+      const o = {}; headers.forEach((h, i) => o[h] = r[i] != null ? r[i] : ''); return o;
+    });
+    if(!rows.length) return null;
+    return { headers, rows };
+  }
+  // No delimiter — fall back to the tolerant single-line roster parser.
+  const ath = parseSquadPaste(text);
+  if(!ath.length) return null;
+  const headers = ['Name', 'Event', 'Time', 'Weekly Mileage'];
+  const rows = ath.map(a => ({
+    'Name': a.name, 'Event': a.raceDistance || a.primaryEvent || '',
+    'Time': a.raceTime || '', 'Weekly Mileage': a.weeklyMileage != null ? String(a.weeklyMileage) : ''
+  }));
+  return { headers, rows };
+}
+
+function applyPastedRoster(){
+  const ta = document.getElementById('importPasteArea');
+  const text = ta ? ta.value : '';
+  const parsed = parsePastedTable(text);
+  if(!parsed){
+    importState = { ...importState, error: 'Could not read that paste. Paste rows from a spreadsheet, Athletic.net, or MileSplit — or one athlete per line like "Maya, 5k, 18:42".' };
+    renderImport();
+    return;
+  }
+  importState = {
+    ...importState, stage:'mapping', fileName:'Pasted roster',
+    headers: parsed.headers, rows: parsed.rows,
+    mapping: autoDetectColumns(parsed.headers), error:''
+  };
+  importMode = 'file'; // hand off to the shared mapping UI
+  renderImport();
+}
+
+// Parse pasted meet results into { name, event, distM, sec, timeText, date }.
+function parseMeetResults(text){
+  const out = [];
+  const lines = (text || '').split(/\r?\n/).filter(l => l.trim());
+  lines.forEach(line => {
+    // Detect the delimiter per line (like parseSquadPaste) — results pastes
+    // routinely mix comma rows with space-aligned rows and none should drop.
+    const delim = line.indexOf('\t') >= 0 ? '\t' : (line.indexOf(',') >= 0 ? ',' : null);
+    let parts = delim ? line.split(delim) : (/\s{2,}/.test(line) ? line.trim().split(/\s{2,}/) : line.trim().split(/\s+/));
+    parts = parts.map(p => p.trim()).filter(Boolean);
+    // Athletic.net / Hy-Tek rows lead with a PLACE column ("1." or "1") — strip
+    // it, or it gets read as a 1-second time ("1." parses) or a 2001 date ("1").
+    if(parts.length > 2 && /^\d{1,3}\.?$/.test(parts[0])) parts = parts.slice(1);
+    parts[0] = parts[0].replace(/^\d{1,3}\.\s+/, ''); // "1. Maya Robinson" in one cell
+    if(parts.length < 2) return;
+    let time = null, ev = null, date = '';
+    const nameTokens = [];
+    parts.forEach(tok => {
+      if(time === null && /[:.]/.test(tok) && parseTime(tok) != null){ time = tok; return; }
+      // Same guard as parseSquadPaste: a name like "Miles" must not be read as
+      // the Mile event on a space-split line.
+      if(ev === null && (/\d/.test(tok) || /^(mile|1 mile|2 mile|two mile|half|half marathon|hm|marathon)$/i.test(tok))){
+        const e = _normEvent(tok);
+        if(e.raceDistanceM){ ev = e; return; }
+      }
+      // Only tokens that LOOK like dates may reach _normDate — its `new Date()`
+      // fallback happily turns a grade ("9"), a place, or "Eli Watts 9" into a
+      // 2001 date that would silently expire the athlete's PR freshness.
+      const dateLike = /^\d{4}-\d{2}-\d{2}$/.test(tok) ||
+        ((/[\/-]/.test(tok)) && /\d/.test(tok) && tok.length >= 6) ||
+        /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(tok);
+      if(!date && dateLike){ const d = _normDate(tok); if(d && /\d{4}-\d{2}-\d{2}/.test(d)){ date = d; return; } }
+      nameTokens.push(tok);
+    });
+    if(time === null || !ev) return; // meet results need an event + a time
+    const name = nameTokens.join(' ').replace(/\s+/g, ' ').trim();
+    if(!name) return;
+    const sec = parseTime(time);
+    // Same plausibility rule as the file-import path: a human can't run faster
+    // than 12 m/s, so "4.38" pasted for a 1600m (4.38 SECONDS) must not
+    // overwrite a real 4:38 PR. Kept as a flagged row so the coach sees it.
+    const implausible = !(sec > 0) || sec <= ev.raceDistanceM / 12;
+    out.push({ name, event: ev.raceDistance, distM: ev.raceDistanceM, sec, timeText: time, date, implausible });
+  });
+  return out;
+}
+
+// Fold diacritics ("José" → "jose") BEFORE stripping non-alphanumerics, or an
+// accented roster name never matches its plain-ASCII meet-results spelling.
+function _normNameKey(s){
+  let t = String(s || '').toLowerCase();
+  try{ t = t.normalize('NFD').replace(/[̀-ͯ]/g, ''); }catch(_e){}
+  return t.replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+}
+function _matchAthlete(name){
+  const key = _normNameKey(name);
+  if(!key) return null;
+  let hit = (DB.athletes || []).find(a => _normNameKey(a.name) === key);
+  if(hit) return hit;
+  // Token-subset fallback with initial support ("Jordan T" ↔ "Jordan Torres",
+  // "Maya R" ↔ "Maya Robinson", "Robinson Maya" ↔ "Maya Robinson"). A
+  // single-letter token matches any token starting with that letter. Only a
+  // UNIQUE candidate counts — ambiguity must not silently update the wrong kid.
+  const toks = key.split(' ').filter(Boolean);
+  const tokMatch = (t, list) => list.some(x => x === t || (t.length === 1 && x.charAt(0) === t) || (x.length === 1 && t.charAt(0) === x));
+  const cands = (DB.athletes || []).filter(a => {
+    const at = _normNameKey(a.name).split(' ').filter(Boolean);
+    return toks.every(t => tokMatch(t, at)) || at.every(t => tokMatch(t, toks));
+  });
+  return cands.length === 1 ? cands[0] : null;
+}
+
+function previewMeetResults(){
+  const ta = document.getElementById('meetPasteArea');
+  meetState.text = ta ? ta.value : '';
+  const results = parseMeetResults(meetState.text);
+  // One paste can carry prelims AND finals for the same athlete+event (Hy-Tek
+  // prints finals first) — keep only the FASTEST plausible row per pair, or
+  // the slower prelim would overwrite the final on apply.
+  const bestByKey = {};
+  results.forEach(res => {
+    if(res.implausible) return;
+    const k = _normNameKey(res.name) + '|' + res.event;
+    if(!bestByKey[k] || res.sec < bestByKey[k].sec) bestByKey[k] = res;
+  });
+  const updates = [];
+  results.forEach(res => {
+    if(res.implausible){ updates.push({ res, status:'badtime' }); return; }
+    const k = _normNameKey(res.name) + '|' + res.event;
+    if(bestByKey[k] !== res){ updates.push({ res, status:'duplicate' }); return; }
+    const ath = _matchAthlete(res.name);
+    if(!ath){ updates.push({ res, status:'nomatch' }); return; }
+    // Compare against the athlete's existing time at that event.
+    let existingSec = null, where = 'new';
+    if(ath.raceDistance === res.event){ existingSec = parseTime(String(ath.raceTime)); where = 'primary'; }
+    else if(ath.additionalPRs && ath.additionalPRs[res.event]){ existingSec = parseTime(String(ath.additionalPRs[res.event])); where = 'additional'; }
+    if(existingSec == null){ updates.push({ res, ath, status:'new', where }); }
+    else if(res.sec < existingSec){ updates.push({ res, ath, status:'pr', where, oldSec:existingSec, deltaSec: existingSec - res.sec, pct: (existingSec - res.sec) / existingSec * 100 }); }
+    else { updates.push({ res, ath, status:'slower', where, oldSec:existingSec }); }
+  });
+  meetState.preview = updates;
+  renderImport();
+}
+
+function applyMeetResults(){
+  const updates = (meetState.preview || []).filter(u => u.status === 'pr' || u.status === 'new');
+  if(!updates.length){ toast('No PRs or new results to apply'); return; }
+  const changed = new Set();
+  updates.forEach(u => {
+    const ath = u.ath; if(!ath) return;
+    if(u.where === 'primary'){ ath.raceTime = u.res.timeText; if(u.res.date) ath.raceDate = u.res.date; }
+    else { ath.additionalPRs = ath.additionalPRs || {}; ath.additionalPRs[u.res.event] = u.res.timeText; }
+    ath.updatedAt = new Date().toISOString();
+    changed.add(ath);
+  });
+  saveDB(DB);
+  refreshActiveAthlete();
+  updateChip();
+  // Push each changed athlete to the cloud if signed in.
+  if(sbClient && sbUser && typeof syncAthleteToSupabase === 'function'){
+    changed.forEach(a => { try{ syncAthleteToSupabase(a); }catch(_e){} });
+  }
+  const improved = updates.filter(u => u.status === 'pr').length;
+  const added = updates.filter(u => u.status === 'new').length;
+  toast(`Applied ${improved} PR${improved===1?'':'s'}${added?` + ${added} new result${added===1?'':'s'}`:''}`);
+  meetState.preview = (meetState.preview || []).map(u =>
+    (u.status === 'pr' || u.status === 'new') ? { ...u, status:'applied', appliedFrom:u.status } : u);
+  renderImport();
+}
+
+function renderMeetResults(){
+  const el = document.getElementById('im-body');
+  if(!el) return;
+  const preview = meetState.preview;
+  let previewHtml = '';
+  if(preview){
+    const prs = preview.filter(u => u.status === 'pr');
+    const news = preview.filter(u => u.status === 'new');
+    const applied = preview.filter(u => u.status === 'applied');
+    const noMatch = preview.filter(u => u.status === 'nomatch');
+    const slower = preview.filter(u => u.status === 'slower');
+    const badTime = preview.filter(u => u.status === 'badtime');
+    const dupes = preview.filter(u => u.status === 'duplicate');
+    const line = (u) => {
+      if(u.status === 'pr' || (u.status==='applied' && u.appliedFrom==='pr')) return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:.4rem .6rem">${esc(u.ath.name)}</td><td style="padding:.4rem .6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${esc(u.res.event)}</td><td style="padding:.4rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem"><span style="color:var(--text-4);text-decoration:line-through">${esc(fmtT(u.oldSec))}</span> → <strong style="color:var(--green)">${esc(u.res.timeText)}</strong></td><td style="padding:.4rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.75rem;color:var(--green)">−${u.deltaSec.toFixed(1)}s (${u.pct.toFixed(1)}%)</td></tr>`;
+      return `<tr style="border-bottom:1px solid var(--border)"><td style="padding:.4rem .6rem">${esc(u.ath.name)}</td><td style="padding:.4rem .6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${esc(u.res.event)}</td><td style="padding:.4rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2)">${esc(u.res.timeText)}</td><td style="padding:.4rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.75rem;color:var(--accent)">new event</td></tr>`;
+    };
+    const improvedRows = [...prs, ...applied.filter(u=>u.appliedFrom==='pr')].map(line).join('');
+    const newRows = [...news, ...applied.filter(u=>u.appliedFrom==='new')].map(line).join('');
+    const pendingCount = prs.length + news.length;
+    previewHtml = `
+      <div class="card" style="margin-top:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
+          <p style="font-family:var(--font-display);font-size:1.25rem;margin:0">Who improved</p>
+          ${pendingCount ? `<button class="btn btn-primary" onclick="applyMeetResults()">Apply ${pendingCount} update${pendingCount===1?'':'s'}</button>` : (applied.length?`<span style="font-family:var(--font-mono);font-size:.75rem;color:var(--green)">✓ ${applied.length} applied</span>`:'')}
+        </div>
+        ${(improvedRows) ? `<p style="font-family:var(--font-mono);font-size:.625rem;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem">New PRs</p><table style="width:100%;border-collapse:collapse;margin-bottom:1rem"><tbody>${improvedRows}</tbody></table>` : ''}
+        ${(newRows) ? `<p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem">New events logged</p><table style="width:100%;border-collapse:collapse;margin-bottom:1rem"><tbody>${newRows}</tbody></table>` : ''}
+        ${slower.length ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${slower.length} result${slower.length===1?'':'s'} were not PRs (kept existing bests).</p>` : ''}
+        ${dupes.length ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.35rem">${dupes.length} duplicate row${dupes.length===1?'':'s'} skipped (kept each athlete's fastest time per event).</p>` : ''}
+        ${badTime.length ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--red);margin-top:.35rem">${badTime.length} row${badTime.length===1?'':'s'} skipped — time doesn't look real for the event (check for a period where a colon should be): ${esc(badTime.slice(0,5).map(u=>`${u.res.name} ${u.res.event} ${u.res.timeText}`).join(' · '))}${badTime.length>5?'…':''}</p>` : ''}
+        ${noMatch.length ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-top:.35rem">${noMatch.length} name${noMatch.length===1?'':'s'} did not match your roster: ${esc(noMatch.slice(0,8).map(u=>u.res.name).join(', '))}${noMatch.length>8?'…':''}. Add them via Paste roster.</p>` : ''}
+        ${(!improvedRows && !newRows) ? `<p style="font-size:.875rem;color:var(--text-2)">No PRs or new events found in this paste.</p>` : ''}
+      </div>`;
+  }
+  el.innerHTML = `
+    ${importModeTabs()}
+    <div class="card">
+      <p style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:.35rem">Paste Saturday’s results</p>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">One result per line: <strong>name, event, time</strong> (date optional). STRIDE matches each to your roster, updates PRs, and shows who improved. Copy straight from Athletic.net, MileSplit, Hy-Tek, or a spreadsheet.</p>
+      <textarea id="meetPasteArea" rows="8" placeholder="Maya Robinson, 5K, 18:31, 2026-05-16&#10;Jordan T, 1600m, 4:35.2&#10;Eli W  3200m  10:12" style="width:100%;font-family:var(--font-mono);font-size:.8125rem;background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;color:var(--text);resize:vertical">${esc(meetState.text||'')}</textarea>
+      <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="previewMeetResults()">Match &amp; preview →</button>
+      </div>
+    </div>
+    ${previewHtml}`;
 }
 
 // ── FRONT DOOR ─────────────────────────────────────────────────────────────
@@ -7121,6 +8366,7 @@ function athleteCard(a){
           : `<button class="btn btn-primary" onclick="switchAthlete('${a.id}')" style="flex:1;font-size:.6875rem;min-width:0">Make Active →</button>`
         }
         ${inviteBtn}
+        ${a.raceDistanceM && a.raceTime ? `<button class="btn btn-print" onclick="event.stopPropagation();printPaceCard('${a.id}')" style="font-size:.6875rem" aria-label="Print pace card for ${esc(a.name)}">Card</button>` : ''}
         <button class="btn" onclick="event.stopPropagation();deleteAthlete('${a.id}')" style="font-size:.6875rem;color:var(--red);border-color:rgba(239,68,68,.3)" aria-label="Delete ${esc(a.name)}">✕</button>
       </div>
     </div>`;
