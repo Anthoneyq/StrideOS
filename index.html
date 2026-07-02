@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STRIDE OS — Pace Calculator for Running Coaches</title>
+<meta name="description" content="Training paces, race forecasts, and event-fit analysis from real race times — built for track &amp; XC coaches. Free calculator, no signup.">
+<link rel="canonical" href="https://strideos.thecoachlab.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="STRIDE OS">
+<meta property="og:title" content="Which event should your runner actually race?">
+<meta property="og:description" content="Enter two race times, get the event your body is built for — free, no signup. Coaches: run it across your whole roster.">
+<meta property="og:url" content="https://strideos.thecoachlab.app/">
+<meta property="og:image" content="https://strideos.thecoachlab.app/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Which event should your runner actually race?">
+<meta name="twitter:description" content="Enter two race times, get the event your body is built for — free, no signup. Built for track &amp; XC coaches.">
+<meta name="twitter:image" content="https://strideos.thecoachlab.app/og-card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -3133,6 +3147,11 @@ function goTo(id,btn){
     promptForAccount('save athletes and open the coach workspace');
     id = PUBLIC_SCREEN_ID;
     btn = null;
+  }
+  // Leaving the Event Finder drops its share fragment so a later reload
+  // lands where the user actually was, not back on a stale shared result.
+  if(id !== 'eventfit' && location.hash.indexOf('#ef') === 0){
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(_e){}
   }
   applyWorkspaceMode({ redirect: false });
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -7023,7 +7042,54 @@ function eventFinderRun(){
   };
   const fit = buildEventFit(temp);
   finderState.result = fit ? { fit } : { error: 'Could not assess these times — try two events in different distance ranges.' };
+  // Make the address bar itself the share link for this result.
+  if(fit){ try{ history.replaceState(null, '', eventFinderShareUrl()); }catch(_e){} }
   renderEventFinder();
+}
+
+// ── Shareable Event Finder links ─────────────────────────────────────────
+// The entered rows are encoded in the URL FRAGMENT (#ef=...), so a shared
+// link reproduces the verdict entirely client-side — no name or time is ever
+// sent to a server. This is the viral loop: every result is a link.
+function eventFinderShareUrl(){
+  const rows = finderState.rows.filter(r => r.dist && r.time && DIST[r.dist] && parseTime(r.time) != null);
+  const payload = { n: finderState.name || '', r: rows.map(r => [r.dist, r.time]) };
+  return location.origin + location.pathname + '#ef=' + encodeURIComponent(JSON.stringify(payload));
+}
+
+function parseEventFinderLink(hash){
+  if(!hash) return null;
+  if(hash === '#eventfinder' || hash === '#eventfit') return { state: null };
+  if(hash.indexOf('#ef=') === 0){
+    try{
+      const p = JSON.parse(decodeURIComponent(hash.slice(4)));
+      if(p && Array.isArray(p.r)) return { state: p };
+    }catch(_e){}
+    return { state: null }; // malformed payload still opens the finder
+  }
+  return null;
+}
+
+function restoreEventFinderShare(p){
+  const rows = (p.r || []).slice(0, 6)
+    .filter(x => Array.isArray(x) && DIST[x[0]] && typeof x[1] === 'string' && parseTime(x[1]) != null)
+    .map(x => ({ dist: x[0], time: String(x[1]).slice(0, 20) }));
+  if(rows.length < 2) return;
+  finderState = { rows, name: String(p.n || '').slice(0, 60), result: null };
+}
+
+function shareEventFinderResult(){
+  const url = eventFinderShareUrl();
+  if(navigator.share){
+    navigator.share({ title: 'Which event should you run? — STRIDE OS', url }).catch(() => {});
+    return;
+  }
+  const done = () => toast('Link copied — anyone who opens it sees this result');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(() => prompt('Copy this link:', url));
+  } else {
+    prompt('Copy this link:', url);
+  }
 }
 
 // Clean black-on-white print of the event-fit verdict — the on-screen card
@@ -7079,6 +7145,7 @@ function renderEventFinder(){
         <details style="margin-top:1rem"><summary style="cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);text-transform:uppercase;list-style:none">▸ See the per-event evidence</summary><div style="margin-top:.5rem">${fit.html}</div></details>
       </div>
       <div style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="shareEventFinderResult()">Share this result →</button>
         <button class="btn" onclick="eventFinderReset()">Try other times</button>
         <button class="btn btn-print" onclick="printEventFitCard()">Save as PDF</button>
       </div>
@@ -9185,9 +9252,19 @@ function toast(msg, type){
 let currentScreen = 'home';
 window.addEventListener('load',()=>{
   refreshActiveAthlete();
-  // Land on the front door: a compact pitch sitting directly above a live free
-  // experience (calculator + demo Team IQ). Value before any ask.
-  goTo('home', null);
+  // Deep links: #eventfinder opens the free Event Finder; #ef=<payload> also
+  // restores a shared result. The payload lives in the URL FRAGMENT, so the
+  // shared times/name never reach a server log.
+  const efLink = parseEventFinderLink(location.hash);
+  if(efLink){
+    if(efLink.state) restoreEventFinderShare(efLink.state);
+    goTo('eventfit', null);
+    if(efLink.state && finderState.rows.length >= 2) eventFinderRun();
+  } else {
+    // Land on the front door: a compact pitch sitting directly above a live free
+    // experience (calculator + demo Team IQ). Value before any ask.
+    goTo('home', null);
+  }
   updateChip();
   initSupabase().then(() => {
     // After Supabase boots, check if the URL signals a return from
