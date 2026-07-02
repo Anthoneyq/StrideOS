@@ -268,6 +268,10 @@ main{padding:2.5rem 3.5rem;max-width:90rem}
 .auth-modal .auth-secondary{font-size:.75rem;margin-top:1rem}
 .auth-modal .auth-feedback{font-family:'Inter',sans-serif;font-size:.8125rem}
 .auth-modal-trust{font-family:'JetBrains Mono',monospace;font-size:.625rem;color:var(--text-3);letter-spacing:.04em;text-align:center;margin-top:1.125rem}
+.auth-legal-consent{display:flex;align-items:flex-start;gap:.625rem;border:1px solid var(--border-s);border-radius:.5rem;padding:.75rem .8125rem;margin:.25rem 0 .75rem;background:rgba(255,255,255,.025);font-family:'Inter',sans-serif;font-size:.8125rem;line-height:1.45;color:var(--text-2)}
+.auth-legal-consent input{flex:0 0 auto;width:1rem;height:1rem;margin:.125rem 0 0;accent-color:var(--accent)}
+.auth-legal-consent a,.auth-legal-links a{color:var(--text);text-decoration:underline;text-underline-offset:2px}
+.auth-legal-links{font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);text-align:center;margin:.75rem 0 0}
 @media(max-width:640px){.auth-modal{padding:1.5rem 1.25rem 1.25rem}}
 
 /* Persistent top-right Sign-in (shown only when signed out / workspace locked) */
@@ -1154,9 +1158,16 @@ function authFormHtml(){
     ? (busy ? 'Creating...' : 'Create Account')
     : (busy ? 'Signing in...' : 'Sign In');
   const primaryHandler = isSignup ? 'signUpWithPassword()' : 'signInWithPassword()';
+  const primaryDisabled = busy || isSignup;
   const secondary = isSignup
     ? `<span>Already have an account?</span> <a onclick="setAuthMode('signin')">Sign in</a>`
     : `<a onclick="sendMagicLink()">Email me a magic link</a> <span>&middot;</span> <a onclick="forgotPassword()">Forgot password?</a>`;
+  const legalNotice = isSignup
+    ? `<label class="auth-legal-consent">
+        <input type="checkbox" id="authLegalConsent" autocomplete="off" onchange="setSignupLegalButtonState()">
+        <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>, and confirm I am authorized to enter athlete data for my team. For athletes under 13, I have parent/guardian permission or school/district authorization where legally permitted.</span>
+      </label>`
+    : `<p class="auth-legal-links"><a href="/terms.html" target="_blank" rel="noopener">Terms</a> <span>&middot;</span> <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a></p>`;
 
   return `
     ${tabs}
@@ -1165,12 +1176,13 @@ function authFormHtml(){
       : 'Welcome back. Sign in to your roster and coach workspace.'}</div>
     <input class="auth-input" id="authEmail" type="email" autocomplete="email" placeholder="coach@email.com">
     <input class="auth-input" id="authPassword" type="password" autocomplete="${passwordAutocomplete}" placeholder="${passwordPlaceholder}">
+    ${legalNotice}
     <div class="auth-actions">
-      <button class="btn btn-primary" onclick="${primaryHandler}" ${busy ? 'disabled' : ''}>${primaryLabel}</button>
+      <button class="btn btn-primary" id="authPrimaryBtn" onclick="${primaryHandler}" ${primaryDisabled ? 'disabled' : ''}>${primaryLabel}</button>
     </div>
     <div class="auth-secondary">${secondary}</div>
     ${authFeedbackHtml()}
-    <p class="auth-modal-trust">Free · no credit card · we never sell athlete data</p>`;
+    <p class="auth-modal-trust">Free · no credit card · no ads · we never sell athlete data</p>`;
 }
 
 function renderAuthPanel(){
@@ -1320,7 +1332,10 @@ async function sendMagicLink(){
 
   const { error } = await sbClient.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: supabaseRedirectUrl() }
+    options: {
+      emailRedirectTo: supabaseRedirectUrl(),
+      shouldCreateUser: false
+    }
   });
   if(error){
     console.error(error);
@@ -1345,6 +1360,17 @@ function getAuthInputs(){
     password: passwordEl ? passwordEl.value : '',
     confirmPassword: confirmEl ? confirmEl.value : ''
   };
+}
+
+function signupLegalAccepted(){
+  const legalEl = document.getElementById('authLegalConsent');
+  return Boolean(legalEl && legalEl.checked);
+}
+
+function setSignupLegalButtonState(){
+  const btn = document.getElementById('authPrimaryBtn');
+  if(!btn || authUiState.mode !== 'signup' || authUiState.sending) return;
+  btn.disabled = !signupLegalAccepted();
 }
 
 async function signInWithPassword(){
@@ -1379,6 +1405,10 @@ async function signUpWithPassword(){
   if(!email) return toast('Enter your email first');
   if(!password || password.length < 6){
     setAuthFeedback('err', 'Choose a password with at least 6 characters.', false);
+    return;
+  }
+  if(!signupLegalAccepted()){
+    toast('Accept the Terms and Privacy Policy before creating an account');
     return;
   }
   setAuthFeedback('info', 'Creating your STRIDE OS account...', true);
@@ -2609,7 +2639,7 @@ function athletesForCurrentTier(){
 
 async function syncLocalToSupabase(){
   if(!sbClient || !sbUser) return toast('Sign in before syncing');
-  if(!confirm('Sync this local roster to your STRIDE OS account? This records Terms and Privacy acceptance for your coach profile.')) return;
+  if(!confirm('Sync this local roster to your STRIDE OS account? Only sync athlete data you are authorized to store in STRIDE OS.')) return;
 
   try{
     await ensureCoachProfile();

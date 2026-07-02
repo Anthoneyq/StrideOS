@@ -110,9 +110,9 @@ Create a simple "School Vendor Packet" folder with these files.
 - **W-9** with legal business name, tax classification, address, and TIN.
 - **Quote template** with plan, athlete cap, coach seats, school/team name, service dates, and total annual price.
 - **Invoice template** that supports PO number, check/ACH/card, billing contact, and remittance details.
-- **Terms of Service** linked from `docs/planning/STRIDE_OS_Terms_of_Service_BETA.md`.
-- **Privacy Policy** linked from `docs/planning/STRIDE_OS_Privacy_Policy_BETA.md`.
-- **Student-data/privacy one-pager** written for ADs, bookkeepers, tech directors, and parents.
+- **Terms of Service** linked from `terms.html` and mirrored in `docs/planning/STRIDE_OS_Terms_of_Service_BETA.md`.
+- **Privacy Policy** linked from `privacy.html` and mirrored in `docs/planning/STRIDE_OS_Privacy_Policy_BETA.md`.
+- **Student-data/privacy one-pager** in `docs/legal/STUDENT_DATA_PRIVACY_SUMMARY.md`.
 - **Sole-source / unique-value one-pager** for districts that ask why this tool is different from a spreadsheet, calculator, or generic training log.
 
 ### Should-have before district-level sales
@@ -120,7 +120,7 @@ Create a simple "School Vendor Packet" folder with these files.
 - Data Processing Addendum or Student Data Privacy Agreement template.
 - Security overview: hosting, encryption, access controls, backups, deletion/export, incident contact.
 - Accessibility statement or VPAT-lite roadmap.
-- Subprocessor list, starting with Supabase and Stripe.
+- Subprocessor list in `docs/legal/SUBPROCESSORS.md`.
 - Certificate of insurance, if requested by districts.
 - Signed quote acceptance form.
 
@@ -147,12 +147,12 @@ School-friendly product defaults:
 - Support deletion and export.
 - Keep clear audit language around who can access roster data.
 
-High-friction items to resolve before broad school sales:
+Still-needed items before broad school sales:
 
-- Replace `[support email - TBD]` in legal/privacy docs with a real inbox.
-- Decide whether under-13 athletes are allowed in Team/Program and how parental consent is handled.
+- Have counsel review the beta Terms, Privacy Policy, student-data summary, subprocessor list, payment language, and limitation-of-liability language.
+- Decide whether under-13 athletes are allowed in Team/Program and how parent/guardian consent or school/district authorization is handled.
 - Decide whether athlete login is required. For public schools, "coach can use it without student accounts" is a major procurement advantage.
-- Create a short privacy answer for ADs and technology directors.
+- Create a DPA/student-data privacy agreement template for districts that require one.
 
 ---
 
@@ -353,7 +353,7 @@ Stripe setup:
 - Add "Request school invoice" CTA for Team/Program.
 - Build invoice request form or simple email intake.
 - Add school purchase status fields in admin/back office notes.
-- Update Terms and Privacy with real support/contact email.
+- Have counsel review Terms and Privacy before broad district sales.
 
 ### Before wider school sales
 
@@ -397,4 +397,3 @@ These are reference anchors for the school-purchasing packet. They do not replac
 - U.S. Department of Education Student Privacy Policy Office, "Protecting Student Privacy While Using Online Educational Services: Requirements and Best Practices": https://studentprivacy.ed.gov/resources/protecting-student-privacy-while-using-online-educational-services-requirements-and-best
 - IRS Form W-9 page: https://www.irs.gov/forms-pubs/about-form-w-9
 - FERPA regulation reference, 34 CFR Part 99, where applicable: https://www.ecfr.gov/current/title-34/subtitle-A/part-99
-

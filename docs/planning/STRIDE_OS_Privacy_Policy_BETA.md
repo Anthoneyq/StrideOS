@@ -1,213 +1,88 @@
-# STRIDE OS — Privacy Policy (Beta Draft)
-**Status:** This is a plain-language beta draft. Not yet lawyer-reviewed. Read carefully before using.
+# STRIDE OS Privacy Policy
+
+**Public page:** `/privacy.html`
+**Status:** Plain-language beta draft. Not legal advice. Attorney review recommended before broad school or district sales.
+**Last updated:** July 2, 2026
+**Contact:** thelabstrength@gmail.com
 
 ---
 
-## What We Collect
+## Short version
 
-When you use STRIDE OS, we collect:
+- STRIDE OS is built for coaches and authorized staff, not direct child use.
+- We use athlete data to provide the product: rosters, paces, forecasts, lineup tools, imports, exports, and support.
+- We do not sell athlete data.
+- We do not run ads or use athlete data for targeted advertising.
+- We do not train outside AI models on identifiable athlete data without explicit permission.
+- Coaches can export data, delete their account, and request help by email.
 
-**Account Information:**
-- Email address
-- Display name you choose
-- Team name (optional)
+## Information we collect
 
-**Athlete Information:**
-- Names and basic demographics (age, grade, sex)
-- Race results and times
-- Training notes and observations
-- Optional daily check-in data (sleep, recovery, HRV)
+| Category | Examples | Why we collect it |
+| --- | --- | --- |
+| Account information | Email address, display name, team name, login metadata | Authentication, support, account management, and security. |
+| Athlete roster information | Name or identifier, age, grade, sex, event focus, roster status | Roster management and coach workspace features. |
+| Performance and training data | Race results, times, race dates, workouts, notes, check-ins, imports | Pace calculations, forecasts, event fit, training groups, lineup tools, exports, and product improvement. |
+| Billing information | Stripe customer ID, plan, subscription status, checkout history | Paid plans, trials, invoices, refunds, subscription portal, and fraud prevention. Stripe handles payment card data. |
+| Technical information | IP address, browser/device metadata, logs, error diagnostics | Security, debugging, abuse prevention, and keeping the service working. |
+| Optional integrations | Connection identifiers and activity data if you connect an integration | Only to provide the connected feature you choose to use. |
 
-**Usage Information:**
-- Which screens you visit
-- When you use the app
-- Basic analytics (what features are used, what breaks)
+## How we use information
 
-**Technical Information:**
-- IP address
-- Browser type
-- Device type
+We use information to provide STRIDE OS, save and sync rosters, calculate paces and forecasts, support paid subscriptions, secure the service, troubleshoot bugs, improve accuracy, respond to requests, and meet legal obligations.
 
----
+## Student data, schools, and FERPA posture
 
-## Why We Collect It
+STRIDE OS may store student-athlete information entered by a coach or authorized staff member. If a school or district uses STRIDE OS, that school or district remains responsible for its own student-data privacy process and compliance decisions.
 
-We collect this information to:
+Our posture: STRIDE OS is built to support school review by limiting access by workspace, avoiding ads and data sales, supporting export/deletion, and using athlete data only to provide and improve the service. We do not claim blanket "FERPA compliant" status without the school/district review and any required written agreement.
 
-1. **Provide the service** — calculate paces, track athletes, store your data
-2. **Improve accuracy** — use your race results to validate our formulas
-3. **Fix bugs** — understand what's breaking and fix it
-4. **Make the app better** — see which features are used most
-5. **Comply with law** — for COPPA (under-13 athletes), we need to verify parental consent
+For school or district purchases, a separate data processing agreement, student data privacy agreement, or district vendor terms may be needed.
 
-We do **not** use your data to:
-- Train AI models on your athletes (we don't have your permission yet)
-- Sell to third parties
-- Target ads (we don't have ads)
-- Compete with you as a coach
+## Children under 13
 
----
+STRIDE OS is intended for coaches and authorized adults. We do not knowingly collect information directly from children under 13. Before entering personal information for an athlete under 13, the coach must have parent/guardian permission or school/district authorization where legally permitted.
 
-## How We Use Your Data
+Parents or guardians may ask to review or delete information tied to their child by contacting us. We may need to verify the request with the coach, team, school, or account owner before acting on it.
 
-**Your Data Is Private:**
-- Other coaches cannot see your athletes
-- Your athletes cannot see other athletes
-- We don't share individual data without your permission
+## Research, AI, and de-identified data
 
-**Aggregate/Anonymous Data:**
-- We may publish population statistics ("The average HS 1600m time is X")
-- We may use de-identified data in research (with your consent)
-- We may share de-identified data with researchers studying running development
+By default, STRIDE OS does not train outside AI models on identifiable athlete data. We may use de-identified or aggregate data to understand whether formulas, forecasts, or product workflows are working. We will seek explicit permission before using identifiable athlete data for external research, model training, publication, or data sharing beyond service operations.
 
-**For Improvement:**
-- We analyze how often predictions are wrong and why
-- We use this to improve the formulas
-- Your athletes' data helps us calibrate the ensemble
+## How we share information
 
----
+We share information only as needed to run STRIDE OS, comply with law, protect rights and security, or honor a written agreement.
 
-## Who Has Access
+- Service providers: hosting, database/authentication, billing, email, support, security, logging, and infrastructure providers.
+- Within your workspace: authorized coaches or staff on the same team/program may see roster data according to product permissions.
+- Legal requests: we may disclose information if legally required, and will try to notify the account owner first unless prohibited.
+- Business transfer: if STRIDE OS is merged, acquired, or reorganized, data may transfer subject to this policy or a replacement notice.
 
-**You (the Coach):**
-- Full access to your athletes' data
-- Can export, edit, or delete anytime
+## Subprocessors
 
-**Your Athletes:**
-- See their own data (in future versions)
-- Can't see other athletes' data
+Current core subprocessors include Supabase for database/authentication, Vercel for hosting, and Stripe for payments. A working subprocessor list is maintained at `docs/legal/SUBPROCESSORS.md`.
 
-**Your School/Program:**
-- If you're using the Program plan, the head coach + assistants can see the shared roster
+## Security
 
-**Researchers (with consent):**
-- Only de-identified data
-- Only under signed research agreements
-- You can opt out per athlete
+STRIDE OS uses HTTPS, Supabase authentication, row-level security, role-based access patterns, and service-side controls for sensitive operations. No security program can guarantee perfect safety, but the product is built to reduce unnecessary access and support account-level deletion/export.
 
-**Our Team:**
-- Engineers access data to fix bugs
-- Analytics platform sees summary statistics (no names)
+## Retention, export, and deletion
 
-**Nobody Else:**
-- We don't sell data
-- We don't share with advertisers
-- We don't share with law enforcement unless legally compelled
+Coaches can export account data from the app's Data & Privacy screen. Coaches can also request account deletion in the app. Deletion removes the coach profile and associated athlete data from active use; some records may remain briefly in backups, logs, or legally required records before they age out.
 
----
+Billing records may be retained through Stripe and accounting systems as required for tax, fraud, legal, or payment-dispute reasons.
 
-## For Athletes Under 13 (COPPA)
+## Your choices
 
-Federal law requires parental consent for children under 13.
+- Use initials or IDs instead of full athlete names where your program prefers that.
+- Export your STRIDE OS data from the app.
+- Delete your account and associated roster data from the app.
+- Ask us to help with access, correction, deletion, parent requests, or school vendor review.
 
-**What we require:**
-- You confirm you have parental permission
-- Parent/guardian understands what data we collect
-- Parent/guardian understands we use it to provide the service
+## Changes
 
-**Parent Rights:**
-- Parents can ask to see what data we have on their child
-- Parents can ask us to delete their child's data
-- Parents can revoke consent anytime
-
----
-
-## Where Your Data Is Stored
-
-**Location:** United States (Supabase servers, AWS us-east-1)
-
-**Security:**
-- All data encrypted in transit (HTTPS only)
-- Database encrypted at rest
-- Access controlled via row-level security
-- Automated daily backups
-
-**If You're Outside the US:**
-- Your data is stored on US servers
-- US privacy laws apply
-- If this is a problem, don't use the service (we may add regional options later)
-
----
-
-## How Long We Keep Your Data
-
-**While Your Account Is Active:**
-- All data retained indefinitely while you use the service
-
-**After You Delete Your Account:**
-- All identifying data purged within 30 days
-- You have 30 days to recover your account if you change your mind
-- After 30 days, deletion is permanent
-
-**For Analytics/Improvement:**
-- De-identified summary data may be retained indefinitely
-- This data has no identifying information
-
----
-
-## Your Rights
-
-You can:
-
-**Access:** Download a copy of all your data (JSON or CSV format) anytime
-
-**Correct:** Fix errors in your data
-
-**Delete:** Ask us to delete all your data (we do it within 30 days)
-
-**Port:** Take your data to another service (we'll export it)
-
-**Opt Out:** Opt out of research participation, analytics, or both
-
----
-
-## Children Under 13
-
-STRIDE OS is designed for coaches, not children. We don't knowingly collect data directly from children under 13. Coaches enter data on behalf of athletes.
-
-If you're under 13 and a coach wants to add your data:
-- Your parent/guardian must give permission
-- Your parent/guardian can ask us to delete your data anytime
-
----
-
-## Third-Party Services
-
-We use these third-party services (they see limited data):
-
-**Supabase (Database & Auth):**
-- Stores all your data
-- Privacy: https://supabase.com/privacy
-
-**Stripe (Payments — future):**
-- Handles subscription billing
-- Doesn't see athlete data
-- Privacy: https://stripe.com/privacy
-
-We don't use Google Analytics or other ad/tracking services.
-
----
-
-## Changes to This Policy
-
-We can change this policy. We'll notify you of big changes and ask you to re-accept.
-
----
-
-## Subpoenas / Law Enforcement
-
-If law enforcement asks for your data, we will:
-- Verify the legal authority
-- Try to notify you first (unless legally prohibited)
-- Provide only what's legally required
-
----
+We may update this policy as the product changes. If a change materially affects saved athlete data or paid users, we will try to provide notice and may ask users to accept updated terms.
 
 ## Contact
 
-For privacy questions, contact [support email — TBD]
-
----
-
-**Last Updated:** May 20, 2026  
-**Status:** BETA DRAFT — not yet reviewed by legal counsel
+Privacy questions, school review requests, parent requests, and deletion/export help can be sent to thelabstrength@gmail.com.

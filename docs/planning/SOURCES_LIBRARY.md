@@ -252,7 +252,7 @@ Those capabilities require lab measurement, professional medical evaluation, or 
 
 For methodology questions, research collaboration, or institutional access requests:
 
-**Email:** [contact email — TBD before launch]
+**Email:** thelabstrength@gmail.com
 **Website:** [CoachLab.com — under construction]
 
 Researchers requesting raw validation corpus access will be asked to sign a data-use agreement before access is granted. Aggregate benchmarks and de-identified summaries are available publicly.

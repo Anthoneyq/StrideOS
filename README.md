@@ -105,9 +105,21 @@ Internal code comments reference specific formulas (Riegel, Cameron, VDOT family
 
 ## Legal & Privacy
 
-Plain-language beta `Terms of Service` and `Privacy Policy` live in `docs/planning/`. Not yet lawyer-reviewed.
+Public beta pages:
+
+- `terms.html`
+- `privacy.html`
+
+School/vendor review support lives in `docs/legal/`:
+
+- `LEGAL_READINESS_CHECKLIST.md`
+- `STUDENT_DATA_PRIVACY_SUMMARY.md`
+- `SUBPROCESSORS.md`
+- `LEGAL_REVIEW_QUESTIONS_FOR_ATTORNEY.md`
+
+These are practical launch-comfort documents, not attorney-reviewed final legal terms.
 
 ---
 
 **Maintained by:** CoachLab
-**Last updated:** May 29, 2026
+**Last updated:** July 2, 2026
