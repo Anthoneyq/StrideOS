@@ -2355,7 +2355,7 @@ function showUpgradeModal(){
         <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.5;color:var(--text-2)">
           <strong style="color:var(--accent)">Founding Coach</strong> · first 25 seats · <span style="color:var(--text)">${BILLING_FOUNDING_LABEL}</span>, price locked for life while active.
         </div>
-        <button class="btn" id="planFoundingBtn" onclick="closeUpgradeModal();(window.showAuthModal?showAuthModal('signup'):goTo('paces'))" style="white-space:nowrap">Claim a founding seat &rarr;</button>
+        <button class="btn" id="planFoundingBtn" onclick="sbUser?startCheckout('founding'):(closeUpgradeModal(),window.showAuthModal?showAuthModal('signup'):goTo('paces'))" style="white-space:nowrap">Claim a founding seat &rarr;</button>
       </div>
 
       <ul class="upgrade-perks">
@@ -2370,10 +2370,11 @@ function showUpgradeModal(){
       <div style="border-top:1px solid var(--border-s);margin-top:.25rem;margin-bottom:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div style="font-family:'JetBrains Mono',monospace;font-size:.75rem;line-height:1.55;color:var(--text-2)">
           <strong style="color:var(--text)">Coaching a team or program?</strong><br>
-          STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; multi-coach staff, roster bands &amp; program admin &middot; <span style="color:var(--accent)">from $399/yr</span> (Starter 1–25 · Plus 26–75 · Program 76–200).
+          STRIDE OS <em style="font-style:normal;color:var(--accent)">Team</em> &middot; whole-program license for staffs &amp; clubs &middot; <span style="color:var(--accent)">from $399/yr</span>. Sold as an annual school/team license — quote, PO &amp; invoice supported.
         </div>
-        <button class="btn" id="planTeamBtn" onclick="startCheckout('team_annual')" style="white-space:nowrap">Get Team &rarr;</button>
+        <button class="btn" id="planTeamBtn" onclick="window.location.href='mailto:thelabstrength@gmail.com?subject=STRIDE%20OS%20Team%20license'" style="white-space:nowrap">Talk to us &rarr;</button>
       </div>
+      ${sbUser ? `<p class="upgrade-foot" style="margin-bottom:.35rem">Skeptical of the forecasts? <button onclick="closeUpgradeModal();goTo('proof',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">Open the Proof Ledger</button> — STRIDE backtested against Riegel &amp; VDOT on your own roster. Run your kids through it, then decide.</p>` : ''}
       <p class="upgrade-foot">Have a promo code? Add it on the Stripe checkout page.</p>
     </div>
   `;
@@ -2479,11 +2480,11 @@ async function requestAccountDeletion(){
 
 // Kicks off Stripe Checkout for the chosen plan.
 async function startCheckout(plan){
-  if(plan !== 'monthly' && plan !== 'annual' && plan !== 'team_annual') return;
-  const btnId = plan === 'monthly' ? 'planMonthlyBtn' : plan === 'annual' ? 'planAnnualBtn' : 'planTeamBtn';
+  if(plan !== 'monthly' && plan !== 'annual' && plan !== 'founding' && plan !== 'team_annual') return;
+  const btnId = plan === 'monthly' ? 'planMonthlyBtn' : plan === 'annual' ? 'planAnnualBtn' : plan === 'founding' ? 'planFoundingBtn' : 'planTeamBtn';
   const btn = document.getElementById(btnId);
   const prev = btn ? btn.innerHTML : null;
-  if(btn){ btn.disabled = true; btn.innerHTML = plan === 'team_annual' ? 'Opening Stripe…' : '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
+  if(btn){ btn.disabled = true; btn.innerHTML = (plan === 'team_annual' || plan === 'founding') ? 'Opening Stripe…' : '<div class="upgrade-plan-label">Opening Stripe…</div>'; }
   try{
     const paymentLink = plan === 'monthly' ? BILLING_MONTHLY_PAYMENT_LINK : plan === 'annual' ? BILLING_ANNUAL_PAYMENT_LINK : '';
     if(paymentLink){
@@ -4825,9 +4826,9 @@ function renderPricingTiers(){
       ], `or ${BILLING_ANNUAL_LABEL} · 30-day free trial, no card`, 'Start 30-day Pro trial →', true)}
       ${card('Team','from $399','/yr','For staffs & programs.',[
         'Everything in Pro',
-        'Multi-coach staff access',
-        'Roster bands &amp; program admin'
-      ], 'Starter · Plus · Program tiers', 'Get Team →', false)}
+        'Whole-program license',
+        'Lineup optimizer &amp; team reports'
+      ], 'Annual school/team license · quote, PO & invoice supported', 'Get started →', false)}
     </div>`;
 }
 

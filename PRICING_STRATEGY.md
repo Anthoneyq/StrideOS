@@ -25,6 +25,18 @@ Use this ladder for launch:
 
 Do **not** launch `$24/mo`. Do **not** use `$249/yr` while monthly is `$19.99`, because `$19.99 x 12 = $239.88`; a `$249` annual plan would cost more than paying monthly.
 
+### Launch configuration (decided 2026-07-01)
+
+The public ladder at launch is **three rungs**, not five:
+
+1. **Free** (anonymous + free account)
+2. **Founding/Pro** (`$149` founding → `$199/yr` / `$19.99/mo`) — founding checkout is wired: `plan:"founding"` auto-applies the `STRIPE_FOUNDING_COUPON` (create it in Stripe: $199→$149, `duration=forever`, `max_redemptions=25`)
+3. **Team — "from $399/yr, talk to us"** (mailto contact, quote/PO/invoice per the school-purchasing playbook)
+
+**Team Plus (`$599`) and Program (`$999`) are internal quote-only price points until multi-coach staff access actually exists.** They are not advertised in the app. Selling them self-serve before the defining Team feature ships is the same unfulfillable-price problem the founding button had. First team sales SHOULD be manual — that conversation is the discovery you need anyway.
+
+**Pro has no athlete cap.** Roster size is not a cost driver, caps create support pain, and "bring your whole roster, no per-athlete pricing" is the positioning wedge against TrainingPeaks-style per-head billing. Team is differentiated by **coach seats + program workflow** (multi-coach, staff roles, shared workspace, program reports) — never by athlete count. (§5 below previously said "up to 25 active athletes" for Pro; that quietly rebuilt the per-athlete logic §4 rejects, and it contradicted the shipped product, which says "Unlimited athletes" in three places.)
+
 ---
 
 ## 1. Why `$199/yr` standard + `$149/yr` founding is the cleanest answer
@@ -89,6 +101,10 @@ An outside competitive scan supports the current ladder, but its exact numbers s
 - **Video tools are adjacent, not direct competitors.** TrackBoss, Onform, and CoachNow compete for the same school/program budget, but StrideOS should not try to become video software. The differentiation is performance intelligence.
 - **Communication is a future value lever, not the launch wedge.** Lightweight coach notes, shareable athlete reports, and eventually athlete/coach feedback can raise retention. The launch wedge should remain prediction quality, roster intelligence, and team decisions.
 
+### Seasonality (forecasting note, not a SKU change)
+
+Track and XC are seasonal. A HS coach on `$19.99/mo` rationally pays for ~3-4 months per season and churns between XC and spring track — expect a monthly-heavy mix with seasonal churn, and model revenue that way rather than as steady MRR. Do **not** add a "Season Pass" SKU now (more SKUs at 0 customers is noise); hold it as a tested lever only if annual conversion stalls after real data exists.
+
 ---
 
 ## 3. Free-to-paid ladder
@@ -100,7 +116,7 @@ The free strategy should be generous on trust-building value, strict on ownershi
 | **Anonymous Free** | `$0` | Full single-athlete calculator, zones, CV/VO2, confidence language, demo squad taste, no login required | Cloud save, unlimited roster, exports, team workflow |
 | **Free Account** | `$0` | Same free value, plus saved limited account data, email relationship, one small roster/squad up to 3 active athletes | Bulk import, unlimited save/sync, PDF/team reports, lineup optimizer |
 | **Founding Coach** | `$149/yr` | Pro access plus lifetime price lock while active, first 25 seats only | Team/Program features unless they upgrade |
-| **Pro Coach** | `$19.99/mo` or `$199/yr` | One coach account, up to 25 active athletes, save/sync, bulk import for one roster, race forecasts, environment adjustments, PDF exports, individual event-fit work | Multi-coach staff, larger roster bands, team-points optimizer, district/region scoring, program reporting |
+| **Pro Coach** | `$19.99/mo` or `$199/yr` | One coach account, **unlimited athletes**, save/sync, bulk import, race forecasts, environment adjustments, PDF exports, individual event-fit work | Multi-coach staff, shared team workspace, district/region scoring, program reporting |
 | **Team/Program** | `$399-$999/yr` | Multi-coach seats, larger roster bands, shared team workspace, lineup/team-points optimizer, team reports, program admin | Custom enterprise needs |
 
 This keeps the promise clear:
@@ -116,14 +132,16 @@ This keeps the promise clear:
 
 Do **not** lead with a visible `$5/athlete/year` formula at launch. It creates math friction and makes the buyer think about cost per kid before they understand the program value.
 
-Use simple roster bands:
+Use simple bands differentiated by **coach seats and workflow depth**, not athlete counts (athlete counts below are sizing guidance for the sales conversation, never enforced caps):
 
-| Plan | Price | Active athletes | Coach seats | Best for |
+| Plan | Price | Coach seats | Typical program size | Best for |
 |---|---:|---:|---:|---|
-| **Team Starter** | `$399/yr` | 1-25 | 2 | Small team, club group, private coach with assistants |
-| **Team Plus** | `$599/yr` | 26-75 | 4 | Normal HS distance program or serious club |
-| **Program** | `$999/yr` | 76-200 | 10 | Large school, full track/XC program, multi-group club |
-| **Enterprise** | Custom | 200+ | Custom | Districts, multi-site orgs, custom compliance |
+| **Team Starter** | `$399/yr` | 2 | up to ~25 athletes | Small team, club group, private coach with assistants |
+| **Team Plus** | `$599/yr` | 4 | ~25-75 athletes | Normal HS distance program or serious club |
+| **Program** | `$999/yr` | 10 | ~75-200 athletes | Large school, full track/XC program, multi-group club |
+| **Enterprise** | Custom | Custom | 200+ | Districts, multi-site orgs, custom compliance |
+
+**Launch status:** only "Team — from $399, talk to us" is public. Plus/Program are quote-only until multi-coach staff access ships (see Launch configuration, §0).
 
 This gives you the economic logic of per-athlete pricing without making the checkout page feel like a spreadsheet.
 
@@ -154,7 +172,7 @@ Use `SCHOOL_PURCHASING_PLAYBOOK.md` as the operating guide for school-funded Tea
 
 - Single coach account
 - One primary roster/workspace
-- Up to 25 active athletes
+- Unlimited athletes (roster size is never the paywall — seats and workflow are)
 - Cloud save/sync
 - Bulk import for one roster
 - Individual athlete profiles
@@ -165,10 +183,9 @@ Use `SCHOOL_PURCHASING_PLAYBOOK.md` as the operating guide for school-funded Tea
 
 ### Team/Program should mean
 
-- Multiple coach seats
+- Multiple coach seats (the band differentiator: 2 / 4 / 10)
 - Shared team workspace
 - Roster groups by squad/event/season
-- Higher athlete caps
 - Staff roles/permissions
 - Team-points lineup optimizer
 - District/region scoring context
@@ -243,23 +260,26 @@ Suggested Stripe prices after decision:
 
 Use the founding offer as the WTP gate:
 
-> "I'm opening the first 25 Founding Coach seats for StrideOS at `$149/year`, locked for life while your subscription stays active. After those seats are gone, Pro is `$199/year` or `$19.99/month`. Founding gets the full Pro plan, direct feedback access, and your roster will shape the roadmap. I want this to be real software, so I am asking for the card now instead of treating interest as demand."
+> "I'm opening the first 25 Founding Coach seats for StrideOS at `$149/year`, locked for life while your subscription stays active. After those seats are gone, Pro is `$199/year` or `$19.99/month`. Founding gets the full Pro plan, direct feedback access, and your roster will shape the roadmap. I want this to be real software, so I am asking for the card now instead of treating interest as demand.
+>
+> Before you decide, open the **Proof Ledger** in the app — it backtests STRIDE against Riegel and VDOT on *your* athletes' real times, hold-one-out, and shows you the error side by side. Run your kids through it, then decide."
 
 If they pay, you have a real signal. If they stall, the product may still be interesting, but WTP is not proven.
+
+**On the 25-seat cap:** keep it (the giveaway is capped and Stripe enforces it via `max_redemptions`), but do not expect scarcity to convert at current distribution — with two warm leads there is no audience for a countdown. The mechanism that converts is the direct ask above; the cap is just downside protection.
 
 ---
 
 ## 8. Final decision checklist
 
 - **Monthly Pro:** `$19.99/mo`
-- **Annual Pro:** `$199/yr`
+- **Annual Pro:** `$199/yr`, **unlimited athletes**
 - **Free Account:** `$0`, up to 3 active athletes
-- **Founding Coach:** `$149/yr`, first 25, lifetime lock while active
+- **Founding Coach:** `$149/yr`, first 25, lifetime lock while active — wired via `STRIPE_FOUNDING_COUPON` (create: $50 off $199, forever, max_redemptions 25)
 - **Founding scope:** Pro plan only, not future Team/Program features
-- **Team Starter:** `$399/yr`, 1-25 active athletes, 2 coach seats
-- **Team Plus:** `$599/yr`, 26-75 active athletes, 4 coach seats
-- **Program:** `$999/yr`, 76-200 active athletes, 10 coach seats
+- **Team (public at launch):** "from `$399/yr`, talk to us" — quote/PO/invoice, 2 coach seats
+- **Team Plus / Program:** `$599` / `$999`, quote-only until multi-coach ships; bands differ by coach seats (4 / 10), never athlete caps
 - **Retired:** `$24/mo`
-- **Do not use:** `$249/yr` unless monthly becomes at least `$24.99/mo`
+- **Do not use:** `$249/yr` unless monthly becomes at least `$24.99/mo`; never per-athlete pricing or athlete caps on paid plans
 
 Once this checklist is accepted, the next pass should align `stride-config.js`, `index.html`, `deploy-stripe-functions.sh`, `create-checkout-session` comments, `Stripe_Setup_SOP.md`, and the Stripe Price IDs.

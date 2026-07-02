@@ -18,6 +18,14 @@ safely-fixable items in code** and turned the rest into a decision list.
 
 ## 🔴 Needs a decision from you (I'll implement whichever you pick)
 
+> **RESOLVED 2026-07-01 (later same day):** D1 → (c)-style: Team button is now a
+> "Talk to us" mailto (quote/PO/invoice); Plus/Program are quote-only until
+> multi-coach ships. D2 → (a): founding checkout wired — `plan:"founding"`
+> auto-applies `STRIPE_FOUNDING_COUPON` (operator: create the $199→$149 coupon,
+> forever, max_redemptions 25, then set the secret). Pro athlete cap dropped
+> from the strategy doc (product says unlimited; bands differ by coach seats).
+> See `PRICING_STRATEGY.md` §0 "Launch configuration".
+
 ### D1 · Team pricing bands
 Today: Team button charges ONE price ($399 `team_annual`); the bands
 "Starter 1–25 · Plus 26–75 · Program 76–200" are *descriptive only* — a

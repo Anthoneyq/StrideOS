@@ -10,6 +10,9 @@
 //   STRIPE_SECRET_KEY        sk_live_... (or sk_test_... for test mode)
 //   STRIPE_PRICE_MONTHLY     price_... for the $19.99/mo price
 //   STRIPE_PRICE_ANNUAL      price_... for the $199/yr price
+//   STRIPE_FOUNDING_COUPON   coupon id for Founding Coach ($199→$149/yr,
+//                            max_redemptions=25, duration=forever) — optional;
+//                            plan:"founding" 400s until it is set
 //   STRIPE_PRICE_TEAM_ANNUAL price_... for the $399/yr Program/Team price
 //   APP_BASE_URL             e.g. https://strideos.thecoachlab.app
 //   SUPABASE_URL             auto-provided
@@ -53,14 +56,24 @@ Deno.serve(async (req) => {
     const PRICE_ENV: Record<string, string> = {
       monthly: 'STRIPE_PRICE_MONTHLY',
       annual: 'STRIPE_PRICE_ANNUAL',
+      // Founding Coach = the standard annual price with the capped FOUNDING
+      // coupon auto-applied; Stripe enforces the 25-seat cap via the coupon's
+      // max_redemptions. No separate price, no separate tier.
+      founding: 'STRIPE_PRICE_ANNUAL',
       team_annual: 'STRIPE_PRICE_TEAM_ANNUAL',
     };
     const envVar = PRICE_ENV[plan];
     if (!envVar) {
       return json(
-        { error: 'plan must be "monthly", "annual", or "team_annual"' },
+        { error: 'plan must be "monthly", "annual", "founding", or "team_annual"' },
         400,
       );
+    }
+    const foundingCoupon = plan === 'founding'
+      ? Deno.env.get('STRIPE_FOUNDING_COUPON')
+      : undefined;
+    if (plan === 'founding' && !foundingCoupon) {
+      return json({ error: 'Founding seats are not open right now' }, 400);
     }
     const priceId = Deno.env.get(envVar);
     if (!priceId) {
@@ -103,7 +116,11 @@ Deno.serve(async (req) => {
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
+      // Stripe rejects `discounts` combined with `allow_promotion_codes` —
+      // founding auto-applies its coupon, everyone else may type a promo code.
+      ...(foundingCoupon
+        ? { discounts: [{ coupon: foundingCoupon }] }
+        : { allow_promotion_codes: true }),
       billing_address_collection: 'auto',
       success_url: `${appUrl}/?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/?upgrade=cancelled`,
