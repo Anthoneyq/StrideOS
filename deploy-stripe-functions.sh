@@ -2,50 +2,47 @@
 # STRIDE OS — deploy the Stripe billing Edge Functions to Supabase.
 #
 # WHY THIS EXISTS:
-#   The "Upgrade to Pro" / "Get Team" buttons fail because these functions were
-#   never deployed. The Supabase project is live (auth responds), but
-#   https://njadrabgodqpzpbgkkbs.supabase.co/functions/v1/create-checkout-session
-#   returns {"code":"NOT_FOUND"}. This script deploys the functions and sets
-#   the secrets they need.
+#   The "Upgrade to Pro" flow depends on Supabase Edge Functions plus Stripe
+#   secrets. Re-run this script after changing Stripe Price IDs, coupons,
+#   webhook secrets, or billing function code.
 #
 # RUN FROM TERMINAL:
 #   cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
 #   bash deploy-stripe-functions.sh
 #
-# ⚠️ The launch price is $19.99/mo · $144/yr (stride-config.js). The monthly/annual
-# Stripe Prices that exist today are the OLD $24/$199 ones — they must be re-created and
-# their new IDs exported before deploy (this script now REQUIRES that; see below). Only
-# the Team $399/yr price is unchanged. Price IDs are publishable; the Stripe secret key +
-# webhook secret are prompted.
+# ⚠️ The launch price is $19.99/mo · $199/yr (stride-config.js). The current
+# live Stripe catalog has a new $19.99 monthly price and the existing $199
+# annual price. The founding offer is a coupon on annual. Price IDs are
+# publishable; the Stripe secret key + webhook secret are prompted.
 
 set -e
 PROJECT_REF="njadrabgodqpzpbgkkbs"
 APP_URL="https://strideos.thecoachlab.app"
 
-# --- PRICE IDs — LAUNCH PRICE IS $19.99/mo · $144/yr (must match stride-config.js) ---
-# Monthly + annual MUST be supplied via env (the new $19.99/$144 Stripe Prices). There is
-# no fallback to the old prices, the known-old IDs are rejected outright, and each price is
-# verified against Stripe (amount/interval/active/livemode) before any secret is written.
+# --- PRICE IDs — LAUNCH PRICE IS $19.99/mo · $199/yr (must match stride-config.js) ---
+# Monthly + annual default to the live Stripe prices confirmed from the product
+# catalog, but callers may override them via env. Each price is verified against
+# Stripe (amount/interval/active/livemode) before any secret is written.
 # If Stripe can't be reached to auto-verify, the operator must type the exact phrase
-# 'DEPLOY 19.99/144' to override (no reflexive 'yes') — so
+# 'DEPLOY 19.99/199' to override (no reflexive 'yes') — so
 # this strongly prevents an accidental price mismatch, but the final safety still depends on
 # the operator not overriding blindly. Team ($399/yr) is unchanged.
 OLD_MONTHLY_ID="price_1TcTlICGBxSHKYzSIQ55cu0J"   # $24/mo  (retired)
-OLD_ANNUAL_ID="price_1TcTudCGBxSHKYzSSTvLudjs"    # $199/yr (retired)
-PRICE_MONTHLY="${STRIPE_PRICE_MONTHLY:-}"
-PRICE_ANNUAL="${STRIPE_PRICE_ANNUAL:-}"
+PRICE_MONTHLY="${STRIPE_PRICE_MONTHLY:-price_1TnlJ7CGBxSHKYzSnAxpkPNv}" # Coach Pro — Monthly ($19.99)
+PRICE_ANNUAL="${STRIPE_PRICE_ANNUAL:-price_1TcTudCGBxSHKYzSSTvLudjs}"    # Coach Pro — Annual ($199)
 PRICE_TEAM_ANNUAL="${STRIPE_PRICE_TEAM_ANNUAL:-price_1TcTtQCGBxSHKYzSHYULj0XQ}" # Program/Team $399/yr (unchanged)
+FOUNDING_COUPON="${STRIPE_FOUNDING_COUPON:-}"
 
 if [ -z "$PRICE_MONTHLY" ] || [ -z "$PRICE_ANNUAL" ]; then
-  echo "⛔ Refusing to deploy: launch price is \$19.99/mo · \$144/yr."
-  echo "   Create new Stripe Prices (\$19.99/mo = 1999, \$144/yr = 14400), then export:"
+  echo "⛔ Refusing to deploy: launch price is \$19.99/mo · \$199/yr."
+  echo "   Create or confirm the current Stripe Prices (\$19.99/mo = 1999, \$199/yr = 19900), then export:"
   echo "     export STRIPE_PRICE_MONTHLY=<new_id> STRIPE_PRICE_ANNUAL=<new_id>"
   echo "   and re-run; each price is then validated against Stripe (amount/interval/active) before deploy."
   exit 1
 fi
-if [ "$PRICE_MONTHLY" = "$OLD_MONTHLY_ID" ] || [ "$PRICE_ANNUAL" = "$OLD_ANNUAL_ID" ]; then
-  echo "⛔ Refusing to deploy: STRIPE_PRICE_MONTHLY/ANNUAL still point at the OLD \$24/\$199 Prices."
-  echo "   Those are retired. Create the \$19.99/\$144 Prices and export their new IDs."
+if [ "$PRICE_MONTHLY" = "$OLD_MONTHLY_ID" ]; then
+  echo "⛔ Refusing to deploy: STRIPE_PRICE_MONTHLY still points at the OLD \$24/mo Price."
+  echo "   Use the confirmed \$19.99/mo Price ID: price_1TnlJ7CGBxSHKYzSnAxpkPNv"
   exit 1
 fi
 
@@ -65,6 +62,8 @@ supabase link --project-ref "$PROJECT_REF"
 echo "==> [4/5] Setting secrets (secret key + webhook input hidden)..."
 read -rsp "Stripe SECRET key (sk_live_...): " STRIPE_KEY; echo
 read -rsp "Stripe WEBHOOK signing secret (whsec_...), or blank to skip: " WEBHOOK_SECRET; echo
+read -rp "Stripe FOUNDING coupon ID (blank to leave founding checkout closed): " FOUNDING_COUPON_INPUT
+[ -n "$FOUNDING_COUPON_INPUT" ] && FOUNDING_COUPON="$FOUNDING_COUPON_INPUT"
 
 case "$STRIPE_KEY" in sk_*) ;; *) echo "✗ Secret key should start with sk_. Aborting."; exit 1;; esac
 
@@ -111,18 +110,23 @@ supabase secrets set STRIPE_PRICE_MONTHLY="$PRICE_MONTHLY"
 supabase secrets set STRIPE_PRICE_ANNUAL="$PRICE_ANNUAL"
 supabase secrets set STRIPE_PRICE_TEAM_ANNUAL="$PRICE_TEAM_ANNUAL"
 supabase secrets set APP_BASE_URL="$APP_URL"
+if [ -n "$FOUNDING_COUPON" ]; then
+  supabase secrets set STRIPE_FOUNDING_COUPON="$FOUNDING_COUPON"
+else
+  echo "⚠ STRIPE_FOUNDING_COUPON not set; plan:\"founding\" will return 'Founding seats are not open right now'."
+fi
 if [ -n "$WEBHOOK_SECRET" ]; then
   supabase secrets set STRIPE_WEBHOOK_SECRET="$WEBHOOK_SECRET"
 fi
 
 echo "==> [5/5] Deploying functions..."
-supabase functions deploy create-checkout-session
-supabase functions deploy create-portal-session
-supabase functions deploy stripe-webhook --no-verify-jwt
+supabase functions deploy create-checkout-session --project-ref "$PROJECT_REF" --use-api
+supabase functions deploy create-portal-session --project-ref "$PROJECT_REF" --use-api
+supabase functions deploy stripe-webhook --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
 
 echo ""
-echo "✓ DONE. Reload the app, sign in, and click Upgrade to Pro (and Get Team)."
-echo "  Verify it's live (should NOT say NOT_FOUND):"
+echo "✓ DONE. Reload the app, sign in, and click Upgrade to Pro."
+echo "  Verify it's live (should return CORS headers, not NOT_FOUND):"
 echo "    curl -i -X OPTIONS https://$PROJECT_REF.supabase.co/functions/v1/create-checkout-session"
 echo ""
 echo "  If you set a webhook secret, point your Stripe webhook endpoint at:"

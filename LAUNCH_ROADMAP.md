@@ -1,12 +1,12 @@
 # StrideOS — Master Launch Roadmap (everything to make it the highest-quality coaching tool, then sell)
 
-**Date:** 2026-06-30 · **Author:** Claude (Opus 4.8) · **Status of product:** ~85% built, **0% deployed of the launch build, 0 paid.**
+**Date:** 2026-06-30 · **Updated:** 2026-07-02 · **Author:** Claude (Opus 4.8) · **Status of product:** ~85% built, launch app shell deployed, billing functions redeployed, billing smoke-tested, **0 paid.**
 
 ## The honest headline
 StrideOS is *not* a "needs more features" problem. The engine and squad analytics are genuinely built and above-commodity. What stands between it and a sellable, high-quality product is four things, in this order:
 
 1. **Trust/correctness bugs the two coaches who love it already caught** — they rejected the actual prediction numbers on real athletes. Nothing else matters until the numbers are coach-credible.
-2. **Operator-gated launch actions** — the entire launch build (6 commits, 30-day trial, new pricing) is committed locally but **never pushed**; the live site serves a stale build; new Stripe Prices are unconfirmed.
+2. **Operator-gated launch actions** — the launch build is live and Supabase migrations/functions are current; Stripe monthly/annual checkout is verified; founding coupon creation and the first paid ask are still operator-gated.
 3. **The one true differentiator (team-points lineup strategy) is vaporware** — it exists only in upgrade copy; zero backing code.
 4. **The "superior predictor" moat is unproven** — validated only against published tables + coach eyeball (which failed live), never against held-out real races.
 
@@ -50,10 +50,10 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 - **C3 · Rebuild data ingestion to MileSplit (HS) + TFRRS (college).** Current data is thin and state-PR-only; Doug flagged it inaccurate and pointed to MileSplit as the accurate HS source. This data is also what *enables* C1.
 
 ## D. LAUNCH OPERATIONS — operator-gated, not code (P0, fast)
-- **D1 · Deploy the launch build.** 6 commits are committed but **un-pushed** (30-day trial + $19.99/$144 + design builds 1–5). Push to `main`, run `supabase db push`, `supabase functions deploy`. Live site is currently a stale build.
-- **D2 · Create the live Stripe Price IDs for $19.99/mo and $144/yr** and run the guarded `deploy-stripe-functions.sh` (it refuses to deploy on the old $24/$199 IDs and live-validates the new ones). **Until this runs, UI shows one price and Stripe may charge another.**
-- **D3 · Enable pg_cron in Supabase** and confirm `expire_trials` fires (the 30-day migration schedules it but silently skips if pg_cron isn't installed — else trials never expire).
-- **D4 · Apply + smoke-test the Strava P0 migration** (`20260529173000`, workouts unique index) on staging → connect Strava → Sync Now → re-sync imports 0.
+- **D1 · Keep the launch build deployed and source synced.** Live `index.html` matched local on 2026-07-02; Supabase migrations are current through `20260702121000`; billing Edge Functions were redeployed. Remaining local changes are docs/config comments/deploy-script hardening until pushed.
+- **D2 · Confirm live Stripe Price IDs/coupon before charging.** Verified 2026-07-02: signed-in checkout opens Stripe Checkout for $19.99/mo and $199/yr. Founding checkout still needs `STRIPE_FOUNDING_COUPON` set; otherwise it intentionally stays closed.
+- **D3 · ✅ CONFIRMED 2026-07-02.** Supabase `pg_cron` is installed (`1.6.4`) and `expire-trials-daily` is active at `0 8 * * *`, running `select public.expire_trials();`.
+- **D4 · Smoke-test the Strava P0 migration** (`20260529173000`, workouts unique index) on staging/prod → connect Strava → Sync Now → re-sync imports 0. The migration is applied; the live behavior still needs an authenticated Strava test.
 
 ## E. LEGAL & COMPLIANCE — biggest pre-sale gap (P0 for paid)
 - **E1 · Lawyer-review ToS + Privacy Policy.** Drafts exist, explicitly "not yet lawyer-reviewed." You handle **minors' PII** — this is non-negotiable before charging.
@@ -68,11 +68,11 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 - **F4 · Finish the design/motion brief** (Inter body + Fraunces display, count-ups, reduced-motion guard, View Transitions). Builds 1–5 shipped much of this — verify against `DESIGN_AND_FREE_TIER_BRIEF.md` P1/P2 items.
 - **F5 · Model the team tier** (`team_annual` currently records as ordinary annual `pro` — BUG-003) before selling team broadly.
 - **F6 · Refactor monolithic `index.html`** into modules (auth/billing/predictions/render) — **only after F1 exists.**
-- **F7 · Doc/copy sync:** price/trial strings across `stride-config.js`, edge-function comments, `Stripe_Setup_SOP.md` (still describes the retired $20 Payment Link), and `TESTING_PLAN.md` (still says 14-day trial).
+- **F7 · Doc/copy sync:** keep price/trial strings aligned across `stride-config.js`, edge-function comments, `Stripe_Setup_SOP.md` (historical Payment Link path is superseded), and `TESTING_PLAN.md`.
 
 ## G. GO-TO-MARKET (P0 — runs in parallel with A/D/E)
 - **G1 · THE GATE: ask Alex + Doug for a card now** (Founding Coach, annual, lifetime-locked). Per the roast: love ≠ demand, and nobody has been asked to pay. An annual "yes" is the only real WTP proof and should dictate what gets built next.
-- **G2 · Reconcile the pricing tension.** $144 standard annual *undercuts* the $199 founding ask. Fix: rename founding to **"lifetime-locked early access"** (scarcity, not a higher price), or raise standard, or drop the founding frame. **Decision owed by Anthoney.**
+- **G2 · Keep the pricing ladder clean.** Current decision is $199 standard annual with $149 Founding Coach as lifetime-locked early access; verify the live Stripe IDs match before any paid ask.
 - **G3 · Cold-coach onboarding / sample-squad front door.** Mostly built (demo squad + home screen, builds 3–5) — verify it lands value before any ask.
 
 ---
@@ -86,6 +86,6 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 ## Decisions — status (2026-06-30)
 1. **Start point: Wave 1 trust bugs (A)** — DECIDED. In progress.
 2. **Lineup scope (B1): FULL optimizer** — DECIDED. Cross-roster event-fit + district/region rankings + lineup assignment, built up front in Wave 2 (not the thin slice).
-3. **Pricing (G2): pending a full pricing-strategy map** — Anthoney wants the whole pricing plan laid out before locking the founding/standard reconcile. See `PRICING_STRATEGY.md`.
+3. **Pricing (G2): decided in `PRICING_STRATEGY.md`** — $19.99 monthly and $199 annual are live-checkout verified; $149 founding remains a coupon-gated offer until Anthoney creates/sets the Stripe coupon.
 4. **Validation/data investment** (C1/C3): still open — backtest now vs after first revenue.
 5. **Legal spend** (E1): still open — lawyer review before or right after first founding charge.

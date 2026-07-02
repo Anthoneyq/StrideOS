@@ -23,9 +23,9 @@ window.STRIDE_STRAVA = {
 // - Populate the payment links if you want a direct Stripe Payment Link
 //   fallback or a lightweight launch path before the backend is live.
 // Launch ladder (PRICING_STRATEGY.md, locked 2026-06-30):
-//   Free Account $0 (≤3 active athletes) · Pro $19.99/mo or $199/yr (≤25)
-//   Founding Coach $149/yr lifetime-locked, first 25 seats (≤25)
-//   Team Starter $399/yr (1–25) · Team Plus $599/yr (26–75) · Program $999/yr (76–200) · Enterprise custom (200+)
+//   Free Account $0 (limited saved athletes) · Pro $19.99/mo or $199/yr (unlimited athletes)
+//   Founding Coach $149/yr lifetime-locked, first 25 seats
+//   Team/Program starts at $399/yr and is quote-only until staff roles ship.
 window.STRIDE_BILLING = {
   monthlyLabel: '$19.99/mo',
   annualLabel: '$199/yr',

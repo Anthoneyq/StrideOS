@@ -236,12 +236,10 @@ support_level
 
 Known implementation cleanup:
 
-- `stride-config.js` currently says `$19.99/mo` and `$144/yr`; if this strategy is accepted, annual display should become `$199/yr`.
-- `index.html` currently frames annual as "save 40%" and `$12/mo`; if accepted, this should become "save 17%" and `$16.58/mo billed yearly`.
-- `deploy-stripe-functions.sh` still guards around `$144/yr`; if accepted, it should require Stripe annual amount `19900`.
-- `create-checkout-session` comments still mention `$144/yr`; update after Stripe prices are created.
+- `stride-config.js`, `index.html`, `deploy-stripe-functions.sh`, and `create-checkout-session` now target `$19.99/mo` and `$199/yr`.
+- Verified 2026-07-02: signed-in live checkout opens Stripe Checkout for `$19.99/mo` and `$199/yr`, backed by active Stripe prices with `unit_amount=1999` monthly and `unit_amount=19900` annual.
 - `team_annual` currently records like ordinary Pro in the subscription model; fix before broad Team sales by storing `plan_code` from Stripe metadata.
-- Do not deploy live Stripe changes until the exact plan ladder is confirmed.
+- Do not open Founding checkout until the exact live Stripe coupon is created and stored as `STRIPE_FOUNDING_COUPON`.
 
 Suggested Stripe prices after decision:
 

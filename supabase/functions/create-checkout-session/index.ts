@@ -2,7 +2,7 @@
 // Creates a Stripe Checkout Session for the signed-in coach, returns the
 // hosted Checkout URL. The frontend redirects to this URL.
 //
-// Request body: { plan: "monthly" | "annual" | "team_annual" }
+// Request body: { plan: "monthly" | "annual" | "founding" | "team_annual" }
 // Response:     { url: "https://checkout.stripe.com/..." }
 //
 // Required env vars (set in Supabase Dashboard → Project Settings → Edge

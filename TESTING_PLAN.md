@@ -72,7 +72,7 @@ Protect the core loop: **coach → athlete → data → review.**
 **Auth**
 - [ ] Magic-link sign-in succeeds; refresh keeps you signed in (`getSession`).
 - [ ] Sign-out clears state; protected actions prompt "Sign in first".
-- [ ] New coach gets a 14-day trial (`my_subscription.has_pro_access = true`, tier `trial`).
+- [ ] New coach gets a 30-day trial (`my_subscription.has_pro_access = true`, tier `trial`).
 
 **Coach → athlete**
 - [ ] Create athlete; appears in roster and chip count updates.
@@ -87,9 +87,12 @@ Protect the core loop: **coach → athlete → data → review.**
 - [ ] Local → cloud sync (`import_local_storage`) records Terms/Privacy and migrates data.
 
 **Billing**
-- [ ] "Upgrade" → checkout for monthly / annual / team_annual (test-mode) → success returns `?upgrade=success` and tier flips to `pro`.
+- [x] "Upgrade" → checkout opens for monthly and annual in live Stripe smoke test (2026-07-02); stop before payment unless running an intentional live charge/refund.
+- [ ] Paid success returns `?upgrade=success` and tier flips to `pro`.
+- [ ] `team_annual` checkout and distinct team-plan persistence before broad Team sales.
 - [ ] Manage subscription opens the Stripe Customer Portal.
 - [ ] Webhook: cancel in Stripe → coach drops to `free` (via `apply_stripe_subscription`).
+- [x] `pg_cron` scheduled `expire-trials-daily` to run `public.expire_trials()` daily at 08:00 UTC.
 
 **Strava** — see §3.
 
