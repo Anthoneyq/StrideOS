@@ -2683,7 +2683,7 @@ async function syncAthleteToSupabase(athlete){
 // this becomes the prediction-vs-outcome dataset used to recalibrate the
 // ensemble (the core data flywheel). Deduped per athlete via a signature of
 // the inputs, so re-saving without changes doesn't write duplicate rows.
-const PREDICTION_ENGINE_VERSION = 'ensemble-2026-07-01-nearest-anchor';
+const PREDICTION_ENGINE_VERSION = 'ensemble-2026-07-01-kfloor-spanfade';
 const PREDICTION_SOURCE_VERSION = 'sources-2026-06-20-norwegian-method-applied';
 
 async function logPredictionSnapshot(athlete){
@@ -5498,11 +5498,22 @@ function personalFatigueExponent(athlete, opts){
 
   distancePRs.sort((a,b) => a.distM - b.distM);
   const exponents = [];
+  let spanLoM = Infinity, spanHiM = 0;
   for(let i = 0; i < distancePRs.length - 1; i++){
     const p1 = distancePRs[i], p2 = distancePRs[i+1];
     if(p2.distM / p1.distM < 1.3) continue;
     const k = Math.log(p2.sec / p1.sec) / Math.log(p2.distM / p1.distM);
-    if(k > 0.95 && k < 1.20) exponents.push(k);
+    // Physical bounds. k < 1 would mean the athlete's PACE IMPROVES as the
+    // race gets longer — impossible; a measured sub-1 k really means the
+    // shorter PR is soft (an event-fit signal, not a fatigue curve), and
+    // extrapolating it produced absurd long forecasts (a 5:09 miler shown a
+    // 1:07 half marathon — faster pace than his own mile). Published human
+    // exponents run ~1.02–1.15 (Riegel 1.06), so require k in (1.005, 1.20).
+    if(k > 1.005 && k < 1.20){
+      exponents.push(k);
+      spanLoM = Math.min(spanLoM, p1.distM);
+      spanHiM = Math.max(spanHiM, p2.distM);
+    }
   }
   if(exponents.length === 0) return null;
   const avgK = exponents.reduce((a,b) => a+b, 0) / exponents.length;
@@ -5510,6 +5521,8 @@ function personalFatigueExponent(athlete, opts){
     k: avgK,
     nPairs: exponents.length,
     nPRs: distancePRs.length,
+    spanLoM,   // the curve is only MEASURED between these distances
+    spanHiM,
     bias: avgK < 1.045 ? 'aerobic-biased' : avgK > 1.080 ? 'speed-biased' : 'balanced',
     biasColor: avgK < 1.045 ? 'var(--green)' : avgK > 1.080 ? 'var(--yellow)' : 'var(--text-2)',
   };
@@ -5569,6 +5582,13 @@ function raceForecastForTarget(athlete, target, opts){
   if(personalK && targetDistM >= 400 && anchor.distM >= 400){
     const personalPrediction = anchor.sec * Math.pow(targetDistM / anchor.distM, personalK.k);
     personalW = Math.min(0.8, 0.4 + 0.2 * personalK.nPairs);
+    // The personal curve is only measured between the athlete's shortest and
+    // longest contributing PRs. Outside that span it is an extrapolation of an
+    // extrapolation — fade its weight by how far outside the target sits, so a
+    // curve fit on 800–3200m can nudge a 5K but never dictate a half marathon.
+    const outside = targetDistM > personalK.spanHiM ? targetDistM / personalK.spanHiM
+                  : (targetDistM < personalK.spanLoM ? personalK.spanLoM / targetDistM : 1);
+    if(outside > 1) personalW /= (1 + Math.log2(outside));
     likely = personalPrediction * personalW + likely * (1 - personalW);
   }
 
@@ -5577,6 +5597,26 @@ function raceForecastForTarget(athlete, target, opts){
     const observedPrediction = anchor.sec * observedRatio;
     likely = observedPrediction * 0.3 + likely * 0.7;
   }
+
+  // Physical floor: no forecast may be a FASTER pace than a TRUSTWORTHY
+  // observed PR at a shorter distance — pace only slows as distance grows
+  // (k >= 1), so equal pace is the theoretical limit. "Trustworthy" means
+  // pace-consistent with the athlete's longer PRs: a soft short PR (slower
+  // pace than a LONGER observed result — e.g. a rarely-raced 2:50 800 next
+  // to a 5:09 1600) is an event-fit signal, not a constraint, and must not
+  // drag long forecasts slower.
+  let paceFloorSec = 0, paceFloorEvent = null;
+  const prsAll = collectAllPRs(athlete);
+  prsAll.forEach(p => {
+    if(p.distM >= targetDistM || sameDistanceM(p.distM, targetDistM)) return;
+    const pPace = p.sec / p.distM;
+    const contradicted = prsAll.some(q => q.distM > p.distM && (q.sec / q.distM) < pPace);
+    if(contradicted) return;
+    const equalPaceSec = pPace * targetDistM;
+    if(equalPaceSec > paceFloorSec){ paceFloorSec = equalPaceSec; paceFloorEvent = p.event; }
+  });
+  const pacedFloorEvent = likely < paceFloorSec ? paceFloorEvent : null;
+  if(pacedFloorEvent) likely = paceFloorSec;
 
   const isExploratory = Math.abs(targetDomain.order - anchorDomain.order) >= 3;
   let rangePct;
@@ -5591,7 +5631,9 @@ function raceForecastForTarget(athlete, target, opts){
   rangePct *= youthFactor;
 
   const conservative = likely * (1 + rangePct);
-  const aggressive = likely * (1 - rangePct);
+  // The aggressive end obeys the same physical floor as the central estimate:
+  // never a faster pace than a trustworthy observed PR at a shorter distance.
+  const aggressive = Math.max(likely * (1 - rangePct), paceFloorSec || 0);
 
   let confidence;
   if(sameDomain && distRatio <= 2.0) confidence = 90 - logRatio * 5;
@@ -5619,6 +5661,7 @@ function raceForecastForTarget(athlete, target, opts){
   if(freshness === 'future') reasons.push('Anchor PR date is in the future');
   if(freshness === 'unknown') reasons.push('Anchor PR date unknown');
   if(personalW > 0) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)}, ${Math.round(personalW*100)}% weight)`);
+  if(pacedFloorEvent) reasons.push(`Floored at equal pace with the observed ${pacedFloorEvent} PR — a longer race can't be faster pace`);
   if(youthFactor > 1) reasons.push(ageYears <= 14 ? 'Youth athlete (≤14) — maturation widens range' : 'Youth athlete — maturation widens range');
   if(typeof athlete.weeklyMileage === 'number' && athlete.weeklyMileage > 0 && targetDistM > 10000) reasons.push(`Volume-adjusted (${athlete.weeklyMileage} mi/wk)`);
   if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000) reasons.push('Nudged by equivalent-performance tables');
