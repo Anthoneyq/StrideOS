@@ -110,6 +110,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .nav-btn.new:hover{background:var(--accent-soft);color:var(--accent)}
 .nav-icon{font-size:.875rem;width:1.125rem;text-align:center}
 .workspace-locked [data-auth-scope="workspace"],.workspace-locked #athleteNavSection,.workspace-locked #activeAthleteChip,.workspace-locked #tierBanner{display:none!important}
+.athlete-only [data-coach-scope="coach"],.athlete-only #tierBanner{display:none!important}
 .sidebar-footer{margin-top:auto;padding-top:1.5rem;border-top:1px solid var(--border)}
 .auth-panel{background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;margin-bottom:.75rem}
 .auth-status{font-family:'JetBrains Mono',monospace;font-size:.5625rem;letter-spacing:.09375rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem}
@@ -539,12 +540,12 @@ input.err,select.err{border-color:var(--red)}
           <li><button class="nav-btn" data-s="home"     onclick="goTo('home',this)"><span class="nav-icon" aria-hidden="true">⌂</span>Home</button></li>
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span><span id="navCalcLabel">Basic Calculator</span></button></li>
           <li><button class="nav-btn" data-s="eventfit" onclick="goTo('eventfit',this)"><span class="nav-icon" aria-hidden="true">◎</span>Event Finder</button></li>
-          <li data-auth-scope="workspace"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
-          <li data-auth-scope="workspace"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
+          <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
+          <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
-          <li data-auth-scope="workspace"><button class="nav-btn" data-s="squads" onclick="goTo('squads',this)"><span class="nav-icon" aria-hidden="true">◍</span>Training Groups</button></li>
-          <li data-auth-scope="workspace"><button class="nav-btn" data-s="lineup" onclick="goTo('lineup',this)"><span class="nav-icon" aria-hidden="true">⁘</span>Lineup Optimizer</button></li>
-          <li data-auth-scope="workspace"><button class="nav-btn" data-s="proof" onclick="goTo('proof',this)"><span class="nav-icon" aria-hidden="true">✓</span>Proof Ledger</button></li>
+          <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="squads" onclick="goTo('squads',this)"><span class="nav-icon" aria-hidden="true">◍</span>Training Groups</button></li>
+          <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="lineup" onclick="goTo('lineup',this)"><span class="nav-icon" aria-hidden="true">⁘</span>Lineup Optimizer</button></li>
+          <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="proof" onclick="goTo('proof',this)"><span class="nav-icon" aria-hidden="true">✓</span>Proof Ledger</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="workouts" onclick="goTo('workouts',this)"><span class="nav-icon" aria-hidden="true">⊞</span>Training Log</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="multievent" onclick="goTo('multievent',this)"><span class="nav-icon" aria-hidden="true">▤</span>Performance Curve</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="predict"  onclick="goTo('predict',this)"><span class="nav-icon" aria-hidden="true">◓</span>Race Forecasts</button></li>
@@ -552,7 +553,7 @@ input.err,select.err{border-color:var(--red)}
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="methodology" onclick="goTo('methodology',this)"><span class="nav-icon" aria-hidden="true">§</span>Sources</button></li>
         </ul>
       </div>
-      <div class="nav-section" id="athleteNavSection">
+      <div class="nav-section" id="athleteNavSection" data-coach-scope="coach">
         <p class="nav-section-label" id="lbl-ath">Athlete</p>
         <ul class="nav-list" aria-labelledby="lbl-ath" role="list">
           <li><button class="nav-btn" data-s="edit" onclick="goTo('edit',this)"><span class="nav-icon" aria-hidden="true">✎</span>Edit Profile</button></li>
@@ -996,6 +997,38 @@ const WORKSPACE_SCREEN_IDS = new Set([
   'methodology',
   'edit'
 ]);
+const ATHLETE_SCREEN_IDS = new Set([
+  'home',
+  'paces',
+  'eventfit',
+  'overview',
+  'workouts',
+  'multievent',
+  'predict',
+  'profile',
+  'methodology'
+]);
+
+function pendingAthleteInviteId(){
+  try{
+    return new URLSearchParams(window.location.search || '').get('athlete_invite');
+  }catch(_e){
+    return null;
+  }
+}
+
+function isAthleteOnly(){
+  return sbRole === 'athlete';
+}
+
+function canManageCoachWorkspace(){
+  return Boolean(sbUser) && !isAthleteOnly();
+}
+
+function screenAllowedForCurrentRole(id){
+  if(!isAthleteOnly()) return true;
+  return ATHLETE_SCREEN_IDS.has(id);
+}
 
 function hasWorkspaceAccess(){
   return Boolean(sbUser);
@@ -1003,15 +1036,17 @@ function hasWorkspaceAccess(){
 
 function applyWorkspaceMode(options = {}){
   const locked = !hasWorkspaceAccess();
+  const athleteOnly = isAthleteOnly();
   document.body.classList.toggle('workspace-locked', locked);
+  document.body.classList.toggle('athlete-only', athleteOnly);
 
   const brandTag = document.getElementById('brandTag');
   if(brandTag){
-    brandTag.textContent = locked ? 'Free Pace Calculator' : 'Coaching Workflow Tool';
+    brandTag.textContent = locked ? 'Free Pace Calculator' : athleteOnly ? 'Athlete Portal' : 'Coaching Workflow Tool';
   }
   const workspaceLabel = document.getElementById('lbl-ws');
   if(workspaceLabel){
-    workspaceLabel.textContent = locked ? 'Calculator' : 'Workspace';
+    workspaceLabel.textContent = locked ? 'Calculator' : athleteOnly ? 'Athlete' : 'Workspace';
   }
   // Calculator nav label reflects access tier: Basic → Advanced → Pro.
   const calcLabelEl = document.getElementById('navCalcLabel');
@@ -1024,6 +1059,11 @@ function applyWorkspaceMode(options = {}){
     const activeProtected = typeof currentScreen !== 'undefined' && WORKSPACE_SCREEN_IDS.has(currentScreen);
     if(options.redirect !== false && activeProtected){
       goTo(PUBLIC_SCREEN_ID, null);
+    }
+  } else if(athleteOnly){
+    const activeDisallowed = typeof currentScreen !== 'undefined' && !screenAllowedForCurrentRole(currentScreen);
+    if(options.redirect !== false && activeDisallowed){
+      goTo('overview', null);
     }
   }
 
@@ -1042,12 +1082,23 @@ function promptForAccount(action){
 }
 
 function requireWorkspace(action){
-  if(hasWorkspaceAccess()) return true;
+  if(hasWorkspaceAccess() && !isAthleteOnly()) return true;
+  if(isAthleteOnly()){
+    toast('This athlete account is linked to a coach-managed profile');
+    if(typeof currentScreen !== 'undefined' && !screenAllowedForCurrentRole(currentScreen)){
+      goTo('overview', null);
+    }
+    return false;
+  }
   promptForAccount(action);
   if(typeof currentScreen !== 'undefined' && currentScreen !== PUBLIC_SCREEN_ID){
     goTo(PUBLIC_SCREEN_ID, null);
   }
   return false;
+}
+
+function requireCoachWorkspace(action){
+  return requireWorkspace(action || 'manage the coach workspace');
 }
 
 function resetSubscriptionState(){
@@ -1111,6 +1162,16 @@ function authStatusHtml(){
       ${sbHealthCheckedAt ? `<div class="auth-note">Last backend check: ${esc(new Date(sbHealthCheckedAt).toLocaleString())}</div>` : ''}${authFeedbackHtml()}`;
   }
   if(sbUser){
+    if(isAthleteOnly()){
+      const athleteName = sbLinkedAthlete && sbLinkedAthlete.display_name
+        ? sbLinkedAthlete.display_name
+        : 'Linked athlete profile';
+      return `<div class="auth-status">Athlete Account</div>
+        <div class="auth-copy">${esc(sbUser.email || athleteName)}</div>
+        <div class="auth-note" style="margin-bottom:.5rem">${esc(athleteName)}</div>
+        <div class="auth-actions"><button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
+        <div class="auth-note" style="margin-top:.5rem"><a href="/terms.html" target="_blank" rel="noopener" style="text-decoration:underline">Terms</a> &middot; <a href="/privacy.html" target="_blank" rel="noopener" style="text-decoration:underline">Privacy</a></div>${authFeedbackHtml()}`;
+    }
     const tier = sbSubscription && sbSubscription.tier;
     const isPro = ['pro','team','athlete'].includes(tier);
     const tierBadge = tier
@@ -1227,10 +1288,175 @@ function closeAuthModal(){
   document.removeEventListener('keydown', _authEscHandler);
 }
 
+function athleteLegalAccepted(){
+  const meta = (sbUser && sbUser.user_metadata) || {};
+  return Boolean(meta.stride_athlete_terms_accepted_at && meta.stride_privacy_accepted_at);
+}
+
+function ensureAthleteLegalModal(){
+  if(!isAthleteOnly() || athleteLegalAccepted()) return;
+  if(document.getElementById('athleteLegalOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'athleteLegalOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.innerHTML = `
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="athleteLegalTitle">
+      <p class="upgrade-eyebrow">Athlete Account</p>
+      <h2 class="upgrade-title" id="athleteLegalTitle">Review access terms</h2>
+      <div class="auth-modal-body">
+        <div class="auth-copy">Your coach invited you to view your STRIDE OS profile and training log. Continue only if this is your profile and you agree to the Terms and Privacy Policy.</div>
+        <label class="auth-legal-consent">
+          <input type="checkbox" id="athleteLegalConsent" autocomplete="off" onchange="setAthleteLegalButtonState()">
+          <span>I agree to the <a href="/terms.html" target="_blank" rel="noopener">Terms</a> and <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        </label>
+        <div class="auth-actions">
+          <button class="btn" onclick="signOutSupabase()">Sign Out</button>
+          <button class="btn btn-primary" id="athleteLegalContinueBtn" onclick="acceptAthleteTerms()" disabled>Continue</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeAthleteLegalModal(){
+  const el = document.getElementById('athleteLegalOverlay');
+  if(el) el.remove();
+}
+
+function setAthleteLegalButtonState(){
+  const btn = document.getElementById('athleteLegalContinueBtn');
+  const consent = document.getElementById('athleteLegalConsent');
+  if(btn) btn.disabled = !consent || !consent.checked;
+}
+
+async function acceptAthleteTerms(){
+  const consent = document.getElementById('athleteLegalConsent');
+  if(!consent || !consent.checked){
+    toast('Accept the Terms and Privacy Policy to continue');
+    return;
+  }
+  if(!sbClient || !sbUser) return toast('Sign in first');
+  const acceptedAt = new Date().toISOString();
+  try{
+    const nextMeta = {
+      ...(sbUser.user_metadata || {}),
+      stride_account_role: 'athlete',
+      stride_athlete_terms_accepted_at: acceptedAt,
+      stride_privacy_accepted_at: acceptedAt
+    };
+    const { data, error } = await sbClient.auth.updateUser({ data: nextMeta });
+    if(error) throw error;
+    if(data && data.user) sbUser = data.user;
+    closeAthleteLegalModal();
+    renderAuthPanel();
+    refreshCurrentScreen();
+  }catch(err){
+    console.error('acceptAthleteTerms failed', err);
+    toast(err.message || 'Could not save consent');
+  }
+}
+
 function isPasswordRecoveryReturn(){
   const hash = window.location.hash || '';
   const search = window.location.search || '';
   return hash.includes('type=recovery') || search.includes('type=recovery');
+}
+
+async function hydrateLinkedAthleteWorkspace(){
+  if(!sbClient || !sbUser || !sbLinkedAthlete) return false;
+  try{
+    let athleteRow = sbLinkedAthlete;
+    const { data: freshAthlete, error: athleteError } = await sbClient
+      .from('athletes')
+      .select('*')
+      .eq('id', sbLinkedAthlete.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+    if(athleteError) throw athleteError;
+    if(freshAthlete) athleteRow = freshAthlete;
+
+    let raceRows = [];
+    try{
+      const { data: races, error: raceError } = await sbClient
+        .from('races')
+        .select('*')
+        .eq('athlete_id', athleteRow.id)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true });
+      if(raceError) throw raceError;
+      raceRows = races || [];
+    }catch(raceErr){
+      console.warn('linked athlete race load failed', raceErr);
+    }
+
+    const linked = remoteAthleteToLocal(athleteRow, raceRows);
+    DB = newDB();
+    DB.athletes = [linked];
+    DB.activeAthleteId = linked.id;
+    refreshActiveAthlete();
+    updateChip();
+    return true;
+  }catch(err){
+    console.warn('hydrateLinkedAthleteWorkspace failed', err);
+    setAuthFeedback('err', 'Could not load your linked athlete profile. Ask your coach to resend the invite if this continues.', false);
+    return false;
+  }
+}
+
+async function bootstrapAuthenticatedSession(){
+  if(!sbUser){
+    sbRole = null;
+    sbLinkedAthlete = null;
+    resetSubscriptionState();
+    applyWorkspaceMode();
+    renderAuthPanel();
+    refreshCurrentScreen();
+    return;
+  }
+
+  const acceptingInvite = Boolean(pendingAthleteInviteId());
+  if(acceptingInvite){
+    const linked = await handleAthleteInviteReturn();
+    await loadAthleteRole();
+    if(!linked && !isAthleteOnly()){
+      resetSubscriptionState();
+      applyWorkspaceMode();
+      renderAuthPanel();
+      refreshCurrentScreen();
+      return;
+    }
+  } else {
+    await loadAthleteRole();
+  }
+
+  if(isAthleteOnly()){
+    resetSubscriptionState();
+    await hydrateLinkedAthleteWorkspace();
+    applyWorkspaceMode();
+    renderAuthPanel();
+    ensureAthleteLegalModal();
+    if(!screenAllowedForCurrentRole(currentScreen)) goTo('overview', null);
+    else refreshCurrentScreen();
+    return;
+  }
+
+  await ensureCoachProfileSilent();
+  await loadSubscription();
+  await loadAthleteRole();
+  if(isAthleteOnly()){
+    resetSubscriptionState();
+    await hydrateLinkedAthleteWorkspace();
+    applyWorkspaceMode();
+    renderAuthPanel();
+    ensureAthleteLegalModal();
+    if(!screenAllowedForCurrentRole(currentScreen)) goTo('overview', null);
+    else refreshCurrentScreen();
+    return;
+  }
+  await loadRemoteAthletes();
+  applyWorkspaceMode();
+  renderAuthPanel();
+  refreshCurrentScreen();
 }
 
 async function initSupabase(){
@@ -1261,30 +1487,15 @@ async function initSupabase(){
         ensureAuthModal();
       }
       if(!sbUser){
-        resetSubscriptionState();
+        DB = loadDB() || newDB();
+        refreshActiveAthlete();
+        updateChip();
       }
-      applyWorkspaceMode();
-      renderAuthPanel();
-      if(sbUser){
-        await ensureCoachProfileSilent();
-        await loadSubscription();
-        await loadAthleteRole();
-        await loadRemoteAthletes();
-      } else {
-        refreshCurrentScreen();
-      }
+      await bootstrapAuthenticatedSession();
     });
 
     renderAuthPanel();
-    if(sbUser){
-      await ensureCoachProfileSilent();
-      await loadSubscription();
-      await loadAthleteRole();
-      await loadRemoteAthletes();
-    } else {
-      resetSubscriptionState();
-      refreshCurrentScreen();
-    }
+    await bootstrapAuthenticatedSession();
   }catch(err){
     console.warn('Supabase init failed', err);
     toast('Supabase sync unavailable');
@@ -1490,6 +1701,12 @@ async function signOutSupabase(){
     if(error) throw error;
     sbUser = null;
     sbCoachReady = false;
+    sbRole = null;
+    sbLinkedAthlete = null;
+    closeAthleteLegalModal();
+    DB = loadDB() || newDB();
+    refreshActiveAthlete();
+    updateChip();
     resetSubscriptionState();
     applyWorkspaceMode();
     setAuthFeedback('info', 'Signed out. You can request another magic link anytime.', false);
@@ -1659,6 +1876,11 @@ function workoutTypeLabel(value){
   return t ? t.label : value;
 }
 
+function canEditWorkoutEntry(workout){
+  if(!isAthleteOnly()) return true;
+  return Boolean(workout && workout.source === 'athlete_entry');
+}
+
 function fmtDuration(sec){
   if(!sec && sec !== 0) return '—';
   sec = Math.round(sec);
@@ -1782,14 +2004,19 @@ function renderWorkouts(){
 
   const items = workoutCache.items;
   if(items.length === 0){
+    const emptyCopy = isAthleteOnly()
+      ? `Log your first training session so you and your coach can see the history here.`
+      : `Log ${esc(A.name)}'s first training session to start building their history.`;
     el.innerHTML = `
       <div class="info-box">
-        Logging workouts for <strong>${esc(A.name)}</strong>. The <strong style="color:var(--accent)">+ Log Workout</strong> button captures one session at a time. Phase 2 will let athletes log their own.
+        ${isAthleteOnly()
+          ? `Training log for <strong>${esc(A.name)}</strong>. Athlete-entered sessions save to your linked coach profile.`
+          : `Logging workouts for <strong>${esc(A.name)}</strong>. The <strong style="color:var(--accent)">+ Log Workout</strong> button captures one session at a time.`}
       </div>
       <div class="empty-state">
         <div class="empty-icon" aria-hidden="true">⊞</div>
         <p class="empty-title">No workouts yet</p>
-        <p class="empty-sub">Log ${esc(A.name)}'s first training session to start building their history.</p>
+        <p class="empty-sub">${emptyCopy}</p>
         <button class="btn btn-primary" onclick="openWorkoutForm()">+ Log First Workout</button>
       </div>`;
     return;
@@ -1828,7 +2055,7 @@ function renderWorkouts(){
   el.innerHTML = `
     ${stravaBar}
     <div class="info-box">
-      Logging for <strong>${esc(A.name)}</strong>. ${items.length} workout${items.length===1?'':'s'} on record.
+      ${isAthleteOnly() ? 'Training log' : 'Logging'} for <strong>${esc(A.name)}</strong>. ${items.length} workout${items.length===1?'':'s'} on record.
     </div>
     ${weekHtml}`;
 }
@@ -1845,6 +2072,12 @@ function workoutCard(w){
     : w.source === 'athlete_entry'
       ? '<span style="background:var(--bg-el);color:var(--accent);border:1px solid var(--accent-line);padding:.0625rem .375rem;border-radius:.1875rem;font-family:\'JetBrains Mono\',monospace;font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">ATHLETE</span>'
       : '';
+  const actionButtons = canEditWorkoutEntry(w)
+    ? `<div style="display:flex;gap:.375rem">
+          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem" onclick="openWorkoutForm('${esc(w.id)}')">Edit</button>
+          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem;color:var(--red,#ef4444)" onclick="deleteWorkout('${esc(w.id)}')">Delete</button>
+        </div>`
+    : '<div style="font-family:\'JetBrains Mono\',monospace;font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.0625rem">Coach entry</div>';
 
   const rpeBadge = w.perceived_effort
     ? `<span style="color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:.6875rem;margin-left:.5rem">RPE ${w.perceived_effort}/10</span>`
@@ -1857,10 +2090,7 @@ function workoutCard(w){
           <p style="font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase">${esc(date)}${sourceBadge}</p>
           <p style="font-family:var(--font-display);font-size:1.125rem;margin-top:.125rem">${esc(typeLabel)}${rpeBadge}</p>
         </div>
-        <div style="display:flex;gap:.375rem">
-          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem" onclick="openWorkoutForm('${esc(w.id)}')">Edit</button>
-          <button class="btn" style="padding:.25rem .625rem;font-size:.6875rem;color:var(--red,#ef4444)" onclick="deleteWorkout('${esc(w.id)}')">Delete</button>
-        </div>
+        ${actionButtons}
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
         <div><span style="color:var(--text-4)">Distance</span><br>${fmtDistance(w.total_distance_m)}</div>
@@ -1869,6 +2099,7 @@ function workoutCard(w){
         ${w.avg_hr_bpm ? `<div><span style="color:var(--text-4)">Avg HR</span><br>${w.avg_hr_bpm} bpm</div>` : ''}
       </div>
       ${w.coach_notes ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.625rem;line-height:1.55;border-left:2px solid var(--accent);padding-left:.625rem">${esc(w.coach_notes)}</p>` : ''}
+      ${w.athlete_notes ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.625rem;line-height:1.55;border-left:2px solid var(--green);padding-left:.625rem">${esc(w.athlete_notes)}</p>` : ''}
     </div>`;
 }
 
@@ -1879,6 +2110,10 @@ function openWorkoutForm(workoutId){
     return;
   }
   const existing = workoutId ? workoutCache.items.find(w => w.id === workoutId) : null;
+  if(isAthleteOnly() && existing && !canEditWorkoutEntry(existing)){
+    toast('Only your coach can edit coach-entered workouts');
+    return;
+  }
   closeWorkoutForm();
   const today = new Date().toISOString().slice(0,10);
   const overlay = document.createElement('div');
@@ -1947,8 +2182,8 @@ function openWorkoutForm(workoutId){
             </label>
           </div>
           <label style="display:flex;flex-direction:column;gap:.25rem;margin-top:.5rem">
-            <span class="auth-status">Coach notes (what to remember)</span>
-            <textarea id="wfCoachNotes" class="auth-input" rows="2" placeholder="How they ran, any tweaks for next time…">${esc(existing ? existing.coach_notes || '' : '')}</textarea>
+            <span class="auth-status">${isAthleteOnly() ? 'Athlete notes' : 'Coach notes (what to remember)'}</span>
+            <textarea id="wfCoachNotes" class="auth-input" rows="2" placeholder="${isAthleteOnly() ? 'How it felt, what to remember...' : 'How they ran, any tweaks for next time...'}">${esc(existing ? (isAthleteOnly() ? existing.athlete_notes : existing.coach_notes) || '' : '')}</textarea>
           </label>
         </div>
 
@@ -1982,6 +2217,7 @@ function parseDurationToSec(s){
 async function saveWorkout(){
   if(!sbClient || !sbUser) return toast('Sign in first');
   if(!A) return toast('Pick an athlete first');
+  const athleteOnly = isAthleteOnly();
 
   const v = (id) => {
     const el = document.getElementById(id);
@@ -2001,10 +2237,17 @@ async function saveWorkout(){
 
   const supabaseAthleteId = await resolveAthleteCloudId(A);
   if(!supabaseAthleteId) return toast('Save athlete to cloud before logging workouts');
+  const existingId = v('wfId');
+  const existingWorkout = existingId ? workoutCache.items.find(w => w.id === existingId) : null;
+  if(athleteOnly && existingId && !canEditWorkoutEntry(existingWorkout)){
+    return toast('Only your coach can edit coach-entered workouts');
+  }
+  const coachId = athleteOnly ? (sbLinkedAthlete && sbLinkedAthlete.coach_id) : sbUser.id;
+  if(!coachId) return toast('Coach link is missing for this athlete account');
 
   const row = {
     athlete_id: supabaseAthleteId,
-    coach_id: sbUser.id,
+    coach_id: coachId,
     workout_date: v('wfDate'),
     workout_type: workoutType,
     prescribed_distance_m: num('wfPrescribedDist'),
@@ -2016,11 +2259,11 @@ async function saveWorkout(){
     avg_hr_bpm: num('wfAvgHr'),
     max_hr_bpm: num('wfMaxHr'),
     perceived_effort: num('wfRpe'),
-    coach_notes: v('wfCoachNotes') || null,
-    source: 'coach_entry'
+    coach_notes: athleteOnly ? null : (v('wfCoachNotes') || null),
+    athlete_notes: athleteOnly ? (v('wfCoachNotes') || null) : null,
+    source: athleteOnly ? 'athlete_entry' : 'coach_entry'
   };
 
-  const existingId = v('wfId');
   try{
     if(existingId){
       const { error } = await sbClient.from('workouts').update(row).eq('id', existingId);
@@ -2042,6 +2285,11 @@ async function saveWorkout(){
 
 async function deleteWorkout(id){
   if(!sbClient || !sbUser) return;
+  const existing = workoutCache.items.find(w => w.id === id);
+  if(isAthleteOnly() && !canEditWorkoutEntry(existing)){
+    toast('Only your coach can delete coach-entered workouts');
+    return;
+  }
   if(!confirm('Delete this workout? This cannot be undone.')) return;
   try{
     const { error } = await sbClient.from('workouts').update({ deleted_at: new Date().toISOString() }).eq('id', id);
@@ -2193,6 +2441,7 @@ function athleteInviteBadge(athlete){
 
 async function sendAthleteInvite(athleteSupabaseId, email){
   if(!sbClient || !sbUser) return toast('Sign in first');
+  if(!requireCoachWorkspace('invite athletes from the coach workspace')) return;
   if(!email){
     email = prompt('Athlete email to invite:');
     if(!email) return;
@@ -2218,7 +2467,14 @@ async function sendAthleteInvite(athleteSupabaseId, email){
     const redirectTo = `${window.location.origin}${window.location.pathname}?athlete_invite=${encodeURIComponent(athleteSupabaseId)}`;
     const { error: otpErr } = await sbClient.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: redirectTo }
+      options: {
+        emailRedirectTo: redirectTo,
+        shouldCreateUser: true,
+        data: {
+          stride_account_role: 'athlete_invite',
+          invited_athlete_id: athleteSupabaseId
+        }
+      }
     });
     if(otpErr) throw otpErr;
 
@@ -2237,27 +2493,53 @@ async function sendAthleteInvite(athleteSupabaseId, email){
 async function handleAthleteInviteReturn(){
   const params = new URLSearchParams(window.location.search);
   const athleteInviteId = params.get('athlete_invite');
-  if(!athleteInviteId) return;
+  if(!athleteInviteId) return false;
   if(!sbClient || !sbUser){
     // Need to wait until sign-in resolves; the auth state change
     // handler will call refreshCurrentScreen which calls this again.
-    return;
+    return false;
   }
   try{
-    const { error } = await sbClient.rpc('link_athlete_user', {
+    const { data, error } = await sbClient.rpc('link_athlete_user', {
       athlete_row_id: athleteInviteId
     });
     if(error) throw error;
+    if(data) sbLinkedAthlete = data;
     toast('You\'re linked to your coach. Welcome!');
     history.replaceState(null, '', window.location.pathname);
-    // Refresh subscription/role state.
-    await loadSubscription();
     await loadAthleteRole();
-    refreshCurrentScreen();
+    await hydrateLinkedAthleteWorkspace();
+    applyWorkspaceMode();
+    renderAuthPanel();
+    ensureAthleteLegalModal();
+    if(isAthleteOnly()) goTo('overview', null);
+    else refreshCurrentScreen();
+    return true;
   }catch(err){
     console.error('link_athlete_user failed', err);
+    setAuthFeedback('err', err.message || 'Could not accept invite. Confirm you opened the link with the invited email address.', false);
     toast(err.message || 'Could not accept invite');
+    return false;
   }
+}
+
+async function hydrateAthleteRoleFromRows(coachRow, athleteRow){
+  if(coachRow && athleteRow) sbRole = 'both';
+  else if(coachRow) sbRole = 'coach';
+  else if(athleteRow) sbRole = 'athlete';
+  else sbRole = null;
+  sbLinkedAthlete = athleteRow || null;
+}
+
+async function refreshLinkedAthleteRow(){
+  const { data: athleteRow, error } = await sbClient
+    .from('athletes')
+    .select('*')
+    .eq('athlete_user_id', sbUser.id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if(error) throw error;
+  return athleteRow || null;
 }
 
 // ─────────────────────────────────────────────
@@ -2285,18 +2567,8 @@ async function loadAthleteRole(){
       .maybeSingle();
 
     // Are we a linked athlete?
-    const { data: athleteRow } = await sbClient
-      .from('athletes')
-      .select('id, display_name, coach_id, race_distance, race_time')
-      .eq('athlete_user_id', sbUser.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if(coachRow && athleteRow) sbRole = 'both';
-    else if(coachRow) sbRole = 'coach';
-    else if(athleteRow) sbRole = 'athlete';
-    else sbRole = null;
-    sbLinkedAthlete = athleteRow || null;
+    const athleteRow = await refreshLinkedAthleteRow();
+    await hydrateAthleteRoleFromRows(coachRow, athleteRow);
   }catch(err){
     console.warn('loadAthleteRole failed', err);
   }
@@ -2325,6 +2597,10 @@ function trialDaysRemaining(){
 function renderTierBanner(){
   const host = document.getElementById('tierBanner');
   if(!host) return;
+  if(isAthleteOnly()){
+    host.innerHTML = '';
+    return;
+  }
   if(!sbSubscription || !sbSubscription.tier){
     host.innerHTML = '';
     return;
@@ -2364,6 +2640,10 @@ function renderTierBanner(){
 
 // Pricing card — shown inside the upgrade modal.
 function showUpgradeModal(){
+  if(isAthleteOnly()){
+    toast('Athlete accounts are managed by their coach');
+    return;
+  }
   const hasDirectBillingLink = Boolean(BILLING_MONTHLY_PAYMENT_LINK || BILLING_ANNUAL_PAYMENT_LINK);
   if(!sbUser && !hasDirectBillingLink){
     setAuthFeedback('info', 'Sign in or create an account first, then upgrade.', false);
@@ -2639,6 +2919,7 @@ function athletesForCurrentTier(){
 
 async function syncLocalToSupabase(){
   if(!sbClient || !sbUser) return toast('Sign in before syncing');
+  if(!requireCoachWorkspace('sync coach roster data')) return;
   if(!confirm('Sync this local roster to your STRIDE OS account? Only sync athlete data you are authorized to store in STRIDE OS.')) return;
 
   try{
@@ -2658,7 +2939,7 @@ async function syncLocalToSupabase(){
 }
 
 async function syncAthleteToSupabase(athlete){
-  if(!sbClient || !sbUser || !sbCoachReady || !athlete){
+  if(!sbClient || !sbUser || !sbCoachReady || !athlete || isAthleteOnly()){
     return { ok: false, skipped: true, reason: 'cloud_not_ready' };
   }
   try{
@@ -2852,6 +3133,10 @@ function remoteAthleteToLocal(row, raceRows){
 
 async function loadRemoteAthletes(){
   if(!sbClient || !sbUser) return;
+  if(isAthleteOnly()){
+    await hydrateLinkedAthleteWorkspace();
+    return;
+  }
 
   try{
     const { data: athletes, error: athleteError } = await sbClient
@@ -3178,6 +3463,11 @@ function goTo(id,btn){
     id = PUBLIC_SCREEN_ID;
     btn = null;
   }
+  if(hasWorkspaceAccess() && !screenAllowedForCurrentRole(id)){
+    toast('Your athlete account is linked to your profile and training log');
+    id = 'overview';
+    btn = null;
+  }
   // Leaving the Event Finder drops its share fragment so a later reload
   // lands where the user actually was, not back on a stale shared result.
   if(id !== 'eventfit' && location.hash.indexOf('#ef') === 0){
@@ -3218,11 +3508,14 @@ function goTo(id,btn){
 
 // ── EMPTY STATE ──
 function emptyHTML(msg){
+  const cta = isAthleteOnly()
+    ? ''
+    : '<button class="btn btn-primary" onclick="goTo(\'edit\',null)">+ Create Athlete</button>';
   return `<div class="empty-state">
     <div class="empty-icon" aria-hidden="true">+</div>
     <p class="empty-title">No athlete yet</p>
     <p class="empty-sub">${esc(msg)}</p>
-    <button class="btn btn-primary" onclick="goTo('edit',null)">+ Create Athlete</button>
+    ${cta}
   </div>`;
 }
 
@@ -3233,7 +3526,8 @@ function renderOverview(){
   // Free wedge: free coaches get the REAL analytics (capped + view-only) with a soft
   // upgrade nudge — NOT a locked card. No free competitor reads a whole roster at once.
   let squadHtml = '';
-  if(DB.athletes && DB.athletes.length >= 2){
+  const athleteOnly = isAthleteOnly();
+  if(!athleteOnly && DB.athletes && DB.athletes.length >= 2){
     squadHtml = hasProAccess()
       ? renderSquadAnalytics(computeSquadAnalytics(DB.athletes))
       : renderSquadTaste(DB.athletes);
@@ -3317,6 +3611,8 @@ function renderOverview(){
       </div>
     </div>
 
+    ${athleteOnly ? `<div class="info-box"><strong>Linked athlete profile.</strong> Your coach manages roster edits. You can view your pace zones, forecasts, event profile, and training log from this account.</div>` : ''}
+
     <!-- WHAT THIS TOOL DOES (instead of admitting weakness) -->
     <div class="card">
       <p class="card-title"><span>${esc(A.name)}'s Toolkit</span><span class="card-accent">AVAILABLE NOW</span></p>
@@ -3328,8 +3624,8 @@ function renderOverview(){
       </div>
     </div>
 
-    <!-- TEAM TOOLKIT — roster-wide coaching workflow -->
-    <div class="card">
+    ${athleteOnly ? '' : `<!-- TEAM TOOLKIT — roster-wide coaching workflow -->
+    <div class="card" data-coach-scope="coach">
       <p class="card-title"><span>Team Toolkit</span><span class="card-accent">WHOLE ROSTER</span></p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin-bottom:1rem">
         ${toolCard('Training Groups', 'Auto-cluster distance athletes into pace groups with today’s rep targets — printable per group.', 'squads', '→')}
@@ -3341,7 +3637,7 @@ function renderOverview(){
         <button class="btn btn-print" onclick="printAllPaceCards()">Print all pace cards</button>
         <button class="btn btn-print" onclick="printGroupSheets()">Print group practice sheets</button>
       </div>
-    </div>
+    </div>`}
 
     <div class="info-box">
       <strong>What this tool intentionally does not do:</strong> Estimate VO₂max, lactate threshold, or running economy without measurement. Those require lab tests, which belong in CoachLab. This tool focuses on what can be calculated honestly from race PRs.
@@ -5869,6 +6165,10 @@ const EVENT_PR_FIELDS = [
 function renderImport(){
   const el = document.getElementById('im-body');
   if(!el) return;
+  if(isAthleteOnly()){
+    el.innerHTML = emptyStateCard('Coach-only roster import', 'Your athlete account is linked to one coach-managed profile. Ask your coach to import or edit roster data.', '', '');
+    return;
+  }
 
   // Pro / trial gate
   if(!hasProAccess()){
@@ -5906,7 +6206,7 @@ function renderImportDropzone(){
       ${importModeTabs()}
       <div class="card">
         <p style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:.35rem">Paste your roster</p>
-        <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Copy rows straight from Athletic.net, MileSplit, a Google Sheet, or Excel and paste below — headers or no headers. Or type one athlete per line: <span style="font-family:var(--font-mono);color:var(--text)">Maya R, 5k, 18:42, 42</span>. You’ll confirm the column mapping next.</p>
+        <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Paste rows from a spreadsheet, meet-management export, or another source you are authorized to use — headers or no headers. Or type one athlete per line: <span style="font-family:var(--font-mono);color:var(--text)">Maya R, 5k, 18:42, 42</span>. You’ll confirm the column mapping next.</p>
         <textarea id="importPasteArea" rows="10" placeholder="Name	Event	Time	Mileage&#10;Maya Robinson	5K	18:42	42&#10;Jordan T	1600m	4:38	35&#10;— or —&#10;Eli W, 3200m, 10:21, 16" style="width:100%;font-family:var(--font-mono);font-size:.8125rem;background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;color:var(--text);resize:vertical"></textarea>
         ${importState.error ? `<div class="import-error" style="margin-top:.75rem">${esc(importState.error)}</div>` : ''}
         <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
@@ -7266,8 +7566,8 @@ function proGateCard(title, body){
 }
 
 // ── FEATURE 4 · PASTE-A-ROSTER + WEEKLY MEET RESULTS ────────────────────────
-// Activation dies on retyping 40 kids. Paste raw rows from Athletic.net /
-// MileSplit / a spreadsheet straight into the existing mapping+validation flow.
+// Activation dies on retyping 40 kids. Paste raw rows from authorized exports
+// or a spreadsheet straight into the existing mapping+validation flow.
 // Weekly variant: paste a meet's results, match by name, update PRs, and show a
 // "who improved" report the coach can drop in the team channel Monday morning.
 let importMode = 'file'; // 'file' | 'paste' | 'meet'
@@ -7329,7 +7629,7 @@ function applyPastedRoster(){
   const text = ta ? ta.value : '';
   const parsed = parsePastedTable(text);
   if(!parsed){
-    importState = { ...importState, error: 'Could not read that paste. Paste rows from a spreadsheet, Athletic.net, or MileSplit — or one athlete per line like "Maya, 5k, 18:42".' };
+    importState = { ...importState, error: 'Could not read that paste. Paste rows from a spreadsheet or authorized meet export — or one athlete per line like "Maya, 5k, 18:42".' };
     renderImport();
     return;
   }
@@ -7511,7 +7811,7 @@ function renderMeetResults(){
     ${importModeTabs()}
     <div class="card">
       <p style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:.35rem">Paste Saturday’s results</p>
-      <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">One result per line: <strong>name, event, time</strong> (date optional). STRIDE matches each to your roster, updates PRs, and shows who improved. Copy straight from Athletic.net, MileSplit, Hy-Tek, or a spreadsheet.</p>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">One result per line: <strong>name, event, time</strong> (date optional). STRIDE matches each to your roster, updates PRs, and shows who improved. Paste from a spreadsheet, meet-management export, or another source you are authorized to use.</p>
       <textarea id="meetPasteArea" rows="8" placeholder="Maya Robinson, 5K, 18:31, 2026-05-16&#10;Jordan T, 1600m, 4:35.2&#10;Eli W  3200m  10:12" style="width:100%;font-family:var(--font-mono);font-size:.8125rem;background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:.75rem;color:var(--text);resize:vertical">${esc(meetState.text||'')}</textarea>
       <div style="display:flex;gap:.75rem;margin-top:.75rem;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="previewMeetResults()">Match &amp; preview →</button>
@@ -8419,6 +8719,10 @@ function renderMethodology(){
 // ══════════════════════════════════════
 function renderRoster(){
   const el = document.getElementById('ro-body');
+  if(isAthleteOnly()){
+    el.innerHTML = emptyStateCard('Coach-managed profile', 'Your athlete account is linked to one profile managed by your coach. Use Dashboard, Pace Calculator, Race Forecasts, and Training Log from the Athlete navigation.', 'Open dashboard', "goTo('overview',null)");
+    return;
+  }
   const visible = athletesForCurrentTier();
   const totalCount = (DB.athletes || []).length;
   const hiddenCount = totalCount - visible.length;
@@ -9131,6 +9435,7 @@ function fillForm(){
 }
 
 async function saveAthlete(){
+  if(!requireCoachWorkspace('edit coach-managed athlete profiles')) return;
   let ok=true;
 
   function chk(id,errId,test,msg){
@@ -9258,6 +9563,7 @@ function startNewAthlete(){
 
 // ── DELETE ATHLETE ──
 function deleteAthlete(id){
+  if(!requireCoachWorkspace('delete coach-managed athlete profiles')) return;
   const ath = DB.athletes.find(a => a.id === id);
   if(!ath) return;
   if(!confirm(`Permanently delete "${ath.name}" and all their workouts? This cannot be undone.`)) return;
