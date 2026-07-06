@@ -113,7 +113,7 @@ Create a simple "School Vendor Packet" folder with these files.
 - **Terms of Service** linked from `terms.html` and mirrored in `docs/planning/STRIDE_OS_Terms_of_Service_BETA.md`.
 - **Privacy Policy** linked from `privacy.html` and mirrored in `docs/planning/STRIDE_OS_Privacy_Policy_BETA.md`.
 - **Student-data/privacy one-pager** in `docs/legal/STUDENT_DATA_PRIVACY_SUMMARY.md`.
-- **Sole-source / unique-value one-pager** for districts that ask why this tool is different from a spreadsheet, calculator, or generic training log.
+- **Sole-source / unique-value one-pager** in `docs/legal/UNIQUE_VALUE_ONE_PAGER.md` for districts that ask why this tool is different from a spreadsheet, calculator, or generic training log.
 
 ### Should-have before district-level sales
 

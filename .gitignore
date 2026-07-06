@@ -16,3 +16,6 @@ supabase/.branches/
 # Node (if ever added)
 node_modules/
 .vercel
+
+# Generated artifacts
+output/

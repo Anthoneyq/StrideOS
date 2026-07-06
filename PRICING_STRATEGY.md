@@ -93,13 +93,14 @@ Current public anchors checked on 2026-06-30:
 
 ### Competitive analysis notes
 
-An outside competitive scan supports the current ladder, but its exact numbers should be used carefully because some public pricing pages are hard to verify. The useful signal is strategic:
+Outside competitive scans, including the 2026-07-02 Manus review, support the current ladder, but exact competitor scores and pricing should be used carefully because some public pages are hard to verify. The useful signal is strategic:
 
 - **Do not change the launch prices.** `$199/yr` Pro and `$149/yr` Founding are still attractive against high-touch endurance platforms and coach-operations tools.
 - **Team pricing must sell intelligence, not storage.** `$399/$599/$999` only works if Team delivers team-points lineup strategy, roster-level progression, district/region context, and program reports. A bigger athlete cap alone is not enough.
 - **Budget tools are the real objection.** Final Surge-style flat pricing and cheap team-management tools can make StrideOS look expensive unless StrideOS clearly answers "what should I do with this roster?" better than a log, spreadsheet, or calculator.
 - **Video tools are adjacent, not direct competitors.** TrackBoss, Onform, and CoachNow compete for the same school/program budget, but StrideOS should not try to become video software. The differentiation is performance intelligence.
 - **Communication is a future value lever, not the launch wedge.** Lightweight coach notes, shareable athlete reports, and eventually athlete/coach feedback can raise retention. The launch wedge should remain prediction quality, roster intelligence, and team decisions.
+- **Do not build consumer AI coaching as the wedge.** Runna-style products sell individual training plans. StrideOS sells coach-owned roster decisions for teams.
 
 ### Seasonality (forecasting note, not a SKU change)
 

@@ -19,6 +19,7 @@
 - Added school/vendor review docs:
   - `docs/legal/STUDENT_DATA_PRIVACY_SUMMARY.md`
   - `docs/legal/SUBPROCESSORS.md`
+  - `docs/legal/UNIQUE_VALUE_ONE_PAGER.md`
   - `docs/legal/LEGAL_REVIEW_QUESTIONS_FOR_ATTORNEY.md`
 - Replaced the public support placeholder with `thelabstrength@gmail.com`.
 - Kept compliance language careful: "built to support school privacy review" instead of claiming blanket FERPA/COPPA compliance.

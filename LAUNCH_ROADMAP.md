@@ -7,8 +7,9 @@ StrideOS is *not* a "needs more features" problem. The engine and squad analytic
 
 1. **Trust/correctness bugs the two coaches who love it already caught** — they rejected the actual prediction numbers on real athletes. Nothing else matters until the numbers are coach-credible.
 2. **Operator-gated launch actions** — the launch build is live and Supabase migrations/functions are current; Stripe monthly/annual checkout is verified; founding coupon creation and the first paid ask are still operator-gated.
-3. **The one true differentiator (team-points lineup strategy) is vaporware** — it exists only in upgrade copy; zero backing code.
-4. **The "superior predictor" moat is unproven** — validated only against published tables + coach eyeball (which failed live), never against held-out real races.
+3. **Roster intelligence is the category wedge** — a 2026-07-02 Manus competitive scan reinforced that calculators own individual paces, result sites own data, and coach platforms own logs; StrideOS should own the missing team-decision layer.
+4. **The lineup product is still early** — the current app now has a heuristic lineup assignment and print flow, but not the full opponent-aware team-points optimizer that justifies Team/Program pricing.
+5. **The predictor moat is partially proven, not finished** — first held-out backtest evidence exists, but confidence bands are still uncalibrated and everyday-HS validation is still needed.
 
 Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest quality" / the moat · **P2** = scale & polish.
 
@@ -35,10 +36,10 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 - **A7 · ✅ FIXED 2026-06-30.** `6:59.5/mi` → `6:60` carry bug. `fmtMile` was already guarded but `displayPace`/`fmtT`/`fmtSplit`/`fmtRepTime`/`fmtOffset` weren't; added carry-safe `_mmss()` helper and routed all through it. Unit-tested; 31/31 benchmarks pass. See BUG-006.
 - **A8 · Tooltip/translation layer for zone names** ("fast rep ≈ VO2max," "cruise interval = broken tempo," steady vs easy). Both coaches asked; lets less-expert coaches trust the labels.
 
-## B. THE REAL DIFFERENTIATOR — build what is currently only marketing copy (P1, the moat)
-*The positioning memo names team-points lineup strategy as the sharp differentiator and the "Monday ritual" that defeats the "episodic predictor dies on frequency" kill-shot. Audit finding: **it does not exist in code** — only `buildEventFit` (single-athlete) and upgrade copy promising "the lineup optimizer."*
+## B. THE REAL DIFFERENTIATOR — make roster intelligence the paid habit (P1, the moat)
+*The 2026-07-02 market scan confirms the open category: race calculators are individual and single-input, results platforms hold data without coaching intelligence, and training platforms are logs/plans first. StrideOS should turn roster data into decisions. Current code includes a heuristic lineup screen; the remaining moat is a full, coach-trusted scoring workflow.*
 
-- **B1 · Cross-roster lineup / team-points optimizer.** Aggregate `buildEventFit` across the roster + district/region rankings → surface scoring moves ("this athlete is slow-for-district at 800 but would *score* in the mile"). Build the **thin slice first: ONE credible placement insight per real roster.** This is the per-meet, in-season ritual and the cleanest B2B bridge ($399 team tier is the natural buyer).
+- **B1 · Cross-roster lineup / team-points optimizer.** Build beyond the current heuristic assignment: aggregate `buildEventFit` across the roster + district/region rankings → surface scoring moves ("this athlete is slow-for-district at 800 but would *score* in the mile"). Add opponent/team-points context only after the first paid rosters show the needed meet formats. This is the per-meet, in-season ritual and the cleanest B2B bridge ($399 team tier is the natural buyer).
 - **B2 · Roster of clickable athlete profiles** from spreadsheet drag-drop import (Doug's "folder of profiles"). Squad import exists; turn it into navigable per-athlete cards.
 - **B3 · Competitive/performance curve** with the athlete's own marks + district/conference/national comparison lines (Alex: "competitive is relative to who you're competing against" — also surfaces mis-event-assigned athletes).
 
@@ -74,13 +75,14 @@ Legend: **P0** = blocks a credible paid launch · **P1** = needed for "highest q
 - **G1 · THE GATE: ask Alex + Doug for a card now** (Founding Coach, annual, lifetime-locked). Per the roast: love ≠ demand, and nobody has been asked to pay. An annual "yes" is the only real WTP proof and should dictate what gets built next.
 - **G2 · Keep the pricing ladder clean.** Current decision is $199 standard annual with $149 Founding Coach as lifetime-locked early access; verify the live Stripe IDs match before any paid ask.
 - **G3 · Cold-coach onboarding / sample-squad front door.** Mostly built (demo squad + home screen, builds 3–5) — verify it lands value before any ask.
+- **G4 · Keep public copy on roster intelligence.** Do not lead with "AI coach" or "pace calculator." The launch line is: race marks + roster data → training groups, event-fit, forecasts, printable sheets, and lineup guidance. See `docs/planning/MARKET_POSITIONING_BRIEF_2026-07-02.md`.
 
 ---
 
 ## Suggested sequencing (3 waves)
 
 - **Wave 1 — "Earn the right to charge" (1–2 wks):** A1–A8 (trust bugs) → D1–D4 (deploy) → E1–E3 (legal) → G1 (ask the 2 coaches). *Outcome: a deployed, legally-safe build with coach-credible numbers, and a real WTP signal.*
-- **Wave 2 — "Build the moat" (2–4 wks):** B1–B3 (lineup/team-points + roster profiles) + C1–C2 (validate + calibrate) + F1 (test loop). *Outcome: the per-meet ritual + a defensible accuracy claim. Let paying rosters dictate scope.*
+- **Wave 2 — "Build the moat" (2–4 wks):** B1–B3 (lineup/team-points + roster profiles) + C1–C2 (validate + calibrate) + F1 (test loop). *Outcome: the roster-intelligence ritual + a defensible accuracy claim. Let paying rosters dictate scope.*
 - **Wave 3 — "Scale & polish":** C3 (MileSplit/TFRRS data), F2–F7, E4. *Outcome: ready for wide launch.*
 
 ## Decisions — status (2026-06-30)

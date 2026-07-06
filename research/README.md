@@ -11,6 +11,10 @@ Working notes, datasets, transcripts, and exports that support STRIDE OS develop
 | `markdown/` | Research write-ups, dataset documentation, scraped references |
 | `data/` | CSV datasets (UIL, NCAA, Milesplit, masters, combined exports) |
 
+## Market / positioning synthesis
+
+- `docs/planning/MARKET_POSITIONING_BRIEF_2026-07-02.md` — distilled internal strategy from the Manus competitive research package. Use this instead of pasting raw competitor claims into public copy.
+
 ## CSV files (`data/`)
 
 | File | Description |

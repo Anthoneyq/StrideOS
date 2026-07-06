@@ -1,6 +1,6 @@
 # STRIDE OS
 
-A pacing calculator and athlete-intelligence tool for running coaches, built as the first module of CoachLab.
+Roster intelligence for track and cross country coaches, built as the first module of CoachLab.
 
 **Status:** Beta. Active development. Shipping to a closed group of coaches for feedback.
 
@@ -8,7 +8,7 @@ A pacing calculator and athlete-intelligence tool for running coaches, built as 
 
 ## What This Is
 
-STRIDE OS turns a single race time into a complete coaching toolkit:
+STRIDE OS turns race marks and roster data into coach decisions:
 
 - Training paces across all intensity zones (Easy through Sprint)
 - Race forecasts for adjacent distances with confidence ranges
@@ -16,6 +16,7 @@ STRIDE OS turns a single race time into a complete coaching toolkit:
 - Environmental corrections for heat, altitude, humidity
 - Multi-event analysis when more than one race is logged
 - Speed Reserve Ratio when sprint and distance data both exist
+- Roster import, squad intelligence, printable sheets, and meet-lineup guidance
 
 The methodology is proprietary — built on validated sport science, with coach-facing methodology and source summaries exposed in the app's Sources screen. Full methodology library lives in `Model_Docs/`, `Formulas/`, `Data_Validation/`, and `docs/planning/SOURCES_LIBRARY.md`.
 
@@ -95,11 +96,11 @@ Internal code comments reference specific formulas (Riegel, Cameron, VDOT family
 
 ## Status & Roadmap
 
-**Phase 1 (current):** Single-file calculator with localStorage + Supabase auth/sync and Pro billing in beta.
+**Phase 1 (current):** Single-file roster-intelligence app with localStorage + Supabase auth/sync and Pro billing in beta.
 
-**Phase 2:** Longitudinal data accumulation, Athlete Profile Engine, Competitive Fit Engine.
+**Phase 2:** Calibrated confidence validation, Athlete Profile Engine, Competitive Fit Engine, and deeper team-points workflow.
 
-**Phase 3+:** Long-term CoachLab vision — see `docs/planning/CoachLab_North_Star.md`.
+**Phase 3+:** Long-term CoachLab vision - see `docs/planning/CoachLab_North_Star.md`.
 
 ---
 
@@ -115,6 +116,7 @@ School/vendor review support lives in `docs/legal/`:
 - `LEGAL_READINESS_CHECKLIST.md`
 - `STUDENT_DATA_PRIVACY_SUMMARY.md`
 - `SUBPROCESSORS.md`
+- `UNIQUE_VALUE_ONE_PAGER.md`
 - `LEGAL_REVIEW_QUESTIONS_FOR_ATTORNEY.md`
 
 These are practical launch-comfort documents, not attorney-reviewed final legal terms.
