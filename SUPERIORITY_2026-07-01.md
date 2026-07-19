@@ -15,11 +15,12 @@ below.
 > *(Evidence scope, restated 2026-07-19 per MOAT_EVIDENCE: the ~33% figure is
 > **Mode A — the single-anchor shipped path** (one PR in, ensemble + nudge
 > out): 292 ordered predictions ≈ 146 unique event pairs from 23 athletes.
-> The multi-PR personalization itself is supported only DIRECTIONALLY —
-> Mode B's 61 ledger-eligible multi-PR folds from 10 athletes (1.4% vs 1.5%
-> against an anchor-matched Riegel) — so the "own fatigue curve" wedge is a
-> product-capability claim, not yet an at-scale accuracy claim. The far-gap
-> (≥4×) figure rests on 10 unique pairs — quote the mid-gap number publicly.)*
+> The multi-PR personalization itself has NO measured median advantage yet —
+> on Mode B's 56 personal-k-active folds from 9 athletes the median TIES an
+> anchor-matched Riegel (1.5% vs 1.5%; mean 1.6% vs 1.9%, 32/56 wins) — so
+> the "own fatigue curve" wedge is a product-capability claim, not an
+> accuracy claim, until the at-scale re-run. The far-gap (≥4×) figure rests
+> on 10 unique pairs — quote the mid-gap number publicly.)*
 
 **The wedge:** every competitor anchors on a SINGLE input — one race (VDOT O2,
 McMillan, Tinman, Riegel, Garmin), one threshold (Final Surge, TrainingPeaks,
@@ -31,10 +32,11 @@ track events or gives a coach a roster.
 - **Multi-PR personalized fatigue curve** (`personalFatigueExponent`) — the
   headline evidence is Mode A (single-anchor shipped path: median 1.2% vs
   Riegel 1.9%; mid-gap 1.2% vs 2.1%; far-gap band too small to headline).
-  The personalization edge itself is *directional, not proven at scale*:
-  Mode B's genuinely multi-PR cohort is only 61 ledger-eligible folds from
-  10 athletes (1.4% vs 1.5% against an anchor-matched Riegel, 37/61 wins) —
-  consistent with the claim, too small to headline (MOAT_EVIDENCE 2026-07-19).
+  The personalization edge itself is *unproven*: on Mode B's 56
+  personal-k-active folds (9 athletes) the median TIES an anchor-matched
+  Riegel (1.5% vs 1.5%; mean 1.6% vs 1.9%; 32/56 wins) — a capability
+  differentiator with hypothesis-level accuracy evidence, nothing more
+  (MOAT_EVIDENCE 2026-07-19).
 - **Track & XC event coverage + coach-owns-athletes console** — the whole
   consumer cluster is road-centric 5K–marathon with no roster.
 - **Roster-level squad intelligence** (`computeSquadAnalytics`) — cross-roster

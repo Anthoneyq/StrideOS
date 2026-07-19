@@ -229,7 +229,7 @@ const fmtTimeStr = s => {
 };
 const mkCohort = () => ({ stride: [], riegel: [], wins: 0, ties: 0, n: 0, athletes: new Set() });
 const resB = mkCohort();        // every ledger-eligible fold
-const resBMulti = mkCohort();   // folds where ≥2 PRs remain (personal-k can engage)
+const resBMulti = mkCohort();   // folds where personal-k ACTUALLY activates (see below)
 let skippedUnmappable = 0;
 for(const key in groups){
   const marks = Object.values(groups[key]);
@@ -271,7 +271,13 @@ for(const key in groups){
       else if(Math.abs(sErr - rErr) <= 1e-9) c.ties++;
     };
     record(resB);
-    if(others.length >= 2) record(resBMulti);
+    // Personalization cohort = folds where the personal fatigue curve ACTUALLY
+    // engages in the shipped path: personalFatigueExponent returns non-null
+    // (needs ≥2 remaining PRs ≥400m, pairwise distance ratio ≥1.3, k within
+    // (1.005, 1.20)) AND the ≥400m target/anchor gates pass — NOT merely
+    // "two PRs remain," which overcounted.
+    const pk = ctx.personalFatigueExponent(athlete, { excludeDistM: target.distM });
+    if(pk && target.distM >= 400 && anchor.distM >= 400) record(resBMulti);
   }
 }
 const cohortReport = (title, c) => {
@@ -284,14 +290,14 @@ const cohortReport = (title, c) => {
 };
 console.log('\n══ MODE B: Proof-Ledger-style leave-one-out through raceForecastForTarget ══');
 console.log(`${resB.n} ledger-eligible held-out predictions from ${resB.athletes.size} athletes (${skippedUnmappable} marks skipped: no StrideOS event; near-dup + 3-model ledger rules applied)\n`);
-cohortReport('ALL eligible folds (single remaining PR in most — personal-k mostly inert):', resB);
-cohortReport(`MULTI-PR folds only — ≥2 PRs remain, personalization can engage (${resBMulti.n} predictions, ${resBMulti.athletes.size} athletes; the ONLY cohort that may back multi-PR claims):`, resBMulti);
+cohortReport('ALL eligible folds (personal-k inert in most):', resB);
+cohortReport(`PERSONAL-K-ACTIVE folds only — personalFatigueExponent non-null + ≥400m gates (${resBMulti.n} predictions, ${resBMulti.athletes.size} athletes; the ONLY cohort that may back personalization claims):`, resBMulti);
 // Cohort-count regression locks (dataset is fixed CSVs; drift = a logic change):
 const assertEq = (label, a, e) => { if(a !== e){ console.error(`ASSERT FAIL ${label}: ${a} !== ${e}`); process.exitCode = 1; } };
 assertEq('Mode A ordered predictions', res.n, 292);
 assertEq('Mode B eligible folds', resB.n, 165);
-assertEq('Mode B multi-PR folds', resBMulti.n, 61);
-assertEq('Mode B multi-PR athletes', resBMulti.athletes.size, 10);
+assertEq('Mode B personal-k-active folds', resBMulti.n, 56);
+assertEq('Mode B personal-k-active athletes', resBMulti.athletes.size, 9);
 
 // ── 7. Verdict ──
 const sMed = median(res.stride), rMed = median(res.riegel);
