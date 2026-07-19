@@ -8105,7 +8105,7 @@ function renderHome(){
     ? `<button class="btn btn-primary btn-lg" onclick="goTo('overview')">Open Coach Tools →</button>`
     : `<button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial</button>`;
   const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · we never sell athlete data.</p>`;
-  const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing on 292 held-out races from 23 real athletes&rsquo; careers, its predictions landed <strong>~33% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
+  const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing across 23 real athletes&rsquo; careers &mdash; 292 held-out race predictions over 146 event pairs &mdash; it landed <strong>~33% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
   const closeCta = signedIn ? '' : `
     <div class="home-close">
       <p class="home-close-q">Like what your roster just showed you?</p>

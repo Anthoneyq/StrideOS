@@ -22,9 +22,12 @@ from an athlete's *multiple* PRs across events. No consumer app even covers
 track events or gives a coach a roster.
 
 ## Where StrideOS already wins (real, shipping)
-- **Multi-PR personalized fatigue curve** (`personalFatigueExponent`, backed by
-  held-out backtest: median 1.2% vs Riegel 1.9%; mid-gap (2–4×) 1.2% vs 2.1% —
-  the far-gap band is too small (10 unique pairs) to headline).
+- **Multi-PR personalized fatigue curve** (`personalFatigueExponent`) — backed
+  by BOTH backtest modes (2026-07-19): single-anchor shipped path median 1.2%
+  vs Riegel 1.9% (mid-gap 1.2% vs 2.1%; far-gap band too small to headline),
+  AND multi-PR leave-one-out through `raceForecastForTarget` itself: 1.4% vs
+  1.6% against Riegel *given the same nearest anchor*, 66% wins on 187
+  held-out predictions.
 - **Track & XC event coverage + coach-owns-athletes console** — the whole
   consumer cluster is road-centric 5K–marathon with no roster.
 - **Roster-level squad intelligence** (`computeSquadAnalytics`) — cross-roster

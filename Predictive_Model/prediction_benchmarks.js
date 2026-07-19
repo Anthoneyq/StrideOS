@@ -37,6 +37,9 @@ const NEEDED = [
   'freshnessPenaltyFor', 'confidenceLabel', 'primaryPRForAthlete',
   'observedPRForTarget', 'collectAllPRs', 'personalFatigueExponent',
   '_selectBestAnchor', 'nearestAnchorForTarget', '_med', 'raceForecastForTarget',
+  // Math-audit minors + BUG-033/034/037 probes:
+  '_mmss', 'fmtT', 'fmt400', 'parseDurationToSec', 'altitudeCorrection',
+  '_normDate', 'vToSpkm', 'vAtPct', 'taMod', 'calcZones', 'vdotPctForZone',
 ];
 const distSrc = (html.match(/const DIST = \{[\s\S]*?\};/) || [''])[0];
 const domainsSrc = (html.match(/const EVENT_DOMAINS = \{[\s\S]*?\};/) || [''])[0];
@@ -45,10 +48,13 @@ if(!distSrc) throw new Error('DIST missing from index.html');
 if(!domainsSrc) throw new Error('EVENT_DOMAINS missing from index.html');
 if(!ratiosSrc) throw new Error('OBSERVED_RATIOS missing from index.html');
 
-const ctx = { Math, console };
+const flagSrc = (html.match(/const VDOT_ZONE_RECONCILIATION_ENABLED = (?:true|false);/) || [''])[0];
+if(!flagSrc) throw new Error('VDOT_ZONE_RECONCILIATION_ENABLED missing from index.html');
+
+const ctx = { Math, Date, console };
 vm.createContext(ctx);
 // `const` inside the vm script doesn't attach to the context object — export explicitly.
-vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;', ctx);
+vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;', ctx);
 
 // ── Assertion harness ──
 let pass = 0, fail = 0;
@@ -184,6 +190,54 @@ inRange('BUG-030: round-trip 400↔800 drift (sec)', Math.abs(rt - 120), 0, 3.0)
 // BUG-031/032: _med must be a true median — even counts average the middles.
 isEqual('_med even count averages middles', ctx._med([1080,1200]), 1140);
 isEqual('_med odd count picks middle', ctx._med([3,1,2]), 2);
+
+// ── 8. Math-audit display/date/minor probes (BUG-033/034/037 + E-minors) ──
+// BUG-033: only whole kilometres get the km label (1200 collided with 1km).
+// repLabel is a local inside buildDanielsTable — extract the arrow fn source.
+const repLabelSrc = (html.match(/const repLabel = (d => \{[\s\S]*?\n  \});/) || [])[1];
+if(!repLabelSrc) throw new Error('repLabel missing from buildDanielsTable');
+const repLabel = vm.runInContext('(' + repLabelSrc + ')', ctx);
+isEqual('BUG-033: repLabel(1200) is 1200m', repLabel(1200), '1200m');
+isEqual('BUG-033: repLabel(1000) is 1km', repLabel(1000), '1km');
+isEqual('BUG-033: repLabel(1609) is 1mi', repLabel(1609), '1mi');
+
+// BUG-034: freshness must compare CALENDAR days — a race dated today is
+// "fresh" (0 days old) at ANY local time of day, never "1 days old"/"future".
+const _now = new Date();
+const todayLocal = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+isEqual('BUG-034: today-dated race is 0 days old', ctx._daysSinceRace(todayLocal), 0);
+isEqual('BUG-034: today-dated race is fresh', ctx.prFreshness(todayLocal), 'fresh');
+
+// BUG-037: the VDOT zone reconciliation stays explicitly gated OFF…
+isEqual('BUG-037: vdotPctForZone gated off', ctx.vdotPctForZone({label:'Easy',pct:65}, {raceDistanceM:5000, raceTime:'19:57'}), null);
+// …and if the gate is ever opened, the math must be the self-consistent
+// Canova inverse: pctToMult(pct) must reproduce the target/race pace ratio
+// (the old reciprocal model broke exactly this round-trip).
+const enabledCtx = { Math, Date, console };
+vm.createContext(enabledCtx);
+vm.runInContext(distSrc + '\nconst VDOT_ZONE_RECONCILIATION_ENABLED = true;\n' +
+  ['parseTime','pctToMult','danielsPctVO2','danielsVO2atVelocity','calcVDOT','vToSpkm','vAtPct','taMod','calcZones','vdotPctForZone'].map(grab).join('\n'), enabledCtx);
+const zAthlete = { raceDistanceM: 5000, raceTime: '19:57', trainingAge: 3 };
+const easyPct = enabledCtx.vdotPctForZone({label:'Easy',pct:65}, zAthlete);
+inRange('BUG-037: enabled Easy pct plausible', easyPct, 45, 90);
+const zones = enabledCtx.calcZones(5000, 1197, 3);
+const rtRatio = enabledCtx.pctToMult(easyPct) * (1197/5000) * 1000 / zones.E.mid;
+inRange('BUG-037: Canova inverse round-trips (ratio ≈ 1)', rtRatio, 0.999, 1.001);
+// vToSpkm units: VDOT-50 velocity ~268 m/min → ~224 s/km (was ~3.7 "s"/km).
+inRange('BUG-037: vToSpkm returns sec/km', ctx.vToSpkm(268), 220, 228);
+
+// E-minors: carry-safe formatting, strict duration parsing, altitude guard,
+// local date printing.
+isEqual('fmtT >1h rounds with carry (3659.94)', ctx.fmtT(3659.94), '1:01:00');
+isEqual('fmtT hour boundary (3599.96)', ctx.fmtT(3599.96), '1:00:00');
+isEqual('fmt400 carries 59.96 to 60', ctx.fmt400(149.9), '60/400');
+isEqual('parseDurationToSec rejects 1:75', ctx.parseDurationToSec('1:75'), null);
+isEqual('parseDurationToSec rejects 1a:30', ctx.parseDurationToSec('1a:30'), null);
+isEqual('parseDurationToSec accepts 32:14', ctx.parseDurationToSec('32:14'), 1934);
+isEqual('altitudeCorrection 1600ft (<500m) is 0', ctx.altitudeCorrection(1600), 0);
+isEqual('altitudeCorrection 1700ft (>500m) applies', ctx.altitudeCorrection(1700), 0.01);
+isEqual('_normDate prints local date (no UTC shift)', ctx._normDate('May 3, 2026'), '2026-05-03');
+isEqual('_normDate US format', ctx._normDate('5/3/26'), '2026-05-03');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

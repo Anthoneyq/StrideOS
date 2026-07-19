@@ -1,6 +1,6 @@
 # StrideOS — Moat Evidence (held-out backtest)
 
-**Date:** 2026-06-30 · **Updated 2026-07-19** (math audit BUG-035/036: harness now scores the FULL shipped forecast path — ensemble + the ≥3000m equivalent-performance nudge — not the bare component, and the sample is stated honestly: 292 *ordered* pairs = ~146 unique pairs scored in both directions, from **23 athletes** / 79 athlete-seasons) · **Script:** `Predictive_Model/moat_backtest.js` (`node Predictive_Model/moat_backtest.js`)
+**Date:** 2026-06-30 · **Updated 2026-07-19** (math audit BUG-035/036 + review): the harness now runs TWO modes — **Mode A**, the single-anchor shipped path (ensemble + the ≥3000m equivalent-performance nudge; exactly what a single-PR athlete's coach sees), and **Mode B**, true multi-PR leave-one-out through `raceForecastForTarget` itself (nearest-anchor + personal-k + floor/ceiling — the same mechanism the in-app Proof Ledger runs). Sample stated honestly: Mode A = 292 *ordered predictions* over ~146 unique event pairs (both directions scored), Mode B = 187 held-out predictions; both from **23 athletes** / 79 athlete-seasons. Units are "predictions"/"event pairs" — never "races" or "runners." · **Script:** `Predictive_Model/moat_backtest.js` (`node Predictive_Model/moat_backtest.js`)
 
 ## Why this exists
 The "superior predictor" claim had only ever been checked against **published equivalence tables** + coach eyeball — and the eyeball *failed live* (Doug rejected real outputs). That's not proof. This harness does the real test: take **real athletes** who ran ≥2 different events in the **same season**, hide one race, predict it from the other with the **live StrideOS engine** (extracted from `index.html`, same mechanism as the regression benchmarks), and compare the error to a **naive Riegel-1.06 baseline** — the commodity formula every free calculator uses.
@@ -8,10 +8,10 @@ The "superior predictor" claim had only ever been checked against **published eq
 ## Method
 - **Data:** `Data_Validation/hs_to_college_pipeline.csv` + `elite_career_arcs.csv` (athlete-keyed, multi-event: HS→college pipeline athletes like Katelyn Tuohy/Nico Young, plus elite arcs like Ingebrigtsen/Kipchoge).
 - Grouped by **(athlete, year)** to control for fitness drift; kept the PR per distance; formed every ordered pair of distinct distances → predict one from the other.
-- XC events excluded (variable course distance). **292 ordered held-out pairs (~146 unique — every unordered pair is scored in both directions, and the two directions' errors correlate r≈0.94, so the effective sample is ~146) from 23 athletes / 79 athlete-seasons.**
-- Metric: absolute % error on the hidden race. StrideOS **full shipped forecast path** (ensemble + the ≥3000m equivalent-performance nudge, exactly what a single-PR athlete's coach sees) vs Riegel `t₂ = t₁·(d₂/d₁)^1.06`.
+- XC events excluded (variable course distance). **292 ordered held-out predictions (~146 unique event pairs — every unordered pair is scored in both directions, and the two directions' errors correlate r≈0.94, so the effective sample is ~146) from 23 athletes / 79 athlete-seasons.**
+- Metric: absolute % error on the hidden race. Mode A: StrideOS **single-anchor shipped path** (ensemble + the ≥3000m equivalent-performance nudge) vs Riegel `t₂ = t₁·(d₂/d₁)^1.06`. Mode B: **multi-PR leave-one-out through `raceForecastForTarget`** vs Riegel *given the same nearest anchor* (a deliberately stronger baseline than a coach's actual single-formula use).
 
-## Result (re-run 2026-07-19, full shipped path, post-BUG-028..030 fixes)
+## Result — Mode A (re-run 2026-07-19, single-anchor shipped path, post-BUG-028..030 fixes)
 | Metric | StrideOS | Riegel-1.06 |
 |---|---:|---:|
 | median \|%err\| | **1.2%** | 1.9% |
@@ -29,7 +29,9 @@ The "superior predictor" claim had only ever been checked against **published eq
 | mid (2–4×) | **1.2%** | 2.1% | 184 |
 | far (≥4×) | **0.7%** | 2.2% | 20 |
 
-**Verdict:** StrideOS median error is **~33% lower** than Riegel, and the advantage **widens with event distance** — at near gaps the two tie (Riegel is fine for adjacent distances), at mid gaps StrideOS pulls clearly ahead. ⚠️ The far (≥4×) band is only **10 unique pairs from 6 elite athletes** — quote the mid-gap number publicly, not the far-gap one. This reasons across an athlete's event range instead of applying one fixed exponent, and it is what the product actually ships, not a component of it.
+**Result — Mode B (2026-07-19, multi-PR leave-one-out through `raceForecastForTarget` — the Proof Ledger mechanism):** 187 held-out predictions from 23 athletes: median |%err| **1.4%** vs **1.6%** for Riegel *given the same nearest anchor*, wins **123/187 (66%)**. This is the direct evidence for the multi-PR forecast path itself; the margin is narrower than Mode A because this Riegel baseline also benefits from nearest-anchor selection, which no free calculator actually does.
+
+**Verdict:** StrideOS median error is **~33% lower** than the commodity formula (Mode A), the multi-PR path independently beats an anchor-matched Riegel (Mode B), and the advantage **widens with event distance** — at near gaps the two tie (Riegel is fine for adjacent distances), at mid gaps StrideOS pulls clearly ahead. ⚠️ The far (≥4×) band is only **10 unique pairs from 6 elite athletes** — quote the mid-gap number publicly, not the far-gap one. This reasons across an athlete's event range instead of applying one fixed exponent, and both the single-anchor and multi-PR shipped paths are now what gets scored.
 
 ## Honest caveats (don't oversell)
 1. **Same-season cross-event, not true future prediction.** This proves better *cross-event equivalence* on real athletes — not "predicts next season's race." That's the multi-event differentiator, which is the right claim, but state it precisely.

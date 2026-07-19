@@ -36,6 +36,11 @@ const NEEDED = [
   '_formulaRiegel', '_formulaCameron', '_formulaVDOT', '_formulaVickersVertosick',
   '_formulaPurdy', '_ensembleWeights', 'strideEnsemble', 'getEventDomain',
   'getObservedRatio', 'sameDistanceM',
+  // Mode B (multi-PR leave-one-out) needs the actual shipped forecast path:
+  '_daysSinceRace', 'prFreshness', 'forecastTargets', 'labelForDistance',
+  'freshnessPenaltyFor', 'confidenceLabel', 'primaryPRForAthlete',
+  'observedPRForTarget', 'collectAllPRs', 'personalFatigueExponent',
+  '_selectBestAnchor', 'nearestAnchorForTarget', '_med', 'raceForecastForTarget',
 ];
 const distSrc    = (html.match(/const DIST = \{[\s\S]*?\};/) || [''])[0];
 const domainsSrc = (html.match(/const EVENT_DOMAINS = \{[\s\S]*?\};/) || [''])[0];
@@ -45,13 +50,15 @@ vm.createContext(ctx);
 vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
   '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;', ctx);
 
+// ── MODE A: single-anchor shipped path ──
 // StrideOS predicted time at d2 (m) from time t1 (s) at d1 (m).
 // Ship-path parity (BUG-036): the product's raceForecastForTarget additionally
-// blends a 30% equivalent-performance nudge on ≥3000m pairs, so the backtest
+// blends a 30% equivalent-performance nudge on ≥3000m pairs, so this mode
 // applies it too — scoring a bare component while shipping the nudged value
-// validated a different engine than coaches see. (Personal-k and the pace
-// floor/ceiling need multi-PR context a single-anchor pair doesn't carry; for
-// a single-PR athlete the shipped path reduces to exactly this.)
+// validated a different engine than coaches see. Personal-k and the pace
+// floor/ceiling need multi-PR context a single anchor doesn't carry, so for a
+// SINGLE-PR athlete the shipped path reduces to exactly this; the multi-PR
+// path is scored separately in MODE B below through raceForecastForTarget.
 const stridePred = (d1, t1, d2) => {
   let pred = ctx.strideEnsemble(d1, t1, d2, 1.0, {}).predSec;
   const ratio = ctx.getObservedRatio(d1, d2);
@@ -177,12 +184,13 @@ const within = (a,t) => a.length ? a.filter(x=>x<=t).length/a.length*100 : NaN;
 const f1 = x => isNaN(x) ? '  n/a' : x.toFixed(1);
 
 // Honest-n accounting (BUG-035): every unordered pair is scored in BOTH
-// directions (errors correlate r≈0.94), so the effective sample is the
-// unique-pair count, and the athlete count is what public copy must cite.
+// directions (errors correlate r≈0.94), so these are 292 ordered PREDICTIONS
+// over ≈146 unique event pairs — never "races" or "runners" in copy; the
+// athlete count is what public copy must cite.
 const nAthletes = res.athletes.size;
 const nSeasons  = Object.keys(groups).filter(k => Object.keys(groups[k]).length >= 2).length;
-console.log('\n══ STRIDE OS MOAT BACKTEST — held-out real races (full shipped path) ══');
-console.log(`${res.n} ordered prediction pairs (≈${Math.round(res.n/2)} unique — both directions scored) from ${nAthletes} athletes / ${nSeasons} athlete-seasons\n`);
+console.log('\n══ STRIDE OS MOAT BACKTEST — MODE A: single-anchor shipped path ══');
+console.log(`${res.n} ordered held-out predictions (≈${Math.round(res.n/2)} unique event pairs — both directions scored) from ${nAthletes} athletes / ${nSeasons} athlete-seasons\n`);
 console.log('                         StrideOS    Riegel-1.06');
 console.log(`  median |%err|          ${f1(median(res.stride)).padStart(6)}      ${f1(median(res.riegel)).padStart(6)}`);
 console.log(`  mean   |%err|          ${f1(mean(res.stride)).padStart(6)}      ${f1(mean(res.riegel)).padStart(6)}`);
@@ -196,6 +204,63 @@ for(const band of ['near (<2×)','mid (2–4×)','far (≥4×)']){
   const d = res.byDomain[band]; if(!d) continue;
   console.log(`  ${band.padEnd(20)}   ${f1(median(d.s)).padStart(6)}        ${f1(median(d.r)).padStart(6)}     ${d.s.length}`);
 }
+
+// ── 6b. MODE B: multi-PR leave-one-out through the ACTUAL shipped forecast ──
+// For every athlete-season, hold out each mark and predict it with
+// raceForecastForTarget from ALL the athlete's other same-season marks —
+// nearest-anchor selection, personal-k blend, nudge, pace floor/ceiling, the
+// works. This is the exact mechanism the in-app Proof Ledger runs. Marks at
+// distances with no StrideOS event name (300/500/600/1000/2000m) can't enter
+// an athlete profile and are skipped with a count.
+const EVNAME = { 100:'100m', 200:'200m', 400:'400m', 800:'800m', 1500:'1500m',
+  1600:'1600m', 1609.34:'Mile', 3000:'3000m', 3200:'3200m', 3218.69:'2 Mile',
+  5000:'5K', 8000:'8K', 10000:'10K', 21097.5:'Half Marathon', 42195:'Marathon' };
+const fmtTimeStr = s => {
+  if(s < 60) return s.toFixed(2);
+  const h = Math.floor(s/3600), m = Math.floor((s - h*3600)/60), ss = (s - h*3600 - m*60).toFixed(1);
+  const mm = h ? String(m).padStart(2,'0') : String(m);
+  return (h ? h + ':' + mm : mm) + ':' + (Number(ss) < 10 ? '0' : '') + ss;
+};
+const resB = { stride: [], riegel: [], wins: 0, ties: 0, n: 0, athletes: new Set() };
+let skippedUnmappable = 0;
+for(const key in groups){
+  const marks = Object.values(groups[key]);
+  const mappable = marks.filter(m => EVNAME[m.distM]);
+  skippedUnmappable += marks.length - mappable.length;
+  if(mappable.length < 2) continue;
+  for(const target of mappable){
+    const others = mappable.filter(m => m !== target);
+    const primary = others[0];
+    const additionalPRs = {};
+    for(const o of others.slice(1)) additionalPRs[EVNAME[o.distM]] = fmtTimeStr(o.sec);
+    const athlete = {
+      name: target.athlete,
+      raceDistance: EVNAME[primary.distM],
+      raceDistanceM: primary.distM,
+      raceTime: fmtTimeStr(primary.sec),
+      raceDate: null,
+      additionalPRs,
+    };
+    const anchor = ctx.nearestAnchorForTarget(athlete, target.distM);
+    if(!anchor) continue;
+    const f = ctx.raceForecastForTarget(athlete, { distM: target.distM, label: EVNAME[target.distM] },
+      { fixedAnchor: anchor });
+    if(!f || f.isObserved || !isFinite(f.likely) || f.likely <= 0) continue;
+    const sErr = absPctErr(f.likely, target.sec);
+    const rErr = absPctErr(riegelPred(anchor.distM, anchor.sec, target.distM), target.sec);
+    resB.stride.push(sErr); resB.riegel.push(rErr); resB.n++;
+    resB.athletes.add(target.athlete);
+    if(sErr < rErr - 1e-9) resB.wins++;
+    else if(Math.abs(sErr - rErr) <= 1e-9) resB.ties++;
+  }
+}
+console.log('\n══ MODE B: multi-PR leave-one-out (raceForecastForTarget — the Proof Ledger mechanism) ══');
+console.log(`${resB.n} held-out predictions (one per athlete-season mark) from ${resB.athletes.size} athletes; ${skippedUnmappable} marks skipped (no StrideOS event)\n`);
+console.log('                         StrideOS    Riegel (same anchor)');
+console.log(`  median |%err|          ${f1(median(resB.stride)).padStart(6)}      ${f1(median(resB.riegel)).padStart(6)}`);
+console.log(`  mean   |%err|          ${f1(mean(resB.stride)).padStart(6)}      ${f1(mean(resB.riegel)).padStart(6)}`);
+console.log(`  within 2%              ${f1(within(resB.stride,2)).padStart(6)}%     ${f1(within(resB.riegel,2)).padStart(6)}%`);
+console.log(`  beats Riegel on ${resB.wins}/${resB.n} (${(resB.wins/resB.n*100).toFixed(0)}%), ties ${resB.ties}`);
 
 // ── 7. Verdict ──
 const sMed = median(res.stride), rMed = median(res.riegel);
