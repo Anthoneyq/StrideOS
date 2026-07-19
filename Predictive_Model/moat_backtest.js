@@ -205,13 +205,19 @@ for(const band of ['near (<2×)','mid (2–4×)','far (≥4×)']){
   console.log(`  ${band.padEnd(20)}   ${f1(median(d.s)).padStart(6)}        ${f1(median(d.r)).padStart(6)}     ${d.s.length}`);
 }
 
-// ── 6b. MODE B: multi-PR leave-one-out through the ACTUAL shipped forecast ──
+// ── 6b. MODE B: Proof-Ledger-STYLE leave-one-out through the shipped forecast ──
 // For every athlete-season, hold out each mark and predict it with
-// raceForecastForTarget from ALL the athlete's other same-season marks —
-// nearest-anchor selection, personal-k blend, nudge, pace floor/ceiling, the
-// works. This is the exact mechanism the in-app Proof Ledger runs. Marks at
-// distances with no StrideOS event name (300/500/600/1000/2000m) can't enter
-// an athlete profile and are skipped with a count.
+// raceForecastForTarget from the athlete's other same-season marks —
+// nearest-anchor selection, personal-k blend (when ≥2 PRs remain), nudge,
+// pace floor/ceiling. The in-app Proof Ledger's ELIGIBILITY rules are applied
+// (near-duplicate anchor/target pairs ratio <1.1 skipped; all three models —
+// STRIDE/Riegel/VDOT — must produce a finite time), so cohort membership
+// matches computeProofLedger; the two implementations are separate code, so
+// this is ledger-STYLE, not verified line-for-line parity. Folds where only
+// ONE mark remains cannot engage personalFatigueExponent — they are reported
+// separately from genuinely multi-PR folds, and only the multi-PR cohort may
+// back personalization claims. Marks at distances with no StrideOS event name
+// (300/500/600/1000/2000m) can't enter an athlete profile; skipped with a count.
 const EVNAME = { 100:'100m', 200:'200m', 400:'400m', 800:'800m', 1500:'1500m',
   1600:'1600m', 1609.34:'Mile', 3000:'3000m', 3200:'3200m', 3218.69:'2 Mile',
   5000:'5K', 8000:'8K', 10000:'10K', 21097.5:'Half Marathon', 42195:'Marathon' };
@@ -221,7 +227,9 @@ const fmtTimeStr = s => {
   const mm = h ? String(m).padStart(2,'0') : String(m);
   return (h ? h + ':' + mm : mm) + ':' + (Number(ss) < 10 ? '0' : '') + ss;
 };
-const resB = { stride: [], riegel: [], wins: 0, ties: 0, n: 0, athletes: new Set() };
+const mkCohort = () => ({ stride: [], riegel: [], wins: 0, ties: 0, n: 0, athletes: new Set() });
+const resB = mkCohort();        // every ledger-eligible fold
+const resBMulti = mkCohort();   // folds where ≥2 PRs remain (personal-k can engage)
 let skippedUnmappable = 0;
 for(const key in groups){
   const marks = Object.values(groups[key]);
@@ -243,24 +251,47 @@ for(const key in groups){
     };
     const anchor = ctx.nearestAnchorForTarget(athlete, target.distM);
     if(!anchor) continue;
+    // Proof-Ledger eligibility rule 1: near-duplicate distances (1600↔Mile,
+    // 3200↔2 Mile) are ~free self-tests — the ledger skips ratio <1.1.
+    if(Math.max(anchor.distM, target.distM) / Math.min(anchor.distM, target.distM) < 1.1) continue;
     const f = ctx.raceForecastForTarget(athlete, { distM: target.distM, label: EVNAME[target.distM] },
       { fixedAnchor: anchor });
     if(!f || f.isObserved || !isFinite(f.likely) || f.likely <= 0) continue;
+    const rieg = riegelPred(anchor.distM, anchor.sec, target.distM);
+    // Proof-Ledger eligibility rule 2: all three models must produce a time
+    // (VDOT returns nothing for sprint pairs — would NaN the ledger averages).
+    const vdotP = ctx._formulaVDOT(anchor.distM, anchor.sec, target.distM);
+    if(![f.likely, rieg, vdotP].every(v => v != null && isFinite(v))) continue;
     const sErr = absPctErr(f.likely, target.sec);
-    const rErr = absPctErr(riegelPred(anchor.distM, anchor.sec, target.distM), target.sec);
-    resB.stride.push(sErr); resB.riegel.push(rErr); resB.n++;
-    resB.athletes.add(target.athlete);
-    if(sErr < rErr - 1e-9) resB.wins++;
-    else if(Math.abs(sErr - rErr) <= 1e-9) resB.ties++;
+    const rErr = absPctErr(rieg, target.sec);
+    const record = c => {
+      c.stride.push(sErr); c.riegel.push(rErr); c.n++;
+      c.athletes.add(target.athlete);
+      if(sErr < rErr - 1e-9) c.wins++;
+      else if(Math.abs(sErr - rErr) <= 1e-9) c.ties++;
+    };
+    record(resB);
+    if(others.length >= 2) record(resBMulti);
   }
 }
-console.log('\n══ MODE B: multi-PR leave-one-out (raceForecastForTarget — the Proof Ledger mechanism) ══');
-console.log(`${resB.n} held-out predictions (one per athlete-season mark) from ${resB.athletes.size} athletes; ${skippedUnmappable} marks skipped (no StrideOS event)\n`);
-console.log('                         StrideOS    Riegel (same anchor)');
-console.log(`  median |%err|          ${f1(median(resB.stride)).padStart(6)}      ${f1(median(resB.riegel)).padStart(6)}`);
-console.log(`  mean   |%err|          ${f1(mean(resB.stride)).padStart(6)}      ${f1(mean(resB.riegel)).padStart(6)}`);
-console.log(`  within 2%              ${f1(within(resB.stride,2)).padStart(6)}%     ${f1(within(resB.riegel,2)).padStart(6)}%`);
-console.log(`  beats Riegel on ${resB.wins}/${resB.n} (${(resB.wins/resB.n*100).toFixed(0)}%), ties ${resB.ties}`);
+const cohortReport = (title, c) => {
+  console.log(title);
+  console.log('                         StrideOS    Riegel (same anchor)');
+  console.log(`  median |%err|          ${f1(median(c.stride)).padStart(6)}      ${f1(median(c.riegel)).padStart(6)}`);
+  console.log(`  mean   |%err|          ${f1(mean(c.stride)).padStart(6)}      ${f1(mean(c.riegel)).padStart(6)}`);
+  console.log(`  within 2%              ${f1(within(c.stride,2)).padStart(6)}%     ${f1(within(c.riegel,2)).padStart(6)}%`);
+  console.log(`  beats Riegel on ${c.wins}/${c.n} (${(c.wins/c.n*100).toFixed(0)}%), ties ${c.ties}\n`);
+};
+console.log('\n══ MODE B: Proof-Ledger-style leave-one-out through raceForecastForTarget ══');
+console.log(`${resB.n} ledger-eligible held-out predictions from ${resB.athletes.size} athletes (${skippedUnmappable} marks skipped: no StrideOS event; near-dup + 3-model ledger rules applied)\n`);
+cohortReport('ALL eligible folds (single remaining PR in most — personal-k mostly inert):', resB);
+cohortReport(`MULTI-PR folds only — ≥2 PRs remain, personalization can engage (${resBMulti.n} predictions, ${resBMulti.athletes.size} athletes; the ONLY cohort that may back multi-PR claims):`, resBMulti);
+// Cohort-count regression locks (dataset is fixed CSVs; drift = a logic change):
+const assertEq = (label, a, e) => { if(a !== e){ console.error(`ASSERT FAIL ${label}: ${a} !== ${e}`); process.exitCode = 1; } };
+assertEq('Mode A ordered predictions', res.n, 292);
+assertEq('Mode B eligible folds', resB.n, 165);
+assertEq('Mode B multi-PR folds', resBMulti.n, 61);
+assertEq('Mode B multi-PR athletes', resBMulti.athletes.size, 10);
 
 // ── 7. Verdict ──
 const sMed = median(res.stride), rMed = median(res.riegel);
