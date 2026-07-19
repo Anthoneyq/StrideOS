@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 """
+⚠️ SUPERSEDED — DO NOT CITE (math audit 2026-07-19, MATH-AUDIT-2026-07-19.md §F).
+This early exploration is internally broken and contradicts the shipped engine:
+its hard-coded "KEY FINDING" exponent ranges contradict its own computed table;
+its "coach validated" reference data is physically impossible (3K slower pace
+than 5K, k<1 — violating the invariant the shipped engine enforces); its
+Section-5 "validation" is circular (scores the model against the dictionary it
+was fit to); and its zone-exponent transfer has +15s discontinuities at 1-meter
+boundaries (the exact flaw the shipped banded `_formulaPurdy` fixed). The live
+engine is in index.html; its regression harness is prediction_benchmarks.js.
+Kept only as history of the thinking.
+
 Stride OS: Diagnosis of Prediction Model Failures
 & Construction of Energy-System-Aware Transfer Functions
 

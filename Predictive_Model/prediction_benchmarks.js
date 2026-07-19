@@ -32,11 +32,11 @@ const NEEDED = [
   '_formulaRiegel', '_formulaCameron', '_formulaVDOT',
   '_formulaVickersVertosick', '_formulaPurdy',
   '_ensembleWeights', 'strideEnsemble',
-  'prFreshness', 'getEventDomain', 'getObservedRatio',
+  '_daysSinceRace', 'prFreshness', 'getEventDomain', 'getObservedRatio',
   'sameDistanceM', 'forecastTargets', 'labelForDistance',
   'freshnessPenaltyFor', 'confidenceLabel', 'primaryPRForAthlete',
   'observedPRForTarget', 'collectAllPRs', 'personalFatigueExponent',
-  '_selectBestAnchor', 'raceForecastForTarget',
+  '_selectBestAnchor', 'nearestAnchorForTarget', '_med', 'raceForecastForTarget',
 ];
 const distSrc = (html.match(/const DIST = \{[\s\S]*?\};/) || [''])[0];
 const domainsSrc = (html.match(/const EVENT_DOMAINS = \{[\s\S]*?\};/) || [''])[0];
@@ -149,6 +149,41 @@ const forecast10K = ctx.raceForecastForTarget(athlete, { distM: 10000, label: '1
 isEqual('raceForecastForTarget returns source-excluded forecast for unknown target', !!forecast10K && !forecast10K.isObserved && forecast10K.likely > 0, true);
 isEqual('raceForecastForTarget labels displayed range as uncalibrated', forecast10K.rangeMethod, 'heuristic_planning_range_uncalibrated');
 isEqual('raceForecastForTarget carries model-disagreement range separately', forecast10K.modelLow < forecast10K.likely && forecast10K.modelHigh > forecast10K.likely, true);
+
+// ── 7. Math-audit 2026-07-19 regression probes (BUG-028..032) ──
+// BUG-028: a soft (contradicted) short PR must neither anchor mile-family
+// forecasts nor let them break the pace ceiling. The audit athlete: 5K 15:30
+// primary + old 800m 2:50 (2:50/800 = 212s pace/km vs 5K 186s pace/km — soft).
+// Broken engine forecast 1600m 6:09.8; from the 5K it should be ~4:35–4:45.
+const softPrAthlete = {
+  raceDistance: '5K', raceDistanceM: 5000, raceTime: '15:30', raceDate: '2026-05-01',
+  additionalPRs: { '800m': '2:50' }
+};
+const soft1600 = ctx.raceForecastForTarget(softPrAthlete, { distM: 1600, label: '1600m' },
+  { fixedAnchor: ctx.nearestAnchorForTarget(softPrAthlete, 1600) });
+inRange('BUG-028: soft 800 must not anchor 1600 (forecast sec)', soft1600.likely, 265, 288);
+isEqual('BUG-028: 1600 anchored from the trusted 5K', soft1600.anchor.distM === 5000, true);
+// Ceiling invariant: no forecast row may be a slower pace than the observed 5K.
+const soft3000 = ctx.raceForecastForTarget(softPrAthlete, { distM: 3000, label: '3000m' },
+  { fixedAnchor: ctx.nearestAnchorForTarget(softPrAthlete, 3000) });
+const pace = (sec, d) => sec / d;
+isEqual('BUG-028: no pace inversion 1600 vs 3000', pace(soft1600.likely,1600) <= pace(soft3000.likely,3000) + 1e-9, true);
+isEqual('BUG-028: 1600 not slower pace than own 5K', pace(soft1600.likely,1600) <= pace(930,5000) + 1e-9, true);
+
+// BUG-029: Mile (1609) must sit in the same weight branch as 1600m — adjacent
+// forecast rows from a 400m anchor may not invert (longer race faster).
+const t1600 = e(400,52.0,1600), tMile = e(400,52.0,1609.34);
+inRange('BUG-029: Mile slower than 1600m from 400m anchor (sec gap)', tMile - t1600, 0.1, 10);
+
+// BUG-030: downward hybrid→sprint must follow the segmented curve, not the
+// flat default (800m 2:00 → 400m was 56.1s vs the curve's own ~53.0, NFHS ~53.5).
+inRange('BUG-030: 800m 2:00 → 400m (downward)', e(800,120,400), 52.5, 55.0);
+const down = e(800,120,400), rt = e(400,down,800);
+inRange('BUG-030: round-trip 400↔800 drift (sec)', Math.abs(rt - 120), 0, 3.0);
+
+// BUG-031/032: _med must be a true median — even counts average the middles.
+isEqual('_med even count averages middles', ctx._med([1080,1200]), 1140);
+isEqual('_med odd count picks middle', ctx._med([3,1,2]), 2);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

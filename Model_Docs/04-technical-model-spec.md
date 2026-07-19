@@ -217,12 +217,21 @@ Conf = sigmoid(
 )
 ```
 
-Suggested labels:
-- 85–100: Very High
-- 70–84: High
-- 55–69: Moderate
-- 40–54: Low
-- <40: Exploratory
+Shipped labels (`confidenceLabel` in index.html — this doc's earlier suggested
+bands were never implemented):
+- 90–100: Very High
+- 75–89: High
+- 55–74: Medium
+- 35–54: Low
+- 15–34: Very Low
+- <15: Exploratory
+
+Note (audit 2026-07-19): the confidence *formula* above and this doc's decay /
+half-life machinery (also §§ of doc 01) are DESIGN PROPOSALS, not what ships —
+the product uses the heuristic domain/ratio/freshness scoring in
+`raceForecastForTarget` with categorical 90/365-day freshness and no
+exponential decay. Where doc 01 and doc 04 disagree on decay ordering, neither
+is authoritative.
 
 ## 12. Special athlete logic
 

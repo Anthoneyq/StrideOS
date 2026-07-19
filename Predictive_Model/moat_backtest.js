@@ -45,8 +45,19 @@ vm.createContext(ctx);
 vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
   '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;', ctx);
 
-// StrideOS predicted time at d2 (m) from time t1 (s) at d1 (m):
-const stridePred = (d1, t1, d2) => ctx.strideEnsemble(d1, t1, d2, 1.0, {}).predSec;
+// StrideOS predicted time at d2 (m) from time t1 (s) at d1 (m).
+// Ship-path parity (BUG-036): the product's raceForecastForTarget additionally
+// blends a 30% equivalent-performance nudge on ≥3000m pairs, so the backtest
+// applies it too — scoring a bare component while shipping the nudged value
+// validated a different engine than coaches see. (Personal-k and the pace
+// floor/ceiling need multi-PR context a single-anchor pair doesn't carry; for
+// a single-PR athlete the shipped path reduces to exactly this.)
+const stridePred = (d1, t1, d2) => {
+  let pred = ctx.strideEnsemble(d1, t1, d2, 1.0, {}).predSec;
+  const ratio = ctx.getObservedRatio(d1, d2);
+  if(ratio && d1 >= 3000 && d2 >= 3000) pred = (t1 * ratio) * 0.3 + pred * 0.7;
+  return pred;
+};
 // Naive Riegel baseline (exponent 1.06) — the commodity formula:
 const riegelPred = (d1, t1, d2) => t1 * Math.pow(d2 / d1, 1.06);
 
@@ -141,7 +152,7 @@ for(const key in groups){
 
 // ── 5. Score: StrideOS vs Riegel, abs % error on the held-out race ──
 function absPctErr(pred, actual){ return Math.abs(pred - actual) / actual * 100; }
-const res = { stride: [], riegel: [], strideWins: 0, ties: 0, n: 0, byDomain: {} };
+const res = { stride: [], riegel: [], strideWins: 0, ties: 0, n: 0, byDomain: {}, athletes: new Set() };
 for(const p of pairs){
   const sPred = stridePred(p.from.distM, p.from.sec, p.to.distM);
   const rPred = riegelPred(p.from.distM, p.from.sec, p.to.distM);
@@ -149,6 +160,7 @@ for(const p of pairs){
   const sErr = absPctErr(sPred, p.to.sec);
   const rErr = absPctErr(rPred, p.to.sec);
   res.stride.push(sErr); res.riegel.push(rErr); res.n++;
+  res.athletes.add(p.from.athlete);
   if(sErr < rErr - 1e-9) res.strideWins++;
   else if(Math.abs(sErr - rErr) <= 1e-9) res.ties++;
   // distance-order gap (how far apart the events are — where the moat should show)
@@ -164,8 +176,13 @@ const mean   = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
 const within = (a,t) => a.length ? a.filter(x=>x<=t).length/a.length*100 : NaN;
 const f1 = x => isNaN(x) ? '  n/a' : x.toFixed(1);
 
-console.log('\n══ STRIDE OS MOAT BACKTEST — held-out real races ══');
-console.log(`Athletes/seasons with ≥2 distinct track events → ${res.n} held-out prediction pairs\n`);
+// Honest-n accounting (BUG-035): every unordered pair is scored in BOTH
+// directions (errors correlate r≈0.94), so the effective sample is the
+// unique-pair count, and the athlete count is what public copy must cite.
+const nAthletes = res.athletes.size;
+const nSeasons  = Object.keys(groups).filter(k => Object.keys(groups[k]).length >= 2).length;
+console.log('\n══ STRIDE OS MOAT BACKTEST — held-out real races (full shipped path) ══');
+console.log(`${res.n} ordered prediction pairs (≈${Math.round(res.n/2)} unique — both directions scored) from ${nAthletes} athletes / ${nSeasons} athlete-seasons\n`);
 console.log('                         StrideOS    Riegel-1.06');
 console.log(`  median |%err|          ${f1(median(res.stride)).padStart(6)}      ${f1(median(res.riegel)).padStart(6)}`);
 console.log(`  mean   |%err|          ${f1(mean(res.stride)).padStart(6)}      ${f1(mean(res.riegel)).padStart(6)}`);

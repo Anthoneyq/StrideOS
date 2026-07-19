@@ -2139,7 +2139,10 @@ function openWorkoutForm(workoutId){
     return;
   }
   closeWorkoutForm();
-  const today = new Date().toISOString().slice(0,10);
+  // Local calendar date — toISOString() is UTC and defaults the form to
+  // TOMORROW every US evening (BUG-034), bucketing runs into next week.
+  const _n = new Date();
+  const today = `${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
   const overlay = document.createElement('div');
   overlay.id = 'workoutFormOverlay';
   overlay.className = 'upgrade-overlay';
@@ -2230,8 +2233,12 @@ function parseDurationToSec(s){
   if(!s) return null;
   s = String(s).trim();
   if(!s) return null;
-  const parts = s.split(':').map(p => parseFloat(p));
-  if(parts.some(isNaN)) return null;
+  // Strict, matching parseTime: digits only per part ("1a:30" was accepted as
+  // 90s via parseFloat) and sub-parts must be 0–59 ("1:75" was accepted as 135s).
+  const raw = s.split(':');
+  if(raw.some(p => !/^\d+(\.\d+)?$/.test(p))) return null;
+  const parts = raw.map(p => parseFloat(p));
+  if(parts.slice(1).some(p => p >= 60)) return null;
   if(parts.length === 1) return parts[0];
   if(parts.length === 2) return parts[0]*60 + parts[1];
   if(parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
@@ -3341,8 +3348,11 @@ function fmtT(sec){
   // Branch on the rounded value so 3599.96 carries into 1:00:00, not "60:00.0".
   const r = Math.round(sec*10)/10;
   if(r < 3600){ return _mmss(sec,1); }
-  const h=Math.floor(r/3600), rem=r-h*3600, mm=Math.floor(rem/60);
-  return `${h}:${String(mm).padStart(2,'0')}:${String(Math.floor(rem-mm*60)).padStart(2,'0')}`;
+  // Round to whole seconds FIRST (flooring made 3659.94 → "1:00:59" instead
+  // of the nearest 1:01:00), then split — carry-safe by construction.
+  const total = Math.round(r);
+  const h=Math.floor(total/3600), rem=total-h*3600, mm=Math.floor(rem/60);
+  return `${h}:${String(mm).padStart(2,'0')}:${String(rem-mm*60).padStart(2,'0')}`;
 }
 
 // ══════════════════════════════════════
@@ -3388,7 +3398,9 @@ function fmtMile(spkm){
 function fmt400(spkm){
   if(!spkm||isNaN(spkm)||spkm<=0) return '—';
   const s = spkm * 0.4;
-  return (s<60 ? s.toFixed(1) : Math.round(s)) + '/400';
+  // Branch on the ROUNDED value so 59.96 renders "60/400", not "60.0/400".
+  const r = Math.round(s*10)/10;
+  return (r<60 ? r.toFixed(1) : Math.round(s)) + '/400';
 }
 
 // sec/km  →  split time for a rep of distM meters  e.g. "3:42" for 1000m
@@ -3441,7 +3453,10 @@ function vAtPct(vdot, pctVO2){
 }
 
 // m/min  →  sec/km
-function vToSpkm(vMperMin){ return 1000 / vMperMin; }
+// velocity (m/min) → SECONDS per km. Was `1000 / v` — that's MINUTES per km,
+// the 60× units bug (BUG-014) that silently killed the whole VDOT zone
+// reconciliation path for every athlete.
+function vToSpkm(vMperMin){ return 60000 / vMperMin; }
 
 // Daniels zone percentages of VO2max (midpoints of published ranges)
 const ZONES = {
@@ -3821,12 +3836,23 @@ function displayPace(raceSecPerM, repDistM, pct, unit){
 // 'stale'   = 90 days – 1 year      → yellow warning, calculations valid but flagged
 // 'expired' = > 1 year              → red, refuse to calculate confidently
 // 'future'  = invalid future date   → red, refuse to trust as evidence
-function prFreshness(raceDateISO){
-  if(!raceDateISO) return 'unknown';
+// Race dates are date-only (ISO strings parse as UTC midnight) while "now" is
+// a local instant — subtracting the two flips the freshness boundaries in the
+// evening (a today-dated race read "1 days old" after ~7pm CT, and "future /
+// INVALID" east of UTC — BUG-034). Compare CALENDAR days on the UTC axis.
+function _daysSinceRace(raceDateISO){
+  if(!raceDateISO) return null;
   const race = new Date(raceDateISO);
-  if(isNaN(race.getTime())) return 'unknown';
+  if(isNaN(race.getTime())) return null;
   const now = new Date();
-  const days = Math.floor((now - race) / (1000*60*60*24));
+  const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const raceUTC = Date.UTC(race.getUTCFullYear(), race.getUTCMonth(), race.getUTCDate());
+  return Math.round((todayUTC - raceUTC) / 86400000);
+}
+
+function prFreshness(raceDateISO){
+  const days = _daysSinceRace(raceDateISO);
+  if(days == null) return 'unknown';
   if(days < 0) return 'future';
   if(days <= 90) return 'fresh';
   if(days <= 365) return 'stale';
@@ -3834,7 +3860,7 @@ function prFreshness(raceDateISO){
 }
 
 function freshnessLabel(state, raceDateISO){
-  const days = raceDateISO ? Math.floor((new Date() - new Date(raceDateISO)) / (1000*60*60*24)) : null;
+  const days = _daysSinceRace(raceDateISO);
   switch(state){
     case 'fresh':   return { color:'var(--green)',  icon:'●', label:'CURRENT',   text:`Race result is ${days} days old — paces are reliable.` };
     case 'stale':   return { color:'var(--yellow)', icon:'▲', label:'STALE',     text:`Race result is ${days} days old (>90 days). Paces may be off — recommend a fresh time trial.` };
@@ -3870,7 +3896,19 @@ function repAllowedForAnchor(repDistM, athlete){
   return repDistM <= athlete.raceDistanceM * 1.25;
 }
 
+// ⚠️ INTENTIONALLY DISABLED (BUG-014 / BUG-037). This VDOT→speed-% zone
+// reconciliation has NEVER been live: the vToSpkm units bug returned min/km
+// and every guard below rejected the result. The math is now corrected — the
+// units fix above and, below, the same Canova model pctToMult ships
+// (pct = 100·(2 − target/race), NOT the reciprocal 100·race/target that
+// BUG-005 removed; the reciprocal here would have shipped Easy ~29 s/mi too
+// fast the moment the units were fixed). Flipping this flag changes every
+// zone prescription, so it stays off until the output is validated against
+// real athletes and Anthoney signs off.
+const VDOT_ZONE_RECONCILIATION_ENABLED = false;
+
 function vdotPctForZone(zone, athlete){
+  if(!VDOT_ZONE_RECONCILIATION_ENABLED) return null;
   if(!zone || !athlete || !athlete.raceDistanceM || !athlete.raceTime) return null;
   if(athlete.raceDistanceM < 1500) return null;
   const sec = parseTime(athlete.raceTime);
@@ -3890,7 +3928,10 @@ function vdotPctForZone(zone, athlete){
 
   const raceSecPerM = sec / athlete.raceDistanceM;
   const targetSecPerM = targetSpkm / 1000;
-  const pct = 100 * raceSecPerM / targetSecPerM;
+  // Self-consistent inverse of pctToMult's Canova model (mult = 2 − pct/100,
+  // mult = targetPace/racePace) — the old reciprocal 100·race/target was the
+  // model BUG-005 removed and disagreed with the shipped forward mapping.
+  const pct = 100 * (2 - targetSecPerM / raceSecPerM);
   if(!isFinite(pct) || pct <= 0) return null;
   // Sanity guards — reject implausible VDOT-equivalents (e.g. a short-race anchor
   // where calcZones over-runs) so the clean speed-% zone (zone.pct) is used instead.
@@ -4077,8 +4118,10 @@ function tempCorrection(tempF){
 // Converted to % time slowdown for distance running.
 // Returns slowdown factor.
 function altitudeCorrection(altitudeFt){
-  if(altitudeFt == null || isNaN(altitudeFt) || altitudeFt < 1500) return 0;
+  if(altitudeFt == null || isNaN(altitudeFt)) return 0;
   const meters = altitudeFt * 0.3048;
+  // One threshold, in the table's own unit (500m ≈ 1640ft) — the old extra
+  // 1500ft guard overlapped this band without ever changing the result.
   if(meters < 500) return 0;
   // Daniels' published table values, simplified:
   if(meters < 1000)  return 0.01;       // 1.0%
@@ -4955,9 +4998,10 @@ function buildDanielsTable(ath){
   const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z => z.reps))].sort((a,b) => a-b);
   const repLabel = d => {
     if(d === 1609) return '1mi';
-    if(d === 1000) return '1km';
-    if(d < 1000) return d + 'm';
-    return (d/1000).toFixed(0) + 'km';
+    // Only whole kilometres get the km label — rounding 1200 to "1km" put two
+    // adjacent "1km" columns in the table (BUG-033).
+    if(d % 1000 === 0) return (d/1000) + 'km';
+    return d + 'm';
   };
 
   const header = `
@@ -5694,7 +5738,26 @@ function _ensembleWeights(d1, d2){
   // HYBRID FAMILY (400m–1500m) — segmented curve + Cameron (strong at middle
   // distance); VDOT underweighted because it inflates aerobic ability for
   // anaerobic specialists.
-  if((isSprintAnchor || isHybridAnchor) && (isHybridTarget || (isDistanceTarget && d2 <= 1600))){
+  // Boundary is 1700 (EVENT_DOMAINS middle_distance max) so the Mile
+  // (1609.34m) sits in the same branch as 1600m — they are adjacent forecast
+  // rows and must not switch formula families (BUG-029: 1600m and Mile
+  // rendered 12s apart, longer race faster; `<= 1600` and even `<= 1609`
+  // both exclude the Mile's true 1609.34).
+  if((isSprintAnchor || isHybridAnchor) && (isHybridTarget || (isDistanceTarget && d2 <= 1700))){
+    return { riegel: 0.10, cameron: 0.25, vdot: 0.15, vickers: 0.10, purdy: 0.40 };
+  }
+
+  // DOWNWARD — hybrid/distance anchor → sprint target. The same segmented
+  // speed-endurance curve governs the descent; VDOT is invalid at sprint
+  // durations and flat-exponent formulas are too pessimistic downward
+  // (BUG-030: 800m 2:00 predicted a 56.1s 400m vs the curve's own 53.0).
+  if((isHybridAnchor || isDistanceAnchor) && isSprintTarget){
+    return { riegel: 0.10, cameron: 0.00, vdot: 0.00, vickers: 0.10, purdy: 0.80 };
+  }
+
+  // DOWNWARD — distance anchor → hybrid target (e.g. 1600/5K → 800): mirror
+  // of the hybrid family above rather than the flat default (BUG-030 family).
+  if(isDistanceAnchor && isHybridTarget){
     return { riegel: 0.10, cameron: 0.25, vdot: 0.15, vickers: 0.10, purdy: 0.40 };
   }
 
@@ -5970,6 +6033,21 @@ function raceForecastForTarget(athlete, target, opts){
   const pacedFloorEvent = likely < paceFloorSec ? paceFloorEvent : null;
   if(pacedFloorEvent) likely = paceFloorSec;
 
+  // Physical ceiling — the floor's mirror (BUG-028): a SHORTER race can never
+  // be a SLOWER pace than a longer observed PR (the athlete passed through the
+  // shorter distance at at-least that average pace). Every longer observed PR
+  // caps the forecast at equal pace; the binding cap is the fastest-pace
+  // longer PR. No trust test needed here — a longer PR whose pace is beaten
+  // by an even-longer PR just yields a looser cap that the tighter one wins.
+  let paceCeilSec = 0, paceCeilEvent = null;
+  prsAll.forEach(p => {
+    if(p.distM <= targetDistM || sameDistanceM(p.distM, targetDistM)) return;
+    const capSec = (p.sec / p.distM) * targetDistM;
+    if(!paceCeilSec || capSec < paceCeilSec){ paceCeilSec = capSec; paceCeilEvent = p.event; }
+  });
+  const pacedCeilEvent = (paceCeilSec && likely > paceCeilSec) ? paceCeilEvent : null;
+  if(pacedCeilEvent) likely = paceCeilSec;
+
   const isExploratory = Math.abs(targetDomain.order - anchorDomain.order) >= 3;
   let rangePct;
   if(sameDomain)             rangePct = 0.015 + logRatio * 0.015;
@@ -5982,9 +6060,10 @@ function raceForecastForTarget(athlete, target, opts){
   const youthFactor = (ageYears && ageYears < 18) ? (ageYears <= 14 ? 1.5 : 1.25) : 1;
   rangePct *= youthFactor;
 
-  const conservative = likely * (1 + rangePct);
-  // The aggressive end obeys the same physical floor as the central estimate:
-  // never a faster pace than a trustworthy observed PR at a shorter distance.
+  // Both range ends obey the same physical bounds as the central estimate:
+  // never a faster pace than a trustworthy observed PR at a shorter distance,
+  // never a slower pace than an observed PR at a longer one.
+  const conservative = Math.min(likely * (1 + rangePct), paceCeilSec || Infinity);
   const aggressive = Math.max(likely * (1 - rangePct), paceFloorSec || 0);
 
   let confidence;
@@ -6014,6 +6093,7 @@ function raceForecastForTarget(athlete, target, opts){
   if(freshness === 'unknown') reasons.push('Anchor PR date unknown');
   if(personalW > 0) reasons.push(`Personal fatigue curve (k=${personalK.k.toFixed(3)}, ${Math.round(personalW*100)}% weight)`);
   if(pacedFloorEvent) reasons.push(`Floored at equal pace with the observed ${pacedFloorEvent} PR — a longer race can't be faster pace`);
+  if(pacedCeilEvent) reasons.push(`Capped at equal pace with the observed ${pacedCeilEvent} PR — a shorter race can't be slower pace`);
   if(youthFactor > 1) reasons.push(ageYears <= 14 ? 'Youth athlete (≤14) — maturation widens range' : 'Youth athlete — maturation widens range');
   if(typeof athlete.weeklyMileage === 'number' && athlete.weeklyMileage > 0 && targetDistM > 10000) reasons.push(`Volume-adjusted (${athlete.weeklyMileage} mi/wk)`);
   if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000) reasons.push('Nudged by equivalent-performance tables');
@@ -7020,8 +7100,9 @@ function computeTrainingGroups(athletes, opts){
 
   const names = ['A', 'B', 'C', 'D'];
   const groups = buckets.map((members, i) => {
-    const refs = members.map(m => m.refSec).sort((a, b) => a - b);
-    const medianRefSec = refs[Math.floor(refs.length / 2)];
+    // True median — indexing floor(n/2) anchored every even-sized group's
+    // targets to its slower middle member (BUG-032).
+    const medianRefSec = _med(members.map(m => m.refSec));
     const paceLo = members[0].paceMileSec, paceHi = members[members.length - 1].paceMileSec;
     return {
       id: 'grp_' + names[i],
@@ -7204,7 +7285,10 @@ function computeProofLedger(athletes){
     });
   });
   const mean = k => rows.length ? rows.reduce((s, r) => s + r[k], 0) / rows.length : null;
-  const wins = rows.filter(r => r.strideErr <= r.riegelErr && r.strideErr <= r.vdotErr).length;
+  // A win must beat at least one rival outright — an exact three-way tie is
+  // not a STRIDE win (honest-ledger rule, same spirit as the near-dup skip).
+  const wins = rows.filter(r => r.strideErr <= r.riegelErr && r.strideErr <= r.vdotErr &&
+    (r.strideErr < r.riegelErr || r.strideErr < r.vdotErr)).length;
   return { rows, n:rows.length, athletes:new Set(rows.map(r => r.name)).size,
     strideMape:mean('strideErr'), riegelMape:mean('riegelErr'), vdotMape:mean('vdotErr'), wins };
 }
@@ -8021,7 +8105,7 @@ function renderHome(){
     ? `<button class="btn btn-primary btn-lg" onclick="goTo('overview')">Open Coach Tools →</button>`
     : `<button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial</button>`;
   const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · we never sell athlete data.</p>`;
-  const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In testing on 290+ real runners, its race predictions landed <strong>~35% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
+  const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing on 292 held-out races from 23 real athletes&rsquo; careers, its predictions landed <strong>~33% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
   const closeCta = signedIn ? '' : `
     <div class="home-close">
       <p class="home-close-q">Like what your roster just showed you?</p>
@@ -8185,9 +8269,10 @@ function _normDate(v){
     const yyyy = us[3].length === 2 ? '20' + us[3] : us[3];
     return `${yyyy}-${us[1].padStart(2,'0')}-${us[2].padStart(2,'0')}`;
   }
-  // Let Date try
+  // Let Date try. Print the LOCAL components — Date parses text dates as
+  // local midnight, so toISOString() shifted them a day back east of UTC.
   const d = new Date(s);
-  if(!isNaN(d)) return d.toISOString().slice(0,10);
+  if(!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   return '';
 }
 
@@ -8370,9 +8455,14 @@ function strideEnsemble(d1, t1, d2, freshnessPenalty, opts){
 // Returns { distM, sec, source }
 function _selectBestAnchor(targetDistM, athlete, opts){
   const excludeTarget = opts && opts.excludeTarget;
-  const allPRs = collectAllPRs(athlete).filter(p => !(excludeTarget && sameDistanceM(p.distM, targetDistM)));
-  if(allPRs.length === 0) return null;
-  if(allPRs.length === 1) return { ...allPRs[0], source: 'only PR' };
+  const fullSet = collectAllPRs(athlete);
+  const candidates = fullSet.filter(p => !(excludeTarget && sameDistanceM(p.distM, targetDistM)));
+  if(candidates.length === 0) return null;
+  if(candidates.length === 1) return { ...candidates[0], source: 'only PR' };
+  // Soft (contradicted) PRs never anchor when a trusted one exists — see
+  // nearestAnchorForTarget (BUG-028).
+  const trusted = candidates.filter(p => !fullSet.some(q => q.distM > p.distM && (q.sec / q.distM) < (p.sec / p.distM)));
+  const allPRs = trusted.length ? trusted : candidates;
 
   // Score each PR by closeness to target on log-distance scale, with a smaller
   // freshness/provenance adjustment so stale or unknown PRs do not beat a
@@ -8399,8 +8489,17 @@ function _selectBestAnchor(targetDistM, athlete, opts){
 // span is anchored by the athlete's own closest real result. Freshness still
 // applies downstream as a range/confidence penalty in raceForecastForTarget.
 function nearestAnchorForTarget(athlete, targetDistM){
-  const prs = collectAllPRs(athlete).filter(p => !sameDistanceM(p.distM, targetDistM));
-  if(!prs.length) return null;
+  const all = collectAllPRs(athlete);
+  const candidates = all.filter(p => !sameDistanceM(p.distM, targetDistM));
+  if(!candidates.length) return null;
+  // A contradicted (soft) PR — slower average pace than a LONGER observed
+  // result — is an event-fit signal, not evidence of ability near its own
+  // distance. Letting one anchor nearby targets dragged mile-family forecasts
+  // ~90s slow next to the athlete's own 5K (BUG-028), so soft PRs never
+  // anchor unless they are all the athlete has. Same trust rule as the
+  // pace floor/ceiling in raceForecastForTarget.
+  const trusted = candidates.filter(p => !all.some(q => q.distM > p.distM && (q.sec / q.distM) < (p.sec / p.distM)));
+  const prs = trusted.length ? trusted : candidates;
   const tLog = Math.log10(targetDistM);
   prs.sort((a, b) => {
     const d = Math.abs(Math.log10(a.distM) - tLog) - Math.abs(Math.log10(b.distM) - tLog);
@@ -9172,6 +9271,9 @@ function collectAllPRs(athlete){
         event: key,
         distM: DIST[key],
         sec,
+        // Data-model limitation: additional PRs store only a time, no race
+        // date, so every additional-PR anchor scores freshness "unknown"
+        // (−7.5 conf pts). Adding per-event dates needs schema + UI work.
         raceDate: null,
         source: `${key} PR`,
         sourceType: 'additional'
@@ -9222,8 +9324,9 @@ function buildEventFit(athlete){
       .filter(v => v && isFinite(v));
 
     if(predictions.length === 0) return null;
-    predictions.sort((a,b) => a-b);
-    const medianPred = predictions[Math.floor(predictions.length/2)];
+    // True median (_med averages the two middles for even counts) — indexing
+    // floor(n/2) took the SLOWER middle and inflated every diffPct (BUG-031).
+    const medianPred = _med(predictions);
 
     // Positive diffPct = athlete is FASTER than predicted at this distance
     const diffPct = ((medianPred - pr.sec) / medianPred) * 100;
