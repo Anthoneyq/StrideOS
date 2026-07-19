@@ -9,11 +9,17 @@ below.
 > **StrideOS is the only tool that builds each athlete's own fatigue curve from
 > ALL their meet PRs** — telling a track/XC coach *which event each kid should
 > actually run* and the race-specific Canova paces to get there — with live,
-> coach-verifiable held-out proof it's **~33% more accurate** than the commodity
-> VDOT/Riegel formula, strongest where events sit 2–4× apart in distance.
-> *(Numbers restated 2026-07-19 per MOAT_EVIDENCE: full shipped path, 292
-> ordered pairs ≈ 146 unique from 23 athletes; the far-gap (≥4×) figure rests
-> on 10 unique pairs — quote the mid-gap number publicly.)*
+> coach-verifiable held-out proof its forecast engine is **~33% more accurate**
+> than the commodity VDOT/Riegel formula, strongest where events sit 2–4×
+> apart in distance.
+> *(Evidence scope, restated 2026-07-19 per MOAT_EVIDENCE: the ~33% figure is
+> **Mode A — the single-anchor shipped path** (one PR in, ensemble + nudge
+> out): 292 ordered predictions ≈ 146 unique event pairs from 23 athletes.
+> The multi-PR personalization itself is supported only DIRECTIONALLY —
+> Mode B's 61 ledger-eligible multi-PR folds from 10 athletes (1.4% vs 1.5%
+> against an anchor-matched Riegel) — so the "own fatigue curve" wedge is a
+> product-capability claim, not yet an at-scale accuracy claim. The far-gap
+> (≥4×) figure rests on 10 unique pairs — quote the mid-gap number publicly.)*
 
 **The wedge:** every competitor anchors on a SINGLE input — one race (VDOT O2,
 McMillan, Tinman, Riegel, Garmin), one threshold (Final Surge, TrainingPeaks,
