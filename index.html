@@ -27,6 +27,19 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="./stride-config.js"></script>
+<script>
+/* Meta pixel — INERT until STRIDE_META_PIXEL_ID is filled with a real dataset ID
+   (Events Manager → Connect data → Web). Use a NEW StrideOS dataset, never the
+   health-restricted coaching pixel. strideTrack() no-ops when the pixel is off. */
+window.STRIDE_META_PIXEL_ID = null;
+window.strideTrack = function(ev, params){ try{ if(window.fbq) window.fbq('track', ev, params || {}); }catch(e){} };
+(function(){
+  if(!window.STRIDE_META_PIXEL_ID) return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', String(window.STRIDE_META_PIXEL_ID));
+  fbq('track', 'PageView');
+})();
+</script>
 <style>
 :root {
   /* DEEP BASE — anthoneyq-family blue-black, more depth than pure black */
@@ -1642,9 +1655,11 @@ async function signUpWithPassword(){
   if(data && data.session){
     setAuthFeedback('ok', 'Account created and signed in.', false);
     toast('Account created');
+    strideTrack('CompleteRegistration');
   } else {
     setAuthFeedback('ok', `Check ${email} for a confirmation link to finish creating your account.`, false);
     toast('Confirmation email sent');
+    strideTrack('CompleteRegistration');
   }
 }
 
@@ -2826,6 +2841,7 @@ async function startCheckout(plan){
     const { data: { session } } = await sbClient.auth.getSession();
     const token = session ? session.access_token : null;
     if(!token) throw new Error('Not signed in');
+    strideTrack('InitiateCheckout', { content_name: plan });
     const res = await fetch(`${STRIDE_SUPABASE_CONFIG.url}/functions/v1/create-checkout-session`, {
       method: 'POST',
       headers: {
