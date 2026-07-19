@@ -30,11 +30,20 @@
 <script>
 /* Meta pixel — INERT until STRIDE_META_PIXEL_ID is filled with a real dataset ID
    (Events Manager → Connect data → Web). Use a NEW StrideOS dataset, never the
-   health-restricted coaching pixel. strideTrack() no-ops when the pixel is off. */
+   health-restricted coaching pixel. strideTrack() no-ops when the pixel is off.
+   Privacy posture (privacy.html §8 / SUBPROCESSORS.md): marketing measurement for
+   signed-out visitors ONLY — never loads when a coach session exists, so workspace
+   usage and athlete data can never enter an ad audience. */
 window.STRIDE_META_PIXEL_ID = null;
 window.strideTrack = function(ev, params){ try{ if(window.fbq) window.fbq('track', ev, params || {}); }catch(e){} };
 (function(){
   if(!window.STRIDE_META_PIXEL_ID) return;
+  try{
+    for (var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) return;
+    }
+  }catch(e){ return; }
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', String(window.STRIDE_META_PIXEL_ID));
   fbq('track', 'PageView');
@@ -2827,6 +2836,7 @@ async function startCheckout(plan){
   try{
     const paymentLink = plan === 'monthly' ? BILLING_MONTHLY_PAYMENT_LINK : plan === 'annual' ? BILLING_ANNUAL_PAYMENT_LINK : '';
     if(paymentLink){
+      strideTrack('InitiateCheckout', { content_name: plan });
       window.location.href = paymentLink;
       return;
     }
