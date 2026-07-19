@@ -108,10 +108,12 @@ Run this the moment either coach sends a roster. The insight goes out with **no 
 
 > **"Stripe founding coupon must be created (~10 min) before any checkout link goes out"**
 > ($199 → $149, `duration=forever`, `max_redemptions=25`, stored as `STRIPE_FOUNDING_COUPON` — per PRICING_STRATEGY.md §0/§8. Founding checkout stays closed until then.)
+> **STATUS 2026-07-19: staged as a one-command script — `bash finish-founding.sh` (this folder), idempotent. Not yet run (live-coupon creation is Anthoney-side).**
 >
-> **"Anthoney sends all messages."**
+> **"Anthoney sends all messages."** *(unchanged, always)*
 
 Pre-flight before any link goes to a coach: open the live deployed site and confirm it's the current build (paste-roster, Event Finder, Proof Ledger, lineup screen all present) — prior docs flagged the live site as a stale build.
+**STATUS 2026-07-19: CLEARED — pushed `8b31e42` (consent gate + privacy-scoped Meta pixel), Vercel auto-deployed, live markers verified (Proof Ledger ×5, paste-roster, founding button; evidence: JOB-2026-0719-006/outputs/EVIDENCE.md). Day-1 warm messages (§3a/§3b — no links, no price) have no remaining gate. Paste-ready pack: `SEND-PACK-2026-07-19.md` (this folder). Cold outbound stays separately blocked on the legal read per STRIDEOS-COLD-OPENER-DRAFT.md.**
 
 ---
 
