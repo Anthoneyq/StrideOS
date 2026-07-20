@@ -11,9 +11,15 @@ Stripe.
 
 ## [YOU] Anthoney — create the coupon (~30s)
 
-1. Go to https://dashboard.stripe.com/coupons/create — confirm account
-   **Anthoneyq** and **Test mode OFF**.
-2. Enter exactly:
+1. Pre-check at https://dashboard.stripe.com/coupons — ALL three before
+   creating anything, stop if any fails:
+   - account is **Anthoneyq** (`acct_1NlGuoCGBxSHKYzS` — visible in the
+     account menu / URL),
+   - **Test mode OFF** (live),
+   - **zero** existing coupons named "Founding Coach" (if one exists, do NOT
+     create another — just run the wiring script below; it verifies and
+     reuses it).
+2. Go to https://dashboard.stripe.com/coupons/create and enter exactly:
    - **Name:** `Founding Coach`  ← exact string, it is the script's match key
    - **Discount type:** Fixed amount discount → **$50.00 USD**
    - **Duration:** **Forever**
@@ -39,8 +45,11 @@ fix.
 ## [YOU] Anthoney — wire it (terminal, after Codex verifies)
 
 ```
-! bash "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/finish-founding.sh"
+bash "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/finish-founding.sh"
 ```
+
+(From a Claude Code prompt, prefix the line with `!` to run it in-session;
+in a plain terminal, run it exactly as written.)
 
 The script independently re-verifies all four terms against the Stripe API,
 reuses the coupon, and stores `STRIPE_FOUNDING_COUPON` on Supabase. Founding
