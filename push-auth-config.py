@@ -8,9 +8,11 @@ default would drop email_sent 30/hr -> 2/hr).
 
 RUN (Anthoney): python3 "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/push-auth-config.py"
 
-Records the pre-change hosted config to tmp/auth-config-pre.json, applies the
-PATCH, then verifies EVERY requested field against a fresh GET — exits
-nonzero with a field-by-field diff if anything did not take."""
+Snapshots the pre-change values of ONLY the fields being changed (sanitized —
+no SMTP or other secret material) to gitignored tmp/auth-config-pre.json,
+applies the PATCH, then against a fresh GET verifies (a) every requested field
+took exactly and (b) every OTHER hosted field is unchanged before vs after —
+exits nonzero with a diff if either check fails."""
 import json, subprocess, sys, tomllib, urllib.request
 
 REPO = "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
@@ -60,33 +62,45 @@ for key in ("confirmation", "email_change", "invite", "magic_link", "recovery"):
     body[f"mailer_subjects_{key}"] = tpl[key]["subject"]
     body[f"mailer_templates_{key}_content"] = tpl_content(key)
 
-# 1. Record pre-change state (oracle evidence + rollback reference).
+# 1. Record pre-change values of ONLY the fields we change (rollback record,
+#    sanitized: none of these carry SMTP/secret material). tmp/ is gitignored.
 pre = call("GET")
 with open(f"{REPO}/tmp/auth-config-pre.json", "w") as f:
-    json.dump(pre, f, indent=2)
+    json.dump({k: pre.get(k) for k in body}, f, indent=2)
 print(f"Pre-change hosted config: site_url={pre.get('site_url')!r} "
-      f"uri_allow_list={pre.get('uri_allow_list')!r} (saved to tmp/auth-config-pre.json)")
+      f"uri_allow_list={pre.get('uri_allow_list')!r} "
+      f"(changed-fields snapshot → tmp/auth-config-pre.json, gitignored)")
 
 # 2. Apply.
 call("PATCH", body)
 
-# 3. Verify every requested field took — against a fresh GET as the authority,
-#    in case the PATCH response is partial or stale.
+# 3. Verify against a fresh GET as the authority (PATCH response could be
+#    partial or stale): every requested field took exactly, and every field we
+#    did NOT request is byte-identical to its pre-change value.
 final = call("GET")
+show = lambda s: (s[:80] + "…") if isinstance(s, str) and len(s) > 80 else s
 mismatches = {k: final.get(k) for k, v in body.items() if final.get(k) != v}
 if mismatches:
     print("⛔ PATCH did not fully apply. Fields still wrong on the hosted project:")
     for k, got in mismatches.items():
-        want = body[k]
-        show = lambda s: (s[:80] + "…") if isinstance(s, str) and len(s) > 80 else s
-        print(f"  {k}: want {show(want)!r}, hosted has {show(got)!r}")
+        print(f"  {k}: want {show(body[k])!r}, hosted has {show(got)!r}")
     sys.exit(1)
 
-print("✓ Verified on hosted project (fresh GET, all requested fields exact):")
+tampered = sorted(k for k in set(pre) | set(final)
+                  if k not in body and final.get(k) != pre.get(k))
+if tampered:
+    # Values withheld on purpose — untouched fields include SMTP material.
+    print("⛔ Fields OUTSIDE the requested set changed during the PATCH "
+          "(names only, values withheld): " + ", ".join(tampered))
+    print("   Inspect in the Supabase dashboard before relying on auth email.")
+    sys.exit(1)
+
+untouched = len([k for k in pre if k not in body])
+print("✓ Verified on hosted project (fresh GET):")
 print(f"  site_url = {final['site_url']}")
 print(f"  uri_allow_list = {final['uri_allow_list']}")
 print(f"  confirmation subject = {final['mailer_subjects_confirmation']!r}")
-print(f"  smtp_host untouched = {final.get('smtp_host')!r}, "
-      f"rate_limit_email_sent untouched = {final.get('rate_limit_email_sent')!r}")
+print(f"  all {untouched} non-requested fields (incl. smtp_*, rate_limit_*) "
+      f"verified unchanged before vs after")
 print("✓ Done. New signup confirmation emails now link to the real site.")
 print("  (Old emails still hold dead localhost links — users must resend.)")

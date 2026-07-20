@@ -141,6 +141,13 @@ page "$BAD_AMT_INVALID" > "$WORK/t11.p1"
 ok=0; run_case t11 NONZERO && out_has t11 "mismatches the" && log_lacks t11 "coupons create" && log_lacks t11 "secrets set" || ok=1
 check $ok "invalid mismatched name-match still blocks creation"
 
+# 12. REGRESSION (mixed case): a valid exact spec match AND a conflicting
+#     same-name coupon together → abort; the exact match is NOT silently
+#     reused until the conflict is cleaned up.
+page "$GOOD,$BAD_AMT" > "$WORK/t12.p1"
+ok=0; run_case t12 NONZERO && out_has t12 "mismatches the" && out_has t12 "exact spec match also exists" && log_lacks t12 "coupons create" && log_lacks t12 "secrets set" || ok=1
+check $ok "mixed exact+mismatched name-matches abort instead of reusing"
+
 echo "----------------------------------------"
 echo "finish-founding: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

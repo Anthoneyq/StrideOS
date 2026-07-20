@@ -18,8 +18,9 @@
 #     reached. A spec-matching but no-longer-valid coupon means the 25 seats
 #     are GONE — the script aborts rather than minting 25 more. Reopening
 #     founding is a pricing decision for Anthoney, never this script.
-#   - Ambiguity (two spec-matching valid coupons, or a name-match with wrong
-#     fields) aborts with instructions instead of guessing.
+#   - Ambiguity aborts with instructions instead of guessing: a same-name
+#     coupon with wrong fields blocks EVERYTHING (even when an exact match
+#     also exists — clean up first), and two exact matches are ambiguous.
 #   - The create path requires exit code 0 AND verifies every field of the
 #     returned coupon before its ID is stored.
 # Tested by tests/test-finish-founding.sh against a stubbed stripe/supabase.
@@ -67,7 +68,24 @@ spec_ids = {c["id"] for c in spec_matches}
 mismatched = [c for c in named if c["id"] not in spec_ids]
 valid_matches = [c for c in spec_matches if c.get("valid")]
 
-if len(valid_matches) == 1:
+if mismatched:
+    # Checked FIRST, even when an exact spec match also exists: a same-name
+    # coupon with different terms is a red flag that must be cleaned up before
+    # this script touches anything.
+    for c in mismatched:
+        diffs = {k: c.get(k) for k in SPEC if c.get(k) != SPEC[k]}
+        sys.stderr.write(f"⛔ coupon {c['id']} (valid={c.get('valid')}) is named "
+                         f"'Founding Coach' but mismatches the spec on {diffs} (want {SPEC}).\n")
+    if valid_matches:
+        ids = ", ".join(c["id"] for c in valid_matches)
+        sys.stderr.write(f"An exact spec match also exists ({ids}); after deleting or "
+                         "renaming the mismatched coupon(s) in the Dashboard, re-run to "
+                         "reuse it.\n")
+    else:
+        sys.stderr.write("Refusing to reuse it or create a near-duplicate. Fix, rename, "
+                         "or delete it in the Dashboard, then re-run.\n")
+    sys.exit(3)
+elif len(valid_matches) == 1:
     with open(out_path, "w") as f:
         f.write("REUSE " + valid_matches[0]["id"])
 elif len(valid_matches) > 1:
@@ -86,14 +104,6 @@ elif spec_matches:
                      "(PRICING_STRATEGY.md) is terminal. Reopening founding seats is a "
                      "pricing decision for Anthoney, not this script.\n")
     sys.exit(4)
-elif mismatched:
-    for c in mismatched:
-        diffs = {k: c.get(k) for k in SPEC if c.get(k) != SPEC[k]}
-        sys.stderr.write(f"⛔ coupon {c['id']} (valid={c.get('valid')}) is named "
-                         f"'Founding Coach' but mismatches the spec on {diffs} (want {SPEC}).\n")
-    sys.stderr.write("Refusing to reuse it or create a near-duplicate. Fix, rename, or "
-                     "delete it in the Dashboard, then re-run.\n")
-    sys.exit(3)
 else:
     with open(out_path, "w") as f:
         f.write("CREATE")

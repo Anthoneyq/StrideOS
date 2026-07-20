@@ -1,6 +1,7 @@
 # OS junk
 .DS_Store
 **/.DS_Store
+__pycache__/
 
 # Supabase local-only state
 supabase/.temp/
