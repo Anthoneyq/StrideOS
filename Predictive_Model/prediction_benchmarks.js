@@ -50,11 +50,14 @@ if(!ratiosSrc) throw new Error('OBSERVED_RATIOS missing from index.html');
 
 const flagSrc = (html.match(/const VDOT_ZONE_RECONCILIATION_ENABLED = (?:true|false);/) || [''])[0];
 if(!flagSrc) throw new Error('VDOT_ZONE_RECONCILIATION_ENABLED missing from index.html');
+const nudgeFlagSrc = (html.match(/const OBSERVED_RATIO_NUDGE_ENABLED = (?:true|false);/) || [''])[0];
+if(!nudgeFlagSrc) throw new Error('OBSERVED_RATIO_NUDGE_ENABLED missing from index.html');
 
+// `const` inside the vm script doesn't attach to the context object — export explicitly.
+const engineSrc = distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + nudgeFlagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;' + '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;';
 const ctx = { Math, Date, console };
 vm.createContext(ctx);
-// `const` inside the vm script doesn't attach to the context object — export explicitly.
-vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;', ctx);
+vm.runInContext(engineSrc, ctx);
 
 // ── Assertion harness ──
 let pass = 0, fail = 0;
@@ -238,6 +241,46 @@ isEqual('altitudeCorrection 1600ft (<500m) is 0', ctx.altitudeCorrection(1600), 
 isEqual('altitudeCorrection 1700ft (>500m) applies', ctx.altitudeCorrection(1700), 0.01);
 isEqual('_normDate prints local date (no UTC shift)', ctx._normDate('May 3, 2026'), '2026-05-03');
 isEqual('_normDate US format', ctx._normDate('5/3/26'), '2026-05-03');
+
+// ── 9. OBSERVED_RATIOS nudge gate (BUG-036 follow-up — flagged; evidence in
+// NUDGE-EVIDENCE-2026-07-19.md) ──
+// The ≥3000m equivalent-performance nudge sits behind OBSERVED_RATIO_NUDGE_ENABLED
+// (true = shipped 30% blend, the current default; false = drop it — the
+// evidence-backed option, measured 1.082→1.011 median on the 58 predictions it
+// changes). BOTH states are pinned against fixed fixtures and the live engine
+// must match whichever state index.html declares, so the owner's decision
+// stays a one-line flag flip with this suite green either way.
+const nudgeCtxFor = flag => {
+  const c = { Math, Date, console };
+  vm.createContext(c);
+  vm.runInContext(engineSrc.replace(nudgeFlagSrc, `const OBSERVED_RATIO_NUDGE_ENABLED = ${flag};`), c);
+  return c;
+};
+const nudgeOn = nudgeCtxFor(true), nudgeOff = nudgeCtxFor(false);
+const nudgeAthlete = { raceDistance: '5K', raceDistanceM: 5000, raceTime: '19:57', raceDate: null, additionalPRs: {} };
+const f10On  = nudgeOn.raceForecastForTarget(nudgeAthlete, { distM: 10000, label: '10K' });
+const f10Off = nudgeOff.raceForecastForTarget(nudgeAthlete, { distM: 10000, label: '10K' });
+const ens10 = e(5000, 1197, 10000);
+inRange('Nudge OFF = bare ensemble (5K→10K, sec diff)', Math.abs(f10Off.likely - ens10), 0, 1e-9);
+inRange('Nudge ON = 30% Daniels-ratio blend (5K→10K, sec diff)',
+  Math.abs(f10On.likely - (0.3 * 1197 * ctx.OBSERVED_RATIOS['5000_10000'] + 0.7 * ens10)), 0, 1e-9);
+isEqual('Nudge flag actually changes the 10K forecast', Math.abs(f10On.likely - f10Off.likely) > 0.5, true);
+isEqual('Nudge ON explains itself in reasons', f10On.reasons.some(r => r.includes('equivalent-performance')), true);
+isEqual('Nudge OFF drops the reason line', f10Off.reasons.some(r => r.includes('equivalent-performance')), false);
+// Marathon wiring check only — the HM/M ratios are UNTESTED by backtest data:
+const fMarOn  = nudgeOn.raceForecastForTarget(nudgeAthlete, { distM: 42195, label: 'Marathon' });
+const fMarOff = nudgeOff.raceForecastForTarget(nudgeAthlete, { distM: 42195, label: 'Marathon' });
+inRange('Nudge ON marathon = 30% blend (sec diff)',
+  Math.abs(fMarOn.likely - (0.3 * 1197 * ctx.OBSERVED_RATIOS['5000_42195'] + 0.7 * fMarOff.likely)), 0, 1e-9);
+// Nudge scope is ≥3000m standardized pairs — shorter pairs identical either way:
+const subFix = { raceDistance: '1600m', raceDistanceM: 1600, raceTime: '4:30', raceDate: null, additionalPRs: {} };
+const sub = c => c.raceForecastForTarget(subFix, { distM: 3200, label: '3200m' });
+inRange('Nudge never touches sub-3000m pairs (1600→3200 diff)', Math.abs(sub(nudgeOn).likely - sub(nudgeOff).likely), 0, 1e-9);
+// Ship parity: the live engine matches the state index.html declares — the
+// flag flip is the ONLY thing that may move it between the two pinned behaviors.
+const f10Live = ctx.raceForecastForTarget(nudgeAthlete, { distM: 10000, label: '10K' });
+inRange('Live engine matches declared nudge-flag state (sec diff)',
+  Math.abs(f10Live.likely - (ctx.OBSERVED_RATIO_NUDGE_ENABLED ? f10On.likely : f10Off.likely)), 0, 1e-9);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

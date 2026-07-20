@@ -5808,6 +5808,18 @@ function getEventDomain(distM){
 // NOTE: earlier versions used population-average ratios from mass race data;
 // those compare DIFFERENT populations per event (selection bias) and implied
 // impossible fatigue exponents (<1.0), so they were replaced 2026-06-10.
+//
+// ⚠️ NUDGE MEASURED NET-NEGATIVE-TO-NOISE (BUG-036 open question; evidence in
+// NUDGE-EVIDENCE-2026-07-19.md). On the 58 backtest predictions the nudge
+// changes (every one a 5K↔10K pair, 11 elite athletes) dropping it improves
+// the changed-subset median |%err| 1.082→1.011 (Mode A) and 1.219→1.108
+// (Mode B) with a dead-even 29W/29L head-to-head; the HM/marathon ratios are
+// never exercised by the validation data at all. Flip the flag below to false
+// to DROP the nudge (the evidence-backed option); it stays true — the shipped
+// 30% blend — until Anthoney signs off, same gate pattern as
+// VDOT_ZONE_RECONCILIATION_ENABLED.
+const OBSERVED_RATIO_NUDGE_ENABLED = true;
+
 const OBSERVED_RATIOS = {
   '5000_10000':    2.073,
   '5000_21097':    4.591,
@@ -6008,7 +6020,9 @@ function raceForecastForTarget(athlete, target, opts){
   }
 
   const observedRatio = getObservedRatio(anchor.distM, targetDistM);
-  if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000){
+  const nudgeApplied = OBSERVED_RATIO_NUDGE_ENABLED && !!observedRatio &&
+    anchor.distM >= 3000 && targetDistM >= 3000;
+  if(nudgeApplied){
     const observedPrediction = anchor.sec * observedRatio;
     likely = observedPrediction * 0.3 + likely * 0.7;
   }
@@ -6096,7 +6110,7 @@ function raceForecastForTarget(athlete, target, opts){
   if(pacedCeilEvent) reasons.push(`Capped at equal pace with the observed ${pacedCeilEvent} PR — a shorter race can't be slower pace`);
   if(youthFactor > 1) reasons.push(ageYears <= 14 ? 'Youth athlete (≤14) — maturation widens range' : 'Youth athlete — maturation widens range');
   if(typeof athlete.weeklyMileage === 'number' && athlete.weeklyMileage > 0 && targetDistM > 10000) reasons.push(`Volume-adjusted (${athlete.weeklyMileage} mi/wk)`);
-  if(observedRatio && anchor.distM >= 3000 && targetDistM >= 3000) reasons.push('Nudged by equivalent-performance tables');
+  if(nudgeApplied) reasons.push('Nudged by equivalent-performance tables');
   if(isExploratory) reasons.push('Exploratory only — no strong validation across this distance gap');
 
   return {

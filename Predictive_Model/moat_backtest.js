@@ -45,24 +45,30 @@ const NEEDED = [
 const distSrc    = (html.match(/const DIST = \{[\s\S]*?\};/) || [''])[0];
 const domainsSrc = (html.match(/const EVENT_DOMAINS = \{[\s\S]*?\};/) || [''])[0];
 const ratiosSrc  = (html.match(/const OBSERVED_RATIOS = \{[\s\S]*?\};/) || [''])[0];
+const nudgeFlagSrc = (html.match(/const OBSERVED_RATIO_NUDGE_ENABLED = (?:true|false);/) || [''])[0];
+if(!nudgeFlagSrc) throw new Error('OBSERVED_RATIO_NUDGE_ENABLED missing from index.html');
 const ctx = { Math, console };
 vm.createContext(ctx);
-vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
-  '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;', ctx);
+vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + nudgeFlagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
+  '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' +
+  '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;', ctx);
 
 // ── MODE A: single-anchor shipped path ──
 // StrideOS predicted time at d2 (m) from time t1 (s) at d1 (m).
 // Ship-path parity (BUG-036): the product's raceForecastForTarget additionally
 // blends a 30% equivalent-performance nudge on ≥3000m pairs, so this mode
 // applies it too — scoring a bare component while shipping the nudged value
-// validated a different engine than coaches see. Personal-k and the pace
-// floor/ceiling need multi-PR context a single anchor doesn't carry, so for a
-// SINGLE-PR athlete the shipped path reduces to exactly this; the multi-PR
-// path is scored separately in MODE B below through raceForecastForTarget.
+// validated a different engine than coaches see. The nudge is behind the
+// OBSERVED_RATIO_NUDGE_ENABLED gate (read from index.html, so this mode tracks
+// whatever ships; evidence in NUDGE-EVIDENCE-2026-07-19.md). Personal-k and
+// the pace floor/ceiling need multi-PR context a single anchor doesn't carry,
+// so for a SINGLE-PR athlete the shipped path reduces to exactly this; the
+// multi-PR path is scored separately in MODE B below through
+// raceForecastForTarget.
 const stridePred = (d1, t1, d2) => {
   let pred = ctx.strideEnsemble(d1, t1, d2, 1.0, {}).predSec;
   const ratio = ctx.getObservedRatio(d1, d2);
-  if(ratio && d1 >= 3000 && d2 >= 3000) pred = (t1 * ratio) * 0.3 + pred * 0.7;
+  if(ctx.OBSERVED_RATIO_NUDGE_ENABLED && ratio && d1 >= 3000 && d2 >= 3000) pred = (t1 * ratio) * 0.3 + pred * 0.7;
   return pred;
 };
 // Naive Riegel baseline (exponent 1.06) — the commodity formula:
