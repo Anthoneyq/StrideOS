@@ -20,12 +20,12 @@ StrideOS sells one thing to a track/XC coach: put the right kid in the right eve
 
 ### StrideOS Founding Coach — first 25 seats
 
-**What StrideOS does.** You paste in your roster's meet times. StrideOS reads every PR each athlete has — not just one race — builds each kid's own fatigue curve, and flags where they'd score more points: the 800 kid who's slow-for-district there but would place in the mile, the "5K runner" whose marks say miler. Event Finder for the roster, forecasts with honest confidence bands, training paces, printable meet sheets, and a lineup screen for meet week.
+**What StrideOS does.** You paste in your roster's meet times. StrideOS reads every PR each athlete has — not just one race — builds each kid's own fatigue curve, and flags where they'd score more points: the 800 kid who's slow-for-district there but would place in the mile, the "5K runner" whose marks say miler. Event Finder for the roster, forecasts with honest planning ranges, training paces, printable meet sheets, and a lineup screen for meet week.
 
-**The proof, stated straight.** The engine was backtested hold-one-out against real athletes' actual meet results — 292 held-out race predictions across 146 event pairs from 23 athletes' careers — with a median error of 1.2% versus 1.9% for the standard Riegel formula every free calculator uses (about a third lower), and the advantage shows most where events sit 2–4× apart in distance (1.2% vs 2.1%). That test is same-season, cross-event, on a sample that skews elite — so don't take my word for it: the Proof Ledger in the app runs the same hold-one-out test on *your* athletes' real times, next to Riegel and VDOT, error side by side. Run your kids through it, then decide.
+**The proof, stated straight.** The engine was backtested hold-one-out against real athletes' actual meet results — 292 held-out race predictions across 146 event pairs from 23 athletes' careers — with a median error of 1.2% versus 1.9% for the standard Riegel formula every free calculator uses (about a third lower), and the advantage shows most where events sit 2–4× apart in distance (1.2% vs 2.1%). That test is same-season, cross-event, on a sample that skews elite — so don't take my word for it: the Proof Ledger in the app runs an analogous hold-one-out check on *your* athletes' real times (its multi-PR path, reported as mean error — roster-specific, not the identical headline test), next to Riegel and VDOT, error side by side. Run your kids through it, then decide.
 
 **What Founding Coaches get:**
-- The full Pro Coach plan: one coach account, unlimited athletes (no per-athlete pricing, ever), cloud save/sync, roster paste/bulk import, race forecasts with confidence bands, environmental adjustments, event-fit analysis, PDF export.
+- The full Pro Coach plan: one coach account, unlimited athletes (no per-athlete pricing, ever), cloud save/sync, roster paste/bulk import, race forecasts with planning ranges, environmental adjustments, event-fit analysis, PDF export.
 - **$149/year, annual only — price locked for life while your subscription stays active.**
 - A direct line to me. Your roster shapes what gets built next.
 
