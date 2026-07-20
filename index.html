@@ -3027,7 +3027,7 @@ async function syncAthleteToSupabase(athlete){
 // this becomes the prediction-vs-outcome dataset used to recalibrate the
 // ensemble (the core data flywheel). Deduped per athlete via a signature of
 // the inputs, so re-saving without changes doesn't write duplicate rows.
-const PREDICTION_ENGINE_VERSION = 'ensemble-2026-07-01-kfloor-spanfade';
+const PREDICTION_ENGINE_VERSION = 'ensemble-2026-07-19-mathaudit-paceceil-nudgeflag';
 const PREDICTION_SOURCE_VERSION = 'sources-2026-06-20-norwegian-method-applied';
 
 async function logPredictionSnapshot(athlete){

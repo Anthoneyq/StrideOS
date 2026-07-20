@@ -282,5 +282,16 @@ const f10Live = ctx.raceForecastForTarget(nudgeAthlete, { distM: 10000, label: '
 inRange('Live engine matches declared nudge-flag state (sec diff)',
   Math.abs(f10Live.likely - (ctx.OBSERVED_RATIO_NUDGE_ENABLED ? f10On.likely : f10Off.likely)), 0, 1e-9);
 
+// Engine-version tracking: the 2026-07-19 math-audit pass (anchor selection, pace
+// ceiling, Mile boundary, nudge flag) changes logged forecasts, and
+// PREDICTION_ENGINE_VERSION keys snapshot dedup + calibration records — so the
+// version MUST move with the math. Any future forecast-affecting change must bump
+// the constant in index.html AND this pinned string, consciously, together.
+const engineVer = (html.match(/const PREDICTION_ENGINE_VERSION = '([^']+)';/) || [])[1] || '';
+inRange("Engine version bumped with the math-audit changes (0=exact match)",
+  engineVer === 'ensemble-2026-07-19-mathaudit-paceceil-nudgeflag' ? 0 : 1, 0, 0);
+inRange('Engine version is not the pre-audit string (0=differs)',
+  engineVer === 'ensemble-2026-07-01-kfloor-spanfade' ? 1 : 0, 0, 0);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
