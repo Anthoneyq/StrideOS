@@ -25,7 +25,7 @@ def token():
                          capture_output=True, text=True).stdout.strip()
     if raw.startswith("go-keyring-base64:"):
         import base64
-        raw = base64.b64decode(raw.split(":", 1)[1]).decode()
+        raw = base64.b64decode(raw.split(":", 1)[1]).decode().strip()
     if not raw:
         sys.exit("⛔ no Supabase CLI token in keychain — run `supabase login` first")
     return raw
@@ -37,7 +37,8 @@ TOKEN = token()
 def call(method, body=None):
     req = urllib.request.Request(
         API, data=json.dumps(body).encode() if body else None,
-        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json",
+                 "User-Agent": "strideos-auth-config/1.0"},
         method=method)
     with urllib.request.urlopen(req) as r:
         return json.load(r)
@@ -86,8 +87,11 @@ if mismatches:
         print(f"  {k}: want {show(body[k])!r}, hosted has {show(got)!r}")
     sys.exit(1)
 
+# Server-derived aggregates of the very fields we patch (boolean maps of
+# "is a custom subject/template set?") — expected to change with them.
+DERIVED = {"mailer_subjects_custom_contents", "mailer_templates_custom_contents"}
 tampered = sorted(k for k in set(pre) | set(final)
-                  if k not in body and final.get(k) != pre.get(k))
+                  if k not in body and k not in DERIVED and final.get(k) != pre.get(k))
 if tampered:
     # Values withheld on purpose — untouched fields include SMTP material.
     print("⛔ Fields OUTSIDE the requested set changed during the PATCH "
