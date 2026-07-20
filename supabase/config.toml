@@ -28,6 +28,11 @@ additional_redirect_urls = [
 ]
 enable_signup = true
 
+# Pinned to the hosted value. Unset, `supabase config push` applies the CLI
+# local default of 2 emails/hour, which would throttle coach signups.
+[auth.rate_limit]
+email_sent = 30
+
 [auth.email]
 enable_signup = true
 enable_confirmations = true
