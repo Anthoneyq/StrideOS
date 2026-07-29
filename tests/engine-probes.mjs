@@ -125,8 +125,30 @@ const pl = E.parseSplitList('75, 1:15\n80');
 ok(pl.length === 3 && pl[0] === 75 && pl[1] === 75 && pl[2] === 80, "split list parses mixed formats");
 ok(E.parseSplitList('abc def').length === 0, "garbage splits parse to empty");
 
+// ── Race Shape adversarial cases (review cycle-1 findings) ──
+// Slow-ish final but a MIDDLE split is the slowest → must not claim "slowest".
+const midSlow = E.computeRaceShape([70, 85, 80]);
+ok(midSlow.kickKey === 'steady', "final split near average with slow middle → steady, no false 'no close'");
+// Final split below average but SLOWER than the penultimate → not a kick.
+const noAccel = E.computeRaceShape([95, 70, 75]);
+ok(noAccel.closePct <= -3, "sanity: final split is well under race average");
+ok(noAccel.kickKey !== 'kick', "below-average close without acceleration is NOT a kick");
+// Final split ≥3% over average but NOT the race's slowest → 'slow finish' wording, no 'slowest' claim.
+const slowNotSlowest = E.computeRaceShape([60, 100, 90]);
+ok(slowNotSlowest.kickKey === 'nokick' && !/slowest/.test(slowNotSlowest.kick),
+  "over-average close that isn't the slowest split never claims 'slowest'");
+ok(slowNotSlowest.lastIsSlowest === false, "lastIsSlowest flag correct");
+// Genuinely slowest final split → the 'slowest' wording IS used.
+const fadeAgain = E.computeRaceShape([70, 72, 75, 80]);
+ok(fadeAgain.kickKey === 'nokick' && /slowest/.test(fadeAgain.kick),
+  "a true slowest-last-split race says so");
+// Kick still requires BOTH below-average close AND acceleration vs the previous split.
+const realKick = E.computeRaceShape([80, 76, 74, 70]);
+ok(realKick.kickKey === 'kick', "descending finish with acceleration is still a kick");
+
 // ── Model Arbitration ──
-const row = (name, errs) => ({ name, strideErr: errs[0], riegelErr: errs[1], vdotErr: errs[2],
+const row = (name, errs, id) => ({ athleteId: id || name, name,
+  strideErr: errs[0], riegelErr: errs[1], vdotErr: errs[2],
   cameronErr: errs[3], purdyErr: errs[4], vvErr: errs[5] });
 const rows = [
   row('X', [2, 1, 3, null, 4, 5]),
@@ -137,6 +159,10 @@ const rows = [
 const arb = E.computeModelArbitration(rows);
 ok(arb.athletes.length === 1 && arb.athletes[0].name === 'X', "single-test athletes are not ranked");
 ok(arb.athletes[0].best.key === 'riegelErr', "best model per athlete = lowest mean error");
+// Comparability control: X's row 1 has an abstaining Cameron, so rankings for
+// X must be computed on the 2 rows every candidate scored — same tests for all.
+ok(arb.athletes[0].comparableTests === 2, "ranking uses only the rows all candidate models scored");
+ok(arb.athletes[0].ranking.every(m => m.n === 2), "every ranked model scored on the identical test set");
 const camPanel = arb.panel.find(m => m.key === 'cameronErr');
 ok(camPanel.n === 3, "abstained rows (null) are excluded from a model's n, not scored as misses");
 const riegelPanel = arb.panel.find(m => m.key === 'riegelErr');
@@ -146,5 +172,46 @@ const zRows = [ row('Z', [2, 3, 4, 5, 1, 6]), row('Z', [2, 3, 4, 5, null, 6]) ];
 const zArb = E.computeModelArbitration(zRows);
 ok(zArb.athletes.length === 1 && !zArb.athletes[0].ranking.some(m => m.key === 'purdyErr'),
   "a model with <2 scored tests on an athlete is not ranked for that athlete");
+// Duplicate names, different IDs → two separate rankings, never merged.
+const dupRows = [
+  row('Jordan Smith', [1, 2, 3, 4, 5, 6], 'id-A'),
+  row('Jordan Smith', [1, 2, 3, 4, 5, 6], 'id-A'),
+  row('Jordan Smith', [3, 1, 2, 4, 5, 6], 'id-B'),
+  row('Jordan Smith', [3, 1, 2, 4, 5, 6], 'id-B'),
+];
+const dupArb = E.computeModelArbitration(dupRows);
+ok(dupArb.athletes.length === 2, "same-name athletes with different IDs are ranked separately");
+ok(dupArb.athletes.some(a => a.best.key === 'strideErr') && dupArb.athletes.some(a => a.best.key === 'riegelErr'),
+  "each same-name athlete keeps their own best model");
+
+// ── Tested-threshold privacy wiring (source-level oracles) ──
+const clearDBsrc = extractFn('clearDB');
+ok(clearDBsrc.includes('strideos_tested_thresholds'), "clearDB wipes the tested-threshold side map");
+const delAthSrc = extractFn('deleteAthlete');
+ok(delAthSrc.includes('setTestedThreshold'), "deleteAthlete removes the athlete's tested threshold");
+const exportSrc = extractFn('exportMyData');
+ok(exportSrc.includes('tested_thresholds'), "exportMyData includes device-local tested thresholds");
+// Behavioral roundtrip with a stubbed localStorage.
+const ttSrc = [
+  `const TESTED_THRESHOLD_KEY = 'strideos_tested_thresholds';`,
+  extractFn('getTestedThreshold'),
+  extractFn('setTestedThreshold'),
+  `return { getTestedThreshold, setTestedThreshold };`
+].join('\n');
+const store = new Map();
+const lsStub = { getItem: k => store.has(k) ? store.get(k) : null,
+  setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+const TT = new Function('localStorage', ttSrc)(lsStub);
+TT.setTestedThreshold('kid-1', '6:45');
+ok(TT.getTestedThreshold('kid-1') === '6:45', "tested threshold set/get roundtrip");
+TT.setTestedThreshold('kid-1', '');
+ok(TT.getTestedThreshold('kid-1') === null, "empty save removes the athlete's entry");
+
+// ── Honest model labels ──
+const models = new Function(extractConst('LEDGER_MODELS', '[', ']') + '; return LEDGER_MODELS;')();
+const vvModel = models.find(m => m.key === 'vvErr');
+ok(/after Vickers-Vertosick/.test(vvModel.label), "V-V heuristic is not presented as the published model");
+const purdyModel = models.find(m => m.key === 'purdyErr');
+ok(/STRIDE/.test(purdyModel.label), "Purdy-style curve is labeled as a STRIDE heuristic");
 
 console.log(`engine probes ok — ${passed} assertions`);
