@@ -18,7 +18,10 @@ function extractBlock(startIdx, openChar, closeChar){
   throw new Error('unbalanced block at ' + startIdx);
 }
 function extractFn(name){
-  const sig = `function ${name}(`;
+  // Preserve `async` — matching bare `function name(` inside `async function
+  // name(` silently drops the keyword and breaks any `await` in the body.
+  const asyncSig = `async function ${name}(`;
+  const sig = html.indexOf(asyncSig) >= 0 ? asyncSig : `function ${name}(`;
   const at = html.indexOf(sig);
   if(at < 0) throw new Error(`function ${name} not found`);
   const bodyStart = html.indexOf('{', at);
@@ -42,6 +45,7 @@ const src = [
   extractFn('parseSplitList'),
   extractFn('computeRaceShape'),
   extractFn('computeModelArbitration'),
+  extractFn('ledgerAthleteKey'),
   extractFn('_formulaRiegel'),
   extractFn('_formulaCameron'),
   extractFn('_formulaVDOT'),
@@ -184,28 +188,104 @@ ok(dupArb.athletes.length === 2, "same-name athletes with different IDs are rank
 ok(dupArb.athletes.some(a => a.best.key === 'strideErr') && dupArb.athletes.some(a => a.best.key === 'riegelErr'),
   "each same-name athlete keeps their own best model");
 
-// ── Tested-threshold privacy wiring (source-level oracles) ──
-const clearDBsrc = extractFn('clearDB');
-ok(clearDBsrc.includes('strideos_tested_thresholds'), "clearDB wipes the tested-threshold side map");
-const delAthSrc = extractFn('deleteAthlete');
-ok(delAthSrc.includes('setTestedThreshold'), "deleteAthlete removes the athlete's tested threshold");
-const exportSrc = extractFn('exportMyData');
-ok(exportSrc.includes('tested_thresholds'), "exportMyData includes device-local tested thresholds");
-// Behavioral roundtrip with a stubbed localStorage.
+// ── Tested-threshold privacy (EXECUTED behavior, stubbed browser surface) ──
+const mkStore = () => {
+  const store = new Map();
+  return { store, ls: { getItem: k => store.has(k) ? store.get(k) : null,
+    setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) } };
+};
+// set/get roundtrip.
 const ttSrc = [
   `const TESTED_THRESHOLD_KEY = 'strideos_tested_thresholds';`,
   extractFn('getTestedThreshold'),
   extractFn('setTestedThreshold'),
   `return { getTestedThreshold, setTestedThreshold };`
 ].join('\n');
-const store = new Map();
-const lsStub = { getItem: k => store.has(k) ? store.get(k) : null,
-  setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
-const TT = new Function('localStorage', ttSrc)(lsStub);
-TT.setTestedThreshold('kid-1', '6:45');
-ok(TT.getTestedThreshold('kid-1') === '6:45', "tested threshold set/get roundtrip");
-TT.setTestedThreshold('kid-1', '');
-ok(TT.getTestedThreshold('kid-1') === null, "empty save removes the athlete's entry");
+{
+  const { ls } = mkStore();
+  const TT = new Function('localStorage', ttSrc)(ls);
+  TT.setTestedThreshold('kid-1', '6:45');
+  ok(TT.getTestedThreshold('kid-1') === '6:45', "tested threshold set/get roundtrip");
+  TT.setTestedThreshold('kid-1', '');
+  ok(TT.getTestedThreshold('kid-1') === null, "empty save removes the athlete's entry");
+}
+// clearDB: EXECUTED — must remove both the main DB and the threshold side map.
+{
+  const { store, ls } = mkStore();
+  store.set('strideos_db', '{"athletes":[]}');
+  store.set('strideos_tested_thresholds', '{"kid-1":"6:45"}');
+  const src = [`const KEY = 'strideos_db'; let _mem = { seeded: true };`,
+    extractFn('clearDB'), `return clearDB;`].join('\n');
+  new Function('localStorage', src)(ls)();
+  ok(!store.has('strideos_db'), "clearDB removes the main DB (executed)");
+  ok(!store.has('strideos_tested_thresholds'), "clearDB removes tested thresholds (executed)");
+}
+// deleteAthlete: EXECUTED — roster, workouts, and the athlete's threshold all go;
+// other athletes' thresholds survive.
+{
+  const { store, ls } = mkStore();
+  store.set('strideos_tested_thresholds', JSON.stringify({ 'kid-1': '6:45', 'kid-2': '7:10' }));
+  const src = [
+    `let DB = { athletes: [{ id: 'kid-1', name: 'A' }, { id: 'kid-2', name: 'B' }],
+       workouts: [{ athleteId: 'kid-1' }, { athleteId: 'kid-2' }], activeAthleteId: 'kid-1' };`,
+    `const requireCoachWorkspace = () => true; const confirm = () => true;`,
+    `const saveDB = () => {}; const softDeleteRemoteAthlete = () => {};`,
+    `const refreshActiveAthlete = () => {}; const updateChip = () => {};`,
+    `const currentScreen = 'roster'; const renderRoster = () => {};`,
+    `const goTo = () => {}; const toast = () => {};`,
+    `const TESTED_THRESHOLD_KEY = 'strideos_tested_thresholds';`,
+    extractFn('getTestedThreshold'),
+    extractFn('setTestedThreshold'),
+    extractFn('deleteAthlete'),
+    `return { del: id => deleteAthlete(id), db: () => DB };`
+  ].join('\n');
+  const H = new Function('localStorage', src)(ls);
+  H.del('kid-1');
+  ok(H.db().athletes.length === 1 && H.db().athletes[0].id === 'kid-2', "deleteAthlete removes the athlete (executed)");
+  ok(H.db().workouts.every(w => w.athleteId !== 'kid-1'), "deleteAthlete removes the athlete's workouts (executed)");
+  const after = JSON.parse(store.get('strideos_tested_thresholds'));
+  ok(!('kid-1' in after), "deleteAthlete removes that athlete's tested threshold (executed)");
+  ok(after['kid-2'] === '7:10', "other athletes' tested thresholds survive deletion");
+}
+// exportMyData: EXECUTED — the downloaded JSON must carry cloud data AND
+// device_local.tested_thresholds.
+{
+  const { store, ls } = mkStore();
+  store.set('strideos_tested_thresholds', JSON.stringify({ 'kid-1': '6:45' }));
+  let captured = null;
+  class BlobStub { constructor(parts){ captured = parts.join(''); } }
+  const documentStub = {
+    getElementById: () => null,
+    createElement: () => ({ click(){}, remove(){}, set href(_v){}, set download(_v){} }),
+    body: { appendChild(){} }
+  };
+  const src = [
+    `const sbClient = { rpc: async () => ({ data: { coach: { email: 'x@y.z' } }, error: null }) };`,
+    `const sbUser = { id: 'coach-1' }; const toast = () => {};`,
+    `const setTimeout = (fn) => {};`,
+    extractFn('exportMyData'),
+    `return exportMyData;`
+  ].join('\n');
+  const run = new Function('localStorage', 'document', 'Blob', 'URL', src)(
+    ls, documentStub, BlobStub, { createObjectURL: () => 'blob:x', revokeObjectURL(){} });
+  await run();
+  ok(captured !== null, "exportMyData produced a download blob (executed)");
+  const exported = JSON.parse(captured);
+  ok(exported.device_local && exported.device_local.tested_thresholds['kid-1'] === '6:45',
+    "export includes device_local.tested_thresholds (executed)");
+  ok(exported.coach && exported.coach.email === 'x@y.z', "export still carries the cloud payload");
+}
+
+// ── Ledger identity: headline count keys by athlete ID ──
+const keyFn = new Function(extractFn('ledgerAthleteKey') + '; return ledgerAthleteKey;')();
+const sameName = [{ athleteId: 'id-A', name: 'Jordan Smith' }, { athleteId: 'id-B', name: 'Jordan Smith' }];
+ok(new Set(sameName.map(keyFn)).size === 2, "same-name different-ID athletes count as two");
+ok(new Set([{ athleteId: 'id-A', name: 'J' }, { athleteId: 'id-A', name: 'J' }].map(keyFn)).size === 1,
+  "same athlete never double-counts");
+// And the ledger's headline count actually uses that key rule.
+const ledgerSrc = extractFn('computeProofLedger');
+ok(/athletes:\s*new Set\(rows\.map\(ledgerAthleteKey\)\)/.test(ledgerSrc),
+  "computeProofLedger's athlete count is keyed by ledgerAthleteKey");
 
 // ── Honest model labels ──
 const models = new Function(extractConst('LEDGER_MODELS', '[', ']') + '; return LEDGER_MODELS;')();

@@ -7363,9 +7363,16 @@ function computeProofLedger(athletes){
   // not a STRIDE win (honest-ledger rule, same spirit as the near-dup skip).
   const wins = rows.filter(r => r.strideErr <= r.riegelErr && r.strideErr <= r.vdotErr &&
     (r.strideErr < r.riegelErr || r.strideErr < r.vdotErr)).length;
-  return { rows, n:rows.length, athletes:new Set(rows.map(r => r.name)).size,
+  return { rows, n:rows.length, athletes:new Set(rows.map(ledgerAthleteKey)).size,
     strideMape:mean('strideErr'), riegelMape:mean('riegelErr'), vdotMape:mean('vdotErr'), wins,
     arb: computeModelArbitration(rows) };
+}
+
+// ONE identity rule for every ledger aggregation: key by athlete ID so two
+// kids with the same name are never merged (count OR arbitration); name-only
+// fallback exists for synthetic rows that carry no id.
+function ledgerAthleteKey(r){
+  return r.athleteId != null ? 'id:' + r.athleteId : 'name:' + r.name;
 }
 
 // ── MODEL ARBITRATION ───────────────────────────────────────────────────────
@@ -7401,11 +7408,10 @@ function computeModelArbitration(rows){
       mape: vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null };
   });
   // Group by athlete ID, never by name — two kids called Jordan Smith must
-  // not be merged into one ranking. (Name-only fallback keeps synthetic rows
-  // usable but real ledger rows always carry athleteId.)
+  // not be merged into one ranking. Same key rule as the headline count.
   const byAthlete = {};
   rows.forEach(r => {
-    const k = r.athleteId != null ? 'id:' + r.athleteId : 'name:' + r.name;
+    const k = ledgerAthleteKey(r);
     (byAthlete[k] = byAthlete[k] || []).push(r);
   });
   const athletes = Object.keys(byAthlete).map(k => {
