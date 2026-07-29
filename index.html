@@ -141,6 +141,10 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .auth-feedback{font-family:'JetBrains Mono',monospace;font-size:.625rem;line-height:1.5;border:1px solid var(--border);border-radius:.375rem;padding:.5rem .625rem;margin-top:.625rem}
 .auth-feedback.info{color:var(--text-2);background:rgba(255,255,255,.03)}
 .auth-feedback.ok{color:var(--green);background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)}
+.helper-toggle{width:100%;margin-top:.75rem;background:transparent;border:1px solid var(--border);border-radius:.375rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:.625rem;letter-spacing:.06em;padding:.55rem .625rem;text-align:left;cursor:pointer}
+.helper-toggle:hover{border-color:var(--border-h);color:var(--text)}
+.simple-help{margin:0 0 1rem;padding:.875rem 1rem;background:rgba(255,107,53,.07);border:1px solid rgba(255,107,53,.3);border-radius:.5rem;color:var(--text-2);font-size:.8125rem;line-height:1.55}
+.simple-help strong{color:var(--text)}
 .auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
 .auth-input{width:100%;background:#050505;border:1px solid var(--border-s);border-radius:.375rem;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.75rem;padding:.55rem .625rem;margin-bottom:.5rem}
 .auth-input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent-line)}
@@ -493,6 +497,19 @@ input.err,select.err{border-color:var(--red)}
   .pace-row,.tl-row{grid-template-columns:1fr;gap:.5rem}
 }
 
+/* Phone guard: keep a late or cached desktop rule from shrinking the entire
+   coach workspace into a two-column layout. Wide tables scroll inside their
+   own cards; the page itself always stays at the device width. */
+@media(max-width:43.75rem){
+  .app{display:block!important;grid-template-columns:1fr!important;width:100%;min-width:0}
+  .sidebar{width:100%;min-width:0;height:auto!important;position:relative!important}
+  main{width:100%;min-width:0;padding:1.25rem 1rem}
+  .screen-header{margin-bottom:1.5rem;padding-bottom:1rem}
+  .screen-title{font-size:clamp(1.75rem,9vw,2.5rem)}
+  .btn-row{width:100%}
+  .btn-row .btn{flex:1 1 auto}
+}
+
 .hidden { display: none; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -616,6 +633,7 @@ input.err,select.err{border-color:var(--red)}
         <div class="chip-name" id="chipName">No athlete</div>
         <div class="chip-meta" id="chipMeta">Click to create →</div>
       </div>
+      <button class="helper-toggle" id="simpleHelpToggle" onclick="toggleSimpleHelp()">? Simple explanations: Off</button>
     </div>
   </aside>
 
@@ -1039,6 +1057,8 @@ const FREE_ATHLETE_LIMIT = 3;
 const ATHLETE_TIER_LIMIT = 1; // Athlete tier (your own profile); bump to 2-3 for households
 const FREE_SQUAD_CAP = 6;     // Free/anon coaches see real Team IQ on up to this many athletes (view-only)
 let authUiState = { type: '', message: '', sending: false, mode: 'signin' };
+let simpleHelpEnabled = false;
+try{ simpleHelpEnabled = localStorage.getItem('strideos_simple_help') === 'true'; }catch(_e){}
 const PUBLIC_SCREEN_ID = 'home';
 const WORKSPACE_SCREEN_IDS = new Set([
   'roster',
@@ -1240,7 +1260,7 @@ function authStatusHtml(){
       : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
     return `<div class="auth-status">Signed In ${tierBadge}</div>
       <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
-      <div class="auth-actions">${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
+      <div class="auth-actions"><button class="btn" onclick="startNewAthlete()">+ Add athlete</button>${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
       <div class="auth-note" style="margin-top:.5rem"><a onclick="showPrivacyModal()" style="cursor:pointer;text-decoration:underline">Data &amp; privacy</a></div>${authFeedbackHtml()}`;
   }
   return `<div class="auth-status">Coach Account</div>
@@ -1300,6 +1320,7 @@ function authFormHtml(){
       <button class="btn btn-primary" id="authPrimaryBtn" onclick="${primaryHandler}" ${primaryDisabled ? 'disabled' : ''}>${primaryLabel}</button>
     </div>
     <div class="auth-secondary">${secondary}</div>
+    ${!isSignup ? `<p class="auth-note"><strong style="color:var(--text-2)">What is a magic link?</strong> It is a one-time sign-in button sent to your email. Open it on this device — no password to remember.</p>` : ''}
     ${authFeedbackHtml()}
     <p class="auth-modal-trust">Free · no credit card · no ads · we never sell athlete data</p>`;
 }
@@ -1313,6 +1334,30 @@ function renderAuthPanel(){
     if(sbUser && authUiState.mode !== 'reset'){ closeAuthModal(); }
     else { modalBody.innerHTML = authFormHtml(); }
   }
+}
+
+function simpleHelpHtml(topic){
+  if(!simpleHelpEnabled) return '';
+  const copy = {
+    roster: '<strong>Quick start:</strong> Add one athlete for a single runner, or import a spreadsheet for a whole team. You can edit any detail later.',
+    import: '<strong>Importing a team:</strong> Drag in a spreadsheet, check the column matches, then confirm. STRIDE only accepts spreadsheet files here — not PDFs.',
+    profile: '<strong>What matters most:</strong> Name, a recent race event, and race time are enough to start. The other fields make the coaching read more specific.'
+  };
+  return copy[topic] ? `<div class="simple-help">${copy[topic]}</div>` : '';
+}
+
+function renderSimpleHelpToggle(){
+  const button = document.getElementById('simpleHelpToggle');
+  if(button) button.textContent = `? Simple explanations: ${simpleHelpEnabled ? 'On' : 'Off'}`;
+}
+
+function toggleSimpleHelp(){
+  simpleHelpEnabled = !simpleHelpEnabled;
+  try{ localStorage.setItem('strideos_simple_help', String(simpleHelpEnabled)); }catch(_e){}
+  renderSimpleHelpToggle();
+  refreshCurrentScreen();
+  renderAuthPanel();
+  toast(simpleHelpEnabled ? 'Simple explanations are on' : 'Simple explanations are off');
 }
 
 // Centered, readable auth modal. Reuses the upgrade-overlay backdrop. The form
@@ -2679,11 +2724,13 @@ function renderTierBanner(){
   }
   if(tier === 'trial'){
     const days = trialDaysRemaining();
-    const label = days === 0 ? 'last day' : (days === 1 ? '1 day left' : `${days} days left`);
+    // A missing subscription countdown must never leak into the UI as
+    // "null days left". The trial still has access; only its expiry is unknown.
+    const label = days == null ? 'full STRIDE OS access' : (days === 0 ? 'last day' : (days === 1 ? '1 day left' : `${days} days left`));
     host.innerHTML = `
       <div class="tier-banner tier-banner-trial">
         <div class="tier-banner-text">
-          <strong>Pro trial</strong> &middot; ${label} of full STRIDE OS access &middot; no card on file.
+          <strong>Pro trial</strong> &middot; ${days == null ? `${label} &middot; no card on file.` : `${label} of full STRIDE OS access &middot; no card on file.`}
         </div>
         <button class="btn btn-primary tier-banner-cta" onclick="showUpgradeModal()">Upgrade to Pro</button>
       </div>
@@ -6372,6 +6419,7 @@ function renderImportDropzone(){
   if(importMode === 'paste'){
     el.innerHTML = `
       ${importModeTabs()}
+      ${simpleHelpHtml('import')}
       <div class="card">
         <p style="font-family:var(--font-display);font-size:1.25rem;margin-bottom:.35rem">Paste your roster</p>
         <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-bottom:1rem">Paste rows from a spreadsheet, meet-management export, or another source you are authorized to use — headers or no headers. Or type one athlete per line: <span style="font-family:var(--font-mono);color:var(--text)">Maya R, 5k, 18:42, 42</span>. You’ll confirm the column mapping next.</p>
@@ -6387,6 +6435,7 @@ function renderImportDropzone(){
 
   el.innerHTML = `
     ${importModeTabs()}
+    ${simpleHelpHtml('import')}
     <div class="import-dropzone" id="importDropzone"
          tabindex="0"
          onclick="document.getElementById('importFileInput').click()"
@@ -6446,6 +6495,12 @@ async function handleImportFile(file){
   renderImport();
   try{
     const name = (file.name || '').toLowerCase();
+    if(name.endsWith('.pdf')){
+      throw new Error('PDF rosters are not supported yet. Export the roster as CSV or XLSX, then upload that spreadsheet.');
+    }
+    if(!/\.(csv|tsv|xlsx|xls)$/.test(name)){
+      throw new Error('Use a CSV, TSV, XLS, or XLSX roster file.');
+    }
     let result;
     if(name.endsWith('.xlsx') || name.endsWith('.xls')){
       result = await parseImportXLSX(file);
@@ -9263,6 +9318,7 @@ function renderRoster(){
 
   if(totalCount === 0){
     el.innerHTML = `
+      ${simpleHelpHtml('roster')}
       <div class="empty-state">
         <div class="empty-icon" aria-hidden="true">+</div>
         <p class="empty-title">No athletes yet</p>
@@ -9300,6 +9356,7 @@ function renderRoster(){
   ` : '';
 
   el.innerHTML = `
+    ${simpleHelpHtml('roster')}
     <div class="info-box">
       <strong>${visible.length} athlete${visible.length>1?'s':''} in roster.</strong> Click an athlete card to make them active across all screens. The <strong style="color:var(--accent)">+ New Athlete</strong> button adds without replacing anyone.
     </div>
@@ -10142,14 +10199,25 @@ function resetForm(){
 
 // ── CHIP ──
 function updateChip(){
-  const n=document.getElementById('chipName'), m=document.getElementById('chipMeta');
+  const n=document.getElementById('chipName'), m=document.getElementById('chipMeta'), chip=document.getElementById('activeAthleteChip');
   const count = DB.athletes.length;
   if(!A||!A.name){
     n.textContent = count > 0 ? 'No active athlete' : 'No athletes yet';
     m.textContent = count > 0 ? `${count} in roster · click to view` : 'Click to create →';
+    if(chip){
+      const action = count > 0 ? "goTo('roster',null)" : 'startNewAthlete()';
+      chip.setAttribute('onclick', action);
+      chip.setAttribute('onkeydown', `if(event.key==='Enter'||event.key===' ')${action}`);
+      chip.setAttribute('aria-label', count > 0 ? 'No active athlete — open roster' : 'No athletes yet — add an athlete');
+    }
   } else {
     n.textContent=A.name;
     m.textContent=`${A.age||'?'}${A.sex||''} · ${A.primaryEvent||''} · ${count} in roster`;
+    if(chip){
+      chip.setAttribute('onclick', "goTo('edit',null)");
+      chip.setAttribute('onkeydown', "if(event.key==='Enter'||event.key===' ')goTo('edit',null)");
+      chip.setAttribute('aria-label', 'Active athlete — click to edit');
+    }
   }
 }
 
@@ -10170,6 +10238,7 @@ function toast(msg, type){
 let currentScreen = 'home';
 window.addEventListener('load',()=>{
   refreshActiveAthlete();
+  renderSimpleHelpToggle();
   // Deep links: #eventfinder opens the free Event Finder; #ef=<payload> also
   // restores a shared result. The payload lives in the URL FRAGMENT, so the
   // shared times/name never reach a server log.
