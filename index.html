@@ -562,6 +562,7 @@ input.err,select.err{border-color:var(--red)}
           <li><button class="nav-btn" data-s="home"     onclick="goTo('home',this)"><span class="nav-icon" aria-hidden="true">⌂</span>Home</button></li>
           <li><button class="nav-btn" data-s="paces"    onclick="goTo('paces',this)"><span class="nav-icon" aria-hidden="true">▸</span><span id="navCalcLabel">Basic Calculator</span></button></li>
           <li><button class="nav-btn" data-s="eventfit" onclick="goTo('eventfit',this)"><span class="nav-icon" aria-hidden="true">◎</span>Event Finder</button></li>
+          <li><button class="nav-btn" data-s="raceshape" onclick="goTo('raceshape',this)"><span class="nav-icon" aria-hidden="true">∿</span>Race Shape</button></li>
           <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li data-auth-scope="workspace" data-coach-scope="coach"><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li data-auth-scope="workspace"><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>Coach Tools</button></li>
@@ -722,6 +723,14 @@ input.err,select.err{border-color:var(--red)}
         <div><p class="eyebrow">Points-maximizing entries</p><h1 class="screen-title" id="ln-h">Lineup <em>Optimizer</em></h1></div>
       </header>
       <div id="ln-body"></div>
+    </section>
+
+    <!-- RACE SHAPE READER -->
+    <section id="raceshape" class="screen" aria-labelledby="rs-h">
+      <header class="screen-header">
+        <div><p class="eyebrow">How they race, not just how fast</p><h1 class="screen-title" id="rs-h">Race <em>Shape</em></h1></div>
+      </header>
+      <div id="rs-body"></div>
     </section>
 
     <!-- PROOF LEDGER -->
@@ -1023,6 +1032,7 @@ const ATHLETE_SCREEN_IDS = new Set([
   'home',
   'paces',
   'eventfit',
+  'raceshape',
   'overview',
   'workouts',
   'multievent',
@@ -2729,7 +2739,7 @@ function showUpgradeModal(){
         </div>
         <button class="btn" id="planTeamBtn" onclick="window.location.href='mailto:thelabstrength@gmail.com?subject=STRIDE%20OS%20Team%20license'" style="white-space:nowrap">Talk to us &rarr;</button>
       </div>
-      ${sbUser ? `<p class="upgrade-foot" style="margin-bottom:.35rem">Skeptical of the forecasts? <button onclick="closeUpgradeModal();goTo('proof',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">Open the Proof Ledger</button> — STRIDE backtested against Riegel &amp; VDOT on your own roster. Run your kids through it, then decide.</p>` : ''}
+      ${sbUser ? `<p class="upgrade-foot" style="margin-bottom:.35rem">Skeptical of the forecasts? <button onclick="closeUpgradeModal();goTo('proof',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">Open the Proof Ledger</button> — STRIDE backtested against Riegel, VDOT, Cameron &amp; Purdy on your own roster. Run your kids through it, then decide.</p>` : ''}
       <p class="upgrade-foot">Have a promo code? Add it on the Stripe checkout page.</p>
     </div>
   `;
@@ -3532,6 +3542,7 @@ function goTo(id,btn){
   if(id==='workouts') renderWorkouts();
   if(id==='methodology') renderMethodology();
   if(id==='eventfit') renderEventFinder();
+  if(id==='raceshape') renderRaceShape();
   if(id==='squads')   renderSquads();
   if(id==='lineup')   renderLineup();
   if(id==='proof')    renderProof();
@@ -3654,6 +3665,8 @@ function renderOverview(){
 
     ${athleteOnly ? `<div class="info-box"><strong>Linked athlete profile.</strong> Your coach manages roster edits. You can view your pace zones, forecasts, event profile, and training log from this account.</div>` : ''}
 
+    ${thresholdEngineCard(A)}
+
     <!-- WHAT THIS TOOL DOES (instead of admitting weakness) -->
     <div class="card">
       <p class="card-title"><span>${esc(A.name)}'s Toolkit</span><span class="card-accent">AVAILABLE NOW</span></p>
@@ -3671,7 +3684,7 @@ function renderOverview(){
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem;margin-bottom:1rem">
         ${toolCard('Training Groups', 'Auto-cluster distance athletes into pace groups with today’s rep targets — printable per group.', 'squads', '→')}
         ${toolCard('Lineup Optimizer', 'Points-maximizing meet entries across the roster under your entry caps. The Monday ritual.', 'lineup', '→')}
-        ${toolCard('Proof Ledger', 'STRIDE backtested against Riegel & VDOT on your own athletes. See how close we are.', 'proof', '→')}
+        ${toolCard('Proof Ledger', 'Every classic calculator — Riegel, VDOT, Cameron, Purdy — backtested on your own athletes, with the best model per kid.', 'proof', '→')}
       </div>
       <div style="display:flex;gap:.75rem;flex-wrap:wrap;padding-top:.5rem;border-top:1px solid var(--border)">
         <button class="btn btn-print" onclick="printPaceCard()">Print this athlete’s pace card</button>
@@ -7291,10 +7304,22 @@ function computeProofLedger(athletes){
       // VDOT returns nothing for sprint pairs, which would NaN the averages.
       if(![stride, riegel, vdot].every(v => v != null && isFinite(v))) return;
       const e = s => Math.abs(s - target.sec) / target.sec * 100;
+      // Extended model panel (arbitration layer). Domain-honest: Cameron is
+      // validated 400m–50mi, so it abstains outside that; Vickers-Vertosick
+      // uses weekly volume when the coach logged it. Null = model abstained —
+      // never scored as a miss, simply excluded from that row's comparison.
+      const wkMiles = parseFloat(a.weeklyMileage);
+      const cameron = (anchor.distM >= 400 && target.distM >= 400)
+        ? _formulaCameron(anchor.distM, anchor.sec, target.distM) : null;
+      const purdy = _formulaPurdy(anchor.distM, anchor.sec, target.distM);
+      const vv = _formulaVickersVertosick(anchor.distM, anchor.sec, target.distM,
+        isFinite(wkMiles) && wkMiles > 0 ? wkMiles : undefined);
+      const err = v => (v != null && isFinite(v)) ? e(v) : null;
       rows.push({
         name:a.name, event:target.event, distM:target.distM, anchorEvent:anchor.event,
         actual:target.sec, stride, riegel, vdot,
-        strideErr:e(stride), riegelErr:e(riegel), vdotErr:e(vdot)
+        strideErr:e(stride), riegelErr:e(riegel), vdotErr:e(vdot),
+        cameronErr:err(cameron), purdyErr:err(purdy), vvErr:err(vv)
       });
     });
   });
@@ -7304,7 +7329,51 @@ function computeProofLedger(athletes){
   const wins = rows.filter(r => r.strideErr <= r.riegelErr && r.strideErr <= r.vdotErr &&
     (r.strideErr < r.riegelErr || r.strideErr < r.vdotErr)).length;
   return { rows, n:rows.length, athletes:new Set(rows.map(r => r.name)).size,
-    strideMape:mean('strideErr'), riegelMape:mean('riegelErr'), vdotMape:mean('vdotErr'), wins };
+    strideMape:mean('strideErr'), riegelMape:mean('riegelErr'), vdotMape:mean('vdotErr'), wins,
+    arb: computeModelArbitration(rows) };
+}
+
+// ── MODEL ARBITRATION ───────────────────────────────────────────────────────
+// "Which calculator is actually right for THIS kid?" Every classic model plus
+// STRIDE, scored per athlete on that athlete's own hold-out rows. The headline
+// 3-way above stays untouched (its MAPEs back published claims); this panel is
+// additive. Honest rules: a model is ranked for an athlete only with ≥2 scored
+// tests, an athlete appears only when ≥2 models are rankable, and an abstained
+// model (null err) is excluded from that row rather than scored as a miss.
+const LEDGER_MODELS = [
+  { key:'strideErr',  label:'STRIDE ensemble',            short:'STRIDE'  },
+  { key:'riegelErr',  label:'Riegel (1977)',              short:'Riegel'  },
+  { key:'vdotErr',    label:'Daniels-Gilbert VDOT',       short:'VDOT'    },
+  { key:'cameronErr', label:'Cameron (1998)',             short:'Cameron' },
+  { key:'purdyErr',   label:'Purdy short-distance curve', short:'Purdy'   },
+  { key:'vvErr',      label:'Vickers-Vertosick (2016)',   short:'V-V'     },
+];
+function computeModelArbitration(rows){
+  const finite = v => v != null && isFinite(v);
+  const panel = LEDGER_MODELS.map(m => {
+    const vals = rows.map(r => r[m.key]).filter(finite);
+    const wins = rows.filter(r => {
+      if(!finite(r[m.key])) return false;
+      const others = LEDGER_MODELS.filter(x => x.key !== m.key).map(x => r[x.key]).filter(finite);
+      return others.length > 0 && others.every(v => r[m.key] <= v) && others.some(v => r[m.key] < v);
+    }).length;
+    return { key:m.key, label:m.label, short:m.short, n:vals.length, wins,
+      mape: vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null };
+  });
+  const byAthlete = {};
+  rows.forEach(r => { (byAthlete[r.name] = byAthlete[r.name] || []).push(r); });
+  const athletes = Object.keys(byAthlete).map(name => {
+    const rws = byAthlete[name];
+    const ranking = LEDGER_MODELS.map(m => {
+      const vals = rws.map(r => r[m.key]).filter(finite);
+      return { key:m.key, label:m.label, short:m.short, n:vals.length,
+        mape: vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null };
+    }).filter(m => m.mape != null && m.n >= 2)
+      .sort((a,b) => a.mape - b.mape);
+    return { name, tests:rws.length, ranking, best: ranking.length ? ranking[0] : null };
+  }).filter(a => a.ranking.length >= 2)
+    .sort((a,b) => b.tests - a.tests || a.name.localeCompare(b.name));
+  return { panel, athletes };
 }
 
 function renderProof(){
@@ -7326,6 +7395,59 @@ function renderProof(){
     </div>`;
   const strideBest = p.strideMape <= p.riegelMape && p.strideMape <= p.vdotMape;
   const edgeVsVdot = (p.vdotMape != null && p.strideMape != null) ? (p.vdotMape - p.strideMape) : null;
+  // Model Arbitration card — per-athlete best model. The "which calculator is
+  // actually right for this kid" answer no single-formula tool can give.
+  const arb = p.arb || { panel:[], athletes:[] };
+  const arbRows = arb.athletes.map(a => {
+    const strideRank = a.ranking.find(m => m.key === 'strideErr');
+    return `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.5rem .6rem;font-family:var(--font-display);font-size:.875rem">${esc(a.name)}</td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${a.tests}</td>
+      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.8125rem;color:${a.best.key==='strideErr'?'var(--green)':'var(--text)'}">${esc(a.best.short)} <span style="color:var(--text-4)">${a.best.mape.toFixed(1)}%</span></td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${strideRank ? strideRank.mape.toFixed(1)+'%' : '—'}</td>
+      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">${a.ranking.slice(0,3).map(m=>esc(m.short)).join(' › ')}</td>
+    </tr>`;
+  }).join('');
+  const arbCard = arb.athletes.length ? `
+    <div class="card" style="margin-bottom:1rem">
+      <p class="card-title"><span>Model Arbitration — which calculator fits each kid</span><span class="card-accent">PER ATHLETE</span></p>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;margin-bottom:.75rem">Every model predicts differently because every athlete fatigues differently. This ranks each model on <em>each athlete's own</em> hold-out tests — so you know which curve to trust for which kid instead of picking one calculator and trusting it for the whole roster.</p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:30rem">
+          <thead><tr style="border-bottom:1px solid var(--border-s)">
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Athlete</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Tests</th>
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Best model</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">STRIDE</th>
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Ranking</th>
+          </tr></thead>
+          <tbody>${arbRows}</tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">A model is ranked only with 2+ scored tests on that athlete; models abstain outside their published domain (Cameron below 400m) rather than being scored as misses. Single-PR athletes can't be ranked — log a second distance.</p>
+    </div>` : '';
+  const panelRows = arb.panel.filter(m => m.n > 0).sort((a,b)=>a.mape-b.mape).map((m,i) => `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.8125rem;color:${i===0?'var(--green)':'var(--text-2)'}">${esc(m.label)}${i===0?' ★':''}</td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem">${m.mape.toFixed(1)}%</td>
+      <td class="num" style="padding:.5rem .6rem;text-align:right;font-family:var(--font-mono);font-size:.75rem;color:var(--text-3)">${m.wins}/${m.n}</td>
+    </tr>`).join('');
+  const panelCard = arb.panel.some(m => m.n > 0) ? `
+    <div class="card" style="margin-bottom:1rem">
+      <p class="card-title"><span>Full model panel</span><span class="card-accent">ROSTER-WIDE</span></p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:24rem">
+          <thead><tr style="border-bottom:1px solid var(--border-s)">
+            <th style="text-align:left;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Model</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Mean error</th>
+            <th style="text-align:right;padding:.5rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Closest / tests</th>
+          </tr></thead>
+          <tbody>${panelRows}</tbody>
+        </table>
+      </div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">Each model scored only on tests where it produced a time. The headline bars above keep the original three-way comparison; this panel adds Cameron, Purdy, and Vickers-Vertosick on the same hold-out rows.</p>
+    </div>` : '';
   const rowsHtml = p.rows.sort((a,b)=>a.strideErr-b.strideErr).map(r => `
     <tr style="border-bottom:1px solid var(--border)">
       <td style="padding:.5rem .6rem;font-family:var(--font-display);font-size:.875rem">${esc(r.name)}</td>
@@ -7346,6 +7468,8 @@ function renderProof(){
       ${bar('Daniels-Gilbert VDOT', p.vdotMape, 'var(--text-3)', p.vdotMape<p.strideMape&&p.vdotMape<p.riegelMape)}
       <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.75rem">STRIDE was closest in ${p.wins} of ${p.n} tests. Lower is better (mean absolute % error vs the athlete’s real time).</p>
     </div>
+    ${arbCard}
+    ${panelCard}
     <div class="card">
       <p class="card-title"><span>Every hold-out test</span><span class="card-accent">LEAVE-ONE-OUT</span></p>
       <div style="overflow-x:auto">
@@ -7361,8 +7485,213 @@ function renderProof(){
           <tbody>${rowsHtml}</tbody>
         </table>
       </div>
-      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">Honest backtest, not marketing: STRIDE’s measured edge comes from its event-aware modeling of each race distance — the single-formula baselines treat every event the same. Where an athlete has multiple PRs it also fits a personal fatigue curve (in backtesting, that cohort matched the ensemble on median error and improved on mean). STRIDE also logs every live forecast to validate against real race results as your season unfolds.</p>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">Honest backtest, not marketing: STRIDE’s measured edge comes from its event-aware modeling of each race distance — the single-formula baselines treat every event the same. Where an athlete has multiple PRs it also fits a personal fatigue curve (in backtesting, that cohort matched the ensemble on median error and improved on mean). STRIDE also logs every live forecast to validate against real race results as your season unfolds. Era note: carbon-plated spikes and fast-rising standards mean marks can shift between seasons independent of fitness — comparisons are strongest between same-season, same-footwear efforts.</p>
     </div>`;
+}
+
+// ── CRITICAL SPEED + D′ · THRESHOLD ENGINE ──────────────────────────────────
+// Two-parameter critical speed model (Monod & Scherrer 1965; Hill 1993; Jones
+// et al. 2010 review): across maximal efforts of roughly 2–20 minutes, distance
+// vs time is near-linear — d = CS·t + D′. CS approximates the heavy–severe
+// boundary (the same boundary VO2/lactate threshold testing chases); D′ is the
+// finite work capacity above CS in meters. This estimates from race marks what
+// a lab measures with a meter — for the athletes who will never get tested.
+// Display/analysis layer only: forecasts and zones are NOT re-anchored here
+// (that change is forecast-affecting and needs an engine-version bump).
+function computeCriticalSpeed(athlete){
+  // 2–25 min window: the model's core validity is 2–20 min; HS girls' 5K times
+  // routinely sit 20–25 min, so those are admitted but flagged below.
+  const prs = collectAllPRs(athlete).filter(p => p.sec >= 120 && p.sec <= 1500);
+  if(prs.length < 2) return null;
+  const n = prs.length;
+  const mt = prs.reduce((s,p)=>s+p.sec,0)/n, md = prs.reduce((s,p)=>s+p.distM,0)/n;
+  let num = 0, den = 0;
+  prs.forEach(p => { num += (p.sec-mt)*(p.distM-md); den += (p.sec-mt)*(p.sec-mt); });
+  if(den === 0) return null;               // identical durations can't set a slope
+  const cs = num/den;                      // m/s
+  const dPrime = md - cs*mt;               // m
+  if(!(cs > 0) || !isFinite(cs)) return null;
+  let ssRes = 0, ssTot = 0;
+  prs.forEach(p => { const pred = cs*p.sec + dPrime; ssRes += Math.pow(p.distM-pred,2); ssTot += Math.pow(p.distM-md,2); });
+  const r2 = ssTot > 0 ? 1 - ssRes/ssTot : null;
+  const flags = [];
+  if(dPrime < 50)  flags.push('D′ is below the physiological range — the efforts may not all be maximal, or the distances sit too close together.');
+  if(dPrime > 600) flags.push('D′ is above the typical range — check that every mark used is a real maximal effort.');
+  if(n === 2)      flags.push('Two-point fit — a PR at a third distance tightens this estimate.');
+  if(prs.some(p => p.sec > 1200)) flags.push('Includes an effort over 20:00 — the edge of the CS model’s validated window.');
+  return { cs, dPrime, r2, n, prs, secPerMile: 1609.344/cs, secPerKm: 1000/cs, flags };
+}
+
+// Coach-entered lab anchor (tested threshold pace). Stored in a device-local
+// side map — NOT on the athlete record — so cloud rehydration from normalized
+// tables can never drop or mangle it, and no schema/deploy is needed. The
+// honest limitation (this device only) is stated in the card.
+const TESTED_THRESHOLD_KEY = 'strideos_tested_thresholds';
+function getTestedThreshold(athleteId){
+  try{ return (JSON.parse(localStorage.getItem(TESTED_THRESHOLD_KEY) || '{}'))[athleteId] || null; }
+  catch(_e){ return null; }
+}
+function setTestedThreshold(athleteId, paceText){
+  let map = {};
+  try{ map = JSON.parse(localStorage.getItem(TESTED_THRESHOLD_KEY) || '{}') || {}; }catch(_e){}
+  if(paceText) map[athleteId] = paceText; else delete map[athleteId];
+  try{ localStorage.setItem(TESTED_THRESHOLD_KEY, JSON.stringify(map)); }catch(_e){}
+}
+function saveTestedThreshold(athleteId){
+  const input = document.getElementById('tt-input');
+  const raw = input ? input.value.trim() : '';
+  if(!raw){ setTestedThreshold(athleteId, ''); toast('Tested threshold cleared'); renderOverview(); return; }
+  const sec = parseTime(raw);
+  // Plausible tested-threshold pace: 3:30–12:00 per mile.
+  if(sec == null || sec < 210 || sec > 720){ toast('Enter a per-mile threshold pace like 6:45'); return; }
+  setTestedThreshold(athleteId, raw);
+  toast('Tested threshold saved for this athlete');
+  renderOverview();
+}
+
+function thresholdEngineCard(A){
+  const est = computeCriticalSpeed(A);
+  const tested = getTestedThreshold(A.id);
+  const testedSec = tested ? parseTime(tested) : null;
+  let body;
+  if(!est){
+    body = `<p style="font-size:.875rem;color:var(--text-2);line-height:1.6">Needs two race PRs at different distances between 2 and 25 minutes (e.g. an 800 and a 1600). Log a second distance and the threshold estimate switches on — no lab required.</p>`;
+  } else {
+    const usedList = est.prs.map(p => `${esc(p.event)} ${esc(fmtT(p.sec))}`).join(' · ');
+    const compare = (testedSec && est.secPerMile)
+      ? (() => {
+          const deltaPct = (testedSec - est.secPerMile) / est.secPerMile * 100;
+          const close = Math.abs(deltaPct) <= 3;
+          return `
+          <div style="margin-top:.85rem;padding:.85rem;border:1px solid ${close?'var(--accent-line)':'var(--border-s)'};border-radius:.6rem;background:var(--bg-el)">
+            <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem">Lab vs race-mark estimate</p>
+            <p style="font-family:var(--font-mono);font-size:.8125rem;line-height:1.7">Tested: <strong>${esc(tested)}/mi</strong> · Estimated from race marks: <strong>${esc(fmtT(est.secPerMile))}/mi</strong> · Δ ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(1)}%</p>
+            <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-top:.35rem">${close
+              ? 'Within 3% — the lab number and the race-mark estimate agree on this athlete. That agreement is evidence the estimate holds for the athletes you can’t test.'
+              : 'They disagree — trust the lab number for this athlete and recheck that the marks used were true maximal efforts. The estimate still covers the untested rest of the roster.'}</p>
+          </div>`;
+        })()
+      : '';
+    body = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.75rem;margin-bottom:.85rem">
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">Critical speed pace</p><p style="font-family:var(--font-display);font-size:1.375rem">${esc(fmtT(est.secPerMile))}<span style="font-size:.75rem;color:var(--text-3)">/mi</span></p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">${esc(fmtT(est.secPerKm))}/km · ${est.cs.toFixed(2)} m/s</p></div>
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">D′ anaerobic capacity</p><p style="font-family:var(--font-display);font-size:1.375rem">${Math.round(est.dPrime)}<span style="font-size:.75rem;color:var(--text-3)">m</span></p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">work above CS before failure</p></div>
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">Fit quality</p><p style="font-family:var(--font-display);font-size:1.375rem">${est.r2 != null ? 'R² ' + est.r2.toFixed(3) : '—'}</p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">${est.n} efforts: ${usedList}</p></div>
+      </div>
+      ${est.flags.length ? `<p style="font-size:.75rem;color:var(--yellow);line-height:1.6;margin-bottom:.5rem">${est.flags.map(esc).join('<br>')}</p>` : ''}
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6">CS approximates the heavy–severe boundary — the same boundary lactate and VO2 threshold testing chases. Steady work just below it is threshold; time above it spends D′. Pace is a starting point; internal load (HR, RPE, lactate where you have it) governs the final call.</p>
+      ${compare}`;
+  }
+  return `
+    <div class="card">
+      <p class="card-title"><span>Threshold Engine — Critical Speed from race marks</span><span class="card-accent">NO LAB NEEDED</span></p>
+      ${body}
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.85rem;padding-top:.75rem;border-top:1px solid var(--border)">
+        <label for="tt-input" style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">Lab-tested threshold pace (optional)</label>
+        <input id="tt-input" type="text" inputmode="numeric" placeholder="6:45 /mi" value="${esc(tested || '')}" style="width:6.5rem;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.4rem;color:var(--text);font-family:var(--font-mono);font-size:.8125rem;padding:.4rem .5rem">
+        <button class="btn" onclick="saveTestedThreshold('${esc(String(A.id))}')">Save</button>
+        <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">From VO2/lactate testing · saved on this device</span>
+      </div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.6rem">Model: Monod &amp; Scherrer (1965); Hill (1993); Jones et&nbsp;al. (2010). Estimates inform training paces — they don’t replace testing where you have it, and they don’t change STRIDE race forecasts.</p>
+    </div>`;
+}
+
+// ── RACE SHAPE READER ───────────────────────────────────────────────────────
+// "The time is only part of the story — you need to see HOW the kid races."
+// Paste splits from any results page (own athlete or a rival's) → pacing
+// pattern, fade, closing kick. Deliberately ephemeral: nothing pasted here is
+// stored, synced, or logged — which is what makes it safe to use on other
+// programs' athletes (paste-scoped scouting, no minors-PII retention).
+function parseSplitList(text){
+  return String(text || '').split(/[,;\n\t]+|\s+/)
+    .map(t => t.trim()).filter(Boolean)
+    .map(t => parseTime(t))
+    .filter(v => v != null && isFinite(v) && v > 0);
+}
+
+function computeRaceShape(splits){
+  const s = (splits || []).filter(v => typeof v === 'number' && isFinite(v) && v > 0);
+  if(s.length < 2) return null;
+  const n = s.length, total = s.reduce((a,b)=>a+b,0), mean = total/n;
+  const half = Math.floor(n/2);                       // odd n: middle split excluded from halves
+  const firstHalf = s.slice(0, half).reduce((a,b)=>a+b,0)/half;
+  const lastHalf  = s.slice(n-half).reduce((a,b)=>a+b,0)/half;
+  const fadePct  = (lastHalf - firstHalf)/firstHalf*100;  // + slowed, − sped up
+  const closePct = (s[n-1] - mean)/mean*100;              // − closed faster than average
+  const spreadPct = (Math.max(...s) - Math.min(...s))/mean*100;
+  let pattern, patternKey;
+  if(fadePct > 3){ pattern = 'Positive split — went out hot and faded'; patternKey = 'fade'; }
+  else if(fadePct < -3){ pattern = 'Negative split — finished faster than they started'; patternKey = 'negative'; }
+  else { pattern = 'Even pacing'; patternKey = 'even'; }
+  let kick, kickKey;
+  if(closePct <= -3){ kick = 'Real closing kick'; kickKey = 'kick'; }
+  else if(closePct >= 3){ kick = 'No close — the final stretch was the slowest'; kickKey = 'nokick'; }
+  else { kick = 'Steady close'; kickKey = 'steady'; }
+  return { splits:s, n, total, mean, firstHalf, lastHalf, fadePct, closePct, spreadPct,
+    pattern, patternKey, kick, kickKey };
+}
+
+let rsState = { text:'', segM: 400 };
+function rsAnalyze(){
+  const ta = document.getElementById('rs-input');
+  const sel = document.getElementById('rs-seg');
+  rsState.text = ta ? ta.value : '';
+  rsState.segM = sel ? parseInt(sel.value, 10) || 0 : 0;
+  renderRaceShape();
+}
+function renderRaceShape(){
+  const el = document.getElementById('rs-body');
+  if(!el) return;
+  const shape = computeRaceShape(parseSplitList(rsState.text));
+  const coachRead = shape ? ({
+    fade:     'They’re spending too much too early. Pacing discipline work, or the early pace is simply above what they can hold — check it against their threshold.',
+    negative: 'They’re leaving time on the table in the first half — there’s a faster total in this athlete at a braver early pace.',
+    even:     'Disciplined pacing. Gains now come from fitness, not tactics.'
+  })[shape.patternKey] + ' ' + ({
+    kick:   'The kick is real — in a tactical race they win the last 200. Protect it: they can afford to sit.',
+    nokick: 'Nothing left at the end — either the pace was honest for them or they can’t change gears; gear-change work (200s at mile pace off float) tells you which.',
+    steady: 'Closes at pace — durable, but no extra gear yet in this race.'
+  })[shape.kickKey] : '';
+  const bars = shape ? shape.splits.map((v, i) => {
+    const min = Math.min(...shape.splits), max = Math.max(...shape.splits);
+    const w = max > min ? 25 + (v - min)/(max - min)*75 : 100;   // slowest = longest bar
+    const vsAvg = (v - shape.mean)/shape.mean*100;
+    const paceTxt = rsState.segM ? ` · ${esc(fmtT(v * 1609.344/rsState.segM))}/mi` : '';
+    return `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem">
+        <span style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4);width:2.2rem">#${i+1}</span>
+        <div style="flex:1;background:var(--bg-el);border-radius:.3rem;overflow:hidden;height:1.15rem"><div style="height:100%;width:${w.toFixed(1)}%;background:${vsAvg > 1 ? 'var(--red)' : vsAvg < -1 ? 'var(--green)' : 'var(--accent)'};opacity:.75"></div></div>
+        <span style="font-family:var(--font-mono);font-size:.75rem;width:9rem;text-align:right">${esc(fmtT(v))} <span style="color:var(--text-4)">${vsAvg >= 0 ? '+' : ''}${vsAvg.toFixed(1)}%${paceTxt}</span></span>
+      </div>`;
+  }).join('') : '';
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:1rem">
+      <p style="font-size:.9375rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">The finish time tells you how fast. The splits tell you <strong style="color:var(--text)">how</strong> — who went out too hot, who has a real kick, who’s leaving time on the table. Paste splits from any results page: your athlete or the kid you’ll face at district. <span style="color:var(--text-3)">Nothing pasted here is stored.</span></p>
+      <textarea id="rs-input" rows="3" placeholder="75, 78, 81, 79   —or one per line, 1:15 format works too" style="width:100%;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.6rem;color:var(--text);font-family:var(--font-mono);font-size:.875rem;padding:.75rem;resize:vertical">${esc(rsState.text)}</textarea>
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.75rem">
+        <label for="rs-seg" style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">Each split =</label>
+        <select id="rs-seg" style="background:var(--bg-el);border:1px solid var(--border-s);border-radius:.4rem;color:var(--text);font-family:var(--font-mono);font-size:.8125rem;padding:.4rem .5rem">
+          <option value="400"${rsState.segM===400?' selected':''}>400m lap</option>
+          <option value="800"${rsState.segM===800?' selected':''}>800m</option>
+          <option value="1000"${rsState.segM===1000?' selected':''}>1000m</option>
+          <option value="1609"${rsState.segM===1609?' selected':''}>1 mile</option>
+          <option value="0"${rsState.segM===0?' selected':''}>just compare splits</option>
+        </select>
+        <button class="btn btn-primary" onclick="rsAnalyze()">Read the race</button>
+      </div>
+    </div>
+    ${shape ? `
+    <div class="card" style="margin-bottom:1rem">
+      <p class="card-title"><span>The read</span><span class="card-accent">${shape.n} SPLITS · ${esc(fmtT(shape.total))} TOTAL</span></p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:.75rem;margin-bottom:1rem">
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">Pattern</p><p style="font-family:var(--font-display);font-size:1.0625rem;line-height:1.3">${esc(shape.pattern)}</p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">2nd half ${shape.fadePct >= 0 ? '+' : ''}${shape.fadePct.toFixed(1)}% vs 1st</p></div>
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">Close</p><p style="font-family:var(--font-display);font-size:1.0625rem;line-height:1.3">${esc(shape.kick)}</p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">last split ${shape.closePct >= 0 ? '+' : ''}${shape.closePct.toFixed(1)}% vs avg</p></div>
+        <div><p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.2rem">Spread</p><p style="font-family:var(--font-display);font-size:1.0625rem;line-height:1.3">${shape.spreadPct.toFixed(1)}%</p><p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-4)">fastest to slowest split</p></div>
+      </div>
+      ${bars}
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-top:.85rem"><strong style="color:var(--text)">Coach read:</strong> ${esc(coachRead)}</p>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.6rem">Assumes equal-distance splits. Green = faster than the race’s average, red = slower. Splits pasted here are analyzed on this screen only — never saved or sent anywhere.</p>
+    </div>` : (rsState.text.trim() ? `<div class="card"><p style="font-size:.875rem;color:var(--text-2)">Couldn’t read at least two splits from that paste. Use times like <span style="font-family:var(--font-mono)">75</span> or <span style="font-family:var(--font-mono)">1:15</span>, separated by commas, spaces, or new lines.</p></div>` : '')}`;
 }
 
 // ── FEATURE 7 · MEET LINEUP OPTIMIZER ───────────────────────────────────────
