@@ -33,6 +33,22 @@ assert.match(contextNav, /Training Paces/);
 assert.match(contextNav, /Training Log/);
 assert.match(contextNav, /Event Demands/);
 
+// The per-athlete tools exist ONLY in this bar (see the doesNotMatch block
+// above), so the bar has to be visible wherever a coach works with a selected
+// athlete. Gating it on an allow-list of athlete screens hid every route to
+// those tools from Team IQ, Roster, and Compare — the screens a coach starts
+// on — so a tool was only reachable from a tool you were already in.
+assert.match(html, /const NO_ATHLETE_CONTEXT_SCREEN_IDS = new Set\(/,
+  'context-bar visibility is a deny-list, not an allow-list of athlete screens');
+assert.doesNotMatch(html, /(?<!NO_)ATHLETE_CONTEXT_SCREEN_IDS\.has\(screenId\)/,
+  'the old allow-list gate is gone');
+for (const screen of ['overview', 'roster', 'compare']) {
+  assert.doesNotMatch(
+    html.slice(html.indexOf('const NO_ATHLETE_CONTEXT_SCREEN_IDS'), html.indexOf('function pendingAthleteInviteId')),
+    new RegExp(`'${screen}'`),
+    `${screen} must keep the athlete-context bar — its tools are reachable nowhere else`);
+}
+
 assert.match(appFooter, /Sources &amp; Methodology/);
 assert.match(appFooter, /href="\/terms\.html"/);
 assert.match(appFooter, /href="\/privacy\.html"/);
@@ -43,4 +59,4 @@ assert.match(html, /function switchAthlete\(id\)[\s\S]*?goTo\(athleteDecisionScr
 assert.match(html, /function athleteDecisionScreen\(athlete\)/);
 assert.doesNotMatch(html, /Event <em>Profile<\/em>/);
 
-console.log('navigation flow probes ok — 25 assertions');
+console.log('navigation flow probes ok — 30 assertions');

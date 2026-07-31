@@ -1251,15 +1251,17 @@ const ATHLETE_SCREEN_IDS = new Set([
   'profile',
   'methodology'
 ]);
-const ATHLETE_CONTEXT_SCREEN_IDS = new Set([
-  'multievent',
-  'predict',
-  'paces',
-  'workouts',
-  'raceshape',
-  'profile',
-  'proof',
-  'edit'
+// Screens where the athlete-context bar is NOT shown: the public front door,
+// the free tools, and the import flow (no athlete is in play yet). Everything
+// else keeps the bar so the per-athlete tools are always one click away —
+// they exist nowhere else in the chrome. Replaced the old allow-list, which
+// hid the bar on Team IQ, Roster, and Compare, i.e. exactly where a coach
+// starts. See updateAthleteContextNav.
+const NO_ATHLETE_CONTEXT_SCREEN_IDS = new Set([
+  'home',
+  'eventfit',
+  'methodology',
+  'import'
 ]);
 
 function pendingAthleteInviteId(){
@@ -1294,7 +1296,13 @@ function updateAthleteContextNav(){
   if(!nav || !name || !label) return;
   const athlete = (typeof A !== 'undefined') ? A : null;
   const screenId = (typeof currentScreen !== 'undefined') ? currentScreen : '';
-  const onAthleteScreen = ATHLETE_CONTEXT_SCREEN_IDS.has(screenId) || (isAthleteOnly() && screenId === 'overview');
+  // The per-athlete tools (Performance Curve, Race Forecasts, Training Paces,
+  // Training Log, and the More menu) live ONLY in this bar — the 2026-07-30 nav
+  // reorg deliberately took them out of the sidebar. Showing the bar only on
+  // the athlete screens themselves therefore hid every route to them from the
+  // three screens a coach actually starts on (Team IQ, Roster, Compare): you
+  // could only reach an athlete tool from a tool you were already in.
+  const onAthleteScreen = !NO_ATHLETE_CONTEXT_SCREEN_IDS.has(screenId);
   const visible = hasWorkspaceAccess() && onAthleteScreen && Boolean(athlete && athlete.name);
   nav.classList.toggle('has-athlete', visible);
   name.textContent = visible ? athlete.name : 'No athlete selected';
