@@ -23,7 +23,14 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const html=fs.readFileSync(path.join(here,'..','index.html'),'utf8');
 const main=[...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).sort((a,b)=>b.length-a.length)[0];
 
-const mkEl=()=>({ innerHTML:'', textContent:'', style:{}, classList:{add(){},remove(){},toggle(){},contains(){return false}},
+// classList is a REAL set, not a no-op: updateAthleteContextNav's only
+// observable effect is classList.toggle('has-athlete', …), so a stubbed-out
+// toggle would make any probe of it vacuous.
+const mkClassList=()=>{ const set=new Set(); return {
+  add(c){set.add(c)}, remove(c){set.delete(c)}, contains(c){return set.has(c)},
+  toggle(c,force){ const on = force===undefined ? !set.has(c) : Boolean(force);
+    if(on) set.add(c); else set.delete(c); return on; } }; };
+const mkEl=()=>({ innerHTML:'', textContent:'', style:{}, classList:mkClassList(),
   setAttribute(){}, removeAttribute(){}, getAttribute(){return null}, appendChild(){}, addEventListener(){},
   querySelectorAll(){return []}, querySelector(){return null}, scrollIntoView(){}, focus(){}, value:'', checked:false, dataset:{} });
 const store={};
@@ -130,6 +137,55 @@ probe('duplicate repair: apply keeps every mark', ()=>{
 });
 probe('duplicate repair: banner clears after merging', ()=>{ renderRoster(); if(/MERGE AVAILABLE/.test(out('ro-body'))) throw new Error('banner still shown'); });
 probe('duplicate repair: merged athlete now renders forecasts + curve', ()=>{ A = DB.athletes.find(a=>a.name==='Elizabeth Leachman'); renderPredict(); renderMultiEvent(); if(/Enter a valid race result/.test(out('pd-body'))) throw new Error('forecast still empty'); if(/Need at least 2 race results/.test(out('me-body'))) throw new Error('curve still empty'); });
+
+// ── ATHLETE-CONTEXT BAR VISIBILITY (behavioral) ──────────────────────────
+// The per-athlete tools (Performance Curve, Race Forecasts, Training Paces,
+// Training Log, More) exist ONLY in this bar — the nav reorg took them out of
+// the sidebar. If the bar hides on the screens a coach starts from, those
+// tools are unreachable. This EXECUTES updateAthleteContextNav and reads the
+// resulting class, rather than pattern-matching the source.
+const barShown = (screen) => {
+  currentScreen = screen;
+  updateAthleteContextNav();
+  return __store['athleteContextNav'].classList.contains('has-athlete');
+};
+probe('context bar: visible on the screens a coach starts from', ()=>{
+  sbUser = { id:'u1' }; sbRole = null;
+  A = DB.athletes.find(a=>a.name==='Riley Chen') || DB.athletes[0];
+  DB.activeAthleteId = A.id;
+  ['overview','roster','compare'].forEach(s=>{
+    if(!barShown(s)) throw new Error('hidden on '+s+' — its tools are reachable nowhere else');
+  });
+});
+probe('context bar: visible on the athlete tool screens themselves', ()=>{
+  ['multievent','predict','paces','workouts','raceshape','profile','proof','edit'].forEach(s=>{
+    if(!barShown(s)) throw new Error('hidden on '+s);
+  });
+});
+probe('context bar: hidden on public / no-athlete screens', ()=>{
+  ['home','eventfit','methodology','import'].forEach(s=>{
+    if(barShown(s)) throw new Error('shown on '+s+' where no athlete is in play');
+  });
+});
+probe('context bar: hidden when signed out', ()=>{
+  const keep = sbUser; sbUser = null;
+  const shown = barShown('overview');
+  sbUser = keep;
+  if(shown) throw new Error('shown to a signed-out visitor');
+});
+probe('context bar: hidden with no athlete selected', ()=>{
+  const keep = A; A = null;
+  const shown = barShown('overview');
+  A = keep;
+  if(shown) throw new Error('shown with no athlete selected');
+});
+probe('context bar: names the selected athlete', ()=>{
+  barShown('roster');
+  if(__store['athleteContextName'].textContent !== A.name) throw new Error('wrong name: '+__store['athleteContextName'].textContent);
+  const keep = A; A = null; barShown('roster');
+  if(__store['athleteContextName'].textContent !== 'No athlete selected') throw new Error('stale name left on screen');
+  A = keep;
+});
 __res;
 `;
 try{ vm.runInContext(probeSrc, ctx, {filename:'probe'}); }catch(e){ console.log('PROBE SCRIPT ERROR:', e.message); }
