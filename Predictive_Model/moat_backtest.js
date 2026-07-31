@@ -34,7 +34,9 @@ function grab(name){
 const NEEDED = [
   'parseTime', 'pctToMult', 'danielsPctVO2', 'danielsVO2atVelocity', 'calcVDOT',
   '_formulaRiegel', '_formulaCameron', '_formulaVDOT', '_formulaVickersVertosick',
-  '_formulaPurdy', '_ensembleWeights', 'strideEnsemble', 'getEventDomain',
+  '_formulaPurdy', '_csDamp', '_csUndamp', '_fitCriticalVelocity',
+  '_formulaCriticalVelocity', '_formulaTinmanCV','_formulaPersonalK', '_memberPredict', '_memberLooErrors',
+  '_adaptiveEnsembleWeights', '_ensembleWeights', 'strideEnsemble', 'getEventDomain',
   'getObservedRatio', 'sameDistanceM',
   // Mode B (multi-PR leave-one-out) needs the actual shipped forecast path:
   '_daysSinceRace', 'prFreshness', 'forecastTargets', 'labelForDistance',
@@ -47,9 +49,14 @@ const domainsSrc = (html.match(/const EVENT_DOMAINS = \{[\s\S]*?\};/) || [''])[0
 const ratiosSrc  = (html.match(/const OBSERVED_RATIOS = \{[\s\S]*?\};/) || [''])[0];
 const nudgeFlagSrc = (html.match(/const OBSERVED_RATIO_NUDGE_ENABLED = (?:true|false);/) || [''])[0];
 if(!nudgeFlagSrc) throw new Error('OBSERVED_RATIO_NUDGE_ENABLED missing from index.html');
+const stackSrc = (html.match(/const ADAPTIVE_STACKING_ENABLED = (?:true|false);/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_SHRINK_TAU = [\d.]+;/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_MAPE_FLOOR = [\d.]+;/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_MEMBERS = \[[^\]]*\];/)||[''])[0];
+if(stackSrc.trim().split('\n').length < 4) throw new Error('Stacking constants missing from index.html');
 const ctx = { Math, console };
 vm.createContext(ctx);
-vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + nudgeFlagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
+vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + nudgeFlagSrc + '\n' + stackSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
   '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' +
   '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;', ctx);
 
@@ -304,6 +311,237 @@ assertEq('Mode A ordered predictions', res.n, 292);
 assertEq('Mode B eligible folds', resB.n, 165);
 assertEq('Mode B personal-k-active folds', resBMulti.n, 56);
 assertEq('Mode B personal-k-active athletes', resBMulti.athletes.size, 9);
+
+// ── 6c. PRIOR DERIVATION + ABLATION (reproducible; added 2026-07-30) ──────────
+// MODEL-EVIDENCE-2026-07-30.md claims the distance-family prior was derived by
+// inverse median-error^4 with the RULE chosen under leave-one-ATHLETE-out CV.
+// A claim that can't be re-run from the oracle is a story, so it is re-run here
+// every time this file runs. Two things are reported:
+//   (1) the derivation — each member's error on the ledger folds, the weights
+//       the rule produces, and how competing rules score under leave-one-athlete-out;
+//   (2) an ablation — adaptive stacking ON vs the population prior only, so the
+//       stacking layer has to keep earning its place instead of being assumed.
+// Each fold's members are scored from the SAME anchor the ledger used, and the
+// 2-param CV fit only ever sees the athlete's other PRs.
+const memberKeys = ['riegel','cameron','vdot','vickers','purdy','tinman'];
+const derivFolds = [];
+for(const key in groups){
+  const marks = Object.values(groups[key]).filter(m => EVNAME[m.distM]);
+  if(marks.length < 2) continue;
+  for(const target of marks){
+    const others = marks.filter(m => m !== target);
+    const primary = others[0], additionalPRs = {};
+    for(const o of others.slice(1)) additionalPRs[EVNAME[o.distM]] = fmtTimeStr(o.sec);
+    const athlete = { name: target.athlete, raceDistance: EVNAME[primary.distM],
+      raceDistanceM: primary.distM, raceTime: fmtTimeStr(primary.sec), raceDate: null, additionalPRs };
+    const a = ctx.nearestAnchorForTarget(athlete, target.distM);
+    if(!a) continue;
+    if(Math.max(a.distM, target.distM) / Math.min(a.distM, target.distM) < 1.1) continue;
+    const prs = ctx.collectAllPRs(athlete).filter(x => !ctx.sameDistanceM(x.distM, target.distM));
+    const P = {};
+    for(const k of memberKeys) P[k] = ctx._memberPredict(k, a.distM, a.sec, target.distM, prs, undefined);
+    if(!isFinite(P.riegel)) continue;
+    derivFolds.push({ P, actual: target.sec, athlete: target.athlete });
+  }
+}
+const dAthletes = [...new Set(derivFolds.map(f => f.athlete))];
+const errOf = (sub, k) => sub.filter(f => f.P[k] != null && isFinite(f.P[k]))
+  .map(f => Math.abs(f.P[k] - f.actual) / f.actual * 100);
+// The rule under test: w_i ∝ 1 / stat(err_i)^pow, members with <10 scored folds abstain.
+function fitRule(sub, stat, pow){
+  const w = {};
+  for(const k of memberKeys){
+    const e = errOf(sub, k);
+    w[k] = e.length >= 10 ? 1 / Math.pow(Math.max(stat === 'med' ? median(e) : mean(e), 0.5), pow) : 0;
+  }
+  const t = Object.values(w).reduce((a, b) => a + b, 0) || 1;
+  for(const k of memberKeys) w[k] /= t;
+  return w;
+}
+function looRule(stat, pow){
+  const E = [];
+  for(const A of dAthletes){
+    const tr = derivFolds.filter(f => f.athlete !== A), te = derivFolds.filter(f => f.athlete === A);
+    if(!tr.length || !te.length) continue;
+    const w = fitRule(tr, stat, pow);          // refit WITHOUT the scored athlete
+    for(const f of te){
+      let sv = 0, sw = 0;
+      for(const k of memberKeys){ const v = f.P[k]; if(w[k] > 0 && v != null && isFinite(v) && v > 0){ sv += v * w[k]; sw += w[k]; } }
+      if(sw) E.push(Math.abs(sv / sw - f.actual) / f.actual * 100);
+    }
+  }
+  return E;
+}
+console.log('\n══ PRIOR DERIVATION (reproduces MODEL-EVIDENCE §2) ══');
+console.log(`${derivFolds.length} folds / ${dAthletes.length} athletes\n`);
+console.log('member      med%   mean%    n');
+for(const k of memberKeys){
+  const e = errOf(derivFolds, k);
+  console.log(`  ${k.padEnd(9)} ${f1(median(e)).padStart(5)}  ${f1(mean(e)).padStart(6)}  ${String(e.length).padStart(3)}`);
+}
+console.log('\nrule selection under leave-one-ATHLETE-out (weights refit without the scored athlete):');
+console.log('  rule              med%   mean%');
+const RULES = [['inv mean^2','mean',2],['inv mean^3','mean',3],['inv median^2','med',2],
+  ['inv median^4','med',4],['inv median^6','med',6]];
+for(const [name, stat, pow] of RULES){
+  const E = looRule(stat, pow);
+  console.log(`  ${name.padEnd(16)} ${f1(median(E)).padStart(5)}  ${f1(mean(E)).padStart(6)}`);
+}
+const shipRule = fitRule(derivFolds, 'med', 4);
+console.log('\nshipped rule (inv median^4) fitted on all folds — compare to _ensembleWeights:');
+console.log('  ' + memberKeys.map(k => `${k}:${shipRule[k].toFixed(2)}`).join('  '));
+// Compare against the DISTANCE FAMILY branch (1500m–10K), which is the branch
+// this corpus actually covers. The LONG DISTANCE (10K+) and sprint branches are
+// NOT derived from this data — there is barely any of it above 10K and none
+// below 800m — so they are deliberately excluded from this lock. Any claim that
+// those branches are evidence-derived would be false.
+const live = ctx._ensembleWeights(1600, 5000);
+console.log('  live distance-family prior (1500m–10K branch) in index.html:');
+console.log('  ' + memberKeys.map(k => `${k}:${(live[k] || 0).toFixed(2)}`).join('  '));
+// Lock the two together: if someone edits the prior by hand without re-deriving
+// it, this fails loudly instead of leaving the evidence doc quietly wrong.
+let priorDrift = 0;
+for(const k of memberKeys) priorDrift = Math.max(priorDrift, Math.abs((live[k] || 0) - shipRule[k]));
+if(priorDrift > 0.08){
+  console.error(`ASSERT FAIL shipped prior drifted from its derivation (max |Δw| = ${priorDrift.toFixed(3)} > 0.08).`);
+  console.error('  Either re-derive the prior from this output or update MODEL-EVIDENCE-2026-07-30.md §2.');
+  process.exitCode = 1;
+} else {
+  console.log(`  ✓ shipped prior matches its stated derivation (max |Δw| = ${priorDrift.toFixed(3)})`);
+}
+
+// ── ABLATION: adaptive stacking ON vs population prior only ──
+// Re-runs Mode B with ADAPTIVE_STACKING_ENABLED forced false in a fresh context.
+const ablCtx = { Math, console };
+vm.createContext(ablCtx);
+vm.runInContext(distSrc + '\n' + domainsSrc + '\n' + nudgeFlagSrc + '\n' +
+  stackSrc.replace('const ADAPTIVE_STACKING_ENABLED = true;', 'const ADAPTIVE_STACKING_ENABLED = false;') +
+  '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc +
+  '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' +
+  '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;', ablCtx);
+const ablErr = [];
+for(const key in groups){
+  const marks = Object.values(groups[key]).filter(m => EVNAME[m.distM]);
+  if(marks.length < 2) continue;
+  for(const target of marks){
+    const others = marks.filter(m => m !== target);
+    const primary = others[0], additionalPRs = {};
+    for(const o of others.slice(1)) additionalPRs[EVNAME[o.distM]] = fmtTimeStr(o.sec);
+    const athlete = { name: target.athlete, raceDistance: EVNAME[primary.distM],
+      raceDistanceM: primary.distM, raceTime: fmtTimeStr(primary.sec), raceDate: null, additionalPRs };
+    const a = ablCtx.nearestAnchorForTarget(athlete, target.distM);
+    if(!a) continue;
+    if(Math.max(a.distM, target.distM) / Math.min(a.distM, target.distM) < 1.1) continue;
+    const f = ablCtx.raceForecastForTarget(athlete, { distM: target.distM, label: EVNAME[target.distM] }, { fixedAnchor: a });
+    if(!f || f.isObserved || !isFinite(f.likely)) continue;
+    ablErr.push(Math.abs(f.likely - target.sec) / target.sec * 100);
+  }
+}
+console.log('\n══ ABLATION — adaptive per-athlete stacking ══');
+console.log(`  stacking ON   median ${f1(median(resB.stride))}  mean ${f1(mean(resB.stride))}  (n=${resB.n})`);
+console.log(`  prior only    median ${f1(median(ablErr))}  mean ${f1(mean(ablErr))}  (n=${ablErr.length})`);
+const dMed = median(ablErr) - median(resB.stride), dMean = mean(ablErr) - mean(resB.stride);
+console.log(`  effect of stacking: median ${dMed >= 0 ? '-' : '+'}${Math.abs(dMed).toFixed(2)}pp, mean ${dMean >= 0 ? '-' : '+'}${Math.abs(dMean).toFixed(2)}pp`);
+if(dMed < -0.05 || dMean < -0.05){
+  console.log('  ⚠  Stacking is NOT paying for itself on this corpus. It is a heuristic, not a theorem —');
+  console.log('     consider ADAPTIVE_STACKING_ENABLED = false until a corpus shows it helps.');
+} else {
+  console.log('  Note: only folds where an athlete has 3+ remaining PRs can engage stacking at all,');
+  console.log('  so a near-zero effect here means "rarely active", not "measured and useless".');
+}
+
+// ── 6d. DATA-VALUE CURVE (backs the import-screen guidance; added 2026-07-31) ─
+// "How many PRs should I enter, and which events?" — the import panel quotes
+// numbers, so the numbers have to be reproducible here, with cohort n attached.
+//
+// MATCHED COHORTS, and this is the whole methodological point. A naive sweep
+// comparing 1-PR folds (all athletes) against 3-PR folds (only athletes who
+// race many distances) confounds "more data" with "different, more predictable
+// athletes" — it made 3 PRs look far better than it is. Every PR count below is
+// scored on the SAME fold set, so the only thing varying is how much of that
+// athlete's history the engine was allowed to see.
+const dvTargets = [];
+for(const key in groups){
+  const marks = Object.values(groups[key]).filter(m => EVNAME[m.distM]);
+  if(marks.length < 2) continue;
+  for(const target of marks){
+    const pool = marks.filter(m => m !== target)
+      .sort((a, b) => Math.abs(Math.log10(a.distM / target.distM)) - Math.abs(Math.log10(b.distM / target.distM)));
+    dvTargets.push({ target, pool, athlete: target.athlete });
+  }
+}
+function dvScore(t, k){
+  const others = t.pool.slice(0, k);
+  if(others.length < k) return null;
+  const primary = others[0], additionalPRs = {};
+  for(const o of others.slice(1)) additionalPRs[EVNAME[o.distM]] = fmtTimeStr(o.sec);
+  const athlete = { name: t.athlete, raceDistance: EVNAME[primary.distM], raceDistanceM: primary.distM,
+    raceTime: fmtTimeStr(primary.sec), raceDate: null, additionalPRs };
+  const a = ctx.nearestAnchorForTarget(athlete, t.target.distM);
+  if(!a) return null;
+  if(Math.max(a.distM, t.target.distM) / Math.min(a.distM, t.target.distM) < 1.1) return null;
+  const f = ctx.raceForecastForTarget(athlete, { distM: t.target.distM, label: EVNAME[t.target.distM] }, { fixedAnchor: a });
+  if(!f || f.isObserved || !isFinite(f.likely)) return null;
+  return Math.abs(f.likely - t.target.sec) / t.target.sec * 100;
+}
+const pctl = (a, q) => { const b = [...a].sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; };
+console.log('\n══ DATA-VALUE CURVE — what another PR actually buys (matched cohorts) ══');
+const dvResults = {};
+for(const K of [2, 3, 4]){
+  const elig = dvTargets.filter(t => t.pool.length >= K);
+  const series = {};
+  let usable = 0;
+  for(const t of elig){
+    const vals = {}; let ok = true;
+    for(let k = 1; k <= K; k++){ const v = dvScore(t, k); if(v == null){ ok = false; break; } vals[k] = v; }
+    if(!ok) continue;
+    usable++;
+    for(let k = 1; k <= K; k++) (series[k] = series[k] || []).push(vals[k]);
+  }
+  const nAth = new Set(elig.map(t => t.athlete)).size;
+  if(usable < 20){
+    console.log(`\n  up to ${K} PRs: only ${usable} matched folds / ${nAth} athletes — TOO FEW TO REPORT.`);
+    console.log('  Any claim about this many PRs is unsupported by the current corpus.');
+    continue;
+  }
+  console.log(`\n  Cohort: athlete has ≥${K} other PRs — n=${usable} folds, ${nAth} athletes`);
+  console.log('   PRs logged   median   mean     p90   within2%');
+  for(let k = 1; k <= K; k++){
+    const e = series[k];
+    console.log(`      ${k}         ${f1(median(e)).padStart(5)}  ${f1(mean(e)).padStart(5)}  ${f1(pctl(e, 0.9)).padStart(5)}     ${(e.filter(x => x <= 2).length / e.length * 100).toFixed(0)}%`);
+  }
+  dvResults[K] = { n: usable, nAth, series };
+}
+// The import panel's headline number. Locked so the copy can't drift from it.
+const dv2 = dvResults[2];
+if(dv2){
+  const p90one = pctl(dv2.series[1], 0.9), p90two = pctl(dv2.series[2], 0.9);
+  console.log(`\n  → SHIPPED CLAIM: a second PR moves 90th-percentile error ${p90one.toFixed(1)}% → ${p90two.toFixed(1)}%`);
+  console.log(`     (n=${dv2.n} matched folds, ${dv2.nAth} athletes). This is the ONLY PR-count claim the`);
+  console.log('     corpus supports; beyond 2 PRs there is no measured gain on this data.');
+  if(!(p90two < p90one)){
+    console.error('ASSERT FAIL the import screen claims a second PR reduces 90th-percentile error; it does not here.');
+    process.exitCode = 1;
+  }
+}
+console.log('\n══ DISTANCE SPREAD — which events to pick (observational, not matched) ══');
+const dvSpan = {};
+for(const t of dvTargets){
+  const v = dvScore(t, t.pool.length);
+  if(v == null) continue;
+  const ds = t.pool.map(o => o.distM).concat(t.target.distM);
+  const span = Math.max(...ds) / Math.min(...ds);
+  const b = span < 1.5 ? '<1.5x' : span < 2.5 ? '1.5-2.5x' : span < 4 ? '2.5-4x' : '>=4x';
+  (dvSpan[b] = dvSpan[b] || []).push(v);
+}
+console.log('  spread      n     median   mean     p90');
+for(const b of ['<1.5x', '1.5-2.5x', '2.5-4x', '>=4x']){
+  const e = dvSpan[b];
+  if(!e || !e.length) continue;
+  console.log(`  ${b.padEnd(10)} ${String(e.length).padStart(3)}   ${f1(median(e)).padStart(5)}  ${f1(mean(e)).padStart(5)}  ${f1(pctl(e, 0.9)).padStart(5)}`);
+}
+console.log('  NOTE: cohorts here are different athletes, not the same athlete with more data —');
+console.log('  read as "rosters that look like this predict better", not "widen your spread and improve".');
 
 // ── 7. Verdict ──
 const sMed = median(res.stride), rMed = median(res.riegel);

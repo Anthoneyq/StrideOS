@@ -294,4 +294,265 @@ ok(/after Vickers-Vertosick/.test(vvModel.label), "V-V heuristic is not presente
 const purdyModel = models.find(m => m.key === 'purdyErr');
 ok(/STRIDE/.test(purdyModel.label), "Purdy-style curve is labeled as a STRIDE heuristic");
 
+
+// ══ CRITICAL VELOCITY / TINMAN FAMILY (added 2026-07-30) ══
+const cvSrc = [extractFn('_csDamp'), extractFn('_csUndamp'), extractFn('_fitCriticalVelocity'),
+  extractFn('_formulaCriticalVelocity'), extractFn('_formulaTinmanCV'), extractFn('_formulaPersonalK'),
+  extractFn('sameDistanceM')].join('\n');
+const CVF = new Function(cvSrc + '; return {_csDamp,_csUndamp,_fitCriticalVelocity,_formulaCriticalVelocity,_formulaTinmanCV,_formulaPersonalK};')();
+
+// The long-duration damping must be exactly invertible — otherwise an anchor
+// over 30 min yields a different CV than the same fitness would from a 5K.
+ok(Math.abs(CVF._csUndamp(CVF._csDamp(2400)) - 2400) < 0.5, "_csDamp/_csUndamp round-trip");
+ok(CVF._csDamp(1500) === 1500, "_csDamp is identity below 30 min");
+ok(CVF._csDamp(3600) > 3600, "_csDamp slows predictions beyond 30 min");
+
+// Two-parameter fit on a textbook CS athlete: CV = 5.0 m/s, D' = 200 m.
+// t = (d - 200)/5  →  1500m in 260s, 5000m in 960s.
+const synth = [{ distM: 1500, sec: 260 }, { distM: 5000, sec: 960 }];
+const fit = CVF._fitCriticalVelocity(synth);
+ok(fit && Math.abs(fit.cv - 5.0) < 0.01, "CV recovered from exact CS data");
+ok(fit && Math.abs(fit.dprime - 200) < 1, "D' recovered from exact CS data");
+const cvPred = CVF._formulaCriticalVelocity(synth, 3000);
+ok(cvPred && Math.abs(cvPred - 560) < 1, "CV model predicts 3000m from its own curve");
+
+// Abstention discipline: a model that cannot speak must return null, never a
+// number — the ledger scores nulls as "excluded", but a junk number as a miss.
+ok(CVF._formulaCriticalVelocity(synth, 200) === null, "CV abstains at sprint distances");
+ok(CVF._fitCriticalVelocity([{distM:1500,sec:260}]) === null, "CV needs 2+ PRs");
+ok(CVF._fitCriticalVelocity([{distM:1500,sec:260},{distM:1600,sec:278}]) === null,
+  "CV abstains when both PRs are near-identical distances (no lever arm)");
+ok(CVF._fitCriticalVelocity([{distM:1500,sec:600},{distM:5000,sec:610}]) === null,
+  "CV abstains on physiologically impossible fits");
+ok(CVF._formulaTinmanCV(200, 24, 400) === null, "Tinman CV abstains inside the D' reserve");
+const tin = CVF._formulaTinmanCV(5000, 960, 3000);
+ok(tin > 500 && tin < 620, "Tinman CV gives a sane 5K→3000m");
+
+// personal-k stays inside published human bounds and fades outside its span
+ok(CVF._formulaPersonalK([{distM:1500,sec:260},{distM:5000,sec:960}], 5000, 960, 3000) > 0,
+  "personal-k predicts inside its measured span");
+ok(CVF._formulaPersonalK([{distM:1500,sec:260}], 1500, 260, 5000) === null,
+  "personal-k needs 2+ PRs at 400m+");
+
+// ══ ADAPTIVE STACKING — leakage is the thing that would make the ledger a lie ══
+const loo = extractFn('_memberLooErrors');
+ok(/prs\.filter\(p => !sameDistanceM\(p\.distM, target\.distM\)\)/.test(loo),
+  "_memberLooErrors excludes the held-out PR from its own fitting set");
+const fcast = extractFn('raceForecastForTarget');
+ok(/collectAllPRs\(athlete\)\.filter\(p => !sameDistanceM\(p\.distM, targetDistM\)\)/.test(fcast),
+  "the shipped forecast never lets a target distance into its own stacking set");
+ok(!/likely = personalPrediction \* personalW/.test(fcast),
+  "personal-k no longer overrides the ensemble downstream (it competes as a member)");
+const ens = extractFn('strideEnsemble');
+ok(/liveKeys\.reduce\(\(s, k\) => s \+ weights\[k\], 0\)/.test(ens),
+  "abstaining members trigger weight renormalization, not a shrunken prediction");
+
+// ══ LEDGER STATISTICAL HONESTY ══
+const ci = new Function(extractFn('_bootstrapPairedCI') + '; return _bootstrapPairedCI;')();
+const cl = (...groups) => groups.map((diffs, i) => ({ key: 'a' + i, diffs }));
+// The screenshot's shape: 3 tests, ONE athlete.
+const three = cl([2.6, -1.0, 0.4]);
+ok(ci(three).separable === false, "a 3-test gap is reported as NOT statistically separable");
+ok(ci(three).nAthletes === 1, "the interval knows how many independent athletes it saw");
+const a = ci(three), b = ci(three);
+ok(a.lo === b.lo && a.hi === b.hi, "the confidence interval is deterministic across renders");
+ok(ci([]) .n === 0, "no clusters yields no tests");
+ok(ci(cl([1])).separable === false, "a single test never separates");
+
+// PSEUDOREPLICATION REGRESSION — the whole reason the bootstrap clusters.
+// One athlete, twelve consistent hold-out tests. Resampling tests individually
+// would call this a significant win; clustering on athletes must not.
+const oneAthleteManyTests = cl([1.4,1.5,1.3,1.6,1.4,1.5,1.5,1.3,1.6,1.4,1.5,1.4]);
+const oneAth = ci(oneAthleteManyTests);
+ok(oneAth.n === 12 && oneAth.nAthletes === 1, "12 tests from 1 athlete counted as 1 cluster");
+ok(oneAth.separable === false,
+  "12 tests from ONE athlete cannot manufacture significance (pseudoreplication guard)");
+// The same 12 differences spread across 6 athletes SHOULD be able to separate.
+const sixAthletes = cl([1.4,1.5],[1.3,1.6],[1.4,1.5],[1.5,1.3],[1.6,1.4],[1.5,1.4]);
+ok(ci(sixAthletes).nAthletes === 6, "clusters counted per athlete");
+ok(ci(sixAthletes).separable === true,
+  "a consistent margin across 6 independent athletes IS separable");
+
+const verdict = new Function('const _LEDGER_MIN_N_FOR_VERDICT = 8;' +
+  'const _LEDGER_MIN_ATHLETES_FOR_VERDICT = 3;' +
+  extractFn('_bootstrapPairedCI') + extractFn('_ledgerVerdict') + '; return _ledgerVerdict;')();
+ok(verdict('Riegel', three).tone === 'neutral', "thin samples are toned neutral");
+ok(verdict('Riegel', three).underpowered === true, "a 3-test sample is flagged underpowered");
+// The floor must bind in OUR favour too: three lopsided wins are still 3 tests.
+ok(verdict('Riegel', cl([3.0, 3.2, 2.9])).tone !== 'win',
+  "STRIDE cannot claim a statistical win on 3 tests either — the floor is symmetric");
+ok(/cannot settle it|aren't independent/.test(verdict('Riegel', cl([3.0,3.2,2.9])).text),
+  "underpowered samples say so in plain language");
+// …and the athlete floor binds even when the TEST floor is satisfied.
+ok(verdict('Riegel', oneAthleteManyTests).tone === 'neutral',
+  "12 tests from one athlete still yields no verdict (athlete floor)");
+ok(/aren't independent/.test(verdict('Riegel', oneAthleteManyTests).text),
+  "the one-athlete case explains WHY it can't be settled");
+const strongSpread = cl([1.5,1.6,1.4],[1.5,1.5,1.6],[1.4,1.5,1.5],[1.6,1.4,1.5]);
+ok(verdict('Riegel', strongSpread).tone === 'win', "a real margin over 4 athletes is reported as a win");
+ok(verdict('Riegel', strongSpread.map(g => ({...g, diffs: g.diffs.map(x => -x)}))).tone === 'loss',
+  "a real deficit is reported as a loss, not hidden");
+
+// ══ NO WINNER BADGE WITHOUT THE SAME EVIDENCE AS THE PROSE ══
+// Codex review 2026-07-30: gating only the sentence while ★ / "best model" /
+// green highlights still ran off raw MAPE left the original overclaim intact.
+const rp = extractFn('renderProof');
+ok(/const strideBest = sweepsAll;/.test(rp),
+  "the STRIDE ★ is driven by the bootstrap sweep, not by raw MAPE comparison");
+ok(!/p\.strideMape <= p\.riegelMape/.test(rp),
+  "no raw-MAPE 'strideBest' comparison survives in renderProof");
+ok(/sweepsAll = shown\.length > 0 && provenWins\.length === shown\.length/.test(rp),
+  "'most accurate model' requires being proven ahead of EVERY displayed competitor");
+ok(/bar\('Riegel \(1977\)', p\.riegelMape, 'var\(--yellow\)', V\.riegel && V\.riegel\.tone === 'loss'\)/.test(rp),
+  "a rival only gets the ★ when it is a PROVEN loss for STRIDE, not a raw-MAPE lead");
+ok(/i===0&&panelRankable/.test(rp),
+  "the full-model-panel ★ is gated on sample adequacy");
+ok(/!smallSample&&r\.strideErr<=r\.riegelErr/.test(rp),
+  "per-row green 'STRIDE closest' highlighting is gated on sample adequacy");
+ok(/smallSample = p\.n < _LEDGER_MIN_N_FOR_VERDICT \|\| p\.athletes < _LEDGER_MIN_ATHLETES_FOR_VERDICT/.test(rp),
+  "sample adequacy counts athletes, not just tests");
+ok(!/color:\$\{a\.best\.key==='strideErr'\?'var\(--green\)'/.test(rp),
+  "per-athlete 'best model' no longer gets a winner colour off 2-4 tests");
+
+// The ledger's verdicts must be built from athlete-clustered differences.
+ok(/_clusterDiffs\(rows, r => r\.riegelErr - r\.strideErr\)/.test(ledgerSrc),
+  "computeProofLedger clusters its paired differences by athlete before testing");
+
+// ══ NO OVERSTATED GUARANTEE ══
+const stackComment = html.slice(html.indexOf('// ── ADAPTIVE PER-ATHLETE STACKING'),
+  html.indexOf('const ADAPTIVE_STACKING_ENABLED'));
+ok(/TESTED HEURISTIC, not a theorem/.test(stackComment),
+  "adaptive stacking is documented as a heuristic, not a guarantee");
+ok(!/is the guarantee/.test(stackComment),
+  "the Bates & Granger 'guarantee' claim is gone");
+
+// The ledger competes against the CV family, and labels it honestly.
+const cvModel = models.find(m => m.key === 'cvErr');
+const tinModel = models.find(m => m.key === 'tinmanErr');
+ok(cvModel && /Hill|Jones/.test(cvModel.label), "2-param CV cites the published critical-speed model");
+ok(tinModel && /after Schwartz/.test(tinModel.label),
+  "the Tinman branch is labeled 'after Schwartz', not as his proprietary calculator");
+ok(/cvErr:err\(cv\)/.test(ledgerSrc) && /tinmanErr:err\(tinman\)/.test(ledgerSrc),
+  "computeProofLedger actually scores the CV family");
+ok(/collectAllPRs\(temp\)/.test(ledgerSrc),
+  "the ledger fits CV on the athlete-minus-held-out-PR, keeping the test honest");
+
+
+// ══ IMPORT-SCREEN CLAIMS MUST MATCH THE ORACLE (Codex review, 2026-07-31) ══
+// The import panel quotes accuracy numbers at coaches. Those numbers were once
+// wrong in two ways at the same time: they compared "1 other PR" against
+// "3 other PRs" while calling it 1-vs-3 TOTAL, and the cohorts were different
+// athletes (folds with 3 spare PRs come only from athletes who race many
+// distances), so "more data helps" was partly just "these athletes are easier".
+// The matched re-analysis in moat_backtest.js §6d killed the 3-PR claim
+// entirely. These probes stop the copy drifting back.
+const importPanel = html.slice(html.indexOf('What to include — and what each column buys you'),
+  html.indexOf('From Google Sheets:'));
+ok(importPanel.length > 500, "import guidance panel found");
+
+ok(/4\.7% to 2\.7%/.test(importPanel),
+  "import copy quotes the matched second-PR figure from moat_backtest.js §6d");
+ok(/n = 61 matched tests across 10 athletes/.test(importPanel),
+  "the second-PR claim carries its cohort n and athlete count");
+ok(!/87%/.test(importPanel),
+  "the discredited 87%-at-3-PRs figure (cohort-selection artifact) is gone");
+ok(/Beyond two PRs, we can(&rsquo;|[’'])t yet promise/.test(importPanel),
+  "copy states plainly that 3+ PRs is unsupported by the corpus");
+ok(!/worst[- ]case/i.test(importPanel),
+  "p90 is never described as 'worst case' — it excludes the worst 10%");
+ok(/90th-percentile/.test(importPanel),
+  "p90 is named accurately");
+
+// Column semantics must match the code, which was checked line by line.
+ok(/longer than 10K/.test(importPanel),
+  "mileage guidance says LONGER than 10K (_formulaVickersVertosick gates on longest > 10000)");
+ok(!/10K-and-longer/.test(importPanel), "the inclusive '10K and longer' wording is gone");
+ok(/Grade<\/td><td[^>]*>Display and roster filtering only/.test(importPanel),
+  "Grade is disclosed as display-only");
+ok(/Years Training<\/td>/.test(importPanel),
+  "Years Training is listed as a real column now that it is importable");
+ok(/we(&rsquo;|[’'])ll ask you right after import/.test(importPanel),
+  "copy tells the coach STRIDE will prompt for training age when the sheet lacks it");
+ok(/elite-skewed/.test(importPanel),
+  "the corpus limitation travels with the numbers instead of only living in the evidence doc");
+ok(/moat_backtest\.js/.test(importPanel),
+  "copy names the oracle that reproduces its figures");
+
+// And the import field list genuinely has no training-age column to map.
+// ══ TRAINING AGE IS IMPORTABLE, AND PROMPTED FOR WHEN ABSENT ══
+// Root fix for the Codex finding: import used to hardcode trainingAge: 0, so a
+// bulk-imported varsity squad silently sat on beginner guardrails and paces.
+const fieldsSrc = html.slice(html.indexOf('const IMPORT_FIELDS = ['),
+  html.indexOf('// Optional per-event PR columns'));
+ok(/key: 'trainingAge'/.test(fieldsSrc), "IMPORT_FIELDS now has a training-age column");
+ok(!/hints: \[[^\]]*'experience'[^\]]*\][^}]*trainingAge/.test(fieldsSrc),
+  "training-age hints avoid the bare terms that collide with Grade");
+ok(!/^\s*trainingAge: 0,$/m.test(html),
+  "the hardcoded trainingAge: 0 on import is gone");
+ok(/take\('trainingAge', m\.trainingAge,/.test(html),
+  "imported athletes take training age from the mapped column");
+// …and when the sheet has no such column but DOES span multiple competition
+// years, training age is derived from that span rather than defaulting to 0
+// (the "Elizabeth Leachman is a beginner" report, 2026-07-31).
+ok(/const trainingAge = statedTrainingAge > 0 \? statedTrainingAge : derivedSpan;/.test(html),
+  "a mapped training-age column always wins over the derived value");
+ok(/trainingAgeDerived: statedTrainingAge <= 0 && derivedSpan > 0/.test(html),
+  "derived training ages are flagged so the import screen can disclose them");
+ok(/Years training derived from season history/.test(html),
+  "the import-done screen discloses which athletes got a derived training age");
+// …and when it is missing, the import routes to a gap-fill step rather than done.
+ok(/stage: needsTrainingAge\.length \? 'enrich' : 'done'/.test(html),
+  "a roster with no training-age data routes to the enrich step, not straight to done");
+ok(/case 'enrich':\s*return renderImportEnrich\(\);/.test(html),
+  "the enrich stage is wired into renderImport");
+const enrichSrc = html.slice(html.indexOf('function renderImportEnrich('),
+  html.indexOf('function renderImportDone('));
+ok(/Skip for now/.test(enrichSrc), "the training-age prompt is skippable, never blocking");
+ok(/setAllEnrichTrainingAge/.test(enrichSrc), "a bulk 'set all' control exists for the common case");
+ok(/does <strong[^>]*>not<\/strong> affect race forecasts/.test(enrichSrc),
+  "the prompt is honest that training age does not change forecasts");
+
+// ══ ROSTER TEMPLATE ══ generated from the importer's own field lists, so the
+// template can never offer a column the importer would not accept.
+const tplSrc = html.slice(html.indexOf('function rosterTemplateColumns('),
+  html.indexOf('function downloadRosterTemplate('));
+ok(/EVENT_PR_FIELDS\.map/.test(tplSrc),
+  "template event columns are generated from EVENT_PR_FIELDS, not hand-listed");
+const dlSrc = html.slice(html.indexOf('function downloadRosterTemplate('),
+  html.indexOf('// ── POST-IMPORT GAP FILL'));
+ok(/typeof XLSX !== 'undefined'/.test(dlSrc), "template prefers xlsx when SheetJS loaded");
+ok(/text\/csv;charset=utf-8/.test(dlSrc), "template falls back to CSV so it never depends on the CDN");
+ok(/4\.7% to 2\.7%/.test(html.slice(html.indexOf('function rosterTemplateGuidance('),
+  html.indexOf('function downloadRosterTemplate('))),
+  "the template's guidance sheet quotes the same evidenced figure as the import panel");
+
+
+// ══ TEMPLATE ROUND-TRIP ══ The template is only useful if a coach can fill it
+// in and drag it straight back with zero manual column mapping. Generating the
+// headers from IMPORT_FIELDS is not sufficient on its own — the importer
+// auto-detects by HINT matching, so a nice-looking header ("Years Training")
+// still has to be something autoDetectColumns actually recognises.
+const tplFns = new Function(
+  extractConst('IMPORT_FIELDS', '[', ']') + extractConst('EVENT_PR_FIELDS', '[', ']') +
+  extractFn('rosterTemplateColumns') + extractFn('rosterTemplateGuidance') +
+  extractFn('autoDetectColumns') +
+  '; return {rosterTemplateColumns,rosterTemplateGuidance,autoDetectColumns,IMPORT_FIELDS,EVENT_PR_FIELDS};')();
+const tplHeaders = tplFns.rosterTemplateColumns().map(c => c.header);
+const tplMap = tplFns.autoDetectColumns(tplHeaders);
+const tplMapped = Object.values(tplMap).filter(Boolean);
+ok(tplHeaders.length >= 20, `template offers the full column set (${tplHeaders.length})`);
+const tplUnmapped = tplHeaders.filter(h => !tplMapped.includes(h));
+ok(tplUnmapped.length === 0,
+  `every template column auto-detects on re-import (unmapped: ${tplUnmapped.join(', ') || 'none'})`);
+for(const key of ['name', 'trainingAge', 'raceTime', 'primaryEvent', 'raceDate', 'mileage', 'age', 'sex', 'grade'])
+  ok(!!tplMap[key], `template's ${key} column is auto-detected`);
+const tplEvents = tplFns.EVENT_PR_FIELDS.filter(ef => tplMap[ef.key]).length;
+ok(tplEvents === tplFns.EVENT_PR_FIELDS.length,
+  `all ${tplFns.EVENT_PR_FIELDS.length} per-event PR columns auto-detect (${tplEvents} did)`);
+// Example rows must be realistic enough to be useful, and clearly replaceable.
+const tplCols = tplFns.rosterTemplateColumns();
+ok(tplCols[0].example.filter(Boolean).length === 3, "template ships 3 example athletes");
+ok(tplCols.every(c => typeof c.note === 'string' && c.note.length > 10),
+  "every template column carries an explanation for the 'How to use' sheet");
+
 console.log(`engine probes ok — ${passed} assertions`);

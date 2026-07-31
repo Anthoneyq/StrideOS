@@ -31,6 +31,9 @@ const NEEDED = [
   'danielsPctVO2', 'danielsVO2atVelocity', 'calcVDOT',
   '_formulaRiegel', '_formulaCameron', '_formulaVDOT',
   '_formulaVickersVertosick', '_formulaPurdy',
+  '_csDamp', '_csUndamp', '_fitCriticalVelocity', '_formulaCriticalVelocity',
+  '_formulaTinmanCV', '_formulaPersonalK', '_memberPredict', '_memberLooErrors',
+  '_adaptiveEnsembleWeights',
   '_ensembleWeights', 'strideEnsemble',
   '_daysSinceRace', 'prFreshness', 'getEventDomain', 'getObservedRatio',
   'sameDistanceM', 'forecastTargets', 'labelForDistance',
@@ -53,8 +56,14 @@ if(!flagSrc) throw new Error('VDOT_ZONE_RECONCILIATION_ENABLED missing from inde
 const nudgeFlagSrc = (html.match(/const OBSERVED_RATIO_NUDGE_ENABLED = (?:true|false);/) || [''])[0];
 if(!nudgeFlagSrc) throw new Error('OBSERVED_RATIO_NUDGE_ENABLED missing from index.html');
 
+const stackSrc = (html.match(/const ADAPTIVE_STACKING_ENABLED = (?:true|false);/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_SHRINK_TAU = [\d.]+;/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_MAPE_FLOOR = [\d.]+;/)||[''])[0]
+  + '\n' + (html.match(/const _STACK_MEMBERS = \[[^\]]*\];/)||[''])[0];
+if(stackSrc.trim().split('\n').length < 4) throw new Error('Stacking constants missing from index.html');
+
 // `const` inside the vm script doesn't attach to the context object — export explicitly.
-const engineSrc = distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + nudgeFlagSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;' + '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;';
+const engineSrc = distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + nudgeFlagSrc + '\n' + stackSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;' + '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;';
 const ctx = { Math, Date, console };
 vm.createContext(ctx);
 vm.runInContext(engineSrc, ctx);
@@ -282,16 +291,17 @@ const f10Live = ctx.raceForecastForTarget(nudgeAthlete, { distM: 10000, label: '
 inRange('Live engine matches declared nudge-flag state (sec diff)',
   Math.abs(f10Live.likely - (ctx.OBSERVED_RATIO_NUDGE_ENABLED ? f10On.likely : f10Off.likely)), 0, 1e-9);
 
-// Engine-version tracking: the 2026-07-19 math-audit pass (anchor selection, pace
-// ceiling, Mile boundary, nudge flag) changes logged forecasts, and
+// Engine-version tracking: the 2026-07-30 pass (per-athlete adaptive stacking,
+// critical-velocity/Tinman members, evidence-derived distance-family prior,
+// personal-k demoted from override to member) changes logged forecasts, and
 // PREDICTION_ENGINE_VERSION keys snapshot dedup + calibration records — so the
 // version MUST move with the math. Any future forecast-affecting change must bump
 // the constant in index.html AND this pinned string, consciously, together.
 const engineVer = (html.match(/const PREDICTION_ENGINE_VERSION = '([^']+)';/) || [])[1] || '';
-inRange("Engine version bumped with the math-audit changes (0=exact match)",
-  engineVer === 'ensemble-2026-07-19-mathaudit-paceceil-nudgeflag' ? 0 : 1, 0, 0);
-inRange('Engine version is not the pre-audit string (0=differs)',
-  engineVer === 'ensemble-2026-07-01-kfloor-spanfade' ? 1 : 0, 0, 0);
+inRange("Engine version bumped with the stacking/CV changes (0=exact match)",
+  engineVer === 'ensemble-2026-07-30-stacking-cv-tinman' ? 0 : 1, 0, 0);
+inRange('Engine version is not the pre-stacking string (0=differs)',
+  engineVer === 'ensemble-2026-07-19-mathaudit-paceceil-nudgeflag' ? 1 : 0, 0, 0);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
