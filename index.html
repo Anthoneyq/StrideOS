@@ -156,13 +156,25 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .simple-help strong{color:var(--text)}
 .athlete-context{display:none;align-items:center;gap:1rem;margin:0 0 1.5rem;padding:.75rem;background:rgba(5,5,5,.88);border:1px solid var(--border);border-radius:.75rem;position:sticky;top:.75rem;z-index:80;backdrop-filter:blur(14px);box-shadow:var(--shadow-card)}
 .athlete-context.has-athlete{display:flex}
-.athlete-context-id{min-width:10rem;padding:0 .5rem}
-.athlete-context-label{font-family:var(--font-mono);font-size:.625rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-4)}
-.athlete-context-name{font-family:var(--font-display);font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13rem;margin-top:.12rem}
+.athlete-context-id{min-width:14rem;padding:0}
+/* The selected-athlete block IS the athlete switcher. It used to render as flat
+   text beside a borderless "Change" button, which read as a label, not a
+   control — coaches did not know the header was clickable. It is now a bordered
+   control with an explicit SWITCH ▾ affordance. */
+.athlete-context-switch{display:flex;align-items:center;gap:.85rem;width:100%;min-height:2.85rem;padding:.4rem .6rem;border:1px solid var(--border-s);border-radius:.55rem;background:var(--bg-el);color:inherit;text-align:left;cursor:pointer;transition:border-color .12s,background .12s}
+.athlete-context-switch:hover,.athlete-context-switch:focus-visible{border-color:var(--accent-line);background:var(--accent-soft)}
+.athlete-context-switch:hover .athlete-context-name,.athlete-context-switch:focus-visible .athlete-context-name{color:var(--accent)}
+.athlete-context-switch[disabled]{cursor:default;border-color:transparent;background:transparent}
+.athlete-context-copy{display:block;min-width:0}
+.athlete-context-switch-cta{margin-left:auto;flex:0 0 auto;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.athlete-context-switch[disabled] .athlete-context-switch-cta{display:none}
+.athlete-context-label{display:block;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-4)}
+.athlete-context-name{display:block;font-family:var(--font-display);font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:13rem;margin-top:.12rem}
 .athlete-context-tabs{display:flex;align-items:center;gap:.35rem;min-width:0;overflow-x:auto;scrollbar-width:none}
 .athlete-context-tabs::-webkit-scrollbar{display:none}
-.context-tab{min-height:2.5rem;border:1px solid transparent;border-radius:.45rem;background:transparent;color:var(--text-3);font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.03em;white-space:nowrap;padding:.55rem .75rem;cursor:pointer}
-.context-tab:hover{color:var(--text);background:var(--bg-el);border-color:var(--border)}
+/* Chips, not bare text: transparent borders made these read as static labels. */
+.context-tab{min-height:2.5rem;border:1px solid var(--border-s);border-radius:.45rem;background:var(--bg-el);color:var(--text-2);font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.03em;white-space:nowrap;padding:.55rem .75rem;cursor:pointer;transition:border-color .12s,background .12s,color .12s}
+.context-tab:hover,.context-tab:focus-visible{color:var(--text);background:var(--bg-raised);border-color:var(--border-h)}
 .context-tab[aria-current="page"]{color:var(--text);background:var(--accent-soft);border-color:var(--accent-line)}
 .context-more{position:relative;flex:0 0 auto}
 .context-more summary{list-style:none}.context-more summary::-webkit-details-marker{display:none}
@@ -730,11 +742,13 @@ input.err,select.err{border-color:var(--red)}
 
     <div class="athlete-context" id="athleteContextNav" data-auth-scope="workspace" aria-label="Selected athlete tools">
       <div class="athlete-context-id">
-        <div>
-          <p class="athlete-context-label" id="athleteContextLabel">Selected athlete</p>
-          <p class="athlete-context-name" id="athleteContextName">No athlete selected</p>
-        </div>
-        <button class="context-tab" data-coach-scope="coach" onclick="goTo('roster',null)">Change</button>
+        <button class="athlete-context-switch" id="athleteContextSwitch" onclick="goTo('roster',null)" title="Switch to a different athlete">
+          <span class="athlete-context-copy">
+            <span class="athlete-context-label" id="athleteContextLabel">Selected athlete</span>
+            <span class="athlete-context-name" id="athleteContextName">No athlete selected</span>
+          </span>
+          <span class="athlete-context-switch-cta">Switch <span aria-hidden="true">▾</span></span>
+        </button>
       </div>
       <div class="athlete-context-tabs">
         <button class="context-tab" data-s="multievent" onclick="goTo('multievent',this)">1 · Performance Curve</button>
@@ -1307,6 +1321,18 @@ function updateAthleteContextNav(){
   nav.classList.toggle('has-athlete', visible);
   name.textContent = visible ? athlete.name : 'No athlete selected';
   label.textContent = isAthleteOnly() ? 'My profile' : 'Selected athlete';
+
+  // An athlete-only account has exactly one profile — the block stays as an
+  // identity readout for them, and is a live switcher only for a coach.
+  const switcher = document.getElementById('athleteContextSwitch');
+  if(switcher){
+    const canSwitch = !isAthleteOnly();
+    switcher.disabled = !canSwitch;
+    switcher.setAttribute('aria-label', canSwitch
+      ? `Selected athlete: ${visible ? athlete.name : 'none'} — switch athlete`
+      : 'Your athlete profile');
+    switcher.title = canSwitch ? 'Switch to a different athlete' : '';
+  }
 }
 
 function hasWorkspaceAccess(){
@@ -3431,6 +3457,62 @@ async function softDeleteRemoteAthlete(clientRef){
   }catch(err){
     console.warn('Remote athlete delete failed', err);
   }
+}
+
+// Resolve a local athlete id to its cloud row id WITHOUT trusting a cached
+// supabaseId — after a merge the survivor's cached id can point at a row that
+// is about to be soft-deleted.
+async function resolveRemoteAthleteIdFresh(localId){
+  if(!sbClient || !sbUser || !localId) return null;
+  try{
+    const { data } = await sbClient
+      .from('athletes').select('id')
+      .eq('client_ref', String(localId))
+      .eq('coach_id', sbUser.id)
+      .maybeSingle();
+    if(data && data.id) return data.id;
+  }catch(err){ console.warn('remote athlete lookup failed', err); }
+  return isUuid(localId) ? localId : null;
+}
+
+// Persist a duplicate merge to the cloud.
+//
+// WHY THIS EXISTS: loadRemoteAthletes() replaces DB.athletes wholesale from
+// Supabase on every sign-in. A merge that only wrote localStorage therefore
+// evaporated at the next login and the coach had to re-merge the same roster
+// forever. The merge is only real once the absorbed rows are soft-deleted
+// server-side and the survivor carries the combined marks.
+async function persistDuplicateMergeToCloud(survivors, absorbed){
+  if(!sbClient || !sbUser || !sbCoachReady || isAthleteOnly()){
+    return { ok: false, skipped: true, reason: 'cloud_not_ready' };
+  }
+  let deleted = 0, failed = 0;
+  for(const survivor of survivors){
+    const synced = await syncAthleteToSupabase(survivor);
+    if(!synced || !synced.ok){ failed++; continue; }
+    const survivorRemoteId = await resolveRemoteAthleteIdFresh(survivor.id);
+    if(!survivorRemoteId){ failed++; continue; }
+    for(const rec of absorbed.filter(r => r.survivorLocalId === survivor.id)){
+      const remoteId = rec.supabaseId || await resolveRemoteAthleteIdFresh(rec.id);
+      if(!remoteId || remoteId === survivorRemoteId) continue;
+      // Re-point logged workouts first — soft-deleting the athlete row would
+      // otherwise strand every workout written against the absorbed entry.
+      const { error: wErr } = await sbClient
+        .from('workouts')
+        .update({ athlete_id: survivorRemoteId })
+        .eq('athlete_id', remoteId)
+        .is('deleted_at', null);
+      if(wErr) console.warn('workout re-point failed', wErr);
+      const { error: dErr } = await sbClient
+        .from('athletes')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', remoteId)
+        .eq('coach_id', sbUser.id);
+      if(dErr){ failed++; console.warn('remote merge delete failed', dErr); }
+      else deleted++;
+    }
+  }
+  return { ok: failed === 0, deleted, failed };
 }
 
 function remoteAthleteToLocal(row, raceRows){
@@ -12632,7 +12714,7 @@ function duplicateRepairPreviewHtml(){
     </div>`;
 }
 
-function applyDuplicateRepair(){
+async function applyDuplicateRepair(){
   if(!requireCoachWorkspace('merge coach-managed athlete profiles')) return;
   const plan = duplicateRepairPlan();
   if(!plan.groups){ toast('No duplicate names to merge'); return; }
@@ -12651,6 +12733,12 @@ function applyDuplicateRepair(){
   // so a workout logged against the 14th "Elizabeth" row is not orphaned.
   const survivorFor = {};
   plan.merges.forEach(m => (m._absorbedIds || []).forEach(id => { survivorFor[id] = m.id; }));
+
+  // Snapshot the absorbed records (with their cloud row ids) BEFORE they are
+  // dropped from DB.athletes — the cloud step below needs them.
+  const absorbedRecords = (DB.athletes || [])
+    .filter(a => absorbed.has(a.id))
+    .map(a => ({ id: a.id, supabaseId: a.supabaseId || null, survivorLocalId: survivorFor[a.id] }));
   if(Array.isArray(DB.workouts)){
     DB.workouts = DB.workouts.map(w =>
       survivorFor[w.athleteId] ? { ...w, athleteId: survivorFor[w.athleteId] } : w);
@@ -12676,6 +12764,20 @@ function applyDuplicateRepair(){
   duplicateRepairOpen = false;
   renderRoster();
   toast(`Merged into ${plan.merges.length} athlete${plan.merges.length===1?'':'s'}`);
+
+  // The merge is not finished until the cloud agrees — otherwise the next
+  // sign-in re-hydrates every absorbed row from Supabase and the coach is
+  // asked to merge the same roster again.
+  const survivors = plan.merges.map(m => mergedById.get(m.id)).filter(Boolean);
+  const cloud = await persistDuplicateMergeToCloud(survivors, absorbedRecords);
+  if(cloud.skipped){
+    toast('Merged on this device — sign in to save it to your account');
+  } else if(!cloud.ok){
+    toast(`Merged, but ${cloud.failed} entr${cloud.failed===1?'y':'ies'} did not sync — they may come back at next sign-in`);
+  } else {
+    toast(`Merge saved to your account (${cloud.deleted} duplicate${cloud.deleted===1?'':'s'} removed)`);
+  }
+  renderRoster();
 }
 
 // ── SWITCH ATHLETE ──
