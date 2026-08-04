@@ -123,20 +123,21 @@ const mk = (o) => Object.assign({ secondaryEvents:[], additionalPRs:{}, guardrai
 // inferring "uuid local id == cloud row id" would target a nonexistent row.
 const UUID_REF = '11111111-1111-4111-8111-111111111111';
 const ROWS = [
-  { local:'r1', row:'row-a1', ref:'r1',     name:'Riley Chen', created:'2026-01-01', ev:'5K',    m:5000, t:'16:25.50', d:'2021-11-06' },
-  { local:'r2', row:'row-a2', ref:'r2',     name:'Riley Chen', created:'2026-01-02', ev:'1600m', m:1600, t:'4:52.46', d:'2023-04-01' },
-  { local:'r3', row:'row-a3', ref:'r3',     name:'Riley Chen', created:'2026-01-03', ev:'3200m', m:3200, t:'9:43.74', d:'2024-05-11' },
-  { local:UUID_REF, row:'row-a4', ref:UUID_REF, name:'Riley Chen', created:'2026-01-04', ev:'800m', m:800, t:'2:05.00', d:'2026-03-02' },
-  { local:'d1', row:'row-d1', ref:'d1',     name:'Dana Ruiz',  created:'2026-01-05', ev:'800m',  m:800,  t:'1:53.51', d:'2025-05-02' }
+  { local:'r0', row:'row-a0', ref:'r0',     name:'Riley Chen', created:'2026-01-01', ev:'',      m:null, t:'',          d:'',           g:'7th' },
+  { local:'r1', row:'row-a1', ref:'r1',     name:'Riley Chen', created:'2026-01-01', ev:'5K',    m:5000, t:'16:25.50', d:'2023-11-06', g:'FR' },
+  { local:'r2', row:'row-a2', ref:'r2',     name:'Riley Chen', created:'2026-01-02', ev:'1600m', m:1600, t:'4:52.46', d:'2023-04-01', g:'SO' },
+  { local:'r3', row:'row-a3', ref:'r3',     name:'Riley Chen', created:'2026-01-03', ev:'3200m', m:3200, t:'9:43.74', d:'2024-05-11', g:'JR' },
+  { local:UUID_REF, row:'row-a4', ref:UUID_REF, name:'Riley Chen', created:'2026-01-04', ev:'800m', m:800, t:'2:05.00', d:'2026-03-02', g:'SR' },
+  { local:'d1', row:'row-d1', ref:'d1',     name:'Dana Ruiz',  created:'2026-01-05', ev:'800m',  m:800,  t:'1:53.51', d:'2025-05-02', g:'SR' }
 ];
 const seed = () => {
   TABLES = {
-    athletes: ROWS.map(r => ({ id:r.row, client_ref:r.ref, coach_id:'coach-1', deleted_at:null, display_name:r.name, race_date:r.d })),
+    athletes: ROWS.map(r => ({ id:r.row, client_ref:r.ref, coach_id:'coach-1', deleted_at:null, display_name:r.name, race_date:r.d, grade:r.g || null })),
     workouts: [{ id:'w1', athlete_id:'row-a3', coach_id:'coach-1', deleted_at:null },
                { id:'w2', athlete_id:'row-a4', coach_id:'coach-1', deleted_at:null }]
   };
   DB = { athletes: ROWS.map(r => mk({ id:r.local, supabaseId:r.row, name:r.name, createdAt:r.created,
-           raceDistance:r.ev, raceDistanceM:r.m, raceTime:r.t, raceDate:r.d })),
+           raceDistance:r.ev, raceDistanceM:r.m, raceTime:r.t, raceDate:r.d, grade:r.g || '' })),
          workouts:[{ id:'w1', athleteId:'r3', date:'2026-02-01' }], activeAthleteId:'r3' };
   A = DB.athletes[2];
 };
@@ -173,12 +174,13 @@ __out.repair = (scenario) => (async () => {
   Object.assign(__fail, scenario || {});
   __out.seed();
   // The state a coach is actually in: already merged, every athlete at 0 yrs.
-  DB.athletes = [ mk({ id:'r1', supabaseId:'row-a1', name:'Riley Chen', trainingAge:0 }),
+  DB.athletes = [ mk({ id:'r0', supabaseId:'row-a0', name:'Riley Chen', trainingAge:0 }),
                   mk({ id:'d1', supabaseId:'row-d1', name:'Dana Ruiz',  trainingAge:0 }) ];
   await loadTrainingAgeArchive();
   const preview = JSON.parse(JSON.stringify(trainingAgeRepair));
   if(preview.stage === 'preview') await applyTrainingAgeRepair();
   return { preview, ages: DB.athletes.map(a => [a.name, a.trainingAge]),
+           grades: DB.athletes.map(a => [a.name, a.grade]),
            rpcs: __calls.filter(c => c.op === 'rpc').map(c => c.payload.local_athlete.trainingAge),
            toasts: __toasts.slice() };
 })();
@@ -215,12 +217,12 @@ const UUID_REF = ctx.__out.UUID_REF;
 const good = await run();
 ok(good.names.filter(n => n === 'Riley Chen').length === 1, 'four Riley rows merge into one (got ' + JSON.stringify(good.names) + ')');
 ok(good.names.includes('Dana Ruiz'), 'a single-entry athlete is left alone');
-ok(good.ids.includes('r1'), 'the earliest entry id survives so training-log history stays attached');
-ok(good.activeAthleteId === 'r1', 'the active athlete follows the merge instead of pointing at an absorbed id');
+ok(good.ids.includes('r0'), 'the earliest entry id survives so training-log history stays attached: ' + JSON.stringify(good.ids));
+ok(good.activeAthleteId === 'r0', 'the active athlete follows the merge instead of pointing at an absorbed id: ' + good.activeAthleteId);
 
-ok(good.deletedRows.join(',') === 'row-a2,row-a3,row-a4', 'exactly the absorbed CLOUD ROWS are soft-deleted: ' + JSON.stringify(good.deletedRows));
-ok(good.liveRows.join(',') === 'row-a1,row-d1', 'the survivor and the untouched athlete remain: ' + JSON.stringify(good.liveRows));
-ok(good.workoutOwners.every(id => id === 'row-a1'), 'every workout moved onto the surviving row: ' + JSON.stringify(good.workoutOwners));
+ok(good.deletedRows.join(',') === 'row-a1,row-a2,row-a3,row-a4', 'exactly the absorbed CLOUD ROWS are soft-deleted: ' + JSON.stringify(good.deletedRows));
+ok(good.liveRows.join(',') === 'row-a0,row-d1', 'the survivor and the untouched athlete remain: ' + JSON.stringify(good.liveRows));
+ok(good.workoutOwners.every(id => id === 'row-a0'), 'every workout moved onto the surviving row: ' + JSON.stringify(good.workoutOwners));
 
 // A uuid-shaped client_ref must be resolved through the table, never assumed.
 ok(!good.calls.some(c => c.table === 'athletes' && c.op === 'update' && [].concat(c.filters.id || []).includes(UUID_REF)),
@@ -304,11 +306,26 @@ ok(/yrs not set/.test(html) && /years training not set/.test(html),
 // The repair for a roster ALREADY merged at 0: derive from archived seasons.
 const rep = await ctx.__out.repair();
 ok(rep.preview.stage === 'preview', 'the repair previews before writing: ' + rep.preview.stage);
-ok(rep.preview.plan.length === 1 && rep.preview.plan[0].name === 'Riley Chen',
-   'only multi-season athletes are proposed; a single-season one is left alone: ' + JSON.stringify(rep.preview.plan.map(p => p.name)));
-ok(rep.preview.plan[0].years === 5, 'the derived span is first→last season on file: ' + JSON.stringify(rep.preview.plan[0]));
+const riley = rep.preview.plan.find(p => p.name === 'Riley Chen');
+const dana  = rep.preview.plan.find(p => p.name === 'Dana Ruiz');
+ok(riley && riley.years === 5, 'the derived span is first→last season on file: ' + JSON.stringify(riley));
+ok(dana && dana.years === 0, 'a single-season athlete gets no invented training age: ' + JSON.stringify(dana));
+// Grades are a season signal too: the 7th-grade row carries NO date, so a
+// dates-only span would have said 5 (2021→2026) — here both agree at 5, and
+// the flag tells the coach which signal carried it.
+// Elizabeth Leachman's real shape: middle-school seasons carry a grade but a
+// dash for PR_Date, so a dates-only span understated her career by a year.
+ok(riley.dateSpan === 3 && riley.gradeSpan === 5,
+   'both signals are computed independently: ' + JSON.stringify(riley));
+ok(riley.years === 5, 'the WIDER signal wins — a missing date can hide a season, never invent one');
+ok(riley.flags.some(f => /no dated results/.test(f)),
+   'the coach is told which signal carried it: ' + JSON.stringify(riley.flags));
+ok(Array.isArray(riley.flags), 'each proposal carries coach-facing flags');
+ok(rep.preview.plan.every(p => p.flags.some(f => /age still unknown/.test(f))),
+   'a missing age is flagged rather than guessed: ' + JSON.stringify(rep.preview.plan.map(p => p.flags)));
 ok(rep.ages.some(([n, v]) => n === 'Riley Chen' && v === 5), 'applying sets the local value: ' + JSON.stringify(rep.ages));
-ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 0), 'an athlete with one season is untouched: ' + JSON.stringify(rep.ages));
+ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 0), 'an athlete with one season keeps no training age: ' + JSON.stringify(rep.ages));
+ok(rep.grades.some(([n, g]) => n === 'Dana Ruiz' && g === 'SR'), 'a blank year is backfilled from the most recent season on file: ' + JSON.stringify(rep.grades));
 ok(rep.rpcs.includes(5), 'the new value is pushed to the account, not just the device: ' + JSON.stringify(rep.rpcs));
 ok(/years training set/i.test(rep.toasts.join(' | ')), 'the coach is told it saved: ' + rep.toasts.join(' | '));
 

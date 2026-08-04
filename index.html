@@ -181,7 +181,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .context-menu{position:absolute;right:0;top:calc(100% + .4rem);z-index:120;display:grid;min-width:12rem;padding:.35rem;background:#090b0d;border:1px solid var(--border-s);border-radius:.5rem;box-shadow:var(--shadow-card)}
 .context-menu button{min-height:2.5rem;border:0;border-radius:.35rem;background:transparent;color:var(--text-2);font-family:var(--font-mono);font-size:.6875rem;text-align:left;padding:.55rem .7rem;cursor:pointer}
 .context-menu button:hover{background:var(--bg-raised);color:var(--text)}
-.team-command-bar{display:grid;grid-template-columns:minmax(0,1.35fr) repeat(3,minmax(9rem,.65fr));gap:.75rem;margin-bottom:1rem}
+.team-command-bar{display:grid;grid-template-columns:minmax(0,1.35fr) repeat(4,minmax(8rem,.65fr));gap:.75rem;margin-bottom:1rem}
 .team-command-intro,.team-command-action{min-height:5rem;border:1px solid var(--border);border-radius:.65rem;background:var(--bg-card);padding:1rem}
 .team-command-intro{display:flex;flex-direction:column;justify-content:center}
 .team-command-intro strong{font-family:var(--font-display);font-size:1.05rem}
@@ -236,6 +236,22 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .brief-flow-arrow{color:var(--text-3)}
 @media(max-width:800px){.brief-pulse{grid-template-columns:1fr 1fr}.brief-grid{grid-template-columns:1fr}.brief-topline{display:block}.brief-stamp{text-align:left;margin-top:.75rem}}
 @media(max-width:480px){.brief-hero{padding:1.25rem}.brief-pulse{grid-template-columns:1fr 1fr}.brief-priority{grid-template-columns:auto minmax(0,1fr)}.brief-priority .brief-action{grid-column:2;text-align:left;justify-self:start}.brief-log-stats{grid-template-columns:1fr}}
+.xc-layout{display:grid;grid-template-columns:minmax(18rem,.72fr) minmax(0,1.28fr);gap:1rem;align-items:start}
+.xc-form{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.xc-form .xc-wide{grid-column:1 / -1}
+.xc-label{display:flex;flex-direction:column;gap:.3rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-2)}
+.xc-label small{font-size:.625rem;line-height:1.45;color:var(--text-4)}
+.xc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
+.xc-stat{background:var(--bg-el);border:1px solid var(--border);border-radius:.55rem;padding:.8rem}
+.xc-stat strong{display:block;font-family:var(--font-stat);font-size:1.25rem}
+.xc-stat span{display:block;font-size:.6875rem;color:var(--text-2);line-height:1.35;margin-top:.15rem}
+.xc-table{width:100%;border-collapse:collapse;min-width:48rem}
+.xc-table th,.xc-table td{padding:.6rem .65rem;border-bottom:1px solid var(--border);font-size:.75rem;text-align:left;vertical-align:top}
+.xc-table th{font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;color:var(--text-4);text-transform:uppercase}
+.xc-table .num{text-align:right;font-family:var(--font-mono);white-space:nowrap}
+.xc-evidence{font-size:.625rem;color:var(--text-3);line-height:1.4;margin-top:.15rem}
+@media(max-width:900px){.xc-layout{grid-template-columns:1fr}.xc-summary{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){.team-command-bar{grid-template-columns:1fr 1fr}.team-command-intro{grid-column:1 / -1}.athlete-context{top:4.65rem}}
 @media(max-width:600px){.athlete-context{align-items:stretch;flex-direction:column;gap:.55rem;padding:.65rem}.athlete-context-id{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-width:0}.athlete-context-name{max-width:65vw}.team-command-bar{grid-template-columns:1fr}.team-command-intro{grid-column:auto}.app-footer{align-items:flex-start;flex-direction:column}}
 .auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
@@ -839,6 +855,18 @@ input.err,select.err{border-color:var(--red)}
       <div id="br-body" role="region" aria-live="polite" aria-busy="false"></div>
     </section>
 
+    <!-- XC COMMAND -->
+    <section id="xc" class="screen" aria-labelledby="xc-h" data-coach-scope="coach">
+      <header class="screen-header">
+        <div><p class="eyebrow">Endurance season workflow</p><h1 class="screen-title" id="xc-h">XC <em>Command</em></h1></div>
+        <div class="btn-row">
+          <button class="btn btn-print" onclick="printXcCommand()">Print meet sheet</button>
+          <button class="btn" onclick="goTo('squads',null)">Training groups →</button>
+        </div>
+      </header>
+      <div id="xc-body" role="region" aria-live="polite"></div>
+    </section>
+
     <!-- TRAINING LOG -->
     <section id="workouts" class="screen" aria-labelledby="wk-h">
       <header class="screen-header">
@@ -1243,6 +1271,7 @@ const WORKSPACE_SCREEN_IDS = new Set([
   'compare',
   'import',
   'brief',
+  'xc',
   'overview',
   'squads',
   'lineup',
@@ -2143,6 +2172,7 @@ function refreshCurrentScreen(){
     applyWorkspaceMode({ redirect: false });
     switch(currentScreen){
       case 'brief':       renderCoachBrief();   break;
+      case 'xc':          renderXcCommand();    break;
       case 'roster':      renderRoster();      break;
       case 'compare':     renderCompare();     break;
       case 'overview':    renderOverview();    break;
@@ -2429,6 +2459,15 @@ function workoutCard(w){
   const rpeBadge = w.perceived_effort
     ? `<span style="color:var(--text-3);font-family:'JetBrains Mono',monospace;font-size:.6875rem;margin-left:.5rem">RPE ${w.perceived_effort}/10</span>`
     : '';
+  const hasPrescription = w.prescribed_distance_m || w.prescribed_pace_sec_per_km ||
+    w.prescribed_zone_label || w.prescribed_notes;
+  const hasCompletion = w.total_distance_m || w.total_duration_sec || w.avg_hr_bpm ||
+    w.max_hr_bpm || w.perceived_effort;
+  const prescription = hasPrescription ? `
+    <div style="background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:.45rem;padding:.65rem .75rem;margin:.6rem 0">
+      <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);margin-bottom:.25rem">Planned</p>
+      <p style="font-size:.8125rem;line-height:1.5;color:var(--text-2)">${w.prescribed_zone_label ? `<strong style="color:var(--text)">${esc(w.prescribed_zone_label)}</strong>` : ''}${w.prescribed_distance_m ? `${w.prescribed_zone_label?' · ':''}${esc(fmtDistance(w.prescribed_distance_m))} quality volume` : ''}${w.prescribed_notes ? `<br>${esc(w.prescribed_notes)}` : ''}</p>
+    </div>` : '';
 
   return `
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem">
@@ -2439,12 +2478,13 @@ function workoutCard(w){
         </div>
         ${actionButtons}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
-        <div><span style="color:var(--text-4)">Distance</span><br>${fmtDistance(w.total_distance_m)}</div>
-        <div><span style="color:var(--text-4)">Duration</span><br>${fmtDuration(w.total_duration_sec)}</div>
-        <div><span style="color:var(--text-4)">Avg Pace</span><br>${fmtPaceFromTotals(w.total_distance_m, w.total_duration_sec)}</div>
-        ${w.avg_hr_bpm ? `<div><span style="color:var(--text-4)">Avg HR</span><br>${w.avg_hr_bpm} bpm</div>` : ''}
-      </div>
+      ${prescription}
+      ${hasCompletion ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));gap:.5rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text-2)">
+          <div><span style="color:var(--text-4)">Completed distance</span><br>${fmtDistance(w.total_distance_m)}</div>
+          <div><span style="color:var(--text-4)">Duration</span><br>${fmtDuration(w.total_duration_sec)}</div>
+          <div><span style="color:var(--text-4)">Avg Pace</span><br>${fmtPaceFromTotals(w.total_distance_m, w.total_duration_sec)}</div>
+          ${w.avg_hr_bpm ? `<div><span style="color:var(--text-4)">Avg HR</span><br>${w.avg_hr_bpm} bpm</div>` : ''}
+        </div>` : `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.5rem">Completion not logged yet.</p>`}
       ${w.coach_notes ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.625rem;line-height:1.55;border-left:2px solid var(--accent);padding-left:.625rem">${esc(w.coach_notes)}</p>` : ''}
       ${w.athlete_notes ? `<p style="font-family:'JetBrains Mono',monospace;font-size:.6875rem;color:var(--text-3);margin-top:.625rem;line-height:1.55;border-left:2px solid var(--green);padding-left:.625rem">${esc(w.athlete_notes)}</p>` : ''}
     </div>`;
@@ -3751,7 +3791,8 @@ function newDB(){
     athletes:[],
     workouts:[],
     activeAthleteId:null,
-    lastMeetSummary:null
+    lastMeetSummary:null,
+    xcPlan:null
   };
 }
 
@@ -3762,6 +3803,7 @@ DB.coach    = DB.coach    || { name:'', team:'', color:'#ff4500' };
 DB.athletes = DB.athletes || [];
 DB.workouts = DB.workouts || [];
 DB.lastMeetSummary = DB.lastMeetSummary || null;
+DB.xcPlan = DB.xcPlan || null;
 
 // Migrate from v4 single-athlete if present
 (function migrate(){
@@ -4076,6 +4118,7 @@ function goTo(id,btn){
   toggleMobileNav(false);
   if(id==='home')     renderHome();
   if(id==='brief')    renderCoachBrief();
+  if(id==='xc')       renderXcCommand();
   if(id==='roster')   renderRoster();
   if(id==='compare')  renderCompare();
   if(id==='overview') renderOverview();
@@ -4256,7 +4299,12 @@ function coachBriefWeekRanges(todayISO){
 function summarizeCoachBriefWorkouts(items, ranges){
   const source = Array.isArray(items) ? items : [];
   const summarize = range => {
-    const rows = source.filter(w => w && w.workout_date >= range.start && w.workout_date <= range.end);
+    const inRange = source.filter(w => w && w.workout_date >= range.start && w.workout_date <= range.end);
+    const rows = inRange.filter(w =>
+      (isFinite(Number(w.total_distance_m)) && Number(w.total_distance_m) > 0) ||
+      (isFinite(Number(w.total_duration_sec)) && Number(w.total_duration_sec) > 0));
+    const planned = inRange.filter(w => !rows.includes(w) &&
+      (w.prescribed_distance_m || w.prescribed_zone_label || w.prescribed_notes)).length;
     const distanceM = rows.reduce((sum,w) => {
       const value = Number(w.total_distance_m);
       return sum + (isFinite(value) && value > 0 ? value : 0);
@@ -4267,7 +4315,7 @@ function summarizeCoachBriefWorkouts(items, ranges){
       const key = w.workout_type || 'other';
       types[key] = (types[key] || 0) + 1;
     });
-    return { sessions:rows.length, distanceM, athletesLogged:athleteIds.size, types };
+    return { sessions:rows.length, planned, distanceM, athletesLogged:athleteIds.size, types };
   };
   return {
     completed:{ ...ranges.completed, ...summarize(ranges.completed) },
@@ -4306,7 +4354,7 @@ async function loadCoachBriefWorkouts(){
   try{
     const { data, error } = await sbClient
       .from('workouts')
-      .select('athlete_id, workout_date, workout_type, total_distance_m, total_duration_sec')
+      .select('athlete_id, workout_date, workout_type, prescribed_distance_m, prescribed_zone_label, prescribed_notes, total_distance_m, total_duration_sec')
       .eq('coach_id', sbUser.id)
       .gte('workout_date', ranges.previous.start)
       .lte('workout_date', ranges.completed.end)
@@ -4495,11 +4543,11 @@ function renderCoachBrief(){
     workoutHtml = `
       <div class="brief-panel-head"><p class="brief-panel-title">Training log coverage</p><span class="brief-panel-tag">${esc(coachBriefRangeLabel(current))}</span></div>
       <div class="brief-log-stats">
-        <div class="brief-log-stat"><strong>${current.sessions}</strong><span>sessions logged</span></div>
+        <div class="brief-log-stat"><strong>${current.sessions}</strong><span>completed entries</span></div>
         <div class="brief-log-stat"><strong>${current.athletesLogged}/${c.roster}</strong><span>athletes with entries</span></div>
         <div class="brief-log-stat"><strong>${miles.toFixed(1)} mi</strong><span>distance logged</span></div>
       </div>
-      <p class="brief-source-note">Previous completed week: ${previous.sessions} session${previous.sessions===1?'':'s'} · ${previousMiles.toFixed(1)} mi logged. This is STRIDE entry coverage only; unlogged training is unknown.</p>`;
+      <p class="brief-source-note">${current.planned ? `${current.planned} prescribed session${current.planned===1?'':'s'} had no completion evidence and ${current.planned===1?'was':'were'} not counted. ` : ''}Previous completed week: ${previous.sessions} completed entr${previous.sessions===1?'y':'ies'} · ${previousMiles.toFixed(1)} mi logged. This is STRIDE entry coverage only; unlogged training is unknown.</p>`;
   } else if(ctx.workouts && ctx.workouts.status === 'unavailable'){
     workoutHtml = `
       <div class="brief-panel-head"><p class="brief-panel-title">Training log coverage</p><span class="brief-panel-tag">Unavailable</span></div>
@@ -4571,7 +4619,8 @@ function coachBriefText(){
   if(ctx.workouts && ctx.workouts.status === 'ready' && ctx.workouts.summary){
     const w = ctx.workouts.summary.completed;
     lines.push('', `TRAINING LOG COVERAGE — ${coachBriefRangeLabel(w)}`);
-    lines.push(`${w.sessions} sessions logged · ${w.athletesLogged}/${c.roster} athletes with entries · ${(w.distanceM/1609.344).toFixed(1)} mi logged`);
+    lines.push(`${w.sessions} completed entries · ${w.athletesLogged}/${c.roster} athletes with entries · ${(w.distanceM/1609.344).toFixed(1)} mi logged`);
+    if(w.planned) lines.push(`${w.planned} prescribed session${w.planned===1?'':'s'} without completion evidence not counted.`);
     lines.push('STRIDE entry coverage only; unlogged training is unknown.');
   } else if(ctx.workouts && ctx.workouts.status === 'unavailable'){
     lines.push('', 'TRAINING LOG COVERAGE — UNAVAILABLE');
@@ -4607,10 +4656,272 @@ function printCoachBrief(){
   const workoutRows = ctx.workouts && ctx.workouts.status === 'ready' && ctx.workouts.summary
     ? (() => {
         const w = ctx.workouts.summary.completed;
-        return `<div class="ps-section">Training log coverage · ${esc(coachBriefRangeLabel(w))}</div><div class="ps-grid"><div class="ps-stat"><div class="k">Sessions logged</div><div class="v">${w.sessions}</div></div><div class="ps-stat"><div class="k">Athletes with entries</div><div class="v">${w.athletesLogged}/${c.roster}</div></div><div class="ps-stat"><div class="k">Distance logged</div><div class="v">${(w.distanceM/1609.344).toFixed(1)} mi</div></div></div><div class="ps-note">STRIDE entry coverage only; unlogged training is unknown.</div>`;
+        return `<div class="ps-section">Training log coverage · ${esc(coachBriefRangeLabel(w))}</div><div class="ps-grid"><div class="ps-stat"><div class="k">Completed entries</div><div class="v">${w.sessions}</div></div><div class="ps-stat"><div class="k">Athletes with entries</div><div class="v">${w.athletesLogged}/${c.roster}</div></div><div class="ps-stat"><div class="k">Distance logged</div><div class="v">${(w.distanceM/1609.344).toFixed(1)} mi</div></div></div><div class="ps-note">${w.planned ? `${w.planned} prescription${w.planned===1?'':'s'} without completion evidence not counted. ` : ''}STRIDE entry coverage only; unlogged training is unknown.</div>`;
       })()
     : '';
   printSheet(`<div class="ps-page">${_psHead('Coach Brief', team, `${c.roster} athletes · ${c.fresh}/${c.withPR} current primary marks · ${c.multiReady} multi-event`, [_psStamp()])}<div class="ps-section">Review queue</div>${priorities}${workoutRows}${meetRows}<div class="ps-foot">Coach-reviewed STRIDE OS snapshot · secondary-event dates and unlogged activity are not represented.</div></div>`);
+}
+
+// ── XC COMMAND ─────────────────────────────────────────────────────────────
+// This first XC release deliberately does NOT invent an automatic course
+// conversion. The coach supplies one transparent whole-race adjustment and
+// STRIDE applies it to the same visible planning range for every athlete.
+// Terrain-segment normalization needs its own validated course dataset.
+const XC_DISTANCES = [
+  { value:3000, label:'3K' },
+  { value:3218, label:'2 Mile' },
+  { value:5000, label:'5K' },
+  { value:6000, label:'6K' },
+  { value:8000, label:'8K' },
+  { value:10000, label:'10K' }
+];
+
+function defaultXcPlan(){
+  return {
+    meetName:'',
+    meetDate:'',
+    courseName:'',
+    distanceM:5000,
+    courseAdjustmentSec:0,
+    notes:'',
+    updatedAt:null
+  };
+}
+
+function normalizeXcPlan(input){
+  const raw = input && typeof input === 'object' ? input : {};
+  const supported = new Set(XC_DISTANCES.map(d => d.value));
+  const distanceM = supported.has(Number(raw.distanceM)) ? Number(raw.distanceM) : 5000;
+  const adjustment = Number(raw.courseAdjustmentSec);
+  return {
+    meetName:String(raw.meetName || '').trim().slice(0,120),
+    meetDate:/^\d{4}-\d{2}-\d{2}$/.test(String(raw.meetDate || '')) ? String(raw.meetDate) : '',
+    courseName:String(raw.courseName || '').trim().slice(0,120),
+    distanceM,
+    courseAdjustmentSec:isFinite(adjustment) ? Math.max(-600, Math.min(1800, Math.round(adjustment))) : 0,
+    notes:String(raw.notes || '').trim().slice(0,1200),
+    updatedAt:raw.updatedAt || null
+  };
+}
+
+function xcCheckpointDistances(distanceM){
+  const candidates = [1000, 1609.344, 3000, 5000, Number(distanceM)];
+  const unique = [];
+  candidates.forEach(d => {
+    if(d <= 0 || d > distanceM || unique.some(x => Math.abs(x - d) < 1)) return;
+    unique.push(d);
+  });
+  // Keep the on-screen table phone-scannable: intermediate checkpoints plus
+  // the finish, capped at four columns.
+  const finish = Number(distanceM);
+  const mids = unique.filter(d => Math.abs(d - finish) >= 1);
+  return mids.slice(0,3).concat([finish]);
+}
+
+function xcCheckpointLabel(distanceM, finishM){
+  if(Math.abs(distanceM - finishM) < 1) return 'Finish';
+  if(Math.abs(distanceM - 1609.344) < 1) return '1 Mile';
+  if(distanceM % 1000 === 0) return `${distanceM/1000}K`;
+  return `${Math.round(distanceM)}m`;
+}
+
+function xcElapsedAt(totalSec, raceDistanceM, checkpointM){
+  if(!isFinite(totalSec) || totalSec <= 0 || !isFinite(raceDistanceM) || raceDistanceM <= 0) return null;
+  return totalSec * (checkpointM / raceDistanceM);
+}
+
+function xcPlanningRows(athletes, rawPlan){
+  const plan = normalizeXcPlan(rawPlan);
+  const rows = [], excluded = [];
+  (athletes || []).filter(Boolean).forEach(athlete => {
+    const prs = collectAllPRs(athlete);
+    const distanceCapable = athlete.raceDistanceM >= 1500 || prs.some(p => p.distM >= 1500);
+    if(!distanceCapable){
+      excluded.push({ athlete, reason:'no 1500m+ evidence' });
+      return;
+    }
+    const forecast = raceForecastForTarget(
+      athlete,
+      { distM:plan.distanceM, label:labelForDistance(plan.distanceM) },
+      { fixedAnchor:nearestAnchorForTarget(athlete, plan.distanceM) }
+    );
+    if(!forecast || !isFinite(forecast.likely)){
+      excluded.push({ athlete, reason:'no usable forecast' });
+      return;
+    }
+    const adjust = plan.courseAdjustmentSec;
+    const likely = Math.max(1, forecast.likely + adjust);
+    const aggressive = Math.max(1, forecast.aggressive + adjust);
+    const conservative = Math.max(aggressive, forecast.conservative + adjust);
+    const checkpoints = xcCheckpointDistances(plan.distanceM).map(distanceM => ({
+      distanceM,
+      label:xcCheckpointLabel(distanceM, plan.distanceM),
+      elapsedSec:xcElapsedAt(likely, plan.distanceM, distanceM)
+    }));
+    rows.push({
+      athlete,
+      forecast,
+      likely,
+      aggressive,
+      conservative,
+      checkpoints,
+      paceMileSec:likely / (plan.distanceM / 1609.344),
+      evidence:forecast.isObserved
+        ? `${forecast.confLabel} · ${labelForDistance(plan.distanceM)} result`
+        : `${forecast.confLabel || confidenceLabel(forecast.confidence)} · ${Math.round(forecast.confidence)}% · ${forecast.anchor && forecast.anchor.event ? forecast.anchor.event : 'race'} anchor`
+    });
+  });
+  rows.sort((a,b) => a.likely - b.likely || String(a.athlete.id).localeCompare(String(b.athlete.id)));
+  rows.forEach((row,index) => {
+    row.rank = index + 1;
+    row.packGapSec = index ? row.likely - rows[index-1].likely : null;
+  });
+  const topFive = rows.slice(0,5);
+  const topFiveSpreadSec = topFive.length >= 5 ? topFive[4].likely - topFive[0].likely : null;
+  return { plan, rows, excluded, topFiveSpreadSec };
+}
+
+function xcFormHTML(plan){
+  return `
+    <div class="brief-panel">
+      <div class="brief-panel-head"><p class="brief-panel-title">Upcoming meet</p><span class="brief-panel-tag">Coach-entered context</span></div>
+      <form class="xc-form" onsubmit="saveXcMeetPlan();return false">
+        <label class="xc-label xc-wide"><span>Meet name</span><input id="xcMeetName" class="auth-input" maxlength="120" required placeholder="District Championship" value="${esc(plan.meetName)}"></label>
+        <label class="xc-label"><span>Date</span><input id="xcMeetDate" class="auth-input" type="date" value="${esc(plan.meetDate)}"></label>
+        <label class="xc-label"><span>Race distance</span><select id="xcDistance" class="auth-input">${XC_DISTANCES.map(d=>`<option value="${d.value}" ${d.value===plan.distanceM?'selected':''}>${esc(d.label)}</option>`).join('')}</select></label>
+        <label class="xc-label xc-wide"><span>Course</span><input id="xcCourseName" class="auth-input" maxlength="120" placeholder="Old Settlers Park" value="${esc(plan.courseName)}"></label>
+        <label class="xc-label xc-wide">
+          <span>Whole-race course adjustment (seconds)</span>
+          <input id="xcAdjustment" class="auth-input" type="number" min="-600" max="1800" step="1" value="${plan.courseAdjustmentSec}">
+          <small>Positive = plan slower; negative = plan faster. This is your coaching assumption, not an automatic STRIDE course grade.</small>
+        </label>
+        <label class="xc-label xc-wide"><span>Course / race notes</span><textarea id="xcNotes" class="auth-input" rows="4" maxlength="1200" placeholder="Narrow first mile, exposed final hill, pack cue at 3K…">${esc(plan.notes)}</textarea></label>
+        <button class="btn btn-primary xc-wide" type="submit">Save and build meet plan</button>
+      </form>
+    </div>`;
+}
+
+function saveXcMeetPlan(){
+  if(!requireCoachWorkspace('save an XC meet plan')) return;
+  const read = id => {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  };
+  const plan = normalizeXcPlan({
+    meetName:read('xcMeetName'),
+    meetDate:read('xcMeetDate'),
+    courseName:read('xcCourseName'),
+    distanceM:read('xcDistance'),
+    courseAdjustmentSec:read('xcAdjustment'),
+    notes:read('xcNotes'),
+    updatedAt:new Date().toISOString()
+  });
+  if(!plan.meetName){
+    toast('Add a meet name before saving', 'error');
+    return;
+  }
+  DB.xcPlan = plan;
+  saveDB(DB);
+  renderXcCommand();
+  toast('XC meet plan saved on this account and device');
+}
+
+function xcPlanTableHTML(result){
+  const { plan, rows, excluded, topFiveSpreadSec } = result;
+  if(!rows.length){
+    return emptyStateCard('No distance evidence yet', 'Add a 1500m-or-longer result to at least one athlete. STRIDE will then create coach-reviewable planning ranges for this meet.', 'Open roster', "goTo('roster',null)");
+  }
+  const checkpoints = xcCheckpointDistances(plan.distanceM);
+  const checkpointHeaders = checkpoints.map(d => `<th class="num">${esc(xcCheckpointLabel(d,plan.distanceM))}</th>`).join('');
+  const tableRows = rows.map(row => {
+    const checkpointCells = row.checkpoints.map(point => `<td class="num">${esc(fmtT(point.elapsedSec))}</td>`).join('');
+    return `<tr>
+      <td class="num">${row.rank}</td>
+      <td><strong>${esc(row.athlete.name)}</strong><p class="xc-evidence">${esc(row.evidence)}</p></td>
+      <td class="num">${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}<p class="xc-evidence">planning range</p></td>
+      <td class="num">${esc(_mmss(row.paceMileSec,0))}/mi</td>
+      ${checkpointCells}
+      <td class="num">${row.packGapSec == null ? '—' : `+${esc(fmtT(row.packGapSec))}`}</td>
+    </tr>`;
+  }).join('');
+  const excludedNote = excluded.length
+    ? `<p class="brief-source-note" style="margin-top:.75rem">${excluded.length} athlete${excluded.length===1?' was':'s were'} excluded because no usable 1500m+ evidence was available: ${esc(excluded.slice(0,8).map(x=>x.athlete.name).join(', '))}${excluded.length>8?'…':''}</p>`
+    : '';
+  return `
+    <div class="xc-summary">
+      <div class="xc-stat"><strong>${rows.length}</strong><span>athletes with planning evidence</span></div>
+      <div class="xc-stat"><strong>${topFiveSpreadSec == null ? '—' : fmtT(topFiveSpreadSec)}</strong><span>projected top-five spread</span></div>
+      <div class="xc-stat"><strong>${plan.courseAdjustmentSec > 0 ? '+' : ''}${plan.courseAdjustmentSec}s</strong><span>coach-entered course adjustment</span></div>
+      <div class="xc-stat"><strong>${esc(labelForDistance(plan.distanceM))}</strong><span>${plan.meetDate ? esc(plan.meetDate) : 'date not set'}</span></div>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:.65rem">
+      <table class="xc-table">
+        <thead><tr><th class="num">#</th><th>Athlete / evidence</th><th class="num">Course range</th><th class="num">/mile</th>${checkpointHeaders}<th class="num">Pack gap</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    ${excludedNote}
+    <p class="brief-source-note" style="margin-top:.75rem">Equal-effort checkpoints use even average pace. Hills, turns, footing, tactics, and pack decisions remain coach context; STRIDE has not modeled individual course segments.</p>`;
+}
+
+function renderXcCommand(){
+  const el = document.getElementById('xc-body');
+  if(!el) return;
+  if(isAthleteOnly()){
+    el.innerHTML = emptyStateCard('Coach-only meet planning', 'Your coach owns team meet plans and group assignments.', 'Open dashboard', "goTo('overview',null)");
+    return;
+  }
+  if(!sbUser){
+    el.innerHTML = emptyStateCard('Coach sign-in required', 'Sign in so this meet plan stays isolated to your coach account on this device.', 'Sign in', "showAuthModal('signin')");
+    return;
+  }
+  if(!hasProAccess()){
+    el.innerHTML = proGateCard('XC Command', 'Turn the roster into an upcoming-meet plan with course-adjusted ranges, checkpoints, pack gaps, top-five spread, and printable coaching sheets.');
+    return;
+  }
+  const plan = normalizeXcPlan(DB.xcPlan || defaultXcPlan());
+  const form = xcFormHTML(plan);
+  const output = DB.xcPlan
+    ? `<div class="brief-panel">
+        <div class="brief-panel-head"><div><p class="brief-panel-title">${esc(plan.meetName || 'Meet plan')}</p><p class="brief-source-note">${esc(plan.courseName || 'Course not named')}${plan.notes ? ` · ${esc(plan.notes)}` : ''}</p></div><span class="brief-panel-tag">Planning estimates</span></div>
+        ${xcPlanTableHTML(xcPlanningRows(DB.athletes || [], plan))}
+      </div>`
+    : `<div class="brief-panel">${emptyStateCard('Build the next meet plan', 'Name the upcoming meet and enter any course adjustment you already use. STRIDE will apply it transparently to every athlete’s visible range.', '', '')}</div>`;
+  el.innerHTML = `<div class="xc-layout">${form}${output}</div>`;
+}
+
+function xcCommandPrintHTML(){
+  if(!DB.xcPlan) return '';
+  const result = xcPlanningRows(DB.athletes || [], DB.xcPlan);
+  const { plan, rows, topFiveSpreadSec } = result;
+  if(!rows.length) return '';
+  const checkpoints = xcCheckpointDistances(plan.distanceM);
+  const headers = checkpoints.map(d => `<th class="num">${esc(xcCheckpointLabel(d,plan.distanceM))}</th>`).join('');
+  const body = rows.map(row => `<tr>
+    <td>${esc(row.athlete.name)}<br><span style="font-size:8pt;color:#555">${esc(row.evidence)}</span></td>
+    <td class="num">${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}</td>
+    <td class="num">${esc(_mmss(row.paceMileSec,0))}/mi</td>
+    ${row.checkpoints.map(point=>`<td class="num">${esc(fmtT(point.elapsedSec))}</td>`).join('')}
+    <td class="num">${row.packGapSec == null?'—':`+${esc(fmtT(row.packGapSec))}`}</td>
+  </tr>`).join('');
+  const meta = [
+    plan.meetDate || 'Date not set',
+    `${labelForDistance(plan.distanceM)} · coach course adjustment ${plan.courseAdjustmentSec > 0 ? '+' : ''}${plan.courseAdjustmentSec}s`,
+    `Top-five spread ${topFiveSpreadSec == null ? 'not available' : fmtT(topFiveSpreadSec)}`
+  ];
+  return `<div class="ps-page">
+    ${_psHead('XC Meet Plan', plan.meetName, plan.courseName || 'Course not named', meta)}
+    ${plan.notes ? `<div class="ps-callout"><strong>Coach notes:</strong> ${esc(plan.notes)}</div>` : ''}
+    <table><thead><tr><th>Athlete / evidence</th><th class="num">Course range</th><th class="num">/mile</th>${headers}<th class="num">Pack gap</th></tr></thead><tbody>${body}</tbody></table>
+    <div class="ps-foot">Coach-reviewed planning estimates · course adjustment entered by the coach · even-average-pace checkpoints · no automatic terrain normalization.</div>
+  </div>`;
+}
+
+function printXcCommand(){
+  if(!hasProAccess()) return showUpgradeModal();
+  const html = xcCommandPrintHTML();
+  if(!html){ toast('Save a meet plan with usable roster evidence first', 'error'); return; }
+  printSheet(html);
 }
 
 // ── RENDER OVERVIEW ──
@@ -4629,7 +4940,8 @@ function renderOverview(){
       </div>
       <button class="team-command-action" onclick="goTo('brief',null)"><span>This week</span><strong>Coach Brief →</strong></button>
       <button class="team-command-action" onclick="goTo('squads',null)"><span>Practice</span><strong>Training Groups →</strong></button>
-      <button class="team-command-action" onclick="goTo('lineup',null)"><span>Meet</span><strong>Lineup Optimizer →</strong></button>
+      <button class="team-command-action" onclick="goTo('xc',null)"><span>XC season</span><strong>Meet Plan →</strong></button>
+      <button class="team-command-action" onclick="goTo('lineup',null)"><span>Track meet</span><strong>Lineup Optimizer →</strong></button>
     </div>` + athletePickerHtml();
   if(!athleteOnly && DB.athletes && DB.athletes.length >= 1){
     squadHtml = hasProAccess()
@@ -8586,6 +8898,178 @@ function groupSessionZones(medianRefSec, repDists){
   return cs.zones.filter(z => keep.has(z.label));
 }
 
+const GROUP_WORKOUT_ZONES = [
+  { label:'Steady', workoutType:'steady' },
+  { label:'Tempo', workoutType:'tempo' },
+  { label:'Threshold', workoutType:'threshold' },
+  { label:'Critical Velocity', workoutType:'critical_velocity' },
+  { label:'Race Pace', workoutType:'race_pace' },
+  { label:'VO2 Max', workoutType:'vo2' }
+];
+
+function currentTrainingGroupResult(){
+  const roster = DB.athletes || [];
+  const source = hasProAccess() ? roster : roster.slice(0, FREE_SQUAD_CAP);
+  return computeTrainingGroups(source);
+}
+
+function groupWorkoutSourceRef(spec){
+  const cleanZone = String(spec.zoneLabel || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return `xc:${spec.date}:${cleanZone}:${Number(spec.repDistanceM)}x${Number(spec.reps)}`;
+}
+
+function buildGroupWorkoutRows(group, rawSpec, coachId){
+  const spec = {
+    date:String(rawSpec && rawSpec.date || ''),
+    zoneLabel:String(rawSpec && rawSpec.zoneLabel || ''),
+    workoutType:String(rawSpec && rawSpec.workoutType || ''),
+    repDistanceM:Number(rawSpec && rawSpec.repDistanceM),
+    reps:Number(rawSpec && rawSpec.reps),
+    recovery:String(rawSpec && rawSpec.recovery || '').trim().slice(0,160),
+    notes:String(rawSpec && rawSpec.notes || '').trim().slice(0,500)
+  };
+  const zoneAllowed = GROUP_WORKOUT_ZONES.some(z => z.label === spec.zoneLabel && z.workoutType === spec.workoutType);
+  if(!group || !Array.isArray(group.members) || !group.members.length ||
+     !/^\d{4}-\d{2}-\d{2}$/.test(spec.date) || !zoneAllowed ||
+     !isFinite(spec.repDistanceM) || spec.repDistanceM < 100 || spec.repDistanceM > 5000 ||
+     !Number.isInteger(spec.reps) || spec.reps < 1 || spec.reps > 40 || !coachId){
+    return { rows:[], missing:[], error:'Complete the date, zone, rep distance, and rep count.' };
+  }
+  const sourceRef = groupWorkoutSourceRef(spec);
+  const rows = [], missing = [];
+  group.members.forEach(member => {
+    const athlete = member && member.athlete;
+    const athleteId = knownAthleteCloudId(athlete);
+    if(!athlete || !athleteId){
+      missing.push({ athlete, reason:'not saved to the coach account' });
+      return;
+    }
+    const cs = computeZoneSplits(_distanceAthleteView(athlete), { repDists:[spec.repDistanceM] });
+    const zone = cs && cs.zones ? cs.zones.find(z => z.label === spec.zoneLabel && z.allowed) : null;
+    const repSec = zone && zone.reps ? zone.reps[spec.repDistanceM] : null;
+    if(!zone || !isFinite(repSec)){
+      missing.push({ athlete, reason:`no ${spec.zoneLabel} target` });
+      return;
+    }
+    const parts = [
+      `${spec.reps} × ${spec.repDistanceM}m @ ${spec.zoneLabel} (${fmtRepTime(repSec)}/rep).`,
+      spec.recovery ? `Recovery: ${spec.recovery}.` : '',
+      spec.notes
+    ].filter(Boolean);
+    rows.push({
+      athlete_id:athleteId,
+      coach_id:coachId,
+      workout_date:spec.date,
+      workout_type:spec.workoutType,
+      prescribed_distance_m:spec.reps * spec.repDistanceM,
+      prescribed_pace_sec_per_km:repSec / (spec.repDistanceM / 1000),
+      prescribed_zone_label:`${spec.zoneLabel} ${zone.pct}%`,
+      prescribed_notes:parts.join(' '),
+      total_distance_m:null,
+      total_duration_sec:null,
+      avg_pace_sec_per_km:null,
+      source:'coach_entry',
+      source_ref:sourceRef
+    });
+  });
+  return { rows, missing, error:'', sourceRef, spec };
+}
+
+function openGroupWorkoutForm(groupId){
+  if(!requireCoachWorkspace('assign a group workout')) return;
+  if(!sbClient || !sbUser){
+    toast('Connect to your STRIDE account before assigning workouts', 'error');
+    return;
+  }
+  const result = currentTrainingGroupResult();
+  const group = result.groups.find(g => g.id === groupId);
+  if(!group){ toast('That training group is no longer available', 'error'); return; }
+  closeGroupWorkoutForm();
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const overlay = document.createElement('div');
+  overlay.id = 'groupWorkoutOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = event => { if(event.target === overlay) closeGroupWorkoutForm(); };
+  overlay.innerHTML = `
+    <div class="upgrade-modal" style="max-width:38rem">
+      <button class="upgrade-close" aria-label="Close" onclick="closeGroupWorkoutForm()">×</button>
+      <p class="upgrade-eyebrow">Group prescription</p>
+      <h2 class="upgrade-title" style="font-size:1.5rem">${esc(group.label)} · <em>${group.members.length} athletes</em></h2>
+      <p class="upgrade-sub">Choose the session once. STRIDE calculates each athlete’s rep target and saves a planned workout to their training log.</p>
+      <input id="gwGroupId" type="hidden" value="${esc(group.id)}">
+      <div class="xc-form">
+        <label class="xc-label"><span>Date</span><input id="gwDate" class="auth-input" type="date" value="${today}"></label>
+        <label class="xc-label"><span>Zone</span><select id="gwZone" class="auth-input">${GROUP_WORKOUT_ZONES.map(z=>`<option value="${esc(z.label)}">${esc(z.label)}</option>`).join('')}</select></label>
+        <label class="xc-label"><span>Rep distance</span><select id="gwRepDistance" class="auth-input">${[200,300,400,600,800,1000,1200,1600].map(d=>`<option value="${d}" ${d===1000?'selected':''}>${d}m</option>`).join('')}</select></label>
+        <label class="xc-label"><span>Reps</span><input id="gwReps" class="auth-input" type="number" min="1" max="40" value="5"></label>
+        <label class="xc-label xc-wide"><span>Recovery</span><input id="gwRecovery" class="auth-input" maxlength="160" placeholder="90 sec jog"></label>
+        <label class="xc-label xc-wide"><span>Coach notes</span><textarea id="gwNotes" class="auth-input" rows="3" maxlength="500" placeholder="Stay controlled through rep 3; finish together."></textarea></label>
+      </div>
+      <p class="brief-source-note" style="margin-top:.5rem">Only the prescription is saved. Distance, duration, heart rate, RPE, and completion remain blank until an athlete or coach logs what happened.</p>
+      <div class="auth-actions" style="grid-template-columns:1fr 1fr;margin-top:1rem">
+        <button class="btn" onclick="closeGroupWorkoutForm()">Cancel</button>
+        <button id="gwSaveButton" class="btn btn-primary" onclick="assignGroupWorkout()">Assign to ${group.members.length} athletes</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeGroupWorkoutForm(){
+  const el = document.getElementById('groupWorkoutOverlay');
+  if(el) el.remove();
+}
+
+async function assignGroupWorkout(){
+  if(!sbClient || !sbUser || isAthleteOnly()) return toast('Coach account required', 'error');
+  const value = id => {
+    const el = document.getElementById(id);
+    return el ? el.value : '';
+  };
+  const groupResult = currentTrainingGroupResult();
+  const group = groupResult.groups.find(g => g.id === value('gwGroupId'));
+  if(!group) return toast('That training group changed — reopen the assignment', 'error');
+
+  // Resolve every cloud row before any write. A half-saved group is harder for
+  // a coach to discover than a blocked assignment, so this fails closed.
+  for(const member of group.members){
+    const id = await resolveAthleteCloudId(member.athlete);
+    if(id) member.athlete.supabaseId = id;
+  }
+  const zoneLabel = value('gwZone');
+  const zoneDef = GROUP_WORKOUT_ZONES.find(z => z.label === zoneLabel);
+  const built = buildGroupWorkoutRows(group, {
+    date:value('gwDate'),
+    zoneLabel,
+    workoutType:zoneDef ? zoneDef.workoutType : '',
+    repDistanceM:value('gwRepDistance'),
+    reps:Number(value('gwReps')),
+    recovery:value('gwRecovery'),
+    notes:value('gwNotes')
+  }, sbUser.id);
+  if(built.error) return toast(built.error, 'error');
+  if(built.missing.length){
+    const names = built.missing.slice(0,4).map(x => x.athlete && x.athlete.name || 'Unnamed athlete').join(', ');
+    return toast(`Nothing assigned — save/repair targets for ${names}${built.missing.length>4?'…':''}`, 'error');
+  }
+
+  const button = document.getElementById('gwSaveButton');
+  if(button){ button.disabled = true; button.textContent = 'Assigning…'; }
+  try{
+    const { error } = await sbClient.from('workouts').upsert(built.rows, {
+      onConflict:'athlete_id,source,source_ref'
+    });
+    if(error) throw error;
+    closeGroupWorkoutForm();
+    invalidateCoachBriefWorkouts();
+    toast(`Workout assigned to ${built.rows.length} athlete${built.rows.length===1?'':'s'}`);
+  }catch(err){
+    console.error('assignGroupWorkout failed', err);
+    toast(err.message || 'Group workout assignment failed', 'error');
+    if(button){ button.disabled = false; button.textContent = `Assign to ${group.members.length} athletes`; }
+  }
+}
+
 function renderSquads(){
   const el = document.getElementById('sq-body');
   if(!el) return;
@@ -8612,9 +9096,10 @@ function renderSquads(){
     const chips = g.members.map(m => `<span style="display:inline-flex;align-items:center;gap:.4rem;background:var(--bg-el);border:1px solid var(--border);border-radius:999px;padding:.25rem .6rem;font-size:.75rem;color:var(--text-2)"><strong style="color:var(--text)">${esc(m.athlete.name)}</strong><span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3)">${esc(m.athlete.raceDistance||'')} ${esc(m.athlete.raceTime||'')}</span></span>`).join(' ');
     return `
       <div class="card" style="margin-bottom:1rem">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
-          <h3 style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;margin:0">${esc(g.label)} <span style="font-size:.75rem;font-family:var(--font-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.06em">${esc(g.tag)}</span></h3>
-          <span style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${g.members.length} athlete${g.members.length===1?'':'s'} · ~${_mmss(g.paceLo,0)}–${_mmss(g.paceHi,0)}/mi at 5K effort</span>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem">
+          <div><h3 style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;margin:0">${esc(g.label)} <span style="font-size:.75rem;font-family:var(--font-mono);color:var(--accent);text-transform:uppercase;letter-spacing:.06em">${esc(g.tag)}</span></h3>
+          <span style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${g.members.length} athlete${g.members.length===1?'':'s'} · ~${_mmss(g.paceLo,0)}–${_mmss(g.paceHi,0)}/mi at 5K effort</span></div>
+          <button class="btn btn-primary" onclick="openGroupWorkoutForm('${esc(g.id)}')">Assign workout</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem">${chips}</div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Today’s rep targets · group median</p>
@@ -12637,6 +13122,33 @@ function deleteAthlete(id){
 //   · the merged athlete KEEPS the earliest record's id, so training-log
 //     entries, meet summaries, and the Supabase link stay attached
 //   · it previews before it acts, and it never runs on its own
+// School-year ladder. A per-race-row roster export carries the athlete's grade
+// on every row, which is a season marker even when that row has no date — the
+// middle-school seasons in Anthoney's export have grades ("7th") but a dash for
+// PR_Date, so a dates-only span understated real careers by a year or more.
+const GRADE_LADDER = { '6TH':0, '7TH':1, '8TH':2, 'FR':3, 'FRESH':3, 'FRESHMAN':3,
+  'SO':4, 'SOPH':4, 'SOPHOMORE':4, 'JR':5, 'JUNIOR':5, 'SR':6, 'SENIOR':6,
+  'FR (COLLEGE)':7, 'COLLEGE':7 };
+function gradeLadderIndex(grade){
+  const key = String(grade || '').trim().toUpperCase();
+  if(!key) return null;
+  if(GRADE_LADDER[key] !== undefined) return GRADE_LADDER[key];
+  const m = key.match(/^(\d+)(ST|ND|RD|TH)?$/);
+  if(m){ const n = parseInt(m[1], 10); if(n >= 6 && n <= 12) return n - 6; }
+  return null;
+}
+// Span, not count: first season on file to last. Two independent signals —
+// race dates and grades — and the WIDER one wins, because a missing date can
+// only ever hide a season, never invent one.
+function seasonSpanYears(years, grades){
+  const ys = [...new Set(years.filter(y => y > 1900))].sort((a, b) => a - b);
+  const gs = [...new Set(grades.map(gradeLadderIndex).filter(g => g !== null))].sort((a, b) => a - b);
+  const dateSpan = ys.length > 1 ? ys[ys.length-1] - ys[0] : 0;
+  const gradeSpan = gs.length > 1 ? gs[gs.length-1] - gs[0] : 0;
+  return { years: Math.max(dateSpan, gradeSpan), dateSpan, gradeSpan,
+           seasons: Math.max(ys.length, gs.length), firstYear: ys[0] || null, lastYear: ys[ys.length-1] || null };
+}
+
 function _athleteNameKey(a){
   return String((a && a.name) || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -12663,15 +13175,21 @@ function trainingAgeRepairBannerHtml(){
   if(st.stage === 'preview' && st.plan.length){
     const rows = st.plan.map(p => `
       <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:.5rem 1rem;font-family:var(--font-display)">${esc(p.name)}</td>
-        <td style="padding:.5rem 1rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${p.first}–${p.last} · ${p.seasons} season${p.seasons===1?'':'s'} on file</td>
-        <td style="padding:.5rem 1rem;text-align:right;font-family:var(--font-mono);color:var(--accent)">${p.years} yr${p.years===1?'':'s'}</td>
+        <td style="padding:.5rem 1rem;font-family:var(--font-display)">${esc(p.name)}${p.grade ? `<span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3)"> · year set to ${esc(p.grade)}</span>` : ''}</td>
+        <td style="padding:.5rem 1rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">
+          ${p.first ? `${p.first}–${p.last} · ` : ''}${p.seasons} season${p.seasons===1?'':'s'} on file
+          ${p.flags.length ? `<br><span style="color:var(--yellow,#f5a623)">▲ ${p.flags.map(esc).join(' · ')}</span>` : ''}
+        </td>
+        <td style="padding:.5rem 1rem;text-align:right;font-family:var(--font-mono);color:var(--accent)">${p.years > 0 ? p.years + ' yr' + (p.years===1?'':'s') : '—'}</td>
       </tr>`).join('');
     return `
     <div class="card" style="border-color:var(--accent-line);background:var(--accent-soft)">
       <p class="card-title"><span>Years training, from your own race history</span><span class="card-accent">REVIEW</span></p>
       <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-2);line-height:1.7;margin:.5rem 0 .875rem">
-        Each athlete's span is the first to the last season on file — the same rule the importer uses. Nothing else on their profile changes, and athletes with a single season are left for you to set by hand.
+        Each athlete's span is the first to the last season on file — from their dated results and their grades, whichever covers more ground. Nothing else on their profile changes except a blank year, which is filled from their most recent season on file.
+      </p>
+      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);line-height:1.7;margin:0 0 .875rem">
+        <strong style="color:var(--text-2)">These can only ever be LOW, never high.</strong> A season with no dated result and no grade on file is invisible to this, so a career can come out short — it can never be inflated. Anything marked ▲ is worth a look; every value stays editable on the athlete's profile.
       </p>
       <div style="overflow-x:auto;margin-bottom:.875rem"><table style="width:100%;border-collapse:collapse">${rows}</table></div>
       <div class="btn-row">
@@ -12713,23 +13231,38 @@ async function loadTrainingAgeArchive(){
   renderRoster();
   try{
     const { data, error } = await sbClient
-      .from('athletes').select('display_name, race_date')
+      .from('athletes').select('display_name, race_date, grade')
       .eq('coach_id', sbUser.id);
     if(error) throw error;
-    const yearsByName = new Map();
+    const history = new Map();
     (data || []).forEach(r => {
-      const y = parseInt(String(r.race_date || '').slice(0, 4), 10);
-      if(!(y > 1900)) return;
       const key = _athleteNameKey({ name: r.display_name });
       if(!key) return;
-      if(!yearsByName.has(key)) yearsByName.set(key, new Set());
-      yearsByName.get(key).add(y);
+      if(!history.has(key)) history.set(key, { years: [], grades: [] });
+      const bucket = history.get(key);
+      const y = parseInt(String(r.race_date || '').slice(0, 4), 10);
+      if(y > 1900) bucket.years.push(y);
+      if(r.grade) bucket.grades.push(r.grade);
     });
     const plan = athletesMissingTrainingAge().map(a => {
-      const ys = [...(yearsByName.get(_athleteNameKey(a)) || [])].sort((x, y) => x - y);
-      return { id: a.id, name: a.name, first: ys[0] || null, last: ys[ys.length-1] || null,
-               seasons: ys.length, years: ys.length > 1 ? ys[ys.length-1] - ys[0] : 0 };
-    }).filter(p => p.years > 0);
+      const bucket = history.get(_athleteNameKey(a)) || { years: [], grades: [] };
+      const span = seasonSpanYears(bucket.years, bucket.grades);
+      // Highest rung on file is the athlete's most recent season.
+      const topGrade = bucket.grades
+        .filter(g => gradeLadderIndex(g) !== null)
+        .sort((x, y) => gradeLadderIndex(y) - gradeLadderIndex(x))[0] || '';
+      // What a coach should look at twice. Derivation can only ever UNDERSTATE
+      // a career (a season with no dated result and no grade is invisible), so
+      // every flag here means "this may be low", never "this may be inflated".
+      const flags = [];
+      if(span.gradeSpan > span.dateSpan) flags.push('early seasons have no dated results — span comes from their grades');
+      else if(span.dateSpan > span.gradeSpan && span.gradeSpan > 0) flags.push('grades on file cover fewer seasons than the results do');
+      if(span.seasons <= 2) flags.push('only ' + span.seasons + ' season' + (span.seasons === 1 ? '' : 's') + ' on file');
+      if(!a.age) flags.push('age still unknown — not in the import');
+      return { id: a.id, name: a.name, first: span.firstYear, last: span.lastYear,
+               seasons: span.seasons, years: span.years, dateSpan: span.dateSpan,
+               gradeSpan: span.gradeSpan, grade: a.grade ? '' : topGrade, flags };
+    }).filter(p => p.years > 0 || p.grade);
     trainingAgeRepair = { stage: plan.length ? 'preview' : 'empty', plan, error:'' };
   }catch(err){
     console.warn('training age archive read failed', err);
@@ -12746,8 +13279,8 @@ async function applyTrainingAgeRepair(){
   plan.forEach(p => {
     const a = DB.athletes.find(x => x.id === p.id);
     if(!a) return;
-    a.trainingAge = p.years;
-    a.trainingAgeDerived = true;
+    if(p.years > 0){ a.trainingAge = p.years; a.trainingAgeDerived = true; }
+    if(p.grade && !a.grade) a.grade = p.grade;
     a.updatedAt = new Date().toISOString();
   });
   saveDB(DB);
@@ -12842,15 +13375,14 @@ function mergeAthleteGroup(group){
   // must not be merged onto beginner guardrails and the most conservative
   // paces. Same span-not-count rule the importer uses; one season stays 0 so
   // the roster still asks. (2026-08-04: the 13 merged athletes all read 0.0yr.)
-  const seasonYears = new Set();
+  const seasonYears = [];
   ordered.forEach(a => {
     collectAllPRs(a).forEach(pr => {
       const y = parseInt(String(pr.raceDate || '').slice(0, 4), 10);
-      if(y > 1900) seasonYears.add(y);
+      if(y > 1900) seasonYears.push(y);
     });
   });
-  const spanYears = [...seasonYears].sort((x, y) => x - y);
-  const derivedSpan = spanYears.length > 1 ? spanYears[spanYears.length - 1] - spanYears[0] : 0;
+  const derivedSpan = seasonSpanYears(seasonYears, ordered.map(a => a.grade)).years;
   const statedTrainingAge = Math.max(0, ...ordered.map(a => Number(a.trainingAge) || 0));
   const trainingAge = statedTrainingAge > 0 ? statedTrainingAge : derivedSpan;
   const mileages = ordered.map(a => Number(a.weeklyMileage)).filter(v => isFinite(v) && v > 0);

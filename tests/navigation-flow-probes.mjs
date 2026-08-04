@@ -20,7 +20,7 @@ for (const route of ['overview', 'roster', 'eventfit']) {
   assert.match(primaryNav, new RegExp(`data-s="${route}"`), `${route} must remain primary`);
 }
 
-for (const route of ['brief', 'import', 'squads', 'lineup', 'predict', 'multievent', 'profile', 'workouts', 'proof', 'methodology', 'raceshape', 'edit']) {
+for (const route of ['brief', 'xc', 'import', 'squads', 'lineup', 'predict', 'multievent', 'profile', 'workouts', 'proof', 'methodology', 'raceshape', 'edit']) {
   assert.doesNotMatch(primaryNav, new RegExp(`data-s="${route}"`), `${route} must be contextual`);
 }
 
@@ -58,5 +58,8 @@ assert.match(html, /if\(currentScreen === 'home'\)\{\s*goTo\('overview', null\);
 assert.match(html, /function switchAthlete\(id\)[\s\S]*?goTo\(athleteDecisionScreen\(A\),null\);/);
 assert.match(html, /function athleteDecisionScreen\(athlete\)/);
 assert.doesNotMatch(html, /Event <em>Profile<\/em>/);
+assert.match(html, /onclick="goTo\('xc',null\)"[^>]*>[\s\S]*?Meet Plan →/,
+  'Team IQ exposes the contextual XC meet-planning route');
+assert.match(workspaceIds, /'xc'/, 'XC Command belongs to the authenticated workspace');
 
-console.log('navigation flow probes ok — 30 assertions');
+console.log('navigation flow probes ok — 33 assertions');
