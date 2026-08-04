@@ -154,6 +154,14 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .helper-toggle:hover{border-color:var(--border-h);color:var(--text)}
 .simple-help{margin:0 0 1rem;padding:.875rem 1rem;background:rgba(255,107,53,.07);border:1px solid rgba(255,107,53,.3);border-radius:.5rem;color:var(--text-2);font-size:.8125rem;line-height:1.55}
 .simple-help strong{color:var(--text)}
+.home-datapromise{max-width:44rem;margin:1.5rem auto 0;padding:1.1rem 1.25rem;border:1px solid var(--border-s);border-radius:.65rem;background:var(--bg-card);text-align:left}
+.home-datapromise-title{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:.6rem}
+.home-datapromise-pts{list-style:none;display:grid;gap:.45rem;margin:0 0 .7rem;padding:0}
+.home-datapromise-pts li{position:relative;padding-left:1.1rem;font-size:.8125rem;line-height:1.6;color:var(--text-2)}
+.home-datapromise-pts li::before{content:'✓';position:absolute;left:0;color:var(--green)}
+.home-datapromise-pts strong{color:var(--text)}
+.home-datapromise-foot{font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6}
+.home-datapromise-foot a{color:var(--text-3);text-decoration:underline}
 .athlete-context{display:none;align-items:center;gap:1rem;margin:0 0 1.5rem;padding:.75rem;background:rgba(5,5,5,.88);border:1px solid var(--border);border-radius:.75rem;position:sticky;top:.75rem;z-index:80;backdrop-filter:blur(14px);box-shadow:var(--shadow-card)}
 .athlete-context.has-athlete{display:flex}
 .athlete-context-id{min-width:14rem;padding:0}
@@ -10606,7 +10614,23 @@ function renderHome(){
       ? `<button class="btn btn-primary btn-lg" onclick="goTo(athleteDecisionScreen(A))">Open my analysis →</button>`
       : `<button class="btn btn-primary btn-lg" onclick="goTo('overview')">Open Team IQ →</button>`
     : `<button class="btn btn-primary btn-lg" onclick="window.showAuthModal ? showAuthModal('signup') : goTo('paces')">Start free — 30-day Pro trial</button>`;
-  const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · we never sell athlete data.</p>`;
+  const trust = signedIn ? '' : `<p class="home-trust">Free to use · no signup to try · no ads · we never sell athlete data.</p>`;
+  // The objection every high-school program raises first, answered on the front
+  // door in plain language rather than buried in a policy page. Says only what
+  // the app actually does — the export and delete controls are real and live
+  // under Data & privacy, and the under-13 authorization is the box a coach
+  // ticks at signup.
+  const dataPromise = signedIn ? '' : `
+    <div class="home-datapromise">
+      <p class="home-datapromise-title">Your athletes&rsquo; data stays your program&rsquo;s</p>
+      <ul class="home-datapromise-pts">
+        <li><strong>No ads, ever.</strong> There is no ad network in this app and no tracking of athletes across the web.</li>
+        <li><strong>We never sell athlete data</strong> — not marks, not names, not training history, to anyone.</li>
+        <li><strong>You can take it or wipe it any time.</strong> Export your whole account as a file, or permanently delete it, from Data &amp; privacy — no email, no waiting on us.</li>
+        <li><strong>Minors:</strong> you confirm at signup that you are authorized to enter athlete data for your team, and that athletes under 13 have parent/guardian permission or school authorization.</li>
+      </ul>
+      <p class="home-datapromise-foot">Plain-language summary, not a substitute for the full <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener">Terms</a>.</p>
+    </div>`;
   const proof = signedIn ? '' : `<p class="home-proof">Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing across 23 real athletes&rsquo; careers &mdash; 292 held-out race predictions over 146 event pairs &mdash; it landed <strong>~33% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>`;
   const closeCta = signedIn ? '' : `
     <div class="home-close">
@@ -10631,6 +10655,7 @@ function renderHome(){
       </div>
       ${trust}
       ${proof}
+      ${dataPromise}
     </div>
 
     <div id="home-arch">${renderArchetypeLab()}</div>

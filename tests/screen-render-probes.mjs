@@ -82,6 +82,15 @@ probe('compare: slot swap dedupes', ()=>{ setCompareSlot(1, compareState.ids[0])
 probe('compare: needs 2', ()=>{ setCompareSlot(0,''); setCompareSlot(1,''); setCompareSlot(2,''); const h=out('cp-body'); if(!/Select at least 2/.test(h)) throw new Error('should ask for 2'); });
 probe('compare: SVG curve renders', ()=>{ compareState={ids:[DB.athletes[0].id,DB.athletes[1].id,''],targetM:null}; renderCompare(); const h=out('cp-body'); if(!/<svg/.test(h)) throw new Error('no svg'); if(!/<path d="M/.test(h)) throw new Error('no line path'); });
 
+// The front-door answer to the first objection a high-school program raises.
+// Signed-out only — a signed-in coach already accepted these at signup.
+probe('home: data promise answers ads / selling / deletion / minors', ()=>{ sbUser=null; renderHome(); const h=out('home-body');
+  [/No ads, ever/, /never sell athlete data/, /delete it/, /Minors:/].forEach(re=>{ if(!re.test(h)) throw new Error('missing: '+re); });
+  if(!/privacy\.html/.test(h)) throw new Error('no link to the full policy');
+  if(/substitute for the full/.test(h) === false) throw new Error('does not disclaim being the policy itself'); });
+probe('home: the promise is not shown to a signed-in coach', ()=>{ sbUser={id:'c1'}; renderHome(); const h=out('home-body');
+  if(/home-datapromise/.test(h)) throw new Error('shown when signed in'); sbUser=null; });
+
 probe('overview: athlete picker present', ()=>{ renderOverview(); const h=out('ov-body'); if(!/ov-athlete-picker/.test(h)) throw new Error('no picker select'); if(!/Compare athletes/.test(h)) throw new Error('no compare button'); });
 probe('selectAthleteInPlace switches', ()=>{ currentScreen='overview'; selectAthleteInPlace(DB.athletes[1].id); if(!A || A.name!=='Dana Ruiz') throw new Error('active not switched: '+(A&&A.name)); A=DB.athletes[0]; DB.activeAthleteId=A.id; });
 
