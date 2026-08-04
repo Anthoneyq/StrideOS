@@ -72,6 +72,9 @@ const ROWS = [
   // Sprinter with relay rows that must not become events.
   R('Dana Ruiz','M','North HS','2024','Spring','JR','Track','100m','10.51','10.51','04/2024','1st','Relays',''),
   R('Dana Ruiz','M','North HS','2024','Spring','JR','Track','4x400m Relay','3:18.44','3:18.44','04/2024','1st','Relays',''),
+  // A field mark: no distance, no running model — must be REPORTED, not dropped
+  // in silence the way Anthoney's two Long Jump marks were.
+  R('Dana Ruiz','M','North HS','2025','Spring','SR','Track','Long Jump','21-00','21-00','04/2025','1st','Relays',''),
   R('Dana Ruiz','M','North HS','2025','Spring','SR','Track','200m','20.57','20.57','05/2025','1st','State',''),
   // Rows that must be skipped outright.
   R('','F','North HS','2025','Spring','SR','Track','800m','2:20.00','2:20.00','','','',''),
@@ -207,5 +210,19 @@ ok(/if\(id==='compare'\)\s*renderCompare\(\);/.test(html), 'goTo dispatches the 
 ok(/case 'compare':\s*renderCompare\(\);/.test(html), 'refreshCurrentScreen re-renders compare');
 ok(/function selectAthleteInPlace\(id\)/.test(html),
   'the dashboard can change the active athlete without navigating away');
+
+// ── Field events are reported, never silently dropped ────────────────────
+// Anthoney's export carried two Long Jump marks that vanished without a word:
+// the label parsed to no distance, so it matched neither import branch.
+{
+  const reasons = merged.skipped.map(f => f.reason).join(' | ');
+  ok(/Long Jump/.test(reasons),
+    `a field mark is reported as not imported (skipped reasons: ${reasons})`);
+  ok(/unsupported event/.test(reasons),
+    'the reason says WHY it did not arrive, rather than a bare "skipped"');
+  const dana = merged.athletes.find(a => a.name === 'Dana Ruiz');
+  ok(!Object.keys(dana.additionalPRs || {}).some(e => /jump/i.test(e)) && dana.raceDistance !== 'Long Jump',
+    'and it is never guessed onto the athlete as a running mark');
+}
 
 console.log(`roster import merge probes ok — ${assertions} assertions`);

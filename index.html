@@ -11167,8 +11167,10 @@ function mergeImportRows(rows, m){
         addMark(g, evt.raceDistance, evt.raceDistanceM, cell, dateISO);
       });
     } else if(evt.primaryEvent){
-      // Unsupported event label (e.g. "2400m", "6K"). Never guess a distance —
-      // report it so the coach knows which marks did not come across.
+      // Any label with no running distance behind it — an odd distance (2400m,
+      // 6K), a relay, or a field event (Long Jump, Shot Put). _normEvent echoes
+      // unrecognized labels back verbatim, so all of them land here. Never guess
+      // a distance — report it so the coach knows which marks did not arrive.
       skipped.push({ index: i, reason: `unsupported event "${evt.primaryEvent}"` });
       g.unsupported = g.unsupported || new Set();
       g.unsupported.add(evt.primaryEvent);
@@ -11857,6 +11859,7 @@ function renderRoster(){
     </div>
     ${duplicateRepairBannerHtml()}
     ${trainingAgeRepairBannerHtml()}
+    ${missingPrDateBannerHtml()}
     ${duplicateRepairPreviewHtml()}
     ${rosterFilterBarHtml(visible)}
     <div id="ro-list">${rosterListHtml(visible)}</div>
@@ -13315,6 +13318,34 @@ function trainingAgeRepairBannerHtml(){
       ${st.stage === 'empty' ? '' : `<div class="btn-row">
         <button class="btn btn-primary" onclick="loadTrainingAgeArchive()"${busy ? ' disabled' : ''}>${busy ? 'Reading your history…' : 'Derive from race history →'}</button>
       </div>`}
+    </div>`;
+}
+
+// ── MISSING PR DATES ─────────────────────────────────────────────────────
+// A PR with no date cannot be aged, so the engine cannot judge freshness: it
+// widens every range and stamps "prediction confidence reduced" on the forecast
+// screen. Anthoney's whole roster reads UNKNOWN because the export's PR_Date
+// column was mostly dashes. Nothing can derive a date — only the coach knows it
+// — so this counts the gap and points at it rather than pretending.
+function athletesMissingPrDate(){
+  return (DB.athletes || []).filter(a => a.raceTime && a.raceDistanceM && !a.raceDate);
+}
+
+function missingPrDateBannerHtml(){
+  if(isAthleteOnly()) return '';
+  const missing = athletesMissingPrDate();
+  if(!missing.length) return '';
+  const names = missing.slice(0, 6).map(a => esc(a.name)).join(' · ');
+  return `
+    <div class="card">
+      <p class="card-title"><span>${missing.length} PR${missing.length===1?' has':'s have'} no date</span><span class="card-accent">CONFIDENCE COST</span></p>
+      <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-2);line-height:1.7;margin:.5rem 0 .875rem">
+        Without a date a mark cannot be aged, so every forecast built on it is widened and flagged "confidence reduced" — the single cheapest accuracy gain on this roster. Only you know when these were run, so nothing here is guessed: open an athlete and set the date on their primary PR.
+        <br><span style="color:var(--text-3)">${names}${missing.length > 6 ? ` · +${missing.length - 6} more` : ''}</span>
+      </p>
+      <div class="btn-row">
+        <button class="btn" onclick="switchAthlete('${esc(missing[0].id)}');goTo('edit',null)">Start with ${esc(missing[0].name)} →</button>
+      </div>
     </div>`;
 }
 

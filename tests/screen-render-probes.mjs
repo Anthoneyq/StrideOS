@@ -74,6 +74,15 @@ probe('filter: sort by most PRs', ()=>{ setRosterFilter('prs',''); setRosterFilt
 probe('filter: no match empty state', ()=>{ setRosterFilter('q','zzzz'); if(!/No athletes match/.test(out('ro-list'))) throw new Error('missing empty state'); });
 probe('clearRosterFilters restores', ()=>{ clearRosterFilters(); const h=out('ro-body'); if(!/Riley Chen/.test(h)||!/Sam Park/.test(h)) throw new Error('not restored'); });
 
+probe('roster: a dateless PR is surfaced, not silently costing confidence', ()=>{ sbUser={id:'c1'}; sbRole=null;
+  const a = DB.athletes[0]; const keep = a.raceDate; a.raceDate = '';
+  renderRoster(); const h = out('ro-body');
+  if(!/no date/i.test(h)) throw new Error('dateless PR not surfaced');
+  if(!/Riley Chen/.test(h)) throw new Error('does not name who to fix');
+  a.raceDate = keep; renderRoster();
+  if(/CONFIDENCE COST/.test(out('ro-body'))) throw new Error('banner persists once every PR has a date');
+  sbUser=null; });
+
 probe('renderCompare full render', ()=>{ renderCompare(); const h=out('cp-body'); ['Pick up to 3','Side by side','Leveled to one distance','Event by event','Range curve'].forEach(s=>{ if(h.indexOf(s)<0) throw new Error('missing: '+s); }); });
 probe('compare: 3 athletes selected by default', ()=>{ const h=out('cp-body'); const n=['Riley Chen','Dana Ruiz','Jo Ellis','Sam Park'].filter(x=>h.indexOf('>'+x)>=0||h.indexOf(x)>=0).length; if(compareState.ids.filter(Boolean).length!==3) throw new Error('slots='+JSON.stringify(compareState.ids)); });
 probe('compare: leveled table ranks', ()=>{ const h=out('cp-body'); if(!/OBSERVED|FORECAST/.test(h)) throw new Error('no basis badges'); });
