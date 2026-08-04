@@ -40,7 +40,9 @@ const win = { addEventListener(){}, matchMedia:()=>({matches:false,addEventListe
 const ctx = { document:doc, window:win, localStorage:ls, sessionStorage:ls, navigator:win.navigator, location:win.location,
   history:win.history, console, setTimeout, clearTimeout, setInterval:()=>0, clearInterval(){},
   fetch:async()=>({ok:false,json:async()=>({})}), alert(){}, confirm:()=>true, prompt:()=>null,
-  requestAnimationFrame:win.requestAnimationFrame, matchMedia:win.matchMedia, URLSearchParams, __store:store, __calls:[], __out:{} };
+  requestAnimationFrame:win.requestAnimationFrame, matchMedia:win.matchMedia, URLSearchParams, __store:store, __calls:[], __out:{},
+  __fail:{ workouts:false }, __toasts:[], __confirms:[] };
+ctx.confirm = (msg) => { ctx.__confirms.push(String(msg)); return true; };
 ctx.globalThis = ctx; ctx.self = ctx;
 vm.createContext(ctx);
 vm.runInContext(main, ctx, { filename: 'index.html' });
@@ -57,6 +59,12 @@ function resolveSelect(st){
   }
   return [];
 }
+// Injectable failure: __fail.workouts makes the workout re-point error, the
+// case where soft-deleting anyway would orphan a season of training history.
+function errFor(st){
+  if(__fail.workouts && st.table === 'workouts' && st.op === 'update') return { message: 'permission denied' };
+  return null;
+}
 function builder(table){
   const st = { table, op:'select', payload:null, filters:{} };
   const b = {
@@ -68,8 +76,8 @@ function builder(table){
     is(k,v){ st.filters[k]=v; return b; },
     in(k,v){ st.filters[k]=v; return b; },
     order(){ return b; },
-    maybeSingle(){ calls.push(st); return Promise.resolve({ data: resolveSelect(st), error: null }); },
-    then(res, rej){ calls.push(st); return Promise.resolve({ data: resolveSelect(st), error: null }).then(res, rej); }
+    maybeSingle(){ calls.push(st); return Promise.resolve({ data: resolveSelect(st), error: errFor(st) }); },
+    then(res, rej){ calls.push(st); return Promise.resolve({ data: resolveSelect(st), error: errFor(st) }).then(res, rej); }
   };
   return b;
 }
@@ -88,13 +96,24 @@ DB = { athletes:[
 ], workouts:[{ id:'w1', athleteId:'r3', date:'2026-02-01' }], activeAthleteId:'r3' };
 A = DB.athletes[2];
 
-saveDB = function(){}; toast = function(){}; renderRoster = function(){};
+saveDB = function(){}; toast = function(m){ __toasts.push(String(m)); }; renderRoster = function(){};
 refreshActiveAthlete = function(){}; updateChip = function(){};
 requireCoachWorkspace = function(){ return true; };
 // The post-merge re-read is proven by its own probe below; here it must not
 // clobber the merged DB the assertions inspect.
 let reloaded = 0;
-loadRemoteAthletes = async function(){ reloaded++; __out.reloaded = reloaded; };
+let reloadOk = true;
+__out.setReloadOk = (v) => { reloadOk = v; };
+loadRemoteAthletes = async function(){ reloaded++; __out.reloaded = reloaded; return { ok: reloadOk, reason: reloadOk ? '' : 'remote_load_failed' }; };
+
+// Re-runnable fixture so a failure scenario starts from the same roster.
+const seed = () => { DB = { athletes:[
+  mk({ id:'r1', supabaseId:'uuid_r1', name:'Riley Chen', createdAt:'2026-01-01', raceDistance:'5K',   raceDistanceM:5000, raceTime:'16:25.50' }),
+  mk({ id:'r2', supabaseId:'uuid_r2', name:'Riley Chen', createdAt:'2026-01-02', raceDistance:'1600m',raceDistanceM:1600, raceTime:'4:52.46' }),
+  mk({ id:'r3', supabaseId:'uuid_r3', name:'Riley Chen', createdAt:'2026-01-03', raceDistance:'3200m',raceDistanceM:3200, raceTime:'9:43.74' }),
+  mk({ id:'d1', supabaseId:'uuid_d1', name:'Dana Ruiz',  createdAt:'2026-01-04', raceDistance:'800m', raceDistanceM:800,  raceTime:'1:53.51' })
+], workouts:[{ id:'w1', athleteId:'r3', date:'2026-02-01' }], activeAthleteId:'r3' }; A = DB.athletes[2]; };
+__out.seed = seed;
 
 __out.run = (async () => {
   await applyDuplicateRepair();
@@ -148,6 +167,43 @@ for(let i = 0; i < perGroup.length; i += 2){
   ok(perGroup[i].table === 'workouts' && perGroup[i+1].table === 'athletes',
      'each absorbed row is re-pointed then deleted, in that order');
 }
+
+// ── The coach is told the cloud is being changed ──────────────────────────
+const confirmText = ctx.__confirms.join(' ');
+ok(/cloud/i.test(confirmText), 'the confirmation names the cloud write: ' + JSON.stringify(ctx.__confirms));
+ok(!/cloud copies are not changed/i.test(html),
+   'the old "cloud copies are not changed" promise is gone from the preview — the same action writes to Supabase');
+ok(/also updates your account in the cloud/i.test(html),
+   'the merge preview discloses the cloud write');
+const successToasts = ctx.__toasts.join(' | ');
+ok(/saved to your account/i.test(successToasts), 'a verified merge says it was saved: ' + successToasts);
+
+// ── A failed workout re-point must NOT delete the absorbed rows ───────────
+// Duplicates on screen are recoverable; orphaned training history is not.
+ctx.__calls.length = 0; ctx.__toasts.length = 0;
+vm.runInContext(`
+  __fail.workouts = true; __out.seed();
+  __out.wfail = applyDuplicateRepair();
+`, ctx, { filename: 'probe-workout-fail.js' });
+await ctx.__out.wfail;
+const failCalls = ctx.__calls;
+const failDeletes = failCalls.filter(c => c.table === 'athletes' && c.op === 'update' && c.payload && c.payload.deleted_at);
+ok(failDeletes.length === 0, 'no athlete is soft-deleted when its workouts could not be re-pointed (got ' + failDeletes.length + ')');
+ok(failCalls.some(c => c.table === 'workouts' && c.op === 'update'), 'the re-point was attempted before giving up');
+const failToasts = ctx.__toasts.join(' | ');
+ok(!/saved to your account/i.test(failToasts), 'a failed re-point never reports the merge as saved: ' + failToasts);
+ok(/did not sync|come back/i.test(failToasts), 'the coach is told the merge did not fully sync: ' + failToasts);
+
+// ── A failed post-merge re-read must not claim "saved" ────────────────────
+ctx.__calls.length = 0; ctx.__toasts.length = 0;
+vm.runInContext(`
+  __fail.workouts = false; __out.setReloadOk(false); __out.seed();
+  __out.rfail = applyDuplicateRepair();
+`, ctx, { filename: 'probe-reload-fail.js' });
+await ctx.__out.rfail;
+const reloadToasts = ctx.__toasts.join(' | ');
+ok(!/saved to your account/i.test(reloadToasts), 'unverified merges are never announced as saved: ' + reloadToasts);
+ok(/could not be re-read|reload to confirm/i.test(reloadToasts), 'the coach is told the result is unverified: ' + reloadToasts);
 
 // ── Signed out: the merge must not silently claim to have synced ──────────
 vm.runInContext(`

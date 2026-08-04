@@ -3517,13 +3517,19 @@ async function persistDuplicateMergeToCloud(survivors, absorbed){
     if(!remoteIds.length) continue;
 
     // Re-point logged workouts FIRST — soft-deleting the athlete rows before
-    // this would strand every workout written against an absorbed entry.
+    // this would strand every workout written against an absorbed entry. If
+    // the re-point fails we STOP for this athlete: keeping visible duplicates
+    // is recoverable, orphaning a season of training history is not.
     const { error: wErr } = await sbClient
       .from('workouts')
       .update({ athlete_id: survivorRemoteId })
       .in('athlete_id', remoteIds)
       .is('deleted_at', null);
-    if(wErr) console.warn('workout re-point failed', wErr);
+    if(wErr){
+      console.warn('workout re-point failed — absorbed rows kept', wErr);
+      failed += remoteIds.length;
+      continue;
+    }
 
     const { error: dErr } = await sbClient
       .from('athletes')
@@ -3579,11 +3585,14 @@ function remoteAthleteToLocal(row, raceRows){
   };
 }
 
+// Returns { ok, reason } so a caller that just wrote to the cloud (the roster
+// merge) can tell "the roster really is what Supabase holds" from "the re-read
+// failed and what you see is unverified". Callers that ignore it are unchanged.
 async function loadRemoteAthletes(){
-  if(!sbClient || !sbUser) return;
+  if(!sbClient || !sbUser) return { ok: false, reason: 'signed_out' };
   if(isAthleteOnly()){
-    await hydrateLinkedAthleteWorkspace();
-    return;
+    const linked = await hydrateLinkedAthleteWorkspace();
+    return { ok: Boolean(linked), reason: linked ? '' : 'linked_athlete_load_failed' };
   }
 
   const ownerId = sbUser.id;
@@ -3621,7 +3630,7 @@ async function loadRemoteAthletes(){
       updateChip();
       if(currentScreen === 'roster') renderRoster();
       if(currentScreen === 'brief') renderCoachBrief();
-      return;
+      return { ok: true, reason: 'empty' };
     }
 
     const athleteIds = athletes.map(a => a.id);
@@ -3647,10 +3656,12 @@ async function loadRemoteAthletes(){
     updateChip();
     if(currentScreen === 'roster') renderRoster();
     if(currentScreen === 'brief') renderCoachBrief();
+    return { ok: true, reason: '' };
   }catch(err){
     console.warn('Remote load failed', err);
     sbRosterState = 'unavailable';
     if(currentScreen === 'brief') renderCoachBrief();
+    return { ok: false, reason: 'remote_load_failed' };
   }
 }
 
@@ -12726,7 +12737,7 @@ function duplicateRepairPreviewHtml(){
       </div>
       <div class="warn-box" style="margin-bottom:1rem">
         <span class="warn-icon" aria-hidden="true">▲</span>
-        <p><strong>This rewrites your roster.</strong> ${plan.recordsIn} entries become ${plan.merges.length}. Every valid mark above is carried onto the merged profile, and each merged athlete keeps the earliest entry's ID so training-log history stays attached. ${sbUser ? 'Your <strong>cloud copies are not changed</strong> — removing the extra rows in Supabase is a separate step that needs your say-so.' : ''} There is no undo, so if this list looks wrong, close it and tell me what to change.</p>
+        <p><strong>This rewrites your roster.</strong> ${plan.recordsIn} entries become ${plan.merges.length}. Every valid mark above is carried onto the merged profile, and each merged athlete keeps the earliest entry's ID so training-log history stays attached. ${sbUser ? 'This <strong>also updates your account in the cloud</strong> — the extra rows are removed there too, and any workouts logged against them move onto the merged athlete. That is what makes the merge stick across sign-ins.' : 'You are signed out, so this changes this device only.'} There is no undo, so if this list looks wrong, close it and tell me what to change.</p>
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="applyDuplicateRepair()">Merge ${plan.recordsIn} entries into ${plan.merges.length} athlete${plan.merges.length===1?'':'s'}</button>
@@ -12739,7 +12750,12 @@ async function applyDuplicateRepair(){
   if(!requireCoachWorkspace('merge coach-managed athlete profiles')) return;
   const plan = duplicateRepairPlan();
   if(!plan.groups){ toast('No duplicate names to merge'); return; }
-  if(!confirm(`Merge ${plan.recordsIn} roster entries into ${plan.merges.length} athlete${plan.merges.length===1?'':'s'}? Every race mark is kept. This cannot be undone.`)) return;
+  // The confirmation must name the cloud write — this action removes the extra
+  // rows from the coach's Supabase account, not just from this browser.
+  const cloudLive = Boolean(sbClient && sbUser && sbCoachReady && !isAthleteOnly());
+  if(!confirm(`Merge ${plan.recordsIn} roster entries into ${plan.merges.length} athlete${plan.merges.length===1?'':'s'}? Every race mark is kept.\n\n${cloudLive
+    ? 'This also updates your account in the cloud: the extra rows are removed there and their workouts move onto the merged athlete.'
+    : 'You are signed out, so this changes this device only.'}\n\nThis cannot be undone.`)) return;
 
   const absorbed = new Set();
   const mergedById = new Map();
@@ -12805,8 +12821,13 @@ async function applyDuplicateRepair(){
   // Re-read from Supabase rather than trusting the local result: what the
   // roster shows after a merge should be exactly what the next sign-in loads.
   // If a delete silently failed, the duplicates reappear NOW, not tomorrow.
-  await loadRemoteAthletes();
-  toast(`Merge saved to your account (${cloud.deleted} duplicate${cloud.deleted===1?'':'s'} removed)`);
+  // "Saved" is claimed only after that read actually comes back.
+  const reread = await loadRemoteAthletes();
+  if(!reread || !reread.ok){
+    toast('Merge sent, but the roster could not be re-read — reload to confirm it stuck');
+  } else {
+    toast(`Merge saved to your account (${cloud.deleted} duplicate${cloud.deleted===1?'':'s'} removed)`);
+  }
   renderRoster();
 }
 
