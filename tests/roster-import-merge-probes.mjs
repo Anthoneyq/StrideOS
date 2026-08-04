@@ -43,6 +43,7 @@ const source = [
   slice('const IMPORT_FIELDS = [', '];') + '];',
   slice('const EVENT_PR_FIELDS = [', '];') + '];',
   slice('function autoDetectColumns(headers){', '\nfunction renderImportMapping'),
+  slice('const GRADE_LADDER = {', '\nfunction _athleteNameKey'),
   slice('function _normEvent(v){', '\nfunction _normDate'),
   slice('function _normDate(v){', '\nfunction _plausibleImportTime'),
   slice('function _normSex(v){', '\n// Best-effort parse'),
@@ -134,8 +135,11 @@ ok(Object.keys(riley.additionalPRs).length + 1 >= 2,
   'renderMultiEvent precondition met (2+ PRs) — Performance Curve will render');
 
 // ── Training age derived from season history ─────────────────────────────
-ok(riley.trainingAge === 4,
-  `training age spans 2021→2025 (got ${riley.trainingAge}) — importing a 5-season runner as a 0-yr beginner put them on beginner guardrails`);
+// A FLOOR, per Anthoney 2026-08-04: "3 years of data = at least 3 years of
+// training. Coaches can specify otherwise if needed." Five competition years on
+// file is five years of training, not the four-year gap between first and last.
+ok(riley.trainingAge === 5,
+  `training age is the seasons on file, 2021→2025 (got ${riley.trainingAge}) — importing a 5-season runner as a 0-yr beginner put them on beginner guardrails`);
 ok(riley.trainingAgeDerived === true, 'the derived training age is flagged for disclosure');
 ok(riley.seasonsOnFile >= 5, 'the number of seasons behind the derivation is reported');
 

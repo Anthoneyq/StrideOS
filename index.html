@@ -4761,6 +4761,7 @@ function xcPlanningRows(athletes, rawPlan){
     rows.push({
       athlete,
       forecast,
+      isObserved:forecast.isObserved,
       likely,
       aggressive,
       conservative,
@@ -4835,10 +4836,13 @@ function xcPlanTableHTML(result){
   const checkpointHeaders = checkpoints.map(d => `<th class="num">${esc(xcCheckpointLabel(d,plan.distanceM))}</th>`).join('');
   const tableRows = rows.map(row => {
     const checkpointCells = row.checkpoints.map(point => `<td class="num">${esc(fmtT(point.elapsedSec))}</td>`).join('');
+    const coursePlan = row.isObserved
+      ? `${esc(fmtT(row.likely))}<p class="xc-evidence">adjusted reference</p>`
+      : `${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}<p class="xc-evidence">planning range</p>`;
     return `<tr>
       <td class="num">${row.rank}</td>
       <td><strong>${esc(row.athlete.name)}</strong><p class="xc-evidence">${esc(row.evidence)}</p></td>
-      <td class="num">${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}<p class="xc-evidence">planning range</p></td>
+      <td class="num">${coursePlan}</td>
       <td class="num">${esc(_mmss(row.paceMileSec,0))}/mi</td>
       ${checkpointCells}
       <td class="num">${row.packGapSec == null ? '—' : `+${esc(fmtT(row.packGapSec))}`}</td>
@@ -4899,7 +4903,7 @@ function xcCommandPrintHTML(){
   const headers = checkpoints.map(d => `<th class="num">${esc(xcCheckpointLabel(d,plan.distanceM))}</th>`).join('');
   const body = rows.map(row => `<tr>
     <td>${esc(row.athlete.name)}<br><span style="font-size:8pt;color:#555">${esc(row.evidence)}</span></td>
-    <td class="num">${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}</td>
+    <td class="num">${row.isObserved ? esc(fmtT(row.likely)) : `${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}`}</td>
     <td class="num">${esc(_mmss(row.paceMileSec,0))}/mi</td>
     ${row.checkpoints.map(point=>`<td class="num">${esc(fmtT(point.elapsedSec))}</td>`).join('')}
     <td class="num">${row.packGapSec == null?'—':`+${esc(fmtT(row.packGapSec))}`}</td>
@@ -8939,7 +8943,9 @@ function buildGroupWorkoutRows(group, rawSpec, coachId){
   const rows = [], missing = [];
   group.members.forEach(member => {
     const athlete = member && member.athlete;
-    const athleteId = knownAthleteCloudId(athlete);
+    // Bulk writes require the verified cloud row ID. A UUID-shaped local
+    // client_ref is not evidence that it equals athletes.id.
+    const athleteId = athlete && athlete.supabaseId;
     if(!athlete || !athleteId){
       missing.push({ athlete, reason:'not saved to the coach account' });
       return;
@@ -9020,6 +9026,25 @@ function closeGroupWorkoutForm(){
   if(el) el.remove();
 }
 
+async function resolveGroupAthleteCloudId(athlete){
+  if(!athlete) return null;
+  if(athlete.supabaseId) return athlete.supabaseId;
+  if(!sbClient || !sbUser || !athlete.id) return null;
+  const { data, error } = await sbClient
+    .from('athletes')
+    .select('id')
+    .eq('coach_id', sbUser.id)
+    .eq('client_ref', String(athlete.id))
+    .is('deleted_at', null)
+    .maybeSingle();
+  if(error) throw error;
+  if(data && data.id){
+    athlete.supabaseId = data.id;
+    return data.id;
+  }
+  return null;
+}
+
 async function assignGroupWorkout(){
   if(!sbClient || !sbUser || isAthleteOnly()) return toast('Coach account required', 'error');
   const value = id => {
@@ -9032,10 +9057,16 @@ async function assignGroupWorkout(){
 
   // Resolve every cloud row before any write. A half-saved group is harder for
   // a coach to discover than a blocked assignment, so this fails closed.
-  for(const member of group.members){
-    const id = await resolveAthleteCloudId(member.athlete);
-    if(id) member.athlete.supabaseId = id;
+  try{
+    for(const member of group.members){
+      const id = await resolveGroupAthleteCloudId(member.athlete);
+      if(id) member.athlete.supabaseId = id;
+    }
+  }catch(err){
+    console.error('group athlete cloud lookup failed', err);
+    return toast('Nothing assigned — the coach roster could not be verified', 'error');
   }
+  saveDB(DB);
   const zoneLabel = value('gwZone');
   const zoneDef = GROUP_WORKOUT_ZONES.find(z => z.label === zoneLabel);
   const built = buildGroupWorkoutRows(group, {
@@ -11068,6 +11099,13 @@ function mergeImportRows(rows, m){
       if(y >= 1900 && y <= 2200) g.years.add(y);
     }
     if(dateISO) g.years.add(parseInt(dateISO.slice(0, 4), 10));
+    // Grades are a season signal of their own: a middle-school row often has a
+    // grade but a dash for a date, and would otherwise be an invisible season.
+    g.grades = g.grades || new Set();
+    if(m.grade){
+      const gr = String(row[m.grade] || '').trim();
+      if(gr) g.grades.add(gr);
+    }
 
     take('sex', m.sex, v => _normSex(v));
     take('age', m.age, v => parseInt(String(v || '').trim(), 10) || '');
@@ -11135,8 +11173,11 @@ function mergeImportRows(rows, m){
     // guardrails and the most conservative paces (the bug Anthoney hit with
     // Elizabeth Leachman). Span, not count: 2021→2026 is 5 years of training,
     // and a single season stays 0 so the enrich prompt still asks.
+    // Same floor rule as the roster repair: seasons on file and how far they
+    // reach, across race dates AND grades, widest wins. See seasonSpanYears.
     const yearList = Array.from(g.years || []).filter(y => isFinite(y)).sort((a,b) => a-b);
-    const derivedSpan = yearList.length > 1 ? (yearList[yearList.length-1] - yearList[0]) : 0;
+    const derived = seasonSpanYears(yearList, Array.from(g.grades || new Set([g.meta.grade])));
+    const derivedSpan = derived.years;
     const statedTrainingAge = g.meta.trainingAge || 0;
     const trainingAge = statedTrainingAge > 0 ? statedTrainingAge : derivedSpan;
 
@@ -13137,16 +13178,25 @@ function gradeLadderIndex(grade){
   if(m){ const n = parseInt(m[1], 10); if(n >= 6 && n <= 12) return n - 6; }
   return null;
 }
-// Span, not count: first season on file to last. Two independent signals —
-// race dates and grades — and the WIDER one wins, because a missing date can
-// only ever hide a season, never invent one.
+// A FLOOR, not an estimate (Anthoney, 2026-08-04): "if an athlete gets added
+// with 3 years of data, we could assume at least 3 years of training. Coaches
+// can specify otherwise if needed."
+//
+// So the answer is the largest thing the data can justify, from four readings
+// of two independent signals — race dates and school grades:
+//   · how many seasons each signal covers  (3 competition years = 3 years)
+//   · how far each signal reaches          (2019 then 2025 = 6 years, with a gap)
+// The widest wins. Every one of these can only ever UNDERSTATE a career — a
+// season with neither a date nor a grade on file is invisible — so the result
+// is a floor the coach raises, never a number that inflates anyone.
 function seasonSpanYears(years, grades){
   const ys = [...new Set(years.filter(y => y > 1900))].sort((a, b) => a - b);
   const gs = [...new Set(grades.map(gradeLadderIndex).filter(g => g !== null))].sort((a, b) => a - b);
   const dateSpan = ys.length > 1 ? ys[ys.length-1] - ys[0] : 0;
   const gradeSpan = gs.length > 1 ? gs[gs.length-1] - gs[0] : 0;
-  return { years: Math.max(dateSpan, gradeSpan), dateSpan, gradeSpan,
-           seasons: Math.max(ys.length, gs.length), firstYear: ys[0] || null, lastYear: ys[ys.length-1] || null };
+  const seasons = Math.max(ys.length, gs.length);
+  return { years: Math.max(seasons, dateSpan, gradeSpan), dateSpan, gradeSpan, seasons,
+           firstYear: ys[0] || null, lastYear: ys[ys.length-1] || null };
 }
 
 function _athleteNameKey(a){
@@ -13184,12 +13234,12 @@ function trainingAgeRepairBannerHtml(){
       </tr>`).join('');
     return `
     <div class="card" style="border-color:var(--accent-line);background:var(--accent-soft)">
-      <p class="card-title"><span>Years training, from your own race history</span><span class="card-accent">REVIEW</span></p>
+      <p class="card-title"><span>Years training — at least this much, from your own race history</span><span class="card-accent">REVIEW</span></p>
       <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-2);line-height:1.7;margin:.5rem 0 .875rem">
-        Each athlete's span is the first to the last season on file — from their dated results and their grades, whichever covers more ground. Nothing else on their profile changes except a blank year, which is filled from their most recent season on file.
+        Each number is <strong style="color:var(--text)">at least</strong> — the seasons an athlete actually has on file, counted from their dated results and their grades, whichever reaches further. Three years of results means at least three years of training. Nothing else on their profile changes except a blank year, filled from their most recent season on file.
       </p>
       <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);line-height:1.7;margin:0 0 .875rem">
-        <strong style="color:var(--text-2)">These can only ever be LOW, never high.</strong> A season with no dated result and no grade on file is invisible to this, so a career can come out short — it can never be inflated. Anything marked ▲ is worth a look; every value stays editable on the athlete's profile.
+        <strong style="color:var(--text-2)">These are floors — they can only ever be LOW, never high.</strong> A season with no dated result and no grade on file is invisible here, so a career can come out short; nothing can inflate one. Anything marked ▲ is worth a look, and every value stays editable on the athlete's profile — set the real number whenever you know it.
       </p>
       <div style="overflow-x:auto;margin-bottom:.875rem"><table style="width:100%;border-collapse:collapse">${rows}</table></div>
       <div class="btn-row">

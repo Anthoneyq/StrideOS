@@ -162,6 +162,37 @@ if(E){
     'computeCoachBriefData: output contains no medical, readiness, fatigue, recovery, or prescription language');
 }
 
+// Prescribed group sessions are future/planned rows until completion evidence
+// exists. They must never inflate the Coach Brief's completed-session totals.
+try{
+  const summarize = new Function(`${extractFn('summarizeCoachBriefWorkouts')}; return summarizeCoachBriefWorkouts;`)();
+  const ranges = {
+    completed:{ start:'2026-07-20', end:'2026-07-26' },
+    previous:{ start:'2026-07-13', end:'2026-07-19' }
+  };
+  const summary = summarize([
+    {
+      athlete_id:'ath-a', workout_date:'2026-07-21', workout_type:'threshold',
+      prescribed_distance_m:5000, prescribed_zone_label:'Threshold 93%',
+      prescribed_notes:'5 × 1000m', total_distance_m:null, total_duration_sec:null
+    },
+    {
+      athlete_id:'ath-b', workout_date:'2026-07-22', workout_type:'easy',
+      total_distance_m:8000, total_duration_sec:2400
+    }
+  ], ranges);
+  check(summary.completed.sessions === 1,
+    'Coach Brief counts only entries with completion distance/duration');
+  check(summary.completed.planned === 1,
+    'Coach Brief reports prescribed rows that lack completion evidence');
+  check(summary.completed.athletesLogged === 1,
+    'planned-only athletes do not inflate completed athlete coverage');
+  check(summary.completed.distanceM === 8000,
+    'prescribed quality volume does not inflate completed distance');
+}catch(err){
+  failures.push(`Coach Brief planned/completed summary must execute: ${err.message}`);
+}
+
 // ── Role and source-truth contracts ────────────────────────────────────────
 let workspaceScreens = null;
 let athleteScreens = null;

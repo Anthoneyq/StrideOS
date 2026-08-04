@@ -309,7 +309,10 @@ ok(rep.preview.stage === 'preview', 'the repair previews before writing: ' + rep
 const riley = rep.preview.plan.find(p => p.name === 'Riley Chen');
 const dana  = rep.preview.plan.find(p => p.name === 'Dana Ruiz');
 ok(riley && riley.years === 5, 'the derived span is first→last season on file: ' + JSON.stringify(riley));
-ok(dana && dana.years === 0, 'a single-season athlete gets no invented training age: ' + JSON.stringify(dana));
+// A floor, not an estimate: one season on file is one year of training, and
+// the coach is told it rests on a single season so they can raise it.
+ok(dana && dana.years === 1, 'one season on file reads as one year, not zero: ' + JSON.stringify(dana));
+ok(dana.flags.some(f => /only 1 season on file/.test(f)), 'the thin evidence is flagged: ' + JSON.stringify(dana.flags));
 // Grades are a season signal too: the 7th-grade row carries NO date, so a
 // dates-only span would have said 5 (2021→2026) — here both agree at 5, and
 // the flag tells the coach which signal carried it.
@@ -324,13 +327,13 @@ ok(Array.isArray(riley.flags), 'each proposal carries coach-facing flags');
 ok(rep.preview.plan.every(p => p.flags.some(f => /age still unknown/.test(f))),
    'a missing age is flagged rather than guessed: ' + JSON.stringify(rep.preview.plan.map(p => p.flags)));
 ok(rep.ages.some(([n, v]) => n === 'Riley Chen' && v === 5), 'applying sets the local value: ' + JSON.stringify(rep.ages));
-ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 0), 'an athlete with one season keeps no training age: ' + JSON.stringify(rep.ages));
+ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 1), 'a one-season athlete gets the one-year floor: ' + JSON.stringify(rep.ages));
 ok(rep.grades.some(([n, g]) => n === 'Dana Ruiz' && g === 'SR'), 'a blank year is backfilled from the most recent season on file: ' + JSON.stringify(rep.grades));
 ok(rep.rpcs.includes(5), 'the new value is pushed to the account, not just the device: ' + JSON.stringify(rep.rpcs));
 ok(/years training set/i.test(rep.toasts.join(' | ')), 'the coach is told it saved: ' + rep.toasts.join(' | '));
 
 const repFail = await ctx.__out.repair({ 'athletes:select': 'network error' });
 ok(repFail.preview.stage === 'error', 'a failed history read is surfaced, not silently empty: ' + repFail.preview.stage);
-ok(repFail.ages.every(([, v]) => v === 0), 'nothing is written when the history could not be read');
+ok(repFail.ages.every(([, v]) => !(v > 0)), 'nothing is written when the history could not be read: ' + JSON.stringify(repFail.ages));
 
 console.log(`roster merge cloud probes ok — ${assertions} assertions`);

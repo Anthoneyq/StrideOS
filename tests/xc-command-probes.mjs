@@ -24,7 +24,8 @@ function extractBlock(source, startIdx, openChar, closeChar){
 }
 
 function extractFn(name){
-  const sig = `function ${name}(`;
+  const asyncSig = `async function ${name}(`;
+  const sig = html.indexOf(asyncSig) >= 0 ? asyncSig : `function ${name}(`;
   const at = html.indexOf(sig);
   assert.ok(at >= 0, `missing function ${name}`);
   const bodyStart = html.indexOf('{', at);
@@ -115,7 +116,6 @@ assert.equal(fastCourse.rows[0].checkpoints.at(-1).distanceM, 6000);
 const groupSource = [
   extractConst('GROUP_WORKOUT_ZONES'),
   extractFn('groupWorkoutSourceRef'),
-  `const knownAthleteCloudId = athlete => athlete && athlete.supabaseId || null;`,
   `const _distanceAthleteView = athlete => athlete;`,
   `const computeZoneSplits = (athlete, opts) => ({
     zones: [{
@@ -176,6 +176,35 @@ const missing = G.buildGroupWorkoutRows({
 assert.equal(missing.rows.length, 2);
 assert.equal(missing.missing.length, 1);
 assert.match(missing.missing[0].reason, /not saved/);
+const uuidLocalOnly = G.buildGroupWorkoutRows({
+  id:'grp_A', label:'Group A',
+  members:[{ athlete:{ id:'11111111-1111-4111-8111-111111111111', name:'UUID local ref only' } }]
+}, spec, coachId);
+assert.equal(uuidLocalOnly.rows.length, 0, 'UUID-shaped local ref is not treated as a verified cloud row');
+assert.equal(uuidLocalOnly.missing.length, 1);
 assert.ok(G.buildGroupWorkoutRows(group, { ...spec, reps:0 }, coachId).error, 'invalid session is rejected');
 
-console.log('xc command probes ok — 35 assertions');
+const lookupCalls = [];
+const lookupClient = {
+  from(table){
+    lookupCalls.push(['from',table]);
+    const chain = {
+      select(value){ lookupCalls.push(['select',value]); return chain; },
+      eq(key,value){ lookupCalls.push(['eq',key,value]); return chain; },
+      is(key,value){ lookupCalls.push(['is',key,value]); return chain; },
+      async maybeSingle(){ return { data:{ id:'cloud-row-7' }, error:null }; }
+    };
+    return chain;
+  }
+};
+const resolveCloud = new Function('sbClient','sbUser',
+  `${extractFn('resolveGroupAthleteCloudId')}; return resolveGroupAthleteCloudId;`
+)(lookupClient, { id:coachId });
+const uuidLocalAthlete = { id:'11111111-1111-4111-8111-111111111111' };
+assert.equal(await resolveCloud(uuidLocalAthlete), 'cloud-row-7',
+  'UUID-shaped client ref resolves through the account-scoped athletes table');
+assert.equal(uuidLocalAthlete.supabaseId, 'cloud-row-7');
+assert.ok(lookupCalls.some(c => c[0] === 'eq' && c[1] === 'coach_id' && c[2] === coachId));
+assert.ok(lookupCalls.some(c => c[0] === 'eq' && c[1] === 'client_ref' && c[2] === uuidLocalAthlete.id));
+
+console.log('xc command probes ok — 41 assertions');
