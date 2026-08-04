@@ -3486,31 +3486,52 @@ async function persistDuplicateMergeToCloud(survivors, absorbed){
   if(!sbClient || !sbUser || !sbCoachReady || isAthleteOnly()){
     return { ok: false, skipped: true, reason: 'cloud_not_ready' };
   }
+  // Batched on purpose: a real repair is 236 entries → 13 athletes. One
+  // request per absorbed row would be ~460 sequential round-trips, slow enough
+  // that a coach closes the tab half way through and keeps the duplicates.
   let deleted = 0, failed = 0;
+  const stamp = new Date().toISOString();
   for(const survivor of survivors){
     const synced = await syncAthleteToSupabase(survivor);
     if(!synced || !synced.ok){ failed++; continue; }
     const survivorRemoteId = await resolveRemoteAthleteIdFresh(survivor.id);
     if(!survivorRemoteId){ failed++; continue; }
-    for(const rec of absorbed.filter(r => r.survivorLocalId === survivor.id)){
-      const remoteId = rec.supabaseId || await resolveRemoteAthleteIdFresh(rec.id);
-      if(!remoteId || remoteId === survivorRemoteId) continue;
-      // Re-point logged workouts first — soft-deleting the athlete row would
-      // otherwise strand every workout written against the absorbed entry.
-      const { error: wErr } = await sbClient
-        .from('workouts')
-        .update({ athlete_id: survivorRemoteId })
-        .eq('athlete_id', remoteId)
-        .is('deleted_at', null);
-      if(wErr) console.warn('workout re-point failed', wErr);
-      const { error: dErr } = await sbClient
-        .from('athletes')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', remoteId)
-        .eq('coach_id', sbUser.id);
-      if(dErr){ failed++; console.warn('remote merge delete failed', dErr); }
-      else deleted++;
+
+    const group = absorbed.filter(r => r.survivorLocalId === survivor.id);
+    const cached = group.filter(r => r.supabaseId).map(r => r.supabaseId);
+    const unresolved = group.filter(r => !r.supabaseId).map(r => String(r.id));
+    let lookedUp = [];
+    if(unresolved.length){
+      try{
+        const { data } = await sbClient
+          .from('athletes').select('id')
+          .in('client_ref', unresolved)
+          .eq('coach_id', sbUser.id)
+          .is('deleted_at', null);
+        lookedUp = (data || []).map(r => r.id);
+      }catch(err){ console.warn('absorbed row lookup failed', err); }
+      // A local id that is itself a uuid IS the cloud row id.
+      lookedUp = lookedUp.concat(unresolved.filter(isUuid));
     }
+    const remoteIds = [...new Set(cached.concat(lookedUp))].filter(id => id && id !== survivorRemoteId);
+    if(!remoteIds.length) continue;
+
+    // Re-point logged workouts FIRST — soft-deleting the athlete rows before
+    // this would strand every workout written against an absorbed entry.
+    const { error: wErr } = await sbClient
+      .from('workouts')
+      .update({ athlete_id: survivorRemoteId })
+      .in('athlete_id', remoteIds)
+      .is('deleted_at', null);
+    if(wErr) console.warn('workout re-point failed', wErr);
+
+    const { error: dErr } = await sbClient
+      .from('athletes')
+      .update({ deleted_at: stamp })
+      .in('id', remoteIds)
+      .eq('coach_id', sbUser.id);
+    if(dErr){ failed += remoteIds.length; console.warn('remote merge delete failed', dErr); }
+    else deleted += remoteIds.length;
   }
   return { ok: failed === 0, deleted, failed };
 }
@@ -12769,14 +12790,23 @@ async function applyDuplicateRepair(){
   // sign-in re-hydrates every absorbed row from Supabase and the coach is
   // asked to merge the same roster again.
   const survivors = plan.merges.map(m => mergedById.get(m.id)).filter(Boolean);
+  if(sbClient && sbUser && sbCoachReady && !isAthleteOnly()) toast('Saving the merge to your account…');
   const cloud = await persistDuplicateMergeToCloud(survivors, absorbedRecords);
   if(cloud.skipped){
     toast('Merged on this device — sign in to save it to your account');
-  } else if(!cloud.ok){
-    toast(`Merged, but ${cloud.failed} entr${cloud.failed===1?'y':'ies'} did not sync — they may come back at next sign-in`);
-  } else {
-    toast(`Merge saved to your account (${cloud.deleted} duplicate${cloud.deleted===1?'':'s'} removed)`);
+    renderRoster();
+    return;
   }
+  if(!cloud.ok){
+    toast(`Merged, but ${cloud.failed} entr${cloud.failed===1?'y':'ies'} did not sync — they may come back at next sign-in`);
+    renderRoster();
+    return;
+  }
+  // Re-read from Supabase rather than trusting the local result: what the
+  // roster shows after a merge should be exactly what the next sign-in loads.
+  // If a delete silently failed, the duplicates reappear NOW, not tomorrow.
+  await loadRemoteAthletes();
+  toast(`Merge saved to your account (${cloud.deleted} duplicate${cloud.deleted===1?'':'s'} removed)`);
   renderRoster();
 }
 

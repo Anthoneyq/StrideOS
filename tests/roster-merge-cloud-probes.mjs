@@ -91,6 +91,10 @@ A = DB.athletes[2];
 saveDB = function(){}; toast = function(){}; renderRoster = function(){};
 refreshActiveAthlete = function(){}; updateChip = function(){};
 requireCoachWorkspace = function(){ return true; };
+// The post-merge re-read is proven by its own probe below; here it must not
+// clobber the merged DB the assertions inspect.
+let reloaded = 0;
+loadRemoteAthletes = async function(){ reloaded++; __out.reloaded = reloaded; };
 
 __out.run = (async () => {
   await applyDuplicateRepair();
@@ -120,16 +124,23 @@ ok(upserts.length === 1, 'the survivor is upserted to Supabase exactly once (got
 ok(upserts[0].payload && upserts[0].payload.local_athlete.id === 'r1', 'the upsert carries the surviving athlete');
 
 const softDeletes = find(c => c.table === 'athletes' && c.op === 'update' && c.payload && c.payload.deleted_at);
-const deletedIds = softDeletes.map(c => c.filters.id).sort();
+const deletedIds = softDeletes.flatMap(c => [].concat(c.filters.id || [])).sort();
 ok(deletedIds.length === 2, 'both absorbed rows are soft-deleted server-side (got ' + JSON.stringify(deletedIds) + ')');
 ok(deletedIds.join(',') === 'uuid_r2,uuid_r3', 'exactly the absorbed rows are deleted: ' + JSON.stringify(deletedIds));
 ok(softDeletes.every(c => c.filters.coach_id === 'coach-1'), 'a soft-delete is always scoped to the signed-in coach');
 ok(!deletedIds.includes('uuid_r1') && !deletedIds.includes('uuid_d1'), 'never soft-delete the survivor or an untouched athlete');
+// Batched, not one request per row: 236 entries → 13 athletes must not become
+// hundreds of sequential round-trips a coach can abandon half way through.
+ok(softDeletes.length === 1, 'absorbed rows are deleted in ONE batched request per athlete (got ' + softDeletes.length + ')');
 
 const repoints = find(c => c.table === 'workouts' && c.op === 'update' && c.payload && c.payload.athlete_id);
-ok(repoints.length === 2, 'workouts are re-pointed for every absorbed row (got ' + repoints.length + ')');
+ok(repoints.length === 1, 'workouts are re-pointed in one batched request per athlete (got ' + repoints.length + ')');
 ok(repoints.every(c => c.payload.athlete_id === 'uuid_r1'), 'workouts move onto the surviving cloud row');
-ok(repoints.map(c => c.filters.athlete_id).sort().join(',') === 'uuid_r2,uuid_r3', 'workouts are moved off the absorbed rows');
+ok([].concat(repoints[0].filters.athlete_id).sort().join(',') === 'uuid_r2,uuid_r3', 'workouts are moved off exactly the absorbed rows');
+ok(repoints[0].filters.deleted_at === null, 'already-deleted workouts are left alone');
+
+// The roster shown after a merge must be what the cloud actually holds.
+ok(ctx.__out.reloaded === 1, 'a successful merge re-reads the roster from Supabase');
 
 // Order matters: soft-deleting first would strand the workouts.
 const perGroup = calls.filter(c => (c.table === 'workouts' && c.op === 'update') || (c.table === 'athletes' && c.op === 'update' && c.payload && c.payload.deleted_at));
