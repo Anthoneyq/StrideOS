@@ -324,8 +324,30 @@ ok(riley.years === 5, 'the WIDER signal wins — a missing date can hide a seaso
 ok(riley.flags.some(f => /no dated results/.test(f)),
    'the coach is told which signal carried it: ' + JSON.stringify(riley.flags));
 ok(Array.isArray(riley.flags), 'each proposal carries coach-facing flags');
-ok(rep.preview.plan.every(p => p.flags.some(f => /age still unknown/.test(f))),
-   'a missing age is flagged rather than guessed: ' + JSON.stringify(rep.preview.plan.map(p => p.flags)));
+ok(rep.preview.plan.every(p => p.flags.some(f => /no age on file/.test(f))),
+   'a missing age is disclosed, not silently filled: ' + JSON.stringify(rep.preview.plan.map(p => p.flags)));
+
+// A school year IS an age statement, so it stands in — but it must never read
+// as a fact, and a real age must always win.
+const ageProbe = vm.runInContext(`(() => {
+  const real = { age: 15, grade: 'SR' };
+  const noAge = { age: '', grade: 'SR' };
+  const bare  = { age: '', grade: '' };
+  return {
+    realWins: athleteAgeYears(real), realLabel: athleteAgeLabel(real), realEstimated: athleteAgeIsEstimated(real),
+    stand: athleteAgeYears(noAge), standLabel: athleteAgeLabel(noAge), standEstimated: athleteAgeIsEstimated(noAge),
+    bare: athleteAgeYears(bare), bareLabel: athleteAgeLabel(bare),
+    guardYouth: smartGuardrailDefault({ grade: '7th', trainingAge: 1, primaryEvent: '800m' })
+  };
+})()`, ctx, { filename: 'probe-age.js' });
+ok(ageProbe.realWins === 15 && ageProbe.realLabel === '15' && ageProbe.realEstimated === false,
+   'a real age always wins and is never marked as a stand-in: ' + JSON.stringify(ageProbe));
+ok(ageProbe.stand === 18 && ageProbe.standLabel === '~18' && ageProbe.standEstimated === true,
+   'a missing age stands in from their year and is always shown with ~: ' + JSON.stringify(ageProbe));
+ok(ageProbe.bare === null && ageProbe.bareLabel === '?',
+   'with neither age nor year, nothing is invented: ' + JSON.stringify(ageProbe));
+ok(ageProbe.guardYouth === 'conservative',
+   'a 7th grader with no stated age still gets youth guardrails: ' + ageProbe.guardYouth);
 ok(rep.ages.some(([n, v]) => n === 'Riley Chen' && v === 5), 'applying sets the local value: ' + JSON.stringify(rep.ages));
 ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 1), 'a one-season athlete gets the one-year floor: ' + JSON.stringify(rep.ages));
 ok(rep.grades.some(([n, g]) => n === 'Dana Ruiz' && g === 'SR'), 'a blank year is backfilled from the most recent season on file: ' + JSON.stringify(rep.grades));

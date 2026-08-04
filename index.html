@@ -237,6 +237,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 @media(max-width:800px){.brief-pulse{grid-template-columns:1fr 1fr}.brief-grid{grid-template-columns:1fr}.brief-topline{display:block}.brief-stamp{text-align:left;margin-top:.75rem}}
 @media(max-width:480px){.brief-hero{padding:1.25rem}.brief-pulse{grid-template-columns:1fr 1fr}.brief-priority{grid-template-columns:auto minmax(0,1fr)}.brief-priority .brief-action{grid-column:2;text-align:left;justify-self:start}.brief-log-stats{grid-template-columns:1fr}}
 .xc-layout{display:grid;grid-template-columns:minmax(18rem,.72fr) minmax(0,1.28fr);gap:1rem;align-items:start}
+.xc-layout>*{min-width:0}
 .xc-form{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .xc-form .xc-wide{grid-column:1 / -1}
 .xc-label{display:flex;flex-direction:column;gap:.3rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-2)}
@@ -251,7 +252,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .xc-table .num{text-align:right;font-family:var(--font-mono);white-space:nowrap}
 .xc-evidence{font-size:.625rem;color:var(--text-3);line-height:1.4;margin-top:.15rem}
 @media(max-width:900px){.xc-layout{grid-template-columns:1fr}.xc-summary{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){#xc-body,.xc-layout,.xc-layout>.brief-panel{min-width:0;max-width:100%}.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary{grid-template-columns:1fr}.xc-layout .brief-panel-head{align-items:flex-start;flex-direction:column}.xc-layout .brief-panel-tag{white-space:normal}}
 @media(max-width:900px){.team-command-bar{grid-template-columns:1fr 1fr}.team-command-intro{grid-column:1 / -1}.athlete-context{top:4.65rem}}
 @media(max-width:600px){.athlete-context{align-items:stretch;flex-direction:column;gap:.55rem;padding:.65rem}.athlete-context-id{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-width:0}.athlete-context-name{max-width:65vw}.team-command-bar{grid-template-columns:1fr}.team-command-intro{grid-column:auto}.app-footer{align-items:flex-start;flex-direction:column}}
 .auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
@@ -5009,7 +5010,7 @@ function renderOverview(){
     <div class="hero-stats">
       <div class="hero-primary">
         <p class="hero-name">${esc(A.name)}</p>
-        <p class="hero-meta">${esc(A.age||'?')} · ${esc(A.sex||'?')} · ${esc(A.grade||'')} · ${A.trainingAge > 0 ? esc(String(A.trainingAge)) + ' yrs training' : 'years training not set'}</p>
+        <p class="hero-meta">${esc(athleteAgeLabel(A))} · ${esc(A.sex||'?')} · ${esc(A.grade||'')} · ${A.trainingAge > 0 ? esc(String(A.trainingAge)) + ' yrs training' : 'years training not set'}</p>
         <div class="tag-row">
           <span class="tag tag-a">${esc(A.primaryEvent)} PRIMARY</span>
           <span class="tag">${A.trainingAge > 0 ? esc(getTier(A.trainingAge)) + ' — ' + esc(String(A.trainingAge)) + ' yrs' : 'Years training not set'}</span>
@@ -5470,7 +5471,9 @@ function smartGuardrailDefault(athlete){
   if(!athlete) return 'standard';
 
   const trainingAge = athlete.trainingAge || 0;
-  const age = athlete.age || 18;
+  // A year-derived age only ever pushes this MORE conservative, so standing in
+  // for a missing one is the safe direction.
+  const age = athleteAgeYears(athlete) || 18;
   const event = athlete.primaryEvent || '';
   const family = getEventGroup(event);
 
@@ -6822,7 +6825,7 @@ function paintGuardrail(){
     const smartDefault = smartGuardrailDefault(A);
     const usingDefault = !A.guardrail;
     if(usingDefault){
-      noteEl.textContent = `Auto-default for this athlete: ${GUARDRAIL_LEVELS[smartDefault].label} (based on age ${A.age||'?'}, ${(A.trainingAge||0).toFixed(1)} yrs training, ${esc(A.primaryEvent||'?')})`;
+      noteEl.textContent = `Auto-default for this athlete: ${GUARDRAIL_LEVELS[smartDefault].label} (based on age ${athleteAgeLabel(A)}, ${(A.trainingAge||0).toFixed(1)} yrs training, ${esc(A.primaryEvent||'?')})`;
       noteEl.style.color = 'var(--text-4)';
     } else if(A.guardrail === smartDefault){
       noteEl.textContent = `Matches the recommended default for this athlete.`;
@@ -6984,11 +6987,11 @@ function renderPredict(){
       ${(() => {
         const pk = personalFatigueExponent(A);
         const fresh = prFreshness(A.raceDate);
-        const ageY = parseInt(A.age, 10) || null;
+        const ageY = athleteAgeYears(A);
         const adj = [
           pk ? `Personal fatigue curve k=${pk.k.toFixed(3)} (${pk.nPairs} PR pair${pk.nPairs===1?'':'s'})` : 'Population fatigue exponent (add a 2nd PR to personalize)',
           fresh && fresh !== 'fresh' ? `PR freshness: ${fresh}` : '',
-          ageY && ageY < 18 ? `Youth (${ageY}) — ranges widened` : ''
+          ageY && ageY < 18 ? `Youth (${athleteAgeLabel(A)}${athleteAgeIsEstimated(A) ? ', from their year' : ''}) — ranges widened` : ''
         ];
         return provenancePanel({
           subtitle: 'these forecasts',
@@ -7740,7 +7743,7 @@ function raceForecastForTarget(athlete, target, opts){
   else                       rangePct = 0.050 + logRatio * 0.025;
   rangePct *= freshPenalty;
 
-  const ageYears = parseInt(athlete.age, 10) || null;
+  const ageYears = athleteAgeYears(athlete);
   const youthFactor = (ageYears && ageYears < 18) ? (ageYears <= 14 ? 1.5 : 1.25) : 1;
   rangePct *= youthFactor;
 
@@ -8636,8 +8639,8 @@ function pacesProvenance(athlete){
   if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
   const fresh = prFreshness(athlete.raceDate);
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
-  const age = parseInt(athlete.age, 10) || null;
-  if(age && age < 18) adjustments.push(`Youth (${age}) — conservative aerobic default`);
+  const age = athleteAgeYears(athlete);
+  if(age && age < 18) adjustments.push(`Youth (${athleteAgeLabel(athlete)}${athleteAgeIsEstimated(athlete) ? ', from their year' : ''}) — conservative aerobic default`);
   const reasons = [
     'Training paces are a percentage of this athlete’s race-PR pace (STRIDE speed-% zones) — not %VO₂max, not heart rate, not a lab test.',
     athlete.raceDistanceM < 1500
@@ -8677,7 +8680,7 @@ function forecastProvenance(f){
 // "these paces are adjusted for a 14-year-old, and here's why."
 function youthGuardrailBanner(athlete){
   if(!athlete) return '';
-  const age = parseInt(athlete.age, 10) || null;
+  const age = athleteAgeYears(athlete);
   const gk = _athGuardrail(athlete);
   const gl = GUARDRAIL_LEVELS[gk] || GUARDRAIL_LEVELS.standard;
   const isYouth = age != null && age < 18;
@@ -10814,7 +10817,7 @@ function renderImportEnrich(){
   const rows = list.map(a => `
     <tr style="border-bottom:1px solid var(--border)">
       <td style="padding:.5rem .6rem;font-family:var(--font-display);font-size:.9375rem">${esc(a.name)}</td>
-      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-4)">${esc(a.age ? a.age + 'y' : '')}${a.grade ? ' · ' + esc(a.grade) : ''}</td>
+      <td style="padding:.5rem .6rem;font-family:var(--font-mono);font-size:.75rem;color:var(--text-4)">${esc(athleteAgeYears(a) ? athleteAgeLabel(a) + 'y' : '')}${a.grade ? ' · ' + esc(a.grade) : ''}</td>
       <td style="padding:.4rem .6rem;text-align:right">
         <div class="btn-row" style="justify-content:flex-end;gap:.25rem">
           ${TRAINING_AGE_CHOICES.map(c => `<button class="btn" data-ta="${esc(a.id)}" data-tav="${c.v}"
@@ -12349,7 +12352,7 @@ function athleteCard(a){
     <div style="background:${isActive?'var(--accent-soft)':'var(--bg-el)'};border:1px solid ${isActive?'var(--accent)':'var(--border)'};border-radius:.5rem;padding:1.25rem;position:relative">
       ${isActive ? '<div style="position:absolute;top:.5rem;right:.5rem;font-family:\'JetBrains Mono\',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.0625rem">● ACTIVE</div>' : ''}
       <p style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:-.0625rem;margin-bottom:.25rem;padding-right:4rem">${esc(a.name)} ${inviteBadge}</p>
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin-bottom:.875rem">${esc(a.age||'?')}${esc(a.sex||'')} · ${esc(a.primaryEvent)} · ${a.trainingAge > 0 ? (a.trainingAge).toFixed(1) + 'yr' : 'yrs not set'}</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin-bottom:.875rem">${esc(athleteAgeLabel(a))}${esc(a.sex||'')} · ${esc(a.primaryEvent)} · ${a.trainingAge > 0 ? (a.trainingAge).toFixed(1) + 'yr' : 'yrs not set'}</p>
 
       <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-bottom:.625rem">
         <span style="color:var(--dim)">Primary PR</span>
@@ -13163,6 +13166,31 @@ function deleteAthlete(id){
 //   · the merged athlete KEEPS the earliest record's id, so training-log
 //     entries, meet summaries, and the Supabase link stay attached
 //   · it previews before it acts, and it never runs on its own
+// ── AGE, WHEN THE SHEET NEVER CARRIED ONE ────────────────────────────────
+// Anthoney's roster export has no age column at all, so 13 athletes imported
+// with none — and age drives the youth guardrails, the range widening, and the
+// youth banner. A school year IS an age statement, so it stands in when no real
+// age is on file. It is ALWAYS labelled: every place a stand-in age reaches a
+// coach it is prefixed "~" and sourced to their year, and it never overwrites
+// the athlete's real age. Set the real one and it wins everywhere, instantly.
+const GRADE_TYPICAL_AGE = { 0:12, 1:13, 2:14, 3:15, 4:16, 5:17, 6:18, 7:19 };
+function athleteAgeYears(athlete){
+  if(!athlete) return null;
+  const stated = parseInt(athlete.age, 10);
+  if(stated > 0) return stated;
+  const rung = gradeLadderIndex(athlete.grade);
+  return rung === null ? null : GRADE_TYPICAL_AGE[rung];
+}
+function athleteAgeIsEstimated(athlete){
+  return !(parseInt(athlete && athlete.age, 10) > 0) && athleteAgeYears(athlete) != null;
+}
+// The one string every screen prints, so a stand-in can never read as a fact.
+function athleteAgeLabel(athlete){
+  const years = athleteAgeYears(athlete);
+  if(years == null) return '?';
+  return (athleteAgeIsEstimated(athlete) ? '~' : '') + years;
+}
+
 // School-year ladder. A per-race-row roster export carries the athlete's grade
 // on every row, which is a season marker even when that row has no date — the
 // middle-school seasons in Anthoney's export have grades ("7th") but a dash for
@@ -13308,7 +13336,9 @@ async function loadTrainingAgeArchive(){
       if(span.gradeSpan > span.dateSpan) flags.push('early seasons have no dated results — span comes from their grades');
       else if(span.dateSpan > span.gradeSpan && span.gradeSpan > 0) flags.push('grades on file cover fewer seasons than the results do');
       if(span.seasons <= 2) flags.push('only ' + span.seasons + ' season' + (span.seasons === 1 ? '' : 's') + ' on file');
-      if(!a.age) flags.push('age still unknown — not in the import');
+      if(!a.age) flags.push(topGrade || a.grade
+        ? 'no age on file — their year stands in, shown as ~' + (GRADE_TYPICAL_AGE[gradeLadderIndex(topGrade || a.grade)] || '?')
+        : 'no age and no year on file — youth guardrails cannot apply');
       return { id: a.id, name: a.name, first: span.firstYear, last: span.lastYear,
                seasons: span.seasons, years: span.years, dateSpan: span.dateSpan,
                gradeSpan: span.gradeSpan, grade: a.grade ? '' : topGrade, flags };
@@ -13676,7 +13706,7 @@ function updateChip(){
     }
   } else {
     n.textContent=A.name;
-    m.textContent=`${A.age||'?'}${A.sex||''} · ${A.primaryEvent||''} · ${count} in roster`;
+    m.textContent=`${athleteAgeLabel(A)}${A.sex||''} · ${A.primaryEvent||''} · ${count} in roster`;
     if(chip){
       chip.setAttribute('onclick', "goTo(athleteDecisionScreen(A),null)");
       chip.setAttribute('onkeydown', "if(event.key==='Enter'||event.key===' ')goTo(athleteDecisionScreen(A),null)");
