@@ -97,7 +97,21 @@ function builder(table){
   return b;
 }
 sbClient = { from: (t) => builder(t),
-  rpc: (name, args) => { calls.push({ table:'rpc:'+name, op:'rpc', payload:args, filters:{} }); return Promise.resolve({ error: null }); } };
+  // import_local_athlete is an upsert keyed on client_ref: model the fields the
+  // roster round-trip depends on, so a probe can prove a value SURVIVES the
+  // write + re-read rather than merely that a call was made.
+  rpc: (name, args) => {
+    calls.push({ table:'rpc:'+name, op:'rpc', payload:args, filters:{} });
+    const a = args && args.local_athlete;
+    if(name === 'import_local_athlete' && a){
+      let row = TABLES.athletes.find(r => r.client_ref === String(a.id));
+      if(!row){ row = { id:'row-new-'+String(a.id), client_ref:String(a.id), coach_id:'coach-1', deleted_at:null }; TABLES.athletes.push(row); }
+      row.display_name = a.name;
+      row.training_age_years = Number(a.trainingAge) || 0;
+      row.race_date = a.raceDate || row.race_date || null;
+    }
+    return Promise.resolve({ error: null });
+  } };
 sbUser = { id: 'coach-1' };
 sbCoachReady = true;
 sbRole = null;
@@ -109,20 +123,20 @@ const mk = (o) => Object.assign({ secondaryEvents:[], additionalPRs:{}, guardrai
 // inferring "uuid local id == cloud row id" would target a nonexistent row.
 const UUID_REF = '11111111-1111-4111-8111-111111111111';
 const ROWS = [
-  { local:'r1', row:'row-a1', ref:'r1',     name:'Riley Chen', created:'2026-01-01', ev:'5K',    m:5000, t:'16:25.50' },
-  { local:'r2', row:'row-a2', ref:'r2',     name:'Riley Chen', created:'2026-01-02', ev:'1600m', m:1600, t:'4:52.46' },
-  { local:'r3', row:'row-a3', ref:'r3',     name:'Riley Chen', created:'2026-01-03', ev:'3200m', m:3200, t:'9:43.74' },
-  { local:UUID_REF, row:'row-a4', ref:UUID_REF, name:'Riley Chen', created:'2026-01-04', ev:'800m', m:800, t:'2:05.00' },
-  { local:'d1', row:'row-d1', ref:'d1',     name:'Dana Ruiz',  created:'2026-01-05', ev:'800m',  m:800,  t:'1:53.51' }
+  { local:'r1', row:'row-a1', ref:'r1',     name:'Riley Chen', created:'2026-01-01', ev:'5K',    m:5000, t:'16:25.50', d:'2021-11-06' },
+  { local:'r2', row:'row-a2', ref:'r2',     name:'Riley Chen', created:'2026-01-02', ev:'1600m', m:1600, t:'4:52.46', d:'2023-04-01' },
+  { local:'r3', row:'row-a3', ref:'r3',     name:'Riley Chen', created:'2026-01-03', ev:'3200m', m:3200, t:'9:43.74', d:'2024-05-11' },
+  { local:UUID_REF, row:'row-a4', ref:UUID_REF, name:'Riley Chen', created:'2026-01-04', ev:'800m', m:800, t:'2:05.00', d:'2026-03-02' },
+  { local:'d1', row:'row-d1', ref:'d1',     name:'Dana Ruiz',  created:'2026-01-05', ev:'800m',  m:800,  t:'1:53.51', d:'2025-05-02' }
 ];
 const seed = () => {
   TABLES = {
-    athletes: ROWS.map(r => ({ id:r.row, client_ref:r.ref, coach_id:'coach-1', deleted_at:null, display_name:r.name })),
+    athletes: ROWS.map(r => ({ id:r.row, client_ref:r.ref, coach_id:'coach-1', deleted_at:null, display_name:r.name, race_date:r.d })),
     workouts: [{ id:'w1', athlete_id:'row-a3', coach_id:'coach-1', deleted_at:null },
                { id:'w2', athlete_id:'row-a4', coach_id:'coach-1', deleted_at:null }]
   };
   DB = { athletes: ROWS.map(r => mk({ id:r.local, supabaseId:r.row, name:r.name, createdAt:r.created,
-           raceDistance:r.ev, raceDistanceM:r.m, raceTime:r.t })),
+           raceDistance:r.ev, raceDistanceM:r.m, raceTime:r.t, raceDate:r.d })),
          workouts:[{ id:'w1', athleteId:'r3', date:'2026-02-01' }], activeAthleteId:'r3' };
   A = DB.athletes[2];
 };
@@ -144,9 +158,30 @@ loadRemoteAthletes = async function(){
   __out.reloads++;
   if(!reloadOk) return { ok:false, reason:'remote_load_failed' };
   DB.athletes = TABLES.athletes.filter(r => !r.deleted_at)
-    .map(r => mk({ id: r.client_ref || r.id, supabaseId: r.id, name: r.display_name }));
+    .map(r => mk({ id: r.client_ref || r.id, supabaseId: r.id, name: r.display_name,
+                   trainingAge: r.training_age_years || 0 }));
   return { ok:true, reason:'' };
 };
+
+const LIVE_CLIENT = sbClient;
+__out.repair = (scenario) => (async () => {
+  // Probe 8 signs the session out; restore it so this scenario is not silently
+  // testing the signed-out path.
+  sbClient = LIVE_CLIENT; sbUser = { id:'coach-1' }; sbCoachReady = true; sbRole = null;
+  __calls.length = 0; __toasts.length = 0;
+  Object.keys(__fail).forEach(k => delete __fail[k]);
+  Object.assign(__fail, scenario || {});
+  __out.seed();
+  // The state a coach is actually in: already merged, every athlete at 0 yrs.
+  DB.athletes = [ mk({ id:'r1', supabaseId:'row-a1', name:'Riley Chen', trainingAge:0 }),
+                  mk({ id:'d1', supabaseId:'row-d1', name:'Dana Ruiz',  trainingAge:0 }) ];
+  await loadTrainingAgeArchive();
+  const preview = JSON.parse(JSON.stringify(trainingAgeRepair));
+  if(preview.stage === 'preview') await applyTrainingAgeRepair();
+  return { preview, ages: DB.athletes.map(a => [a.name, a.trainingAge]),
+           rpcs: __calls.filter(c => c.op === 'rpc').map(c => c.payload.local_athlete.trainingAge),
+           toasts: __toasts.slice() };
+})();
 
 __out.run = (scenario) => (async () => {
   __calls.length = 0; __toasts.length = 0;
@@ -163,6 +198,7 @@ __out.run = (scenario) => (async () => {
     liveRows: TABLES.athletes.filter(r => !r.deleted_at).map(r => r.id).sort(),
     deletedRows: TABLES.athletes.filter(r => r.deleted_at).map(r => r.id).sort(),
     workoutOwners: TABLES.workouts.map(w => w.athlete_id).sort(),
+    trainingAges: DB.athletes.map(a => [a.name, a.trainingAge]),
     calls: __calls.map(c => ({ table:c.table, op:c.op, filters:c.filters, payload:c.payload })),
     toasts: __toasts.slice()
   };
@@ -254,5 +290,30 @@ vm.runInContext(`
 const offline = await ctx.__out.offline;
 ok(offline.skipped === true, 'with no cloud session the merge reports skipped, not success');
 ok(offline.ok === false, 'a local-only merge is never reported as ok');
+
+// ══ 9. Years training is derived, never left as a false 0.0 ══════════════
+// A per-race-row import stored no training age, so 13 real multi-season
+// runners merged at "0.0yr" and landed on beginner guardrails.
+ok(good.trainingAges.some(([n, v]) => n === 'Riley Chen' && v === 5),
+   'the merge derives years training from the span of the group (2021→2026 = 5): ' + JSON.stringify(good.trainingAges));
+ok(!/\$\{\(a\.trainingAge\|\|0\)\.toFixed\(1\)\}yr/.test(html),
+   'the roster card no longer prints an unknown training age as the fact "0.0yr"');
+ok(/yrs not set/.test(html) && /years training not set/.test(html),
+   'an unknown training age reads as not set, on both the card and the hero');
+
+// The repair for a roster ALREADY merged at 0: derive from archived seasons.
+const rep = await ctx.__out.repair();
+ok(rep.preview.stage === 'preview', 'the repair previews before writing: ' + rep.preview.stage);
+ok(rep.preview.plan.length === 1 && rep.preview.plan[0].name === 'Riley Chen',
+   'only multi-season athletes are proposed; a single-season one is left alone: ' + JSON.stringify(rep.preview.plan.map(p => p.name)));
+ok(rep.preview.plan[0].years === 5, 'the derived span is first→last season on file: ' + JSON.stringify(rep.preview.plan[0]));
+ok(rep.ages.some(([n, v]) => n === 'Riley Chen' && v === 5), 'applying sets the local value: ' + JSON.stringify(rep.ages));
+ok(rep.ages.some(([n, v]) => n === 'Dana Ruiz' && v === 0), 'an athlete with one season is untouched: ' + JSON.stringify(rep.ages));
+ok(rep.rpcs.includes(5), 'the new value is pushed to the account, not just the device: ' + JSON.stringify(rep.rpcs));
+ok(/years training set/i.test(rep.toasts.join(' | ')), 'the coach is told it saved: ' + rep.toasts.join(' | '));
+
+const repFail = await ctx.__out.repair({ 'athletes:select': 'network error' });
+ok(repFail.preview.stage === 'error', 'a failed history read is surfaced, not silently empty: ' + repFail.preview.stage);
+ok(repFail.ages.every(([, v]) => v === 0), 'nothing is written when the history could not be read');
 
 console.log(`roster merge cloud probes ok — ${assertions} assertions`);

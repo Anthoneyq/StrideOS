@@ -4693,10 +4693,10 @@ function renderOverview(){
     <div class="hero-stats">
       <div class="hero-primary">
         <p class="hero-name">${esc(A.name)}</p>
-        <p class="hero-meta">${esc(A.age||'?')} · ${esc(A.sex||'?')} · ${esc(A.grade||'')} · ${esc(String(A.trainingAge||0))} yrs training</p>
+        <p class="hero-meta">${esc(A.age||'?')} · ${esc(A.sex||'?')} · ${esc(A.grade||'')} · ${A.trainingAge > 0 ? esc(String(A.trainingAge)) + ' yrs training' : 'years training not set'}</p>
         <div class="tag-row">
           <span class="tag tag-a">${esc(A.primaryEvent)} PRIMARY</span>
-          <span class="tag">${esc(getTier(A.trainingAge))} — ${esc(String(A.trainingAge||0))} yrs</span>
+          <span class="tag">${A.trainingAge > 0 ? esc(getTier(A.trainingAge)) + ' — ' + esc(String(A.trainingAge)) + ' yrs' : 'Years training not set'}</span>
           <span class="tag tag-g">${esc(getType(A.primaryEvent))}</span>
         </div>
       </div>
@@ -11302,6 +11302,7 @@ function renderRoster(){
       <strong>${visible.length} athlete${visible.length>1?'s':''} in roster.</strong> Click an athlete card to make them active across all screens. The <strong style="color:var(--accent)">+ New Athlete</strong> button adds without replacing anyone.
     </div>
     ${duplicateRepairBannerHtml()}
+    ${trainingAgeRepairBannerHtml()}
     ${duplicateRepairPreviewHtml()}
     ${rosterFilterBarHtml(visible)}
     <div id="ro-list">${rosterListHtml(visible)}</div>
@@ -11822,7 +11823,7 @@ function athleteCard(a){
     <div style="background:${isActive?'var(--accent-soft)':'var(--bg-el)'};border:1px solid ${isActive?'var(--accent)':'var(--border)'};border-radius:.5rem;padding:1.25rem;position:relative">
       ${isActive ? '<div style="position:absolute;top:.5rem;right:.5rem;font-family:\'JetBrains Mono\',monospace;font-size:.625rem;color:var(--accent);letter-spacing:.0625rem">● ACTIVE</div>' : ''}
       <p style="font-family:var(--font-display);font-size:1.375rem;font-weight:400;letter-spacing:-.0625rem;margin-bottom:.25rem;padding-right:4rem">${esc(a.name)} ${inviteBadge}</p>
-      <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin-bottom:.875rem">${esc(a.age||'?')}${esc(a.sex||'')} · ${esc(a.primaryEvent)} · ${(a.trainingAge||0).toFixed(1)}yr</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--dim);margin-bottom:.875rem">${esc(a.age||'?')}${esc(a.sex||'')} · ${esc(a.primaryEvent)} · ${a.trainingAge > 0 ? (a.trainingAge).toFixed(1) + 'yr' : 'yrs not set'}</p>
 
       <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.75rem;margin-bottom:.625rem">
         <span style="color:var(--dim)">Primary PR</span>
@@ -12640,6 +12641,135 @@ function _athleteNameKey(a){
   return String((a && a.name) || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// ── YEARS TRAINING REPAIR ────────────────────────────────────────────────
+// The 2026-08-04 case: a roster imported one-row-per-race by the OLD importer
+// stored no training age, so every athlete merged at 0.0yr — which puts real
+// multi-season runners on beginner guardrails and the most conservative paces.
+// The seasons are still on file: each archived (soft-deleted) row carries the
+// race date of one result, so the span is recoverable from the coach's own
+// history. Derived, previewed, and applied only on his say-so.
+let trainingAgeRepair = { stage:'idle', plan:[], error:'' };
+
+function athletesMissingTrainingAge(){
+  return (DB.athletes || []).filter(a => !(Number(a.trainingAge) > 0));
+}
+
+function trainingAgeRepairBannerHtml(){
+  if(!sbUser || isAthleteOnly()) return '';
+  const missing = athletesMissingTrainingAge();
+  const st = trainingAgeRepair;
+  if(!missing.length && st.stage === 'idle') return '';
+
+  if(st.stage === 'preview' && st.plan.length){
+    const rows = st.plan.map(p => `
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.5rem 1rem;font-family:var(--font-display)">${esc(p.name)}</td>
+        <td style="padding:.5rem 1rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">${p.first}–${p.last} · ${p.seasons} season${p.seasons===1?'':'s'} on file</td>
+        <td style="padding:.5rem 1rem;text-align:right;font-family:var(--font-mono);color:var(--accent)">${p.years} yr${p.years===1?'':'s'}</td>
+      </tr>`).join('');
+    return `
+    <div class="card" style="border-color:var(--accent-line);background:var(--accent-soft)">
+      <p class="card-title"><span>Years training, from your own race history</span><span class="card-accent">REVIEW</span></p>
+      <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-2);line-height:1.7;margin:.5rem 0 .875rem">
+        Each athlete's span is the first to the last season on file — the same rule the importer uses. Nothing else on their profile changes, and athletes with a single season are left for you to set by hand.
+      </p>
+      <div style="overflow-x:auto;margin-bottom:.875rem"><table style="width:100%;border-collapse:collapse">${rows}</table></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="applyTrainingAgeRepair()">Set years training for ${st.plan.length} athlete${st.plan.length===1?'':'s'}</button>
+        <button class="btn" onclick="cancelTrainingAgeRepair()">Cancel</button>
+      </div>
+    </div>`;
+  }
+
+  const busy = st.stage === 'loading' || st.stage === 'saving';
+  const note = st.stage === 'error'
+    ? `<strong style="color:var(--red)">${esc(st.error)}</strong>`
+    : st.stage === 'empty'
+      ? 'No multi-season history on file for them — set years training by hand on each profile.'
+      : `${missing.length} athlete${missing.length===1?'':'s'} have no years training, so they are being treated as beginners: the most conservative paces and guardrails. Your archived season history can fill it in.`;
+  return `
+    <div class="card">
+      <p class="card-title"><span>Years training missing</span><span class="card-accent">${busy ? 'WORKING' : 'FIXABLE'}</span></p>
+      <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-2);line-height:1.7;margin:.5rem 0 .875rem">${note}</p>
+      ${st.stage === 'empty' ? '' : `<div class="btn-row">
+        <button class="btn btn-primary" onclick="loadTrainingAgeArchive()"${busy ? ' disabled' : ''}>${busy ? 'Reading your history…' : 'Derive from race history →'}</button>
+      </div>`}
+    </div>`;
+}
+
+function cancelTrainingAgeRepair(){
+  trainingAgeRepair = { stage:'idle', plan:[], error:'' };
+  renderRoster();
+}
+
+// Reads every athlete row this coach owns — live AND archived — because the
+// per-race rows absorbed by a merge are exactly where the season dates live.
+async function loadTrainingAgeArchive(){
+  if(!sbClient || !sbUser || !sbCoachReady || isAthleteOnly()){
+    toast('Sign in to read your archived season history');
+    return;
+  }
+  trainingAgeRepair = { stage:'loading', plan:[], error:'' };
+  renderRoster();
+  try{
+    const { data, error } = await sbClient
+      .from('athletes').select('display_name, race_date')
+      .eq('coach_id', sbUser.id);
+    if(error) throw error;
+    const yearsByName = new Map();
+    (data || []).forEach(r => {
+      const y = parseInt(String(r.race_date || '').slice(0, 4), 10);
+      if(!(y > 1900)) return;
+      const key = _athleteNameKey({ name: r.display_name });
+      if(!key) return;
+      if(!yearsByName.has(key)) yearsByName.set(key, new Set());
+      yearsByName.get(key).add(y);
+    });
+    const plan = athletesMissingTrainingAge().map(a => {
+      const ys = [...(yearsByName.get(_athleteNameKey(a)) || [])].sort((x, y) => x - y);
+      return { id: a.id, name: a.name, first: ys[0] || null, last: ys[ys.length-1] || null,
+               seasons: ys.length, years: ys.length > 1 ? ys[ys.length-1] - ys[0] : 0 };
+    }).filter(p => p.years > 0);
+    trainingAgeRepair = { stage: plan.length ? 'preview' : 'empty', plan, error:'' };
+  }catch(err){
+    console.warn('training age archive read failed', err);
+    trainingAgeRepair = { stage:'error', plan:[], error: (err && err.message) || 'Could not read your season history' };
+  }
+  renderRoster();
+}
+
+async function applyTrainingAgeRepair(){
+  if(!requireCoachWorkspace('set years training')) return;
+  const plan = (trainingAgeRepair.plan || []).slice();
+  if(!plan.length) return;
+
+  plan.forEach(p => {
+    const a = DB.athletes.find(x => x.id === p.id);
+    if(!a) return;
+    a.trainingAge = p.years;
+    a.trainingAgeDerived = true;
+    a.updatedAt = new Date().toISOString();
+  });
+  saveDB(DB);
+  refreshActiveAthlete();
+  updateChip();
+  trainingAgeRepair = { stage:'saving', plan, error:'' };
+  renderRoster();
+
+  let failed = 0;
+  for(const p of plan){
+    const a = DB.athletes.find(x => x.id === p.id);
+    if(!a) continue;
+    const res = await syncAthleteToSupabase(a);
+    if(!res || !res.ok) failed++;
+  }
+  trainingAgeRepair = { stage:'idle', plan:[], error:'' };
+  renderRoster();
+  toast(failed
+    ? `Years training set — ${failed} did not save to your account and may revert at next sign-in`
+    : `Years training set for ${plan.length} athlete${plan.length===1?'':'s'}`);
+}
+
 function duplicateAthleteGroups(){
   const map = new Map();
   (DB.athletes || []).forEach(a => {
@@ -12706,8 +12836,23 @@ function mergeAthleteGroup(group){
   const grade = (byRecency.map(a => String(a.grade || '').trim()).find(Boolean)) || '';
 
   // Years training: the sheet may have carried it on only one row, and a
-  // per-race-row import left it at 0 everywhere. Take the largest stated value.
-  const trainingAge = Math.max(0, ...ordered.map(a => Number(a.trainingAge) || 0));
+  // per-race-row import left it at 0 everywhere. Take the largest stated value,
+  // and when nobody states one, DERIVE it from the span of race dates in the
+  // group — a runner with marks from 2021 to 2026 has been training 5 years and
+  // must not be merged onto beginner guardrails and the most conservative
+  // paces. Same span-not-count rule the importer uses; one season stays 0 so
+  // the roster still asks. (2026-08-04: the 13 merged athletes all read 0.0yr.)
+  const seasonYears = new Set();
+  ordered.forEach(a => {
+    collectAllPRs(a).forEach(pr => {
+      const y = parseInt(String(pr.raceDate || '').slice(0, 4), 10);
+      if(y > 1900) seasonYears.add(y);
+    });
+  });
+  const spanYears = [...seasonYears].sort((x, y) => x - y);
+  const derivedSpan = spanYears.length > 1 ? spanYears[spanYears.length - 1] - spanYears[0] : 0;
+  const statedTrainingAge = Math.max(0, ...ordered.map(a => Number(a.trainingAge) || 0));
+  const trainingAge = statedTrainingAge > 0 ? statedTrainingAge : derivedSpan;
   const mileages = ordered.map(a => Number(a.weeklyMileage)).filter(v => isFinite(v) && v > 0);
 
   return {
