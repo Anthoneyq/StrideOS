@@ -20,7 +20,7 @@
 <meta name="twitter:image" content="https://strideos.thecoachlab.app/og-card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -51,30 +51,42 @@ window.strideTrack = function(ev, params){ try{ if(window.fbq) window.fbq('track
 </script>
 <style>
 :root {
-  /* DEEP BASE — anthoneyq-family blue-black, more depth than pure black */
-  --bg: #0B0D0F;
-  --bg-el: #14171A;
-  --bg-card: #16191D;
-  --bg-raised: #1f2329;
+  /* ── SURFACE LADDER (2026-08-04 redesign) ────────────────────────────
+     The old ramp had --bg-el #14171A and --bg-card #16191D two points
+     apart, so a card inside a panel inside a screen all read as the same
+     grey and the eye got no hierarchy. Each step below is a perceptible
+     ~5–7 points of lightness, so nesting reads as depth without needing
+     a border on every box. */
+  --bg: #08090B;          /* canvas — deepest, behind everything */
+  --bg-sunken: #050607;   /* wells: inputs, tracks, chart plots */
+  --bg-el: #101317;       /* level 1 — quiet panel */
+  --bg-card: #15181D;     /* level 2 — the standard card */
+  --bg-raised: #1D2126;   /* level 3 — hover / popover / active */
+  --bg-float: #23272E;    /* level 4 — menus, modals over content */
 
-  /* Borders graduate from subtle to defined */
-  --border: rgba(255,255,255,.06);
-  --border-s: rgba(255,255,255,.12);
-  --border-h: rgba(255,255,255,.22);
+  /* Hairlines. Most surfaces should lean on the ladder above and use only
+     --border; --border-s and --border-h are for controls that must read as
+     interactive. */
+  --border: rgba(255,255,255,.055);
+  --border-s: rgba(255,255,255,.10);
+  --border-h: rgba(255,255,255,.20);
 
   /* Text hierarchy: near-white at top, fading down */
-  --text: #F5F7FA;
-  --text-2: #b4bcc6;
-  --text-3: #828a94;
-  --text-4: #565d66;
-  --dim: #b4bcc6;
-  --faint: #565d66;
+  --text: #F7F8FA;
+  --text-2: #AEB6C0;
+  --text-3: #7C848E;
+  --text-4: #575E67;
+  --dim: #AEB6C0;
+  --faint: #575E67;
 
-  /* ACCENT — STRIDE orange, used only for primary action + active selection */
-  --accent: #ff6b35;
-  --accent-2: #ff8a4c;
-  --accent-soft: rgba(255,107,53,.10);
-  --accent-line: rgba(255,107,53,.35);
+  /* ACCENT — STRIDE orange. POLICY: at most ONE accent-filled control per
+     view. Everything else uses .btn (quiet) or .btn-ghost. Orange marks the
+     single next action and the active selection; it is not a button style. */
+  --accent: #FF6B35;
+  --accent-2: #FF8A4C;
+  --accent-hot: #FF5A1F;
+  --accent-soft: rgba(255,107,53,.09);
+  --accent-line: rgba(255,107,53,.32);
 
   /* SEMANTIC — used only when meaning is required */
   --green: #4ade80;     /* success / strength / fresh */
@@ -82,64 +94,118 @@ window.strideTrack = function(ev, params){ try{ if(window.fbq) window.fbq('track
   --red: #ef4444;       /* error / gap / expired */
   --gold: #d4a017;      /* legacy, retained for ceilings only */
 
-  /* TYPE — one modern grotesque, three roles (2026-08-04). The monospace layer
-     (JetBrains Mono) read as "military / digital readout" on numbers and made
-     labels feel like terminal output, so it is gone. Archivo carries display,
-     Inter carries everything else, and digits are tabular everywhere so times
-     still align in columns without a typewriter face.
+  /* TYPE — a grotesque system with one editorial voice (2026-08-04).
+     Archivo carries display, Inter carries everything else, digits are
+     tabular everywhere so times align in columns. Instrument Serif italic
+     is the ACCENT VOICE: it replaces the orange-highlighter treatment on
+     headline words, which read as a marker pen rather than a design choice.
      --font-mono is kept as a TOKEN NAME ONLY (152+ call sites); it is a sans. */
   --font-display: 'Archivo','Inter',-apple-system,sans-serif;
+  --font-accent: 'Instrument Serif','Iowan Old Style',Georgia,serif;
   --font-stat: 'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   --font-ui: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --font-mono: 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
-  /* DEPTH SYSTEM — premium motion + glass + glow (anthoneyq DNA) */
+  /* TYPE SCALE — fluid, one ramp for the whole product */
+  --t-hero: clamp(2.75rem, 7.2vw, 6.5rem);
+  --t-display: clamp(2.25rem, 4.6vw, 3.75rem);
+  --t-title: clamp(1.5rem, 2.6vw, 2.125rem);
+  --t-head: 1.25rem;
+  --t-body: .9375rem;
+  --t-small: .8125rem;
+  --t-label: .6875rem;
+
+  /* SPACE + RADIUS — a real scale, so gaps stop being ad-hoc decimals */
+  --s1:.25rem; --s2:.5rem; --s3:.75rem; --s4:1rem; --s5:1.5rem;
+  --s6:2rem; --s7:3rem; --s8:4.5rem; --s9:7rem;
+  --r-sm:.5rem; --r-md:.75rem; --r-lg:1.125rem; --r-xl:1.75rem; --r-pill:999px;
+
+  /* MOTION — one easing family. --ease-out for entrances, --ease-spring for
+     controls that should feel physical under the cursor. */
   --ease: cubic-bezier(.22,.61,.36,1);
-  --shadow-card: 0 1px 0 rgba(255,255,255,.04) inset, 0 18px 44px -26px rgba(0,0,0,.75);
-  --glow-accent: 0 10px 30px -8px rgba(255,107,53,.45);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --dur-fast: .16s; --dur: .28s; --dur-slow: .6s;
+
+  /* DEPTH — layered rather than one flat drop */
+  --shadow-card: 0 1px 0 rgba(255,255,255,.035) inset, 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -20px rgba(0,0,0,.9);
+  --shadow-float: 0 1px 0 rgba(255,255,255,.05) inset, 0 24px 64px -24px rgba(0,0,0,.95), 0 2px 8px rgba(0,0,0,.5);
+  --glow-accent: 0 8px 26px -10px rgba(255,107,53,.55);
+  --ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html{font-size:16px}
-body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;font-variant-numeric:tabular-nums}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;min-height:100vh;overflow-x:hidden;font-variant-numeric:tabular-nums;text-rendering:optimizeLegibility}
 /* Display voice — Archivo (heavy, tight): athletic high-performance headlines + big numbers */
 .display,h1,h2.scr{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em}
 .stat-num,.big-stat{font-family:var(--font-stat);font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-/* Ambient orange depth field — fixed glow behind all content (anthoneyq DNA, STRIDE orange) */
-body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+
+/* THE ACCENT VOICE — Instrument Serif italic. One or two words per headline,
+   never a whole line. This replaced `em{color:orange}`, which read as a
+   highlighter pen; a contrasting serif reads as typography instead. */
+.said{font-family:var(--font-accent);font-style:italic;font-weight:400;letter-spacing:-.01em;
+  /* Serif italic at a display weight sits optically small next to Archivo 800,
+     so it is scaled up and nudged onto the same baseline. */
+  font-size:1.14em;line-height:.9;padding-right:.04em}
+.said-hot{color:var(--accent-2)}
+
+/* Ambient depth field — a fixed, slowly breathing ember behind all content.
+   Two layers: warm light from the top-right, a cooler counter-glow bottom-left
+   so the field has direction instead of reading as an even orange wash. */
+body::before{content:"";position:fixed;inset:-20% -10%;z-index:0;pointer-events:none;
   background:
-    radial-gradient(900px 620px at 80% -10%, rgba(255,107,53,.11), transparent 60%),
-    radial-gradient(760px 560px at 2% 6%, rgba(255,138,76,.06), transparent 55%),
-    radial-gradient(1100px 820px at 50% 122%, rgba(255,107,53,.055), transparent 62%);}
-body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
-  background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
-  background-size:64px 64px;
-  -webkit-mask-image:radial-gradient(circle at 60% 18%,#000,transparent 78%);mask-image:radial-gradient(circle at 60% 18%,#000,transparent 78%);}
+    radial-gradient(52% 42% at 82% -6%, rgba(255,107,53,.13), transparent 62%),
+    radial-gradient(44% 40% at 4% 10%, rgba(255,138,76,.05), transparent 60%),
+    radial-gradient(60% 45% at 46% 118%, rgba(120,150,255,.045), transparent 64%);
+  animation:emberDrift 34s var(--ease) infinite alternate}
+@keyframes emberDrift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-2.5%,1.5%,0) scale(1.06)}}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.45;
+  background-image:linear-gradient(rgba(255,255,255,.014) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.014) 1px,transparent 1px);
+  background-size:72px 72px;
+  -webkit-mask-image:radial-gradient(circle at 62% 14%,#000,transparent 76%);mask-image:radial-gradient(circle at 62% 14%,#000,transparent 76%);}
+
+/* SCROLL REVEAL — IntersectionObserver adds .in. Progressive enhancement:
+   the .reveal class is only applied by JS, so with JS off nothing is hidden. */
+.reveal{opacity:0;transform:translateY(1.5rem);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out)}
+.reveal.in{opacity:1;transform:none}
+.reveal-d1{transition-delay:.08s}.reveal-d2{transition-delay:.16s}.reveal-d3{transition-delay:.24s}.reveal-d4{transition-delay:.32s}
 
 /* LAYOUT */
-.app{display:grid;grid-template-columns:15rem 1fr;min-height:100vh;position:relative;z-index:1}
+.app{display:grid;grid-template-columns:16rem 1fr;min-height:100vh;position:relative;z-index:1}
 .mobile-appbar,.mobile-nav-scrim,.mobile-menu-close{display:none}
 
-/* SIDEBAR */
-.sidebar{background:#050505;border-right:1px solid var(--border);padding:2rem 1.25rem;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow-y:auto}
-.brand{margin-bottom:3rem}
-.brand-mark{display:flex;align-items:center;gap:.625rem;margin-bottom:.25rem}
-.brand-logo{width:2rem;height:2rem;background:var(--text);border-radius:.25rem;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.125rem;color:var(--bg);font-family:var(--font-mono);flex-shrink:0}
-.brand-name{font-family:var(--font-mono);font-weight:700;font-size:1rem;letter-spacing:.0625rem}
-.brand-tag{font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-family:var(--font-mono);margin-left:2.625rem}
+/* SIDEBAR — a quiet rail. It should read as furniture, not as a second
+   competing surface, so it sits DARKER than the canvas with a single
+   fading hairline instead of a hard border down the full height. */
+.sidebar{background:linear-gradient(180deg,#050607,#07080A 40%,#050607);padding:1.75rem 1rem 1.25rem;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:thin}
+.sidebar::after{content:"";position:absolute;top:0;right:0;width:1px;height:100%;
+  background:linear-gradient(180deg,transparent,rgba(255,255,255,.09) 12%,rgba(255,255,255,.09) 78%,transparent)}
+.brand{margin-bottom:2.25rem;padding:0 .5rem}
+.brand-mark{display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem}
+.brand-logo{width:2.125rem;height:2.125rem;background:linear-gradient(145deg,#FFF,#C9CED6);border-radius:.6rem;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.0625rem;color:#08090B;font-family:var(--font-display);flex-shrink:0;box-shadow:0 2px 10px -4px rgba(0,0,0,.9),inset 0 -1px 0 rgba(0,0,0,.18)}
+.brand-name{font-family:var(--font-display);font-weight:800;font-size:.9375rem;letter-spacing:.09em}
+.brand-tag{font-size:.625rem;letter-spacing:.1em;color:var(--text-4);text-transform:uppercase;font-family:var(--font-ui);font-weight:600;margin-left:2.725rem;line-height:1.4}
 .mobile-menu-btn{display:none;min-width:2.75rem;min-height:2.75rem;align-items:center;justify-content:center;gap:.5rem;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.5rem;color:var(--text);font-family:var(--font-mono);font-size:.75rem;letter-spacing:.04em;cursor:pointer}
 .mobile-menu-btn:hover{border-color:var(--border-h);background:var(--bg-raised)}
 .mobile-menu-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mobile-menu-icon{font-size:1rem;line-height:1}
-.nav-section{margin-bottom:2rem}
-.nav-section-label{font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;margin-bottom:.5rem;padding:0 .75rem}
+.nav-section{margin-bottom:1.5rem}
+.nav-section-label{font-family:var(--font-ui);font-size:.625rem;font-weight:700;letter-spacing:.11em;color:var(--text-4);text-transform:uppercase;margin-bottom:.4rem;padding:0 .75rem}
 .nav-list{list-style:none}
-.nav-btn{display:flex;align-items:center;gap:.75rem;width:100%;padding:.625rem .75rem;border:none;border-radius:.375rem;background:transparent;color:var(--dim);font-family:var(--font-mono);font-size:.875rem;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;margin-bottom:.125rem}
-.nav-btn:hover{background:var(--bg-el);color:var(--text)}
-.nav-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.nav-btn[aria-current="page"]{background:var(--bg-raised);color:var(--text);border-left:.1875rem solid var(--text);padding-left:.5625rem}
+/* Active state is a filled pill with an accent bar, animated in from the left.
+   The old treatment (a border-left plus a compensating padding shift) made the
+   label jump 3px sideways whenever the route changed. */
+.nav-btn{position:relative;display:flex;align-items:center;gap:.7rem;width:100%;min-height:2.5rem;padding:.55rem .75rem;border:none;border-radius:.55rem;background:transparent;color:var(--text-2);font-family:var(--font-ui);font-size:.875rem;font-weight:500;letter-spacing:-.005em;cursor:pointer;text-align:left;transition:background var(--dur-fast) var(--ease),color var(--dur-fast) var(--ease);margin-bottom:.0625rem}
+.nav-btn::before{content:"";position:absolute;left:0;top:50%;width:2px;height:0;border-radius:0 2px 2px 0;background:var(--accent);transform:translateY(-50%);transition:height var(--dur) var(--ease-out)}
+.nav-btn:hover{background:rgba(255,255,255,.045);color:var(--text)}
+.nav-btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.nav-btn[aria-current="page"]{background:rgba(255,255,255,.075);color:var(--text);font-weight:600}
+.nav-btn[aria-current="page"]::before{height:1.15rem}
+.nav-btn[aria-current="page"] .nav-icon{color:var(--accent);opacity:1}
 .nav-btn.new{color:var(--text)}
-.nav-btn.new:hover{background:var(--accent-soft);color:var(--accent)}
-.nav-icon{font-size:.875rem;width:1.125rem;text-align:center}
+.nav-btn.new:hover{background:var(--accent-soft);color:var(--accent-2)}
+.nav-icon{font-size:.8125rem;width:1.125rem;text-align:center;opacity:.55;transition:opacity var(--dur-fast) var(--ease)}
+.nav-btn:hover .nav-icon{opacity:.9}
 .workspace-locked [data-auth-scope="workspace"],.workspace-locked #athleteNavSection,.workspace-locked #activeAthleteChip,.workspace-locked #tierBanner{display:none!important}
 .athlete-only [data-coach-scope="coach"],.athlete-only #tierBanner{display:none!important}
 [data-athlete-scope="athlete"]{display:none!important}
@@ -200,7 +266,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .context-menu{position:absolute;right:0;top:calc(100% + .4rem);z-index:120;display:grid;min-width:12rem;padding:.35rem;background:#090b0d;border:1px solid var(--border-s);border-radius:.5rem;box-shadow:var(--shadow-card)}
 .context-menu button{min-height:2.5rem;border:0;border-radius:.35rem;background:transparent;color:var(--text-2);font-family:var(--font-mono);font-size:.6875rem;text-align:left;padding:.55rem .7rem;cursor:pointer}
 .context-menu button:hover{background:var(--bg-raised);color:var(--text)}
-.team-command-bar{display:grid;grid-template-columns:minmax(0,1.35fr) repeat(4,minmax(8rem,.65fr));gap:.75rem;margin-bottom:1rem}
+.team-command-bar{display:grid;grid-template-columns:minmax(0,1.35fr) repeat(5,minmax(7rem,.65fr));gap:.75rem;margin-bottom:1rem}
 .team-command-intro,.team-command-action{min-height:5rem;border:1px solid var(--border);border-radius:.65rem;background:var(--bg-card);padding:1rem}
 .team-command-intro{display:flex;flex-direction:column;justify-content:center}
 .team-command-intro strong{font-family:var(--font-display);font-size:1.05rem}
@@ -270,8 +336,18 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .xc-table th{font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;color:var(--text-4);text-transform:uppercase}
 .xc-table .num{text-align:right;font-family:var(--font-mono);white-space:nowrap}
 .xc-evidence{font-size:.625rem;color:var(--text-3);line-height:1.4;margin-top:.15rem}
+.online-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(18rem,.65fr);gap:1rem;align-items:start}
+.online-grid>*{min-width:0}
+.online-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1rem}
+.online-queue{display:grid;gap:.65rem}
+.queue-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.8rem;align-items:start;padding:1rem;background:var(--bg-el);border:1px solid var(--border);border-radius:.6rem}
+.queue-kind{font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);white-space:nowrap}
+.queue-copy strong{display:block;font-size:.9rem}.queue-copy span{display:block;font-size:.75rem;line-height:1.5;color:var(--text-2);margin-top:.15rem}
+.program-session-grid{display:grid;grid-template-columns:4.5rem 5.5rem minmax(8rem,1fr) 7rem minmax(12rem,1.5fr);gap:.5rem;align-items:end}
+.race-execution-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
 @media(max-width:900px){.xc-layout{grid-template-columns:1fr}.xc-summary{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){#xc-body,.xc-layout,.xc-layout>.brief-panel{min-width:0;max-width:100%}.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary{grid-template-columns:1fr}.xc-layout .brief-panel-head{align-items:flex-start;flex-direction:column}.xc-layout .brief-panel-tag{white-space:normal}}
+@media(max-width:900px){.online-grid{grid-template-columns:1fr}.online-metrics{grid-template-columns:1fr 1fr}.program-session-grid{grid-template-columns:1fr 1fr}.program-session-grid .program-wide{grid-column:1 / -1}}
+@media(max-width:520px){#xc-body,.xc-layout,.xc-layout>.brief-panel{min-width:0;max-width:100%}.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary,.online-metrics,.race-execution-grid{grid-template-columns:1fr}.xc-layout .brief-panel-head{align-items:flex-start;flex-direction:column}.xc-layout .brief-panel-tag{white-space:normal}.queue-item{grid-template-columns:1fr}.program-session-grid{grid-template-columns:1fr}.program-session-grid .program-wide{grid-column:auto}}
 @media(max-width:900px){.team-command-bar{grid-template-columns:1fr 1fr}.team-command-intro{grid-column:1 / -1}.athlete-context{top:4.65rem}}
 @media(max-width:600px){.athlete-context{align-items:stretch;flex-direction:column;gap:.55rem;padding:.65rem}.athlete-context-id{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-width:0}.athlete-context-name{max-width:65vw}.team-command-bar{grid-template-columns:1fr}.team-command-intro{grid-column:auto}.app-footer{align-items:flex-start;flex-direction:column}}
 .auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
@@ -351,11 +427,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .chip-meta{font-size:.6875rem;color:var(--dim);font-family:var(--font-mono);margin-top:.125rem}
 
 /* MAIN */
-main{padding:2.5rem 3.5rem;max-width:90rem}
+main{padding:3rem 3.5rem 4rem;max-width:88rem;width:100%}
 
 /* SCREENS */
 .screen{display:none}
-.screen.active{display:block;animation:fadeUp .35s ease}
+.screen.active{display:block;animation:fadeUp .42s var(--ease-out)}
 
 /* FRONT DOOR / HOME — the signed-out first impression (compact hero over a live tool) */
 .home-hero{max-width:48rem;padding:1.5rem 0 2.5rem}
@@ -448,24 +524,45 @@ body.workspace-locked .top-signin{display:block}
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(.5rem)}to{opacity:1;transform:translateY(0)}}
 
-/* SCREEN HEADER */
-.screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);gap:1rem;flex-wrap:wrap}
-.eyebrow{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.5rem}
-.eyebrow::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 1px var(--accent);margin-right:.5rem;vertical-align:middle;transform:translateY(-1px)}
-.screen-title{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.03em;line-height:1}
-.screen-title em{font-style:normal;font-weight:800;background:linear-gradient(120deg,#ff8a4c,#ff5a1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-.btn-row{display:flex;gap:.75rem;flex-wrap:wrap}
+/* SCREEN HEADER — no rule underneath. A 1px line under every title turned
+   each screen into a stack of boxed sections; space does the separating now. */
+.screen-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2.25rem;padding-bottom:0;border-bottom:0;gap:1.25rem;flex-wrap:wrap}
+.eyebrow{font-family:var(--font-ui);font-size:.6875rem;font-weight:700;letter-spacing:.14em;color:var(--text-3);text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center}
+.eyebrow::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px 1px rgba(255,107,53,.8);margin-right:.55rem;flex:0 0 auto}
+.screen-title{font-family:var(--font-display);font-weight:800;font-size:var(--t-display);letter-spacing:-.038em;line-height:.98}
+/* Every <em> in a heading is the editorial accent voice (see .said). */
+.screen-title em,.home-title em,.arch-title em,.upgrade-title em{font-family:var(--font-accent);font-style:italic;font-weight:400;letter-spacing:-.01em;font-size:1.1em;line-height:.9;-webkit-text-fill-color:currentColor;background:none;color:var(--accent-2)}
+.btn-row{display:flex;gap:.6rem;flex-wrap:wrap}
 
-/* BUTTONS */
-.btn{background:var(--bg-el);border:1px solid var(--border-s);color:var(--text);padding:.625rem 1.125rem;border-radius:.5rem;cursor:pointer;font-family:var(--font-mono);font-size:.75rem;letter-spacing:.0625rem;text-transform:uppercase;font-weight:500;text-shadow:0 1px 1px rgba(0,0,0,.35);transition:transform .25s var(--ease),border-color .2s,background .2s,box-shadow .25s var(--ease)}
-.btn:hover{border-color:var(--border-h);background:var(--bg-raised);transform:translateY(-1px)}
-.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
-.btn-primary{background:linear-gradient(135deg,#ff7e4d,#ff5a1f);border-color:transparent;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.30);box-shadow:var(--glow-accent),inset 0 1px 0 rgba(255,255,255,.25)}
-.btn-primary:hover{background:linear-gradient(135deg,#ff8d61,#ff6a30);border-color:transparent;color:#fff;transform:translateY(-2px);box-shadow:0 16px 40px -10px rgba(255,107,53,.6),inset 0 1px 0 rgba(255,255,255,.25)}
+/* ══ BUTTONS ══════════════════════════════════════════════════════════
+   Tiny uppercase letterspaced labels were the strongest "internal admin
+   tool" signal in the product, so every button is now sentence case at a
+   readable size with a 2.5rem minimum target. The hover lift is a spring,
+   and :active presses back down so controls feel physical.
+   POLICY: .btn-primary is the ONE next action on a view. Repeating it per
+   row (as the roster cards did) destroys the hierarchy it exists to create. */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:2.5rem;background:var(--bg-raised);border:1px solid var(--border-s);color:var(--text);padding:.55rem 1.05rem;border-radius:.6rem;cursor:pointer;font-family:var(--font-ui);font-size:.8125rem;font-weight:600;letter-spacing:-.005em;text-transform:none;line-height:1.2;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 1px 2px rgba(0,0,0,.35);
+  transition:transform var(--dur) var(--ease-spring),border-color var(--dur-fast) var(--ease),background var(--dur-fast) var(--ease),box-shadow var(--dur) var(--ease)}
+.btn:hover{border-color:var(--border-h);background:var(--bg-float);transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 6px 16px -8px rgba(0,0,0,.9)}
+.btn:active{transform:translateY(0) scale(.985);transition-duration:.06s}
+.btn:focus-visible{outline:none;box-shadow:var(--ring)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+/* Quiet tertiary: for destructive/secondary row actions that must not shout */
+.btn-quiet{background:transparent;border-color:var(--border);color:var(--text-3)}
+.btn-quiet:hover{background:rgba(255,255,255,.05);color:var(--text);border-color:var(--border-s)}
+.btn-primary{background:linear-gradient(150deg,var(--accent-2),var(--accent-hot));border-color:transparent;color:#fff;font-weight:650;
+  box-shadow:var(--glow-accent),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.15)}
+.btn-primary:hover{background:linear-gradient(150deg,#FF9A63,#FF6B33);border-color:transparent;color:#fff;transform:translateY(-2px);box-shadow:0 14px 34px -12px rgba(255,107,53,.7),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-primary:focus-visible{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent-2)}
 
-/* CARDS */
-.card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0) 140px),var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:1.75rem;margin-bottom:1.25rem;box-shadow:var(--shadow-card)}
-.card-title{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+/* ══ CARDS ═══════════════════════════════════════════════════════════
+   A card leans on the surface ladder for separation. The top sheen is a
+   short gradient so tall cards do not read as a washed-out block. */
+.card{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.75rem;margin-bottom:1.25rem;box-shadow:var(--shadow-card)}
+.card::before{content:"";position:absolute;inset:0 0 auto;height:120px;border-radius:var(--r-lg) var(--r-lg) 0 0;background:linear-gradient(180deg,rgba(255,255,255,.028),transparent);pointer-events:none}
+.card>*{position:relative}
+.card-title{font-family:var(--font-ui);font-size:.6875rem;font-weight:700;letter-spacing:.1em;color:var(--text-4);text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
 .card-accent{color:var(--text-3);font-weight:500}
 
 /* GRIDS */
@@ -736,6 +833,8 @@ input.err,select.err{border-color:var(--red)}
         <p class="nav-section-label" id="lbl-myteam">Coach</p>
         <ul class="nav-list" aria-labelledby="lbl-myteam" role="list">
           <li><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◆</span>Team IQ</button></li>
+          <li><button class="nav-btn" data-s="online" onclick="goTo('online',this)"><span class="nav-icon" aria-hidden="true">✓</span>Coaching Queue</button></li>
+          <li><button class="nav-btn" data-s="programs" onclick="goTo('programs',this)"><span class="nav-icon" aria-hidden="true">▦</span>Programs</button></li>
           <li><button class="nav-btn" data-s="roster"   onclick="goTo('roster',this)"><span class="nav-icon" aria-hidden="true">☰</span>Athletes</button></li>
           <li><button class="nav-btn" data-s="compare"  onclick="goTo('compare',this)"><span class="nav-icon" aria-hidden="true">⇄</span>Compare</button></li>
         </ul>
@@ -744,6 +843,7 @@ input.err,select.err{border-color:var(--red)}
         <p class="nav-section-label" id="lbl-athlete-home">Athlete</p>
         <ul class="nav-list" aria-labelledby="lbl-athlete-home" role="list">
           <li><button class="nav-btn" data-s="overview" onclick="goTo('overview',this)"><span class="nav-icon" aria-hidden="true">◐</span>My Dashboard</button></li>
+          <li><button class="nav-btn" data-s="online" onclick="goTo('online',this)"><span class="nav-icon" aria-hidden="true">✓</span>Weekly Check-in</button></li>
         </ul>
       </div>
       <div class="nav-section" id="athleteNavSection" data-coach-scope="coach">
@@ -878,12 +978,33 @@ input.err,select.err{border-color:var(--red)}
       <div id="br-body" role="region" aria-live="polite" aria-busy="false"></div>
     </section>
 
-    <!-- XC COMMAND -->
+    <!-- ONLINE COACHING QUEUE / ATHLETE CHECK-IN -->
+    <section id="online" class="screen" aria-labelledby="on-h">
+      <header class="screen-header">
+        <div><p class="eyebrow" id="on-eyebrow">Daily online coaching workflow</p><h1 class="screen-title" id="on-h">Coaching <em>Queue</em></h1></div>
+        <div class="btn-row" data-coach-scope="coach">
+          <button class="btn" onclick="loadOnlineCoachState(true)">Refresh</button>
+          <button class="btn btn-primary" onclick="goTo('programs',null)">Build program →</button>
+        </div>
+      </header>
+      <div id="on-body" role="region" aria-live="polite"></div>
+    </section>
+
+    <!-- MULTIWEEK PROGRAM BUILDER -->
+    <section id="programs" class="screen" aria-labelledby="pg-h" data-coach-scope="coach">
+      <header class="screen-header">
+        <div><p class="eyebrow">Reusable remote programming</p><h1 class="screen-title" id="pg-h">Program <em>Builder</em></h1></div>
+        <div class="btn-row"><button class="btn" onclick="goTo('online',null)">← Coaching Queue</button></div>
+      </header>
+      <div id="pg-body" role="region" aria-live="polite"></div>
+    </section>
+
+    <!-- RACE COMMAND -->
     <section id="xc" class="screen" aria-labelledby="xc-h" data-coach-scope="coach">
       <header class="screen-header">
-        <div><p class="eyebrow">Endurance season workflow</p><h1 class="screen-title" id="xc-h">XC <em>Command</em></h1></div>
+        <div><p class="eyebrow">XC through marathon</p><h1 class="screen-title" id="xc-h">Race <em>Command</em></h1></div>
         <div class="btn-row">
-          <button class="btn btn-print" onclick="printXcCommand()">Print meet sheet</button>
+          <button class="btn btn-print" onclick="printXcCommand()">Print race sheet</button>
           <button class="btn" onclick="goTo('squads',null)">Training groups →</button>
         </div>
       </header>
@@ -895,6 +1016,7 @@ input.err,select.err{border-color:var(--red)}
       <header class="screen-header">
         <div><p class="eyebrow">Per-athlete training history</p><h1 class="screen-title" id="wk-h">Training <em>Log</em></h1></div>
         <div class="btn-row">
+          <button class="btn" onclick="openActivityImport()">Import CSV</button>
           <button class="btn btn-primary" onclick="openWorkoutForm()">+ Log Workout</button>
         </div>
       </header>
@@ -1294,6 +1416,8 @@ const WORKSPACE_SCREEN_IDS = new Set([
   'compare',
   'import',
   'brief',
+  'online',
+  'programs',
   'xc',
   'overview',
   'squads',
@@ -1311,6 +1435,7 @@ const ATHLETE_SCREEN_IDS = new Set([
   'eventfit',
   'raceshape',
   'overview',
+  'online',
   'workouts',
   'multievent',
   'predict',
@@ -2195,6 +2320,8 @@ function refreshCurrentScreen(){
     applyWorkspaceMode({ redirect: false });
     switch(currentScreen){
       case 'brief':       renderCoachBrief();   break;
+      case 'online':      renderOnlineCoach();  break;
+      case 'programs':    renderPrograms();     break;
       case 'xc':          renderXcCommand();    break;
       case 'roster':      renderRoster();      break;
       case 'compare':     renderCompare();     break;
@@ -2408,6 +2535,7 @@ function renderWorkouts(){
       ? `Log your first training session so you and your coach can see the history here.`
       : `Log ${esc(A.name)}'s first training session to start building their history.`;
     el.innerHTML = `
+      ${stravaBar}
       <div class="info-box">
         ${isAthleteOnly()
           ? `Training log for <strong>${esc(A.name)}</strong>. Athlete-entered sessions save to your linked coach profile.`
@@ -2469,6 +2597,10 @@ function workoutCard(w){
 
   const sourceBadge = w.source === 'strava'
     ? '<span style="background:#fc4c02;color:#fff;padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">STRAVA</span>'
+    : w.source === 'garmin'
+      ? '<span style="background:#1976d2;color:#fff;padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">GARMIN CSV</span>'
+      : w.source === 'manual_import'
+        ? '<span style="background:var(--bg-raised);color:var(--text-2);border:1px solid var(--border-s);padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">CSV</span>'
     : w.source === 'athlete_entry'
       ? '<span style="background:var(--bg-el);color:var(--accent);border:1px solid var(--accent-line);padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">ATHLETE</span>'
       : '';
@@ -3815,7 +3947,10 @@ function newDB(){
     workouts:[],
     activeAthleteId:null,
     lastMeetSummary:null,
-    xcPlan:null
+    xcPlan:null,
+    checkIns:[],
+    programTemplates:[],
+    racePlans:[]
   };
 }
 
@@ -3827,6 +3962,9 @@ DB.athletes = DB.athletes || [];
 DB.workouts = DB.workouts || [];
 DB.lastMeetSummary = DB.lastMeetSummary || null;
 DB.xcPlan = DB.xcPlan || null;
+DB.checkIns = Array.isArray(DB.checkIns) ? DB.checkIns : [];
+DB.programTemplates = Array.isArray(DB.programTemplates) ? DB.programTemplates : [];
+DB.racePlans = Array.isArray(DB.racePlans) ? DB.racePlans : [];
 
 // Migrate from v4 single-athlete if present
 (function migrate(){
@@ -4141,6 +4279,8 @@ function goTo(id,btn){
   toggleMobileNav(false);
   if(id==='home')     renderHome();
   if(id==='brief')    renderCoachBrief();
+  if(id==='online')   renderOnlineCoach();
+  if(id==='programs') renderPrograms();
   if(id==='xc')       renderXcCommand();
   if(id==='roster')   renderRoster();
   if(id==='compare')  renderCompare();
@@ -4696,7 +4836,9 @@ const XC_DISTANCES = [
   { value:5000, label:'5K' },
   { value:6000, label:'6K' },
   { value:8000, label:'8K' },
-  { value:10000, label:'10K' }
+  { value:10000, label:'10K' },
+  { value:21097, label:'Half Marathon' },
+  { value:42195, label:'Marathon' }
 ];
 
 function defaultXcPlan(){
@@ -4707,6 +4849,11 @@ function defaultXcPlan(){
     distanceM:5000,
     courseAdjustmentSec:0,
     notes:'',
+    athleteId:'',
+    segmentText:'',
+    carbsPerHour:0,
+    fluidOzPerHour:0,
+    sodiumMgPerHour:0,
     updatedAt:null
   };
 }
@@ -4721,14 +4868,21 @@ function normalizeXcPlan(input){
     meetDate:/^\d{4}-\d{2}-\d{2}$/.test(String(raw.meetDate || '')) ? String(raw.meetDate) : '',
     courseName:String(raw.courseName || '').trim().slice(0,120),
     distanceM,
-    courseAdjustmentSec:isFinite(adjustment) ? Math.max(-600, Math.min(1800, Math.round(adjustment))) : 0,
+    courseAdjustmentSec:isFinite(adjustment) ? Math.max(-1800, Math.min(7200, Math.round(adjustment))) : 0,
     notes:String(raw.notes || '').trim().slice(0,1200),
+    athleteId:String(raw.athleteId || '').trim().slice(0,120),
+    segmentText:String(raw.segmentText || '').trim().slice(0,4000),
+    carbsPerHour:isFinite(Number(raw.carbsPerHour)) ? Math.max(0, Math.min(200, Number(raw.carbsPerHour))) : 0,
+    fluidOzPerHour:isFinite(Number(raw.fluidOzPerHour)) ? Math.max(0, Math.min(100, Number(raw.fluidOzPerHour))) : 0,
+    sodiumMgPerHour:isFinite(Number(raw.sodiumMgPerHour)) ? Math.max(0, Math.min(3000, Number(raw.sodiumMgPerHour))) : 0,
     updatedAt:raw.updatedAt || null
   };
 }
 
 function xcCheckpointDistances(distanceM){
-  const candidates = [1000, 1609.344, 3000, 5000, Number(distanceM)];
+  const candidates = distanceM > 10000
+    ? [5000, 10000, 21097.5, 30000, Number(distanceM)]
+    : [1000, 1609.344, 3000, 5000, Number(distanceM)];
   const unique = [];
   candidates.forEach(d => {
     if(d <= 0 || d > distanceM || unique.some(x => Math.abs(x - d) < 1)) return;
@@ -4751,6 +4905,70 @@ function xcCheckpointLabel(distanceM, finishM){
 function xcElapsedAt(totalSec, raceDistanceM, checkpointM){
   if(!isFinite(totalSec) || totalSec <= 0 || !isFinite(raceDistanceM) || raceDistanceM <= 0) return null;
   return totalSec * (checkpointM / raceDistanceM);
+}
+
+function parseRaceSegmentLines(text){
+  const rows = [];
+  String(text || '').split(/\r?\n/).forEach((line,index) => {
+    const clean = line.trim();
+    if(!clean) return;
+    const parts = clean.split('|').map(value => value.trim());
+    const distanceMi = Number(parts[1]);
+    const elevationFt = parts[2] === '' || parts[2] == null ? 0 : Number(parts[2]);
+    if(!parts[0] || !isFinite(distanceMi) || distanceMi <= 0 || !isFinite(elevationFt)){
+      rows.push({ invalid:true, line:index + 1, raw:clean });
+      return;
+    }
+    rows.push({
+      invalid:false,
+      label:parts[0].slice(0,80),
+      distanceMi:Math.min(distanceMi, 100),
+      elevationFt:Math.max(-10000, Math.min(30000, elevationFt)),
+      cue:String(parts.slice(3).join(' | ') || '').slice(0,240)
+    });
+  });
+  return rows;
+}
+
+function buildRaceExecutionPlan(rawPlan, totalSec){
+  const plan = normalizeXcPlan(rawPlan);
+  const parsed = parseRaceSegmentLines(plan.segmentText);
+  const invalid = parsed.filter(row => row.invalid);
+  const segments = parsed.filter(row => !row.invalid);
+  const segmentMiles = segments.reduce((sum,row) => sum + row.distanceMi, 0);
+  let elapsed = 0;
+  const targetMiles = plan.distanceM / 1609.344;
+  const plannedSegments = segments.map(row => {
+    const seconds = totalSec > 0 ? totalSec * (row.distanceMi / targetMiles) : null;
+    elapsed += seconds || 0;
+    return { ...row, seconds, elapsedSec:seconds == null ? null : elapsed };
+  });
+  const durationHours = totalSec > 0 ? totalSec / 3600 : 0;
+  const schedule = [];
+  if(totalSec > 0 && (plan.carbsPerHour || plan.fluidOzPerHour || plan.sodiumMgPerHour)){
+    for(let atSec = 1800; atSec < totalSec; atSec += 1800){
+      schedule.push({
+        atSec,
+        carbsG:plan.carbsPerHour / 2,
+        fluidOz:plan.fluidOzPerHour / 2,
+        sodiumMg:plan.sodiumMgPerHour / 2
+      });
+    }
+  }
+  return {
+    plan,
+    segments:plannedSegments,
+    invalid,
+    segmentMiles,
+    targetMiles,
+    distanceDeltaMi:segmentMiles ? segmentMiles - targetMiles : null,
+    schedule,
+    totals:{
+      carbsG:plan.carbsPerHour * durationHours,
+      fluidOz:plan.fluidOzPerHour * durationHours,
+      sodiumMg:plan.sodiumMgPerHour * durationHours
+    }
+  };
 }
 
 function xcPlanningRows(athletes, rawPlan){
@@ -4806,26 +5024,36 @@ function xcPlanningRows(athletes, rawPlan){
 }
 
 function xcFormHTML(plan){
+  const athleteOptions = (DB.athletes || []).map(athlete =>
+    `<option value="${esc(athlete.id)}" ${String(athlete.id)===String(plan.athleteId||DB.activeAthleteId)?'selected':''}>${esc(athlete.name)}</option>`
+  ).join('');
+  const longRace = plan.distanceM >= 21097;
   return `
     <div class="brief-panel">
       <div class="brief-panel-head"><p class="brief-panel-title">Upcoming meet</p><span class="brief-panel-tag">Coach-entered context</span></div>
       <form class="xc-form" onsubmit="saveXcMeetPlan();return false">
-        <label class="xc-label xc-wide"><span>Meet name</span><input id="xcMeetName" class="auth-input" maxlength="120" required placeholder="District Championship" value="${esc(plan.meetName)}"></label>
+        <label class="xc-label xc-wide"><span>Race / meet name</span><input id="xcMeetName" class="auth-input" maxlength="120" required placeholder="Chicago Marathon" value="${esc(plan.meetName)}"></label>
         <label class="xc-label"><span>Date</span><input id="xcMeetDate" class="auth-input" type="date" value="${esc(plan.meetDate)}"></label>
         <label class="xc-label"><span>Race distance</span><select id="xcDistance" class="auth-input">${XC_DISTANCES.map(d=>`<option value="${d.value}" ${d.value===plan.distanceM?'selected':''}>${esc(d.label)}</option>`).join('')}</select></label>
         <label class="xc-label xc-wide"><span>Course</span><input id="xcCourseName" class="auth-input" maxlength="120" placeholder="Old Settlers Park" value="${esc(plan.courseName)}"></label>
+        <label class="xc-label xc-wide"><span>Primary athlete for execution plan</span><select id="xcAthlete" class="auth-input"><option value="">Selected athlete</option>${athleteOptions}</select></label>
         <label class="xc-label xc-wide">
           <span>Whole-race course adjustment (seconds)</span>
-          <input id="xcAdjustment" class="auth-input" type="number" min="-600" max="1800" step="1" value="${plan.courseAdjustmentSec}">
+          <input id="xcAdjustment" class="auth-input" type="number" min="-1800" max="7200" step="1" value="${plan.courseAdjustmentSec}">
           <small>Positive = plan slower; negative = plan faster. This is your coaching assumption, not an automatic STRIDE course grade.</small>
         </label>
         <label class="xc-label xc-wide"><span>Course / race notes</span><textarea id="xcNotes" class="auth-input" rows="4" maxlength="1200" placeholder="Narrow first mile, exposed final hill, pack cue at 3K…">${esc(plan.notes)}</textarea></label>
-        <button class="btn btn-primary xc-wide" type="submit">Save and build meet plan</button>
+        <label class="xc-label xc-wide"><span>Course segments</span><textarea id="xcSegments" class="auth-input" rows="5" maxlength="4000" placeholder="Start to 5K | 3.1 | 80 | Stay patient&#10;5K to Half | 10.0 | 220 | Settle and fuel&#10;Half to finish | 13.1 | -40 | Race the final 10K">${esc(plan.segmentText)}</textarea><small>One per line: label | segment miles | net elevation feet | coach cue. STRIDE does not infer terrain effects.</small></label>
+        <label class="xc-label"><span>Carbohydrate target (g/hour)</span><input id="xcCarbs" class="auth-input" type="number" min="0" max="200" step="1" value="${plan.carbsPerHour || ''}" placeholder="Coach-entered"></label>
+        <label class="xc-label"><span>Fluid target (oz/hour)</span><input id="xcFluid" class="auth-input" type="number" min="0" max="100" step="1" value="${plan.fluidOzPerHour || ''}" placeholder="Coach-entered"></label>
+        <label class="xc-label"><span>Sodium target (mg/hour)</span><input id="xcSodium" class="auth-input" type="number" min="0" max="3000" step="10" value="${plan.sodiumMgPerHour || ''}" placeholder="Coach-entered"></label>
+        <p class="brief-source-note xc-wide">${longRace ? 'These are coach-entered targets. STRIDE only turns them into a timing and total-intake schedule; it does not recommend or medically validate them.' : 'Fueling fields are optional and most useful for half marathon and marathon planning.'}</p>
+        <button class="btn btn-primary xc-wide" type="submit">Save and build race plan</button>
       </form>
     </div>`;
 }
 
-function saveXcMeetPlan(){
+async function saveXcMeetPlan(){
   if(!requireCoachWorkspace('save an XC meet plan')) return;
   const read = id => {
     const el = document.getElementById(id);
@@ -4838,6 +5066,11 @@ function saveXcMeetPlan(){
     distanceM:read('xcDistance'),
     courseAdjustmentSec:read('xcAdjustment'),
     notes:read('xcNotes'),
+    athleteId:read('xcAthlete') || DB.activeAthleteId || '',
+    segmentText:read('xcSegments'),
+    carbsPerHour:read('xcCarbs'),
+    fluidOzPerHour:read('xcFluid'),
+    sodiumMgPerHour:read('xcSodium'),
     updatedAt:new Date().toISOString()
   });
   if(!plan.meetName){
@@ -4847,7 +5080,71 @@ function saveXcMeetPlan(){
   DB.xcPlan = plan;
   saveDB(DB);
   renderXcCommand();
-  toast('XC meet plan saved on this account and device');
+  DB.racePlans = (DB.racePlans || []).filter(item => String(item.athleteId) !== String(plan.athleteId));
+  DB.racePlans.push(plan);
+  saveDB(DB);
+  let cloudSaved = false;
+  const athlete = (DB.athletes || []).find(item => String(item.id) === String(plan.athleteId));
+  if(sbClient && sbUser && athlete && plan.meetDate){
+    try{
+      const athleteId = await resolveGroupAthleteCloudId(athlete);
+      if(athleteId){
+        const clientRef = `race:${athlete.id}:${plan.meetDate || 'undated'}:${plan.distanceM}`;
+        const { error } = await sbClient.from('race_plans').upsert({
+          athlete_id:athleteId,
+          coach_id:sbUser.id,
+          client_ref:clientRef,
+          race_name:plan.meetName,
+          race_date:plan.meetDate,
+          distance_m:plan.distanceM,
+          course_name:plan.courseName || null,
+          course_adjustment_sec:plan.courseAdjustmentSec,
+          segment_text:plan.segmentText || null,
+          carbs_per_hour:plan.carbsPerHour || null,
+          fluid_oz_per_hour:plan.fluidOzPerHour || null,
+          sodium_mg_per_hour:plan.sodiumMgPerHour || null,
+          coach_notes:plan.notes || null
+        },{onConflict:'athlete_id,client_ref'});
+        if(error) throw error;
+        cloudSaved = true;
+      }
+    }catch(err){
+      console.warn('race plan cloud save unavailable',err);
+    }
+  }
+  onlineCoachState.status = 'idle';
+  toast(cloudSaved ? 'Race plan saved and synced' : 'Race plan saved on this device',cloudSaved?'success':'info');
+}
+
+function raceExecutionPlanHTML(result){
+  const plan = result.plan;
+  if(plan.distanceM < 21097) return '';
+  const athleteId = plan.athleteId || DB.activeAthleteId;
+  const row = result.rows.find(item => String(item.athlete.id) === String(athleteId)) || result.rows[0];
+  if(!row) return '';
+  const execution = buildRaceExecutionPlan(plan, row.likely);
+  const distanceWarning = execution.distanceDeltaMi != null && Math.abs(execution.distanceDeltaMi) > .15
+    ? `<p class="auth-feedback err">Segment distances total ${execution.segmentMiles.toFixed(1)} mi, ${Math.abs(execution.distanceDeltaMi).toFixed(1)} mi ${execution.distanceDeltaMi>0?'over':'short of'} the race distance.</p>`
+    : '';
+  const invalid = execution.invalid.length
+    ? `<p class="auth-feedback err">Fix segment line${execution.invalid.length===1?'':'s'} ${execution.invalid.map(row=>row.line).join(', ')}. Expected: label | miles | elevation ft | cue.</p>`
+    : '';
+  const segments = execution.segments.length ? execution.segments.map(segment => `
+    <tr><td>${esc(segment.label)}<p class="xc-evidence">${esc(segment.cue || 'No cue entered')}</p></td><td class="num">${segment.distanceMi.toFixed(1)} mi</td><td class="num">${segment.elevationFt>0?'+':''}${segment.elevationFt} ft</td><td class="num">${segment.elapsedSec == null?'—':fmtT(segment.elapsedSec)}</td></tr>`).join('') : '';
+  const schedule = execution.schedule.length ? execution.schedule.map(item => `
+    <tr><td class="num">${fmtT(item.atSec)}</td><td class="num">${item.carbsG?item.carbsG.toFixed(0)+' g':'—'}</td><td class="num">${item.fluidOz?item.fluidOz.toFixed(0)+' oz':'—'}</td><td class="num">${item.sodiumMg?item.sodiumMg.toFixed(0)+' mg':'—'}</td></tr>`).join('') : '';
+  return `
+    <div class="brief-panel" style="margin-top:1rem">
+      <div class="brief-panel-head"><div><p class="brief-panel-title">${esc(row.athlete.name)} · execution plan</p><p class="brief-source-note">Schedule calculated from the coach-entered race inputs above and the visible planning estimate.</p></div><span class="brief-panel-tag">${esc(labelForDistance(plan.distanceM))}</span></div>
+      ${distanceWarning}${invalid}
+      <div class="race-execution-grid" style="margin-bottom:1rem">
+        <div class="xc-stat"><strong>${fmtT(row.likely)}</strong><span>planning estimate</span></div>
+        <div class="xc-stat"><strong>${execution.totals.carbsG ? execution.totals.carbsG.toFixed(0)+' g' : '—'}</strong><span>coach-target carbohydrate total</span></div>
+        <div class="xc-stat"><strong>${execution.totals.fluidOz ? execution.totals.fluidOz.toFixed(0)+' oz' : '—'}</strong><span>coach-target fluid total</span></div>
+      </div>
+      ${segments ? `<p class="brief-panel-tag" style="margin-bottom:.5rem">Course segments</p><div style="overflow-x:auto"><table class="xc-table" style="min-width:36rem"><thead><tr><th>Segment / cue</th><th class="num">Distance</th><th class="num">Net elev.</th><th class="num">Target time</th></tr></thead><tbody>${segments}</tbody></table></div>` : '<p class="brief-source-note">Add course segments to build an elevation-aware coaching sheet. Elevation is displayed as context and does not automatically change pace.</p>'}
+      ${schedule ? `<p class="brief-panel-tag" style="margin:1rem 0 .5rem">Coach-entered intake schedule · every 30 minutes</p><div style="overflow-x:auto"><table class="xc-table" style="min-width:30rem"><thead><tr><th class="num">Elapsed</th><th class="num">Carbs</th><th class="num">Fluid</th><th class="num">Sodium</th></tr></thead><tbody>${schedule}</tbody></table></div>` : '<p class="brief-source-note" style="margin-top:1rem">No fueling, fluid, or sodium targets entered.</p>'}
+    </div>`;
 }
 
 function xcPlanTableHTML(result){
@@ -4914,7 +5211,681 @@ function renderXcCommand(){
         ${xcPlanTableHTML(xcPlanningRows(DB.athletes || [], plan))}
       </div>`
     : `<div class="brief-panel">${emptyStateCard('Build the next meet plan', 'Name the upcoming meet and enter any course adjustment you already use. STRIDE will apply it transparently to every athlete’s visible range.', '', '')}</div>`;
-  el.innerHTML = `<div class="xc-layout">${form}${output}</div>`;
+  const result = DB.xcPlan ? xcPlanningRows(DB.athletes || [], plan) : null;
+  el.innerHTML = `<div class="xc-layout">${form}${output}</div>${result ? raceExecutionPlanHTML(result) : ''}`;
+}
+
+// ── ONLINE COACH OS ───────────────────────────────────────────────────────
+// Reported, prescribed, and completed are deliberately separate states.
+// Queue ordering helps the coach find work; it never interprets readiness or
+// changes a prescription.
+let onlineCoachState = { status:'idle', ownerId:null, checkIns:[], workouts:[], racePlans:[], error:'' };
+let programTemplateState = { status:'idle', ownerId:null, error:'' };
+let activityImportPreview = null;
+
+function localIsoDate(value){
+  const raw = String(value || '');
+  if(/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0,10);
+}
+
+function isoDateAdd(dateISO, days){
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  if(isNaN(date.getTime())) return '';
+  date.setUTCDate(date.getUTCDate() + Number(days || 0));
+  return date.toISOString().slice(0,10);
+}
+
+function mondayForIso(dateISO){
+  const date = new Date(`${dateISO}T00:00:00Z`);
+  if(isNaN(date.getTime())) return '';
+  const day = date.getUTCDay();
+  date.setUTCDate(date.getUTCDate() + (day === 0 ? -6 : 1 - day));
+  return date.toISOString().slice(0,10);
+}
+
+function normalizeCheckIn(input){
+  const raw = input && typeof input === 'object' ? input : {};
+  const bounded = (value,max) => {
+    const number = Number(value);
+    return isFinite(number) ? Math.max(1, Math.min(max, Math.round(number))) : null;
+  };
+  const today = new Date().toISOString().slice(0,10);
+  return {
+    id:String(raw.id || raw.clientRef || `ci_${Date.now().toString(36)}`),
+    clientRef:String(raw.clientRef || raw.client_ref || '').slice(0,180),
+    athleteId:String(raw.athleteId || raw.athlete_id || '').slice(0,120),
+    coachId:String(raw.coachId || raw.coach_id || '').slice(0,120),
+    weekOf:mondayForIso(raw.weekOf || raw.week_of || today),
+    submittedAt:raw.submittedAt || raw.submitted_at || new Date().toISOString(),
+    energy:bounded(raw.energy,5),
+    soreness:bounded(raw.soreness,5),
+    confidence:bounded(raw.confidence,5),
+    sleepHours:isFinite(Number(raw.sleepHours ?? raw.sleep_hours)) ? Math.max(0, Math.min(24, Number(raw.sleepHours ?? raw.sleep_hours))) : null,
+    athleteNote:String(raw.athleteNote || raw.athlete_note || '').trim().slice(0,2000),
+    coachResponse:String(raw.coachResponse || raw.coach_response || '').trim().slice(0,2000),
+    respondedAt:raw.respondedAt || raw.responded_at || null
+  };
+}
+
+function mergeByClientRef(localRows, remoteRows, normalize){
+  const map = new Map();
+  [...(localRows || []), ...(remoteRows || [])].forEach(row => {
+    const item = normalize(row);
+    map.set(item.clientRef || item.id,item);
+  });
+  return [...map.values()];
+}
+
+function buildOnlineCoachQueue({ athletes, checkIns, workouts, racePlans, todayISO }){
+  const today = localIsoDate(todayISO) || new Date().toISOString().slice(0,10);
+  const athleteById = new Map();
+  (athletes || []).forEach(athlete => {
+    athleteById.set(String(athlete.id),athlete);
+    if(athlete.supabaseId) athleteById.set(String(athlete.supabaseId),athlete);
+  });
+  const items = [];
+  (checkIns || []).map(normalizeCheckIn).forEach(checkIn => {
+    if(checkIn.coachResponse) return;
+    const athlete = athleteById.get(String(checkIn.athleteId));
+    items.push({
+      id:`checkin:${checkIn.id}`,
+      kind:'Athlete report',
+      athleteId:athlete ? athlete.id : checkIn.athleteId,
+      athleteName:athlete ? athlete.name : 'Athlete',
+      date:String(checkIn.submittedAt || checkIn.weekOf).slice(0,10),
+      title:'Weekly check-in awaiting coach response',
+      detail:`Energy ${checkIn.energy || '—'}/5 · soreness ${checkIn.soreness || '—'}/5 · confidence ${checkIn.confidence || '—'}/5. Athlete-reported; not interpreted by STRIDE.`,
+      checkInId:checkIn.id,
+      rank:1
+    });
+  });
+  (workouts || []).filter(Boolean).forEach(workout => {
+    const athlete = athleteById.get(String(workout.athlete_id || workout.athleteId));
+    const athleteId = athlete ? athlete.id : (workout.athlete_id || workout.athleteId);
+    const hasCompletion = Boolean(workout.total_distance_m || workout.total_duration_sec || workout.perceived_effort);
+    const hasPrescription = Boolean(workout.prescribed_distance_m || workout.prescribed_zone_label || workout.prescribed_notes);
+    const date = localIsoDate(workout.workout_date || workout.date);
+    if(workout.athlete_notes && !workout.coach_notes){
+      items.push({
+        id:`note:${workout.id || workout.source_ref || date}`, kind:'Athlete note', athleteId,
+        athleteName:athlete ? athlete.name : 'Athlete', date,
+        title:'Workout note awaiting coach review',
+        detail:String(workout.athlete_notes).slice(0,240), rank:1
+      });
+    }else if(hasPrescription && !hasCompletion && date && date < today){
+      items.push({
+        id:`planned:${workout.id || workout.source_ref || date}`, kind:'No completion', athleteId,
+        athleteName:athlete ? athlete.name : 'Athlete', date,
+        title:'Past prescription has no completion data',
+        detail:`${workout.prescribed_zone_label || workoutTypeLabel(workout.workout_type || 'other')} was planned. STRIDE does not mark it missed; completion is unknown.`,
+        rank:2
+      });
+    }else if(hasCompletion && date && date >= isoDateAdd(today,-7)){
+      items.push({
+        id:`completed:${workout.id || workout.source_ref || date}`,
+        kind:workout.source === 'strava' || workout.source === 'garmin' ? 'Imported activity' : 'Completed entry',
+        athleteId, athleteName:athlete ? athlete.name : 'Athlete', date,
+        title:'Recent training ready for coach review',
+        detail:`${workoutTypeLabel(workout.workout_type || 'other')} · ${fmtDistance(workout.total_distance_m)} · ${fmtDuration(workout.total_duration_sec)}${workout.perceived_effort ? ` · RPE ${workout.perceived_effort}/10` : ''}.`,
+        rank:3
+      });
+    }
+  });
+  (racePlans || []).forEach(plan => {
+    const date = localIsoDate(plan.meetDate || plan.race_date);
+    if(!date || date < today || date > isoDateAdd(today,21)) return;
+    const athlete = athleteById.get(String(plan.athleteId || plan.athlete_id));
+    items.push({
+      id:`race:${plan.id || plan.meetName || date}`, kind:'Upcoming race',
+      athleteId:athlete ? athlete.id : (plan.athleteId || plan.athlete_id),
+      athleteName:athlete ? athlete.name : 'Athlete', date,
+      title:`${plan.meetName || plan.race_name || 'Race'} is within 21 days`,
+      detail:`${labelForDistance(Number(plan.distanceM || plan.distance_m))} · ${plan.courseName || plan.course_name || 'course not entered'}. Open Race Command to review the coach-entered plan.`,
+      rank:4
+    });
+  });
+  items.sort((a,b) => a.rank - b.rank || String(a.date || '').localeCompare(String(b.date || '')) || a.athleteName.localeCompare(b.athleteName));
+  return items;
+}
+
+function onlineCoachRows(){
+  return {
+    checkIns:mergeByClientRef(DB.checkIns || [],onlineCoachState.checkIns || [],normalizeCheckIn),
+    workouts:[...(DB.workouts || []),...(onlineCoachState.workouts || [])],
+    racePlans:[...(DB.racePlans || []),...(onlineCoachState.racePlans || [])]
+  };
+}
+
+async function loadOnlineCoachState(force){
+  if(!sbClient || !sbUser || typeof sbClient.from !== 'function'){
+    onlineCoachState = { status:'local', ownerId:sbUser && sbUser.id || null, checkIns:[], workouts:[], racePlans:[], error:'' };
+    if(currentScreen === 'online') renderOnlineCoach();
+    return;
+  }
+  if(!force && onlineCoachState.status === 'loading') return;
+  onlineCoachState = { ...onlineCoachState,status:'loading',ownerId:sbUser.id,error:'' };
+  if(currentScreen === 'online') renderOnlineCoach();
+  try{
+    const since = isoDateAdd(new Date().toISOString().slice(0,10),-35);
+    const [checkResult,workoutResult,raceResult] = await Promise.all([
+      sbClient.from('athlete_checkins').select('*').order('submitted_at',{ascending:false}),
+      sbClient.from('workouts').select('*').gte('workout_date',since).is('deleted_at',null).order('workout_date',{ascending:false}),
+      sbClient.from('race_plans').select('*').gte('race_date',new Date().toISOString().slice(0,10)).order('race_date',{ascending:true})
+    ]);
+    if(checkResult.error) throw checkResult.error;
+    if(workoutResult.error) throw workoutResult.error;
+    if(raceResult.error) throw raceResult.error;
+    onlineCoachState = { status:'ready',ownerId:sbUser.id,checkIns:checkResult.data||[],workouts:workoutResult.data||[],racePlans:raceResult.data||[],error:'' };
+  }catch(err){
+    console.warn('loadOnlineCoachState failed',err);
+    onlineCoachState = { status:'unavailable',ownerId:sbUser.id,checkIns:[],workouts:[],racePlans:[],error:err.message||'Cloud coaching data unavailable' };
+  }
+  if(currentScreen === 'online') renderOnlineCoach();
+}
+
+function checkInFormHTML(){
+  const week = mondayForIso(new Date().toISOString().slice(0,10));
+  const previous = (DB.checkIns || []).map(normalizeCheckIn)
+    .filter(item => A && String(item.athleteId) === String(A.id))
+    .sort((a,b) => String(b.submittedAt).localeCompare(String(a.submittedAt)))[0];
+  return `
+    <div class="brief-panel">
+      <div class="brief-panel-head"><div><p class="brief-panel-title">Weekly check-in</p><p class="brief-source-note">Report what you experienced. Your coach interprets it; STRIDE does not score readiness.</p></div><span class="brief-panel-tag">Week of ${esc(week)}</span></div>
+      <form class="xc-form" onsubmit="saveWeeklyCheckIn();return false">
+        <input id="ciWeek" type="hidden" value="${esc(week)}">
+        ${[['ciEnergy','Energy'],['ciSoreness','Soreness'],['ciConfidence','Training confidence']].map(([id,label])=>`<label class="xc-label"><span>${label} · athlete-reported</span><select id="${id}" class="auth-input" required><option value="">Select</option>${[1,2,3,4,5].map(n=>`<option value="${n}">${n} / 5</option>`).join('')}</select></label>`).join('')}
+        <label class="xc-label"><span>Average sleep (hours)</span><input id="ciSleep" class="auth-input" type="number" min="0" max="24" step=".25" placeholder="Optional"></label>
+        <label class="xc-label xc-wide"><span>What should your coach know?</span><textarea id="ciNote" class="auth-input" rows="5" maxlength="2000" placeholder="What felt good, what was difficult, questions, schedule changes…"></textarea></label>
+        <button class="btn btn-primary xc-wide" type="submit">Send check-in to coach</button>
+      </form>
+      ${previous && previous.coachResponse ? `<div class="auth-feedback ok"><strong>Latest coach response</strong><br>${esc(previous.coachResponse)}</div>` : ''}
+    </div>`;
+}
+
+async function saveWeeklyCheckIn(){
+  if(!sbUser || !A) return toast('Sign in and load your athlete profile first','error');
+  const value = id => { const element=document.getElementById(id); return element?element.value:''; };
+  const athleteCloudId = await resolveAthleteCloudId(A);
+  const coachId = isAthleteOnly() ? (sbLinkedAthlete && sbLinkedAthlete.coach_id) : sbUser.id;
+  const weekOf = value('ciWeek');
+  const clientRef = `checkin:${A.id}:${weekOf}`;
+  const item = normalizeCheckIn({
+    id:clientRef,clientRef,athleteId:A.id,coachId,weekOf,
+    energy:value('ciEnergy'),soreness:value('ciSoreness'),confidence:value('ciConfidence'),
+    sleepHours:value('ciSleep'),athleteNote:value('ciNote')
+  });
+  if(!item.energy || !item.soreness || !item.confidence) return toast('Complete the three reported ratings','error');
+  DB.checkIns = (DB.checkIns || []).filter(row => normalizeCheckIn(row).clientRef !== clientRef);
+  DB.checkIns.push(item);
+  saveDB(DB);
+  let cloudSaved = false;
+  if(sbClient && athleteCloudId && coachId){
+    try{
+      const { error } = await sbClient.rpc('submit_athlete_checkin',{
+        athlete_row_id:athleteCloudId,
+        checkin_client_ref:clientRef,
+        checkin_week_of:item.weekOf,
+        reported_energy:item.energy,
+        reported_soreness:item.soreness,
+        reported_confidence:item.confidence,
+        reported_sleep_hours:item.sleepHours,
+        reported_note:item.athleteNote||null
+      });
+      if(error) throw error;
+      cloudSaved = true;
+    }catch(err){ console.warn('check-in cloud save unavailable',err); }
+  }
+  onlineCoachState.status='idle';
+  renderOnlineCoach();
+  toast(cloudSaved?'Check-in sent to your coach':'Check-in saved on this device — cloud sync unavailable',cloudSaved?'success':'info');
+}
+
+function openCheckInResponse(checkInId){
+  if(isAthleteOnly()) return;
+  const item = onlineCoachRows().checkIns.find(row => String(row.id)===String(checkInId) || String(row.clientRef)===String(checkInId));
+  if(!item) return toast('Check-in not found','error');
+  const athlete = (DB.athletes || []).find(row => String(row.id)===String(item.athleteId) || String(row.supabaseId)===String(item.athleteId));
+  const response = prompt(`Response to ${athlete?athlete.name:'athlete'}:\n\n${item.athleteNote||'No written note.'}`,item.coachResponse||'');
+  if(response != null) saveCheckInResponse(item,response);
+}
+
+async function saveCheckInResponse(item,response){
+  const clean = String(response || '').trim().slice(0,2000);
+  if(!clean) return toast('Add a response before saving','error');
+  const normalized = normalizeCheckIn({...item,coachResponse:clean,respondedAt:new Date().toISOString()});
+  DB.checkIns = (DB.checkIns || []).filter(row => {
+    const check=normalizeCheckIn(row);
+    return check.clientRef!==normalized.clientRef && String(check.id)!==String(normalized.id);
+  });
+  DB.checkIns.push(normalized);
+  saveDB(DB);
+  if(sbClient){
+    try{
+      let query = sbClient.from('athlete_checkins').update({coach_response:clean,responded_at:normalized.respondedAt});
+      query = isUuid(item.id) ? query.eq('id',item.id) : query.eq('client_ref',item.clientRef);
+      const { error } = await query;
+      if(error) throw error;
+    }catch(err){
+      console.warn('check-in response cloud save unavailable',err);
+      toast('Response saved on this device — cloud sync unavailable','info');
+    }
+  }
+  renderOnlineCoach();
+}
+
+function openQueueItem(kindId,athleteId,checkInId){
+  if(checkInId) return openCheckInResponse(checkInId);
+  const athlete = (DB.athletes || []).find(row => String(row.id)===String(athleteId) || String(row.supabaseId)===String(athleteId));
+  if(athlete){
+    DB.activeAthleteId=athlete.id; saveDB(DB); refreshActiveAthlete(); updateChip();
+  }
+  goTo(String(kindId).startsWith('race:')?'xc':'workouts',null);
+}
+
+function renderOnlineCoach(){
+  const element=document.getElementById('on-body');
+  if(!element) return;
+  const eyebrow=document.getElementById('on-eyebrow'), heading=document.getElementById('on-h');
+  if(eyebrow) eyebrow.textContent=isAthleteOnly()?'Athlete-reported weekly context':'Daily online coaching workflow';
+  if(heading) heading.innerHTML=isAthleteOnly()?'Weekly <em>Check-in</em>':'Coaching <em>Queue</em>';
+  if(!sbUser){
+    element.innerHTML=emptyStateCard('Sign in required','Your coaching queue and check-ins stay scoped to your account.','Sign in',"showAuthModal('signin')");
+    return;
+  }
+  if(isAthleteOnly()){
+    element.innerHTML=A?checkInFormHTML():emptyStateCard('Athlete profile unavailable','Open the invitation link from your coach or ask them to verify the account link.','','');
+    return;
+  }
+  const rows=onlineCoachRows();
+  const queue=buildOnlineCoachQueue({athletes:DB.athletes||[],checkIns:rows.checkIns,workouts:rows.workouts,racePlans:rows.racePlans,todayISO:new Date().toISOString().slice(0,10)});
+  const reportCount=queue.filter(item=>item.kind==='Athlete report'||item.kind==='Athlete note').length;
+  const unknownCount=queue.filter(item=>item.kind==='No completion').length;
+  const completedCount=queue.filter(item=>item.kind==='Completed entry'||item.kind==='Imported activity').length;
+  const raceCount=queue.filter(item=>item.kind==='Upcoming race').length;
+  const queueHtml=queue.length?queue.map(item=>`
+    <div class="queue-item"><span class="queue-kind">${esc(item.kind)}</span><div class="queue-copy"><strong>${esc(item.athleteName)} · ${esc(item.title)}</strong><span>${esc(item.detail)}${item.date?` · ${esc(item.date)}`:''}</span></div><button class="btn" onclick="openQueueItem('${esc(item.id)}','${esc(item.athleteId||'')}','${esc(item.checkInId||'')}')">${item.checkInId?'Respond':'Review'} →</button></div>`).join('')
+    :`<div class="empty-state"><p class="empty-title">Queue clear</p><p class="empty-sub">No unanswered check-ins, athlete notes, recent completions, past prescriptions with unknown completion, or races inside 21 days are represented in STRIDE.</p></div>`;
+  const cloudNote=onlineCoachState.status==='unavailable'
+    ?`<p class="auth-feedback err">Cloud coaching data is unavailable. Showing device-local records only; this is not proof that the remote queue is empty.</p>`
+    :onlineCoachState.status==='loading'?`<p class="auth-feedback info">Refreshing account-scoped check-ins and workouts…</p>`:'';
+  element.innerHTML=`
+    ${cloudNote}<div class="online-metrics">
+      <div class="xc-stat"><strong>${reportCount}</strong><span>athlete reports awaiting response</span></div>
+      <div class="xc-stat"><strong>${completedCount}</strong><span>recent completions to review</span></div>
+      <div class="xc-stat"><strong>${unknownCount}</strong><span>past plans with unknown completion</span></div>
+      <div class="xc-stat"><strong>${raceCount}</strong><span>races inside 21 days</span></div>
+    </div>
+    <div class="online-grid">
+      <div class="brief-panel"><div class="brief-panel-head"><div><p class="brief-panel-title">Review queue</p><p class="brief-source-note">Organized from represented data only. Queue position is not a readiness or health score.</p></div><span class="brief-panel-tag">${queue.length} item${queue.length===1?'':'s'}</span></div><div class="online-queue">${queueHtml}</div></div>
+      <div style="display:grid;gap:1rem">
+        <div class="brief-panel"><p class="brief-panel-title">Weekly workflow</p><div class="brief-flow">
+          <button onclick="goTo('programs',null)"><span class="brief-flow-num">1</span><span class="brief-flow-copy"><strong>Build or reuse a program</strong><span>Assign planned sessions with individualized targets.</span></span><span>→</span></button>
+          <button onclick="goTo('workouts',null)"><span class="brief-flow-num">2</span><span class="brief-flow-copy"><strong>Review what happened</strong><span>Imported and athlete-entered completion stays separate from the plan.</span></span><span>→</span></button>
+          <button onclick="goTo('xc',null)"><span class="brief-flow-num">3</span><span class="brief-flow-copy"><strong>Prepare the next race</strong><span>XC through marathon strategy and coach-entered execution.</span></span><span>→</span></button>
+        </div></div>
+        <div class="brief-panel"><p class="brief-panel-title">Activity connections</p><p class="brief-source-note" style="margin:.5rem 0 1rem">Direct Strava sync remains available in each athlete’s Training Log. Garmin and Strava CSV exports can be imported there with explicit units; direct Garmin API access is not claimed.</p><button class="btn" onclick="goTo('workouts',null)">Open selected athlete log →</button></div>
+      </div>
+    </div>`;
+  if(onlineCoachState.status==='idle'||onlineCoachState.ownerId!==sbUser.id) loadOnlineCoachState(false);
+}
+
+// ── PROGRAM TEMPLATES ─────────────────────────────────────────────────────
+const PROGRAM_DAY_INDEX = { sun:6,sunday:6,mon:0,monday:0,tue:1,tues:1,tuesday:1,wed:2,wednesday:2,thu:3,thur:3,thurs:3,thursday:3,fri:4,friday:4,sat:5,saturday:5 };
+
+function parseProgramSessionLines(text,weeks){
+  const sessions=[],invalid=[];
+  String(text||'').split(/\r?\n/).forEach((line,index)=>{
+    if(!line.trim()) return;
+    const parts=line.split('|').map(value=>value.trim());
+    const week=Number(parts[0]);
+    const dayIndex=PROGRAM_DAY_INDEX[String(parts[1]||'').toLowerCase()];
+    const workoutType=String(parts[2]||'').toLowerCase().replace(/\s+/g,'_');
+    const distanceMi=Number(parts[3]);
+    if(!Number.isInteger(week)||week<1||week>weeks||dayIndex==null||
+       !WORKOUT_TYPES.some(type=>type.value===workoutType)||!isFinite(distanceMi)||distanceMi<0||distanceMi>100){
+      invalid.push(index+1); return;
+    }
+    sessions.push({week,dayIndex,workoutType,distanceMi,notes:String(parts.slice(4).join(' | ')||'').slice(0,500)});
+  });
+  return {sessions,invalid};
+}
+
+function normalizeProgramTemplate(input){
+  const raw=input&&typeof input==='object'?input:{};
+  const weeks=Math.max(1,Math.min(52,Math.round(Number(raw.weeks)||1)));
+  const parsed=Array.isArray(raw.sessions)
+    ?{sessions:raw.sessions.map(session=>({
+      week:Math.max(1,Math.min(weeks,Math.round(Number(session.week)||1))),
+      dayIndex:Math.max(0,Math.min(6,Math.round(Number(session.dayIndex)||0))),
+      workoutType:WORKOUT_TYPES.some(type=>type.value===session.workoutType)?session.workoutType:'other',
+      distanceMi:Math.max(0,Math.min(100,Number(session.distanceMi)||0)),
+      notes:String(session.notes||'').slice(0,500)
+    })),invalid:[]}
+    :parseProgramSessionLines(raw.sessionText||'',weeks);
+  const fallbackId=`tpl_${Date.now().toString(36)}`;
+  return {
+    id:String(raw.id||fallbackId),
+    clientRef:String(raw.clientRef||raw.client_ref||raw.id||fallbackId).slice(0,160),
+    name:String(raw.name||'').trim().slice(0,120),
+    weeks,sessions:parsed.sessions,invalid:parsed.invalid,
+    updatedAt:raw.updatedAt||raw.updated_at||new Date().toISOString()
+  };
+}
+
+function programSourceRef(template,startDate,session){
+  return `program:${template.clientRef||template.id}:${startDate}:w${session.week}:d${session.dayIndex}:${session.workoutType}`;
+}
+
+function programPaceForAthlete(athlete,workoutType){
+  if(!athlete||!athlete.raceDistanceM||!parseTime(athlete.raceTime||'')) return null;
+  const labelMap={recovery:'Recovery',easy:'Easy',long:'Easy',steady:'Steady',tempo:'Tempo',threshold:'Threshold',critical_velocity:'Critical Velocity',race_pace:'Race Pace',vo2:'VO2 Max',speed:'Speed',sprint:'Sprint'};
+  const label=labelMap[workoutType];
+  if(!label) return null;
+  const split=computeZoneSplits(_distanceAthleteView(athlete),{repDists:[1000]});
+  const zone=split&&split.zones?split.zones.find(item=>item.label===label&&item.allowed):null;
+  return zone&&zone.reps?zone.reps[1000]:null;
+}
+
+function buildProgramWorkoutRows(templateInput,athlete,startDate,coachId){
+  const template=normalizeProgramTemplate(templateInput);
+  if(!template.name||!template.sessions.length||template.invalid.length||!athlete||!athlete.supabaseId||
+     !/^\d{4}-\d{2}-\d{2}$/.test(String(startDate||''))||!coachId){
+    return {rows:[],error:'Complete a valid template, start date, and cloud-linked athlete.'};
+  }
+  const monday=mondayForIso(startDate);
+  const rows=template.sessions.map(session=>{
+    const pace=programPaceForAthlete(athlete,session.workoutType);
+    const type=WORKOUT_TYPES.find(item=>item.value===session.workoutType);
+    return {
+      athlete_id:athlete.supabaseId,coach_id:coachId,
+      workout_date:isoDateAdd(monday,(session.week-1)*7+session.dayIndex),
+      workout_type:session.workoutType,
+      prescribed_distance_m:Math.round(session.distanceMi*1609.344),
+      prescribed_pace_sec_per_km:pace,
+      prescribed_zone_label:type?type.zoneLabel:workoutTypeLabel(session.workoutType),
+      prescribed_notes:session.notes||`${template.name} · week ${session.week}`,
+      total_distance_m:null,total_duration_sec:null,avg_pace_sec_per_km:null,
+      avg_hr_bpm:null,max_hr_bpm:null,perceived_effort:null,
+      source:'coach_entry',source_ref:programSourceRef(template,monday,session)
+    };
+  });
+  return {rows,error:'',template,startDate:monday};
+}
+
+function programSessionText(template){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  return (template.sessions||[]).map(session=>`${session.week} | ${days[session.dayIndex]} | ${session.workoutType} | ${session.distanceMi} | ${session.notes||''}`).join('\n');
+}
+
+function editProgramTemplate(templateId){
+  const template=(DB.programTemplates||[]).find(item=>String(item.id)===String(templateId));
+  if(!template) return;
+  const set=(id,value)=>{const element=document.getElementById(id);if(element)element.value=value;};
+  set('pgId',template.id);set('pgName',template.name);set('pgWeeks',template.weeks);set('pgSessions',programSessionText(template));
+}
+
+async function saveProgramTemplate(){
+  if(!requireCoachWorkspace('save a program template')) return;
+  const value=id=>{const element=document.getElementById(id);return element?element.value:'';};
+  const template=normalizeProgramTemplate({id:value('pgId')||undefined,clientRef:value('pgId')||undefined,name:value('pgName'),weeks:value('pgWeeks'),sessionText:value('pgSessions')});
+  if(!template.name||!template.sessions.length||template.invalid.length){
+    return toast(template.invalid.length?`Fix program line${template.invalid.length===1?'':'s'} ${template.invalid.join(', ')}`:'Add a name and at least one session','error');
+  }
+  DB.programTemplates=(DB.programTemplates||[]).filter(item=>String(item.id)!==String(template.id));
+  DB.programTemplates.push(template);saveDB(DB);
+  let cloudSaved=false;
+  if(sbClient&&sbUser){
+    try{
+      const {error}=await sbClient.from('training_plan_templates').upsert({coach_id:sbUser.id,client_ref:template.clientRef,name:template.name,weeks:template.weeks,sessions:template.sessions},{onConflict:'coach_id,client_ref'});
+      if(error) throw error;
+      cloudSaved=true;
+    }catch(err){console.warn('program template cloud save unavailable',err);}
+  }
+  renderPrograms();
+  toast(cloudSaved?'Program template saved and synced':'Program template saved on this device',cloudSaved?'success':'info');
+}
+
+async function loadProgramTemplates(){
+  if(!sbClient||!sbUser||isAthleteOnly()||programTemplateState.status==='loading') return;
+  programTemplateState={status:'loading',ownerId:sbUser.id,error:''};
+  try{
+    const {data,error}=await sbClient.from('training_plan_templates').select('*').order('updated_at',{ascending:false});
+    if(error) throw error;
+    const map=new Map((DB.programTemplates||[]).map(item=>[String(normalizeProgramTemplate(item).clientRef),normalizeProgramTemplate(item)]));
+    (data||[]).forEach(row=>{
+      const template=normalizeProgramTemplate({id:row.client_ref,clientRef:row.client_ref,name:row.name,weeks:row.weeks,sessions:row.sessions,updatedAt:row.updated_at});
+      map.set(template.clientRef,template);
+    });
+    DB.programTemplates=[...map.values()];saveDB(DB);
+    programTemplateState={status:'ready',ownerId:sbUser.id,error:''};
+  }catch(err){
+    console.warn('program template load unavailable',err);
+    programTemplateState={status:'unavailable',ownerId:sbUser.id,error:err.message||'Cloud templates unavailable'};
+  }
+  if(currentScreen==='programs') renderPrograms();
+}
+
+async function assignProgramTemplate(templateId){
+  if(!sbClient||!sbUser||!A) return toast('Select a cloud-linked athlete and sign in','error');
+  const template=(DB.programTemplates||[]).find(item=>String(item.id)===String(templateId));
+  const start=(document.getElementById(`pgStart_${templateId}`)||{}).value||'';
+  if(!template) return toast('Template not found','error');
+  try{
+    const cloudId=await resolveGroupAthleteCloudId(A);
+    if(cloudId) A.supabaseId=cloudId;
+  }catch(err){return toast('Nothing assigned — athlete cloud row could not be verified','error');}
+  const built=buildProgramWorkoutRows(template,A,start,sbUser.id);
+  if(built.error) return toast(built.error,'error');
+  try{
+    const {error}=await sbClient.from('workouts').upsert(built.rows,{onConflict:'athlete_id,source,source_ref'});
+    if(error) throw error;
+    invalidateCoachBriefWorkouts();onlineCoachState.status='idle';
+    toast(`${template.name} assigned to ${A.name} · ${built.rows.length} planned sessions`);
+  }catch(err){
+    console.error('assignProgramTemplate failed',err);
+    toast(err.message||'Program assignment failed','error');
+  }
+}
+
+function renderPrograms(){
+  const element=document.getElementById('pg-body');
+  if(!element) return;
+  if(!sbUser||isAthleteOnly()){
+    element.innerHTML=emptyStateCard('Coach account required','Program templates are coach-managed. Athletes see assigned sessions in Training Log.','','');return;
+  }
+  const templates=(DB.programTemplates||[]).map(normalizeProgramTemplate);
+  const templateCards=templates.length?templates.map(template=>`
+    <div class="brief-panel">
+      <div class="brief-panel-head"><div><p class="brief-panel-title">${esc(template.name)}</p><p class="brief-source-note">${template.weeks} week${template.weeks===1?'':'s'} · ${template.sessions.length} session${template.sessions.length===1?'':'s'}</p></div><button class="btn" onclick="editProgramTemplate('${esc(template.id)}')">Edit</button></div>
+      <label class="xc-label"><span>Assign to ${esc(A?A.name:'selected athlete')} · week-one Monday</span><input id="pgStart_${esc(template.id)}" class="auth-input" type="date" value="${mondayForIso(new Date().toISOString().slice(0,10))}"></label>
+      <button class="btn btn-primary" onclick="assignProgramTemplate('${esc(template.id)}')" ${A?'':'disabled'}>Assign ${template.sessions.length} planned sessions</button>
+      <p class="brief-source-note" style="margin-top:.65rem">Retrying the same template, athlete, and start date updates the same sessions. Completion fields remain blank.</p>
+    </div>`).join(''):emptyStateCard('No templates yet','Build a reusable week or full training block using the line format shown.','','');
+  const cloudNote=programTemplateState.status==='unavailable'?`<p class="auth-feedback err">Cloud templates are unavailable. Showing templates saved on this device only.</p>`:programTemplateState.status==='loading'?`<p class="auth-feedback info">Loading account templates…</p>`:'';
+  element.innerHTML=`
+    ${cloudNote}
+    <div class="online-grid">
+      <div class="brief-panel">
+        <div class="brief-panel-head"><div><p class="brief-panel-title">Build a reusable program</p><p class="brief-source-note">One line per session: week | day | workout type | miles | coach instructions.</p></div><span class="brief-panel-tag">Coach authored</span></div>
+        <input id="pgId" type="hidden"><div class="xc-form">
+          <label class="xc-label"><span>Template name</span><input id="pgName" class="auth-input" maxlength="120" placeholder="8-week half marathon build"></label>
+          <label class="xc-label"><span>Weeks</span><input id="pgWeeks" class="auth-input" type="number" min="1" max="52" value="4"></label>
+          <label class="xc-label xc-wide"><span>Sessions</span><textarea id="pgSessions" class="auth-input" rows="12" placeholder="1 | Mon | easy | 5 | Conversational&#10;1 | Wed | threshold | 6 | 3 × 10 min controlled&#10;1 | Sat | long | 10 | Practice coach-entered fueling target"></textarea><small>Types: recovery, easy, long, steady, tempo, threshold, critical_velocity, race_pace, vo2, speed, sprint, race, cross_training, strength, rest, other.</small></label>
+          <button class="btn btn-primary xc-wide" onclick="saveProgramTemplate()">Save reusable template</button>
+        </div>
+      </div><div style="display:grid;gap:1rem">${templateCards}</div>
+    </div>`;
+  if(programTemplateState.status==='idle'||programTemplateState.ownerId!==sbUser.id) loadProgramTemplates();
+}
+
+// ── GARMIN / STRAVA CSV ACTIVITY IMPORT ──────────────────────────────────
+function parseCsvGrid(text){
+  const rows=[];let row=[],cell='',quoted=false;
+  const source=String(text||'').replace(/^\uFEFF/,'');
+  for(let index=0;index<source.length;index++){
+    const char=source[index];
+    if(char==='"'){
+      if(quoted&&source[index+1]==='"'){cell+='"';index++;}else quoted=!quoted;
+    }else if(char===','&&!quoted){row.push(cell);cell='';}
+    else if((char==='\n'||char==='\r')&&!quoted){
+      if(char==='\r'&&source[index+1]==='\n') index++;
+      row.push(cell);cell='';
+      if(row.some(value=>String(value).trim())) rows.push(row);
+      row=[];
+    }else cell+=char;
+  }
+  row.push(cell);
+  if(row.some(value=>String(value).trim())) rows.push(row);
+  return rows;
+}
+
+function activityDurationSec(value){
+  const raw=String(value||'').trim();
+  if(!raw) return null;
+  if(/^\d+(\.\d+)?$/.test(raw)) return Number(raw);
+  const parts=raw.split(':');
+  if(parts.some(part=>!/^\d+(\.\d+)?$/.test(part))) return null;
+  const numbers=parts.map(Number);
+  if(numbers.slice(1).some(number=>number>=60)) return null;
+  if(numbers.length===2) return numbers[0]*60+numbers[1];
+  if(numbers.length===3) return numbers[0]*3600+numbers[1]*60+numbers[2];
+  return null;
+}
+
+function activityHash(text){
+  let hash=2166136261;
+  for(const char of String(text||'')){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}
+  return (hash>>>0).toString(36);
+}
+
+function activityTypeFromLabel(value){
+  const label=String(value||'').toLowerCase();
+  if(/race/.test(label)) return 'race';
+  if(/strength|weight/.test(label)) return 'strength';
+  if(/bike|cycl|swim|ellipt|cross/.test(label)) return 'cross_training';
+  if(/long/.test(label)) return 'long';
+  if(/tempo/.test(label)) return 'tempo';
+  if(/interval|workout/.test(label)) return 'other';
+  return 'easy';
+}
+
+function buildActivityImportRows(csvText,options){
+  const provider=['garmin','strava','manual_import','athlete_entry'].includes(options&&options.provider)?options.provider:'manual_import';
+  const distanceUnit=options&&options.distanceUnit==='mi'?'mi':'km';
+  const athleteId=String(options&&options.athleteId||''),coachId=String(options&&options.coachId||'');
+  const grid=parseCsvGrid(csvText);
+  if(grid.length<2||!athleteId||!coachId) return {rows:[],skipped:[],error:'Choose an athlete and a CSV with a header row.'};
+  const headers=grid[0].map(header=>String(header).trim().toLowerCase().replace(/[^a-z0-9]+/g,' '));
+  const find=names=>{
+    for(const name of names){
+      const index=headers.findIndex(header=>header===name||header.includes(name));
+      if(index>=0) return index;
+    }
+    return -1;
+  };
+  const columns={
+    id:find(['activity id','activityid','id']),date:find(['activity date','start time','date']),
+    name:find(['activity name','title','name']),type:find(['activity type','type']),
+    distance:find(['distance']),duration:find(['elapsed time','moving time','duration','time']),
+    avgHr:find(['average heart rate','avg hr','average hr']),maxHr:find(['max heart rate','max hr']),
+    notes:find(['notes','description'])
+  };
+  if(columns.date<0||columns.distance<0||columns.duration<0) return {rows:[],skipped:[],error:'CSV needs date, distance, and duration/elapsed-time columns.'};
+  const rows=[],skipped=[],seen=new Set();
+  grid.slice(1).forEach((cells,index)=>{
+    const date=localIsoDate(cells[columns.date]);
+    const distance=Number(String(cells[columns.distance]||'').replace(/,/g,''));
+    const duration=activityDurationSec(cells[columns.duration]);
+    if(!date||!isFinite(distance)||distance<=0||!duration){skipped.push({line:index+2,reason:'missing valid date, distance, or duration'});return;}
+    const distanceM=distance*(distanceUnit==='mi'?1609.344:1000);
+    const name=columns.name>=0?String(cells[columns.name]||''):'';
+    const externalId=columns.id>=0?String(cells[columns.id]||'').trim():'';
+    const sourceRef=externalId||`csv:${activityHash([date,name,distance,duration].join('|'))}`;
+    if(seen.has(sourceRef)){skipped.push({line:index+2,reason:'duplicate activity in file'});return;}
+    seen.add(sourceRef);
+    const avgHr=columns.avgHr>=0?Number(cells[columns.avgHr]):null;
+    const maxHr=columns.maxHr>=0?Number(cells[columns.maxHr]):null;
+    rows.push({
+      athlete_id:athleteId,coach_id:coachId,workout_date:date,
+      workout_type:activityTypeFromLabel(columns.type>=0?cells[columns.type]:name),
+      prescribed_distance_m:null,prescribed_pace_sec_per_km:null,prescribed_zone_label:null,prescribed_notes:null,
+      total_distance_m:Math.round(distanceM),total_duration_sec:duration,
+      avg_pace_sec_per_km:duration/(distanceM/1000),
+      avg_hr_bpm:isFinite(avgHr)&&avgHr>0?Math.round(avgHr):null,
+      max_hr_bpm:isFinite(maxHr)&&maxHr>0?Math.round(maxHr):null,
+      athlete_notes:columns.notes>=0?String(cells[columns.notes]||'').slice(0,1000)||null:null,
+      source:provider,source_ref:sourceRef
+    });
+  });
+  return {rows,skipped,error:''};
+}
+
+function openActivityImport(){
+  if(!sbUser||!A) return toast('Sign in and select an athlete first','error');
+  closeActivityImport();activityImportPreview=null;
+  const overlay=document.createElement('div');
+  overlay.id='activityImportOverlay';overlay.className='upgrade-overlay';
+  overlay.onclick=event=>{if(event.target===overlay)closeActivityImport();};
+  overlay.innerHTML=`
+    <div class="upgrade-modal" style="max-width:42rem">
+      <button class="upgrade-close" aria-label="Close" onclick="closeActivityImport()">×</button>
+      <p class="upgrade-eyebrow">Activity import</p>
+      <h2 class="upgrade-title" style="font-size:1.5rem">Import <em>${esc(A.name)}’s training</em></h2>
+      <p class="upgrade-sub">Direct Strava sync remains available above. For Garmin or Strava exports, choose the provider and the distance unit used in the file—STRIDE will not guess units.</p>
+      <div class="xc-form">
+        <label class="xc-label"><span>Export source</span><select id="aiProvider" class="auth-input"><option value="garmin">Garmin CSV export</option><option value="strava">Strava CSV export</option><option value="${isAthleteOnly()?'athlete_entry':'manual_import'}">Other CSV</option></select></label>
+        <label class="xc-label"><span>Distance unit in file</span><select id="aiUnit" class="auth-input"><option value="mi">Miles</option><option value="km">Kilometers</option></select></label>
+        <label class="xc-label xc-wide"><span>CSV file</span><input id="aiFile" class="auth-input" type="file" accept=".csv,text/csv" onchange="previewActivityCsv(this.files&&this.files[0])"></label>
+      </div>
+      <div id="aiPreview" class="auth-feedback info">Required columns: date, distance, and duration/elapsed time. Activity ID, name, type, heart rate, and notes are optional.</div>
+      <div class="auth-actions" style="grid-template-columns:1fr 1fr;margin-top:1rem">
+        <button class="btn" onclick="closeActivityImport()">Cancel</button>
+        <button id="aiImportButton" class="btn btn-primary" disabled onclick="importActivityPreview()">Import completed activities</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function closeActivityImport(){
+  const element=document.getElementById('activityImportOverlay');
+  if(element) element.remove();
+  activityImportPreview=null;
+}
+
+async function previewActivityCsv(file){
+  const preview=document.getElementById('aiPreview'),button=document.getElementById('aiImportButton');
+  if(!file||!preview||!button) return;
+  const cloudId=await resolveAthleteCloudId(A);
+  const coachId=isAthleteOnly()?(sbLinkedAthlete&&sbLinkedAthlete.coach_id):sbUser.id;
+  if(!cloudId||!coachId){preview.className='auth-feedback err';preview.textContent='This athlete must be linked to a coach account before importing.';return;}
+  const text=await file.text();
+  const provider=(document.getElementById('aiProvider')||{}).value||'manual_import';
+  const distanceUnit=(document.getElementById('aiUnit')||{}).value||'mi';
+  activityImportPreview=buildActivityImportRows(text,{provider,distanceUnit,athleteId:cloudId,coachId});
+  if(activityImportPreview.error){
+    preview.className='auth-feedback err';preview.textContent=activityImportPreview.error;button.disabled=true;return;
+  }
+  preview.className='auth-feedback ok';
+  preview.textContent=`${activityImportPreview.rows.length} completed activit${activityImportPreview.rows.length===1?'y':'ies'} ready · ${activityImportPreview.skipped.length} row${activityImportPreview.skipped.length===1?'':'s'} skipped. No prescriptions or readiness conclusions will be created.`;
+  button.disabled=!activityImportPreview.rows.length;
+}
+
+async function importActivityPreview(){
+  if(!activityImportPreview||!activityImportPreview.rows.length||!sbClient) return toast('Nothing ready to import','error');
+  const button=document.getElementById('aiImportButton');
+  if(button){button.disabled=true;button.textContent='Importing…';}
+  try{
+    const {error}=await sbClient.from('workouts').upsert(activityImportPreview.rows,{onConflict:'athlete_id,source,source_ref'});
+    if(error) throw error;
+    const count=activityImportPreview.rows.length,cloudId=activityImportPreview.rows[0].athlete_id;
+    closeActivityImport();await loadWorkouts(cloudId);invalidateCoachBriefWorkouts();onlineCoachState.status='idle';renderWorkouts();
+    toast(`${count} completed activit${count===1?'y':'ies'} imported`);
+  }catch(err){
+    console.error('activity CSV import failed',err);toast(err.message||'Activity import failed','error');
+    if(button){button.disabled=false;button.textContent='Import completed activities';}
+  }
 }
 
 function xcCommandPrintHTML(){
@@ -4937,7 +5908,7 @@ function xcCommandPrintHTML(){
     `Top-five spread ${topFiveSpreadSec == null ? 'not available' : fmtT(topFiveSpreadSec)}`
   ];
   return `<div class="ps-page">
-    ${_psHead('XC Meet Plan', plan.meetName, plan.courseName || 'Course not named', meta)}
+    ${_psHead('Race Plan', plan.meetName, plan.courseName || 'Course not named', meta)}
     ${plan.notes ? `<div class="ps-callout"><strong>Coach notes:</strong> ${esc(plan.notes)}</div>` : ''}
     <table><thead><tr><th>Athlete / evidence</th><th class="num">Course range</th><th class="num">/mile</th>${headers}<th class="num">Pack gap</th></tr></thead><tbody>${body}</tbody></table>
     <div class="ps-foot">Coach-reviewed planning estimates · course adjustment entered by the coach · even-average-pace checkpoints · no automatic terrain normalization.</div>
@@ -4965,9 +5936,10 @@ function renderOverview(){
         <strong>Start with the roster. Act on one athlete.</strong>
         <span>Review the team signal, select the athlete who needs attention, then follow Performance Curve → Race Forecasts.</span>
       </div>
+      <button class="team-command-action" onclick="goTo('online',null)"><span>Today</span><strong>Coaching Queue →</strong></button>
       <button class="team-command-action" onclick="goTo('brief',null)"><span>This week</span><strong>Coach Brief →</strong></button>
       <button class="team-command-action" onclick="goTo('squads',null)"><span>Practice</span><strong>Training Groups →</strong></button>
-      <button class="team-command-action" onclick="goTo('xc',null)"><span>XC season</span><strong>Meet Plan →</strong></button>
+      <button class="team-command-action" onclick="goTo('xc',null)"><span>Race day</span><strong>Race Command →</strong></button>
       <button class="team-command-action" onclick="goTo('lineup',null)"><span>Track meet</span><strong>Lineup Optimizer →</strong></button>
     </div>` + athletePickerHtml();
   if(!athleteOnly && DB.athletes && DB.athletes.length >= 1){

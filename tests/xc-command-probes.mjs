@@ -72,11 +72,12 @@ const P = new Function(planningSource)();
 
 assert.deepEqual(P.defaultXcPlan(), {
   meetName:'', meetDate:'', courseName:'', distanceM:5000,
-  courseAdjustmentSec:0, notes:'', updatedAt:null
+  courseAdjustmentSec:0, notes:'', athleteId:'', segmentText:'',
+  carbsPerHour:0, fluidOzPerHour:0, sodiumMgPerHour:0, updatedAt:null
 });
 assert.equal(P.normalizeXcPlan({ distanceM:1234 }).distanceM, 5000, 'unsupported distance falls back to 5K');
-assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:9999 }).courseAdjustmentSec, 1800, 'slow adjustment clamps');
-assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:-9999 }).courseAdjustmentSec, -600, 'fast adjustment clamps');
+assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:9999 }).courseAdjustmentSec, 7200, 'slow adjustment clamps');
+assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:-9999 }).courseAdjustmentSec, -1800, 'fast adjustment clamps');
 assert.equal(P.normalizeXcPlan({ meetDate:'08/04/2026' }).meetDate, '', 'non-ISO date is rejected');
 
 assert.deepEqual(P.xcCheckpointDistances(3218).map(Math.round), [1000,1609,3000,3218]);

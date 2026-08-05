@@ -58,8 +58,8 @@ assert.match(html, /if\(currentScreen === 'home'\)\{\s*goTo\('overview', null\);
 assert.match(html, /function switchAthlete\(id\)[\s\S]*?goTo\(athleteDecisionScreen\(A\),null\);/);
 assert.match(html, /function athleteDecisionScreen\(athlete\)/);
 assert.doesNotMatch(html, /Event <em>Profile<\/em>/);
-assert.match(html, /onclick="goTo\('xc',null\)"[^>]*>[\s\S]*?Meet Plan →/,
-  'Team IQ exposes the contextual XC meet-planning route');
-assert.match(workspaceIds, /'xc'/, 'XC Command belongs to the authenticated workspace');
+assert.match(html, /onclick="goTo\('xc',null\)"[^>]*>[\s\S]*?Race Command →/,
+  'Team IQ exposes the contextual race-planning route');
+assert.match(workspaceIds, /'xc'/, 'Race Command belongs to the authenticated workspace');
 
 console.log('navigation flow probes ok — 33 assertions');
