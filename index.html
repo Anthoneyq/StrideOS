@@ -1830,7 +1830,7 @@ let sbHealthCheckedAt = null;
 // the previous browser user's roster.
 let sbRosterState = 'idle'; // idle | loading | unavailable | empty | ready
 let pendingLocalRosterSnapshot = null;
-let coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, error:'' };
+let coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, items:[], error:'' };
 // Subscription state, populated from the my_subscription view after sign-in.
 // Defaults to "no access" until we've actually read it.
 function emptySubscription(){
@@ -2359,7 +2359,7 @@ async function bootstrapAuthenticatedSession(){
     sbRole = null;
     sbLinkedAthlete = null;
     sbRosterState = 'idle';
-    coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, error:'' };
+    coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, items:[], error:'' };
     resetSubscriptionState();
     applyWorkspaceMode();
     renderAuthPanel();
@@ -2664,7 +2664,7 @@ async function signOutSupabase(){
     sbLinkedAthlete = null;
     sbRosterState = 'idle';
     pendingLocalRosterSnapshot = null;
-    coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, error:'' };
+    coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, items:[], error:'' };
     closeAthleteLegalModal();
     DB = loadDB() || newDB();
     refreshActiveAthlete();
@@ -4406,9 +4406,26 @@ function remoteAthleteToLocal(row, raceRows){
     }
   });
 
+  // Full dated race history, kept alongside additionalPRs rather than replacing
+  // it. additionalPRs collapses to one best time per event, which can never
+  // show direction of travel — a PR does not move backwards. The Coach Brief
+  // signal layer needs the sequence, so it is preserved here.
+  const raceHistory = races
+    .filter(r => r && r.race_date && r.event && Number(r.time_sec) > 0)
+    .map(r => ({
+      event: r.event,
+      distM: Number(r.distance_m) || 0,
+      sec: Number(r.time_sec),
+      date: String(r.race_date).slice(0,10),
+      meet: r.race_meet_name || '',
+      placement: r.placement == null ? null : Number(r.placement)
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.event.localeCompare(b.event) || a.sec - b.sec);
+
   return {
     id: row.client_ref || row.id,
     name: row.display_name,
+    raceHistory,
     age: row.age_years,
     sex: row.sex || '',
     grade: row.grade || '',
@@ -4476,7 +4493,7 @@ async function loadRemoteAthletes(){
       if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
       saveDB(DB, accountKey);
       sbRosterState = 'empty';
-      coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, error:'' };
+      coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, items:[], error:'' };
       refreshActiveAthlete();
       updateChip();
       if(currentScreen === 'roster') renderRoster();
@@ -4502,7 +4519,7 @@ async function loadRemoteAthletes(){
     }
     saveDB(DB, accountKey);
     sbRosterState = 'ready';
-    coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, error:'' };
+    coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, items:[], error:'' };
     refreshActiveAthlete();
     updateChip();
     if(currentScreen === 'roster') renderRoster();
@@ -4922,6 +4939,16 @@ function emptyHTML(msg){
 // It intentionally does not infer fatigue, injury risk, readiness, or workouts
 // the coach did not log. $5k-quality means a tighter weekly workflow, not a
 // more confident claim than the available data supports.
+//
+// Two layers, in this order (2026-08-11):
+//   1. ATHLETE SIGNALS — who on the roster changed. Built from dated race rows
+//      and logged workouts. Every signal is an OBSERVATION of recorded data
+//      ("no session logged since Jul 28", "800m 2.1% slower than their best"),
+//      never an inference about fatigue, readiness, injury risk, or intent.
+//      The coach draws the conclusion; STRIDE only refuses to make them search.
+//   2. ROSTER INPUTS — the data-hygiene items. Still present, still actionable,
+//      but they are housekeeping and no longer lead the screen. A coach opening
+//      Monday morning needs to know which kid moved, not which field is blank.
 function coachBriefDateState(raceDateISO, todayISO){
   if(!raceDateISO) return 'unknown';
   const race = new Date(raceDateISO);
@@ -4942,7 +4969,196 @@ function coachBriefDateState(raceDateISO, todayISO){
   return 'expired';
 }
 
-function computeCoachBriefData(athletes, todayISO){
+// Day windows the signal layer reads. All UTC, all derived from one "today" so
+// the whole brief is reproducible from a fixed date in tests.
+function coachBriefSignalRanges(todayISO){
+  let today;
+  if(todayISO && /^\d{4}-\d{2}-\d{2}/.test(String(todayISO))){
+    const p = String(todayISO).slice(0,10).split('-').map(Number);
+    today = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+  } else {
+    const now = new Date();
+    today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  }
+  const iso = d => d.toISOString().slice(0,10);
+  const back = n => { const d = new Date(today); d.setUTCDate(today.getUTCDate() - n); return iso(d); };
+  return {
+    today: iso(today),
+    week: back(6),        // last 7 days inclusive
+    priorWeek: back(13),  // the 7 days before that
+    quiet: back(9),       // "no session logged in 10 days"
+    window: back(27)      // full lookback the loader fetches
+  };
+}
+
+const BRIEF_EASY_TYPES = new Set(['easy','recovery','long','rest','cross_training']);
+// A race is "materially" different from a prior best at 1.5%. Below that,
+// normal day-to-day variation and hand-timing noise swamp the signal, and a
+// brief that cries wolf on 0.4s gets ignored — which is the failure mode that
+// makes a dashboard worthless.
+const BRIEF_RACE_DELTA_PCT = 1.5;
+
+// Pure. (athletes, workout rows, todayISO) → ranked athlete-state signals.
+// Never throws on partial data: a roster with no races and no workouts returns
+// an empty list, and the caller renders the honest "nothing to report" state.
+function computeRosterSignals(athletes, workoutItems, todayISO){
+  const R = coachBriefSignalRanges(todayISO);
+  const roster = (athletes || []).filter(Boolean);
+  const items = Array.isArray(workoutItems) ? workoutItems : [];
+  const signals = [];
+  const add = (key, sev, title, detail, names, action, actionLabel) =>
+    signals.push({ key, sev, title, detail, names:names || [], action, actionLabel });
+
+  // Index workouts by the athlete key the roster actually carries.
+  const byAthlete = new Map();
+  items.forEach(w => {
+    if(!w || !w.athlete_id || !w.workout_date) return;
+    const key = String(w.athlete_id);
+    if(!byAthlete.has(key)) byAthlete.set(key, []);
+    byAthlete.get(key).push(w);
+  });
+  const workoutsFor = a => {
+    const keys = [a.supabaseId, a.id].filter(v => v != null).map(String);
+    for(const k of keys){ if(byAthlete.has(k)) return byAthlete.get(k); }
+    return [];
+  };
+  const didHappen = w =>
+    (isFinite(Number(w.total_distance_m)) && Number(w.total_distance_m) > 0) ||
+    (isFinite(Number(w.total_duration_sec)) && Number(w.total_duration_sec) > 0);
+  const wasPrescribed = w =>
+    Boolean(w.prescribed_distance_m || w.prescribed_zone_label || w.prescribed_notes);
+  const inRange = (w, start, end) => w.workout_date >= start && w.workout_date <= (end || R.today);
+  const nameOf = a => a.name || 'Unnamed athlete';
+  const dayGap = iso => {
+    const p = String(iso).slice(0,10).split('-').map(Number);
+    if(p.length !== 3 || p.some(n => !isFinite(n))) return null;
+    const then = Date.UTC(p[0], p[1] - 1, p[2]);
+    const t = R.today.split('-').map(Number);
+    return Math.round((Date.UTC(t[0], t[1] - 1, t[2]) - then) / 86400000);
+  };
+  // Deterministic ordering everywhere: worst first, then name.
+  const bySeverityThenName = (x, y) => (y.by - x.by) || x.name.localeCompare(y.name);
+
+  const quiet = [], missed = [], spiked = [], strained = [], slower = [], faster = [];
+
+  roster.forEach(a => {
+    const logs = workoutsFor(a);
+    const done = logs.filter(didHappen);
+
+    // 1. Gone quiet — had activity in the window, nothing in the last 10 days.
+    if(done.length){
+      const last = done.reduce((m, w) => (w.workout_date > m ? w.workout_date : m), done[0].workout_date);
+      if(last < R.quiet){
+        const gap = dayGap(last);
+        quiet.push({ name:nameOf(a), by:gap == null ? 0 : gap, last });
+      }
+    }
+
+    // 2. Prescribed but not recorded, last 7 days.
+    const openPrescribed = logs.filter(w =>
+      inRange(w, R.week) && wasPrescribed(w) && !didHappen(w)).length;
+    if(openPrescribed >= 2) missed.push({ name:nameOf(a), by:openPrescribed, n:openPrescribed });
+
+    // 3. Recorded distance jumped week over week.
+    const dist = (start, end) => logs
+      .filter(w => didHappen(w) && inRange(w, start, end))
+      .reduce((s, w) => s + (Number(w.total_distance_m) > 0 ? Number(w.total_distance_m) : 0), 0);
+    const thisWk = dist(R.week, R.today);
+    const prevEnd = (() => { const p = R.week.split('-').map(Number);
+      const d = new Date(Date.UTC(p[0], p[1] - 1, p[2])); d.setUTCDate(d.getUTCDate() - 1);
+      return d.toISOString().slice(0,10); })();
+    const prevWk = dist(R.priorWeek, prevEnd);
+    if(prevWk >= 5000 && thisWk >= prevWk * 1.5){
+      const pct = Math.round((thisWk / prevWk - 1) * 100);
+      spiked.push({ name:nameOf(a), by:pct, pct, thisWk, prevWk });
+    }
+
+    // 4. Athlete-reported effort of 8+ on days prescribed as easy/recovery.
+    const hard = logs.filter(w => inRange(w, R.week) && didHappen(w) &&
+      Number(w.perceived_effort) >= 8 && BRIEF_EASY_TYPES.has(w.workout_type || 'other')).length;
+    if(hard >= 2) strained.push({ name:nameOf(a), by:hard, n:hard });
+
+    // 5/6. Race direction — latest dated result vs their best prior result in
+    // the same event. Requires two dated races in one event; PR fields alone
+    // can never show this, because a PR by definition never moves backwards.
+    const hist = Array.isArray(a.raceHistory) ? a.raceHistory : [];
+    const byEvent = new Map();
+    hist.forEach(r => {
+      if(!r || !r.event || !r.date || !(Number(r.sec) > 0)) return;
+      if(!byEvent.has(r.event)) byEvent.set(r.event, []);
+      byEvent.get(r.event).push(r);
+    });
+    let best = null;
+    byEvent.forEach((rows, event) => {
+      if(rows.length < 2) return;
+      const sorted = rows.slice().sort((x, y) => x.date.localeCompare(y.date));
+      const latest = sorted[sorted.length - 1];
+      const prior = sorted.slice(0, -1).reduce((m, r) => (r.sec < m.sec ? r : m), sorted[0]);
+      if(!(prior.sec > 0)) return;
+      const pct = (latest.sec - prior.sec) / prior.sec * 100;
+      if(Math.abs(pct) < BRIEF_RACE_DELTA_PCT) return;
+      if(!best || Math.abs(pct) > Math.abs(best.pct)) best = { event, pct, latest, prior };
+    });
+    if(best){
+      const row = { name:nameOf(a), by:Math.abs(best.pct), pct:best.pct, event:best.event,
+        date:best.latest.date };
+      (best.pct > 0 ? slower : faster).push(row);
+    }
+  });
+
+  const listNames = rows => rows.sort(bySeverityThenName).map(r => r.name);
+
+  if(quiet.length){
+    const sorted = quiet.slice().sort(bySeverityThenName);
+    add('quiet', 'alert',
+      `${sorted.length} athlete${sorted.length===1?' has':'s have'} no session logged in 10+ days`,
+      `Longest gap ${sorted[0].by} days (last logged ${sorted[0].last}). This reflects the training log only — it does not mean they did not train.`,
+      sorted.map(r => r.name), 'roster', 'Open roster');
+  }
+  if(slower.length){
+    const sorted = slower.slice().sort(bySeverityThenName);
+    const top = sorted[0];
+    add('slower', 'alert',
+      `${sorted.length} recent result${sorted.length===1?'' :'s'} behind their best`,
+      `${top.name}: ${top.event} on ${top.date} is ${top.pct.toFixed(1)}% behind their best prior mark at that distance. Result comparison only — conditions, place in the season, and race plan are not in this number.`,
+      sorted.map(r => r.name), 'compare', 'Compare results');
+  }
+  if(spiked.length){
+    const sorted = spiked.slice().sort(bySeverityThenName);
+    add('load-spike', 'warn',
+      `${sorted.length} athlete${sorted.length===1?'' :'s'} up 50%+ in recorded distance`,
+      `${sorted[0].name} logged ${sorted[0].pct}% more distance than the previous 7 days. This is the recorded total only — STRIDE reports the jump, it does not judge whether it was too much.`,
+      sorted.map(r => r.name), 'roster', 'Review training log');
+  }
+  if(missed.length){
+    const sorted = missed.slice().sort(bySeverityThenName);
+    add('missed', 'warn',
+      `${sorted.length} athlete${sorted.length===1?'' :'s'} with assigned sessions not recorded`,
+      `${sorted[0].name} has ${sorted[0].n} assigned sessions in the last 7 days with nothing logged against them. The session may have happened and gone unlogged.`,
+      sorted.map(r => r.name), 'workouts', 'Open training log');
+  }
+  if(strained.length){
+    const sorted = strained.slice().sort(bySeverityThenName);
+    add('effort', 'warn',
+      `${sorted.length} athlete${sorted.length===1?'' :'s'} reporting 8+ effort on easy days`,
+      `${sorted[0].name} rated ${sorted[0].n} easy-day sessions at an effort of 8 or higher. This is the athlete's own rating, nothing inferred from it.`,
+      sorted.map(r => r.name), 'workouts', 'Open training log');
+  }
+  if(faster.length){
+    const sorted = faster.slice().sort(bySeverityThenName);
+    const top = sorted[0];
+    add('faster', 'good',
+      `${sorted.length} athlete${sorted.length===1?'' :'s'} ran a new best`,
+      `${top.name}: ${top.event} on ${top.date} is ${Math.abs(top.pct).toFixed(1)}% ahead of their previous best at that distance.`,
+      sorted.map(r => r.name), 'compare', 'Compare results');
+  }
+
+  const order = { alert:0, warn:1, good:2 };
+  signals.sort((x, y) => (order[x.sev] - order[y.sev]) || x.key.localeCompare(y.key));
+  return signals;
+}
+
+function computeCoachBriefData(athletes, todayISO, workoutItems){
   const seenIds = new Set();
   const roster = (athletes || []).filter(Boolean).filter(a => {
     if(a.id == null || String(a.id) === '') return true;
@@ -5024,7 +5240,11 @@ function computeCoachBriefData(athletes, todayISO){
       'Dates, source marks, multi-event evidence, and weekly mileage are complete. Review groups and meet choices.',
       [], 'groups', 'Open groups');
   }
-  return { rows, counts, priorities:priorities.slice(0,4) };
+  return {
+    rows, counts,
+    priorities:priorities.slice(0,4),
+    signals:computeRosterSignals(roster, workoutItems, todayISO)
+  };
 }
 
 function coachBriefWeekRanges(todayISO){
@@ -5095,6 +5315,7 @@ function invalidateCoachBriefWorkouts(){
     ownerId:sbUser && sbUser.id ? sbUser.id : null,
     rangeKey:null,
     summary:null,
+    items:[],
     error:''
   };
 }
@@ -5102,21 +5323,28 @@ function invalidateCoachBriefWorkouts(){
 async function loadCoachBriefWorkouts(){
   if(!sbClient || !sbUser || isAthleteOnly()) return;
   const ranges = coachBriefWeekRanges();
-  const rangeKey = `${ranges.previous.start}|${ranges.completed.end}`;
+  const signal = coachBriefSignalRanges();
+  // The two-completed-week summary and the 28-day signal window are fetched in
+  // one query: whichever reaches further back wins, and the query now runs to
+  // TODAY rather than to last week's end, because "nothing logged in 10 days"
+  // is unanswerable from a range that stops before today.
+  const fetchStart = ranges.previous.start < signal.window ? ranges.previous.start : signal.window;
+  const fetchEnd = ranges.completed.end > signal.today ? ranges.completed.end : signal.today;
+  const rangeKey = `${fetchStart}|${fetchEnd}`;
   if(coachBriefWorkoutState.ownerId === sbUser.id &&
      coachBriefWorkoutState.rangeKey === rangeKey &&
      (coachBriefWorkoutState.status === 'loading' || coachBriefWorkoutState.status === 'ready')){
     return;
   }
-  coachBriefWorkoutState = { status:'loading', ownerId:sbUser.id, rangeKey, summary:null, error:'' };
+  coachBriefWorkoutState = { status:'loading', ownerId:sbUser.id, rangeKey, summary:null, items:[], error:'' };
   if(currentScreen === 'brief') renderCoachBrief();
   try{
     const { data, error } = await sbClient
       .from('workouts')
-      .select('athlete_id, workout_date, workout_type, prescribed_distance_m, prescribed_zone_label, prescribed_notes, total_distance_m, total_duration_sec')
+      .select('athlete_id, workout_date, workout_type, prescribed_distance_m, prescribed_zone_label, prescribed_notes, total_distance_m, total_duration_sec, perceived_effort')
       .eq('coach_id', sbUser.id)
-      .gte('workout_date', ranges.previous.start)
-      .lte('workout_date', ranges.completed.end)
+      .gte('workout_date', fetchStart)
+      .lte('workout_date', fetchEnd)
       .is('deleted_at', null);
     if(error) throw error;
     coachBriefWorkoutState = {
@@ -5124,6 +5352,7 @@ async function loadCoachBriefWorkouts(){
       ownerId:sbUser.id,
       rangeKey,
       summary:summarizeCoachBriefWorkouts(data || [], ranges),
+      items:data || [],
       error:''
     };
   }catch(err){
@@ -5133,6 +5362,7 @@ async function loadCoachBriefWorkouts(){
       ownerId:sbUser.id,
       rangeKey,
       summary:null,
+      items:[],
       error:'Training log coverage is temporarily unavailable.'
     };
   }
@@ -5188,7 +5418,10 @@ function briefGo(action){
 }
 
 function coachBriefContext(){
-  const data = computeCoachBriefData(DB.athletes || []);
+  const workoutItems = coachBriefWorkoutState && coachBriefWorkoutState.status === 'ready'
+    ? (coachBriefWorkoutState.items || [])
+    : [];
+  const data = computeCoachBriefData(DB.athletes || [], null, workoutItems);
   const groups = computeTrainingGroups(DB.athletes || []);
   const ledger = computeProofLedger(DB.athletes || []);
   const storedMeet = DB.lastMeetSummary || null;
@@ -5263,6 +5496,30 @@ function renderCoachBrief(){
       <button class="brief-action" onclick="briefGo('${esc(p.action)}')">${esc(p.actionLabel)} →</button>
     </div>`).join('');
 
+  // ATHLETE SIGNALS — who moved. This leads the brief; roster inputs follow.
+  const sevLabel = { alert:'Needs a look', warn:'Worth checking', good:'Good news' };
+  const signalRows = ctx.data.signals.map(s => `
+    <div class="sq-flag sq-flag-${s.sev === 'good' ? 'clear' : s.sev}">
+      <p class="sq-flag-title">${esc(s.title)}</p>
+      <p class="sq-flag-detail"><span class="brief-panel-tag">${esc(sevLabel[s.sev] || '')}</span> ${esc(s.detail)}</p>
+      ${s.names.length ? `<p class="sq-flag-who">${esc(briefNames(s.names))}</p>` : ''}
+      <button class="brief-action" style="margin-top:.6rem" onclick="briefGo('${esc(s.action)}')">${esc(s.actionLabel)} →</button>
+    </div>`).join('');
+  const logReady = ctx.workouts && ctx.workouts.status === 'ready';
+  const signalsHtml = signalRows || `
+    <div class="sq-flag sq-flag-clear">
+      <p class="sq-flag-detail">${logReady
+        ? 'No roster changes to flag. No 10-day logging gaps, no assigned sessions left unrecorded, no result more than 1.5% off a previous best, and no week-over-week distance jump above 50%.'
+        : 'Signals need the training log and at least two dated results at the same distance. STRIDE will not guess at athlete state from PR fields alone — a PR never moves backwards, so it cannot show direction.'}</p>
+    </div>`;
+  const signalsPanel = `
+    <div class="brief-panel-head">
+      <p class="brief-panel-title">Athlete signals</p>
+      <span class="brief-panel-tag">${ctx.data.signals.length ? `${ctx.data.signals.length} to review` : 'All clear'}</span>
+    </div>
+    ${signalsHtml}
+    <p class="brief-source-note" style="margin-top:.75rem">Built from dated race results and logged workouts on this roster. Each line reports what was recorded — STRIDE does not infer fatigue, readiness, or injury risk, and an unlogged session is not a missed one.</p>`;
+
   let meetHtml;
   const lastMeet = ctx.lastMeet;
   if(lastMeet && Array.isArray(lastMeet.rows) && lastMeet.rows.length){
@@ -5335,9 +5592,11 @@ function renderCoachBrief(){
       </div>
     </div>
 
+    <div class="brief-panel" style="margin-bottom:1.25rem">${signalsPanel}</div>
+
     <div class="brief-grid">
       <div class="brief-panel">
-        <div class="brief-panel-head"><p class="brief-panel-title">Review queue</p><span class="brief-panel-tag">Evidence gaps first</span></div>
+        <div class="brief-panel-head"><p class="brief-panel-title">Roster inputs</p><span class="brief-panel-tag">Housekeeping</span></div>
         ${priorities}
       </div>
       <div class="brief-side-stack">
@@ -5418,7 +5677,10 @@ function printCoachBrief(){
         return `<div class="ps-section">Training log coverage · ${esc(coachBriefRangeLabel(w))}</div><div class="ps-grid"><div class="ps-stat"><div class="k">Completed entries</div><div class="v">${w.sessions}</div></div><div class="ps-stat"><div class="k">Athletes with entries</div><div class="v">${w.athletesLogged}/${c.roster}</div></div><div class="ps-stat"><div class="k">Distance logged</div><div class="v">${(w.distanceM/1609.344).toFixed(1)} mi</div></div></div><div class="ps-note">${w.planned ? `${w.planned} prescription${w.planned===1?'':'s'} without completion evidence not counted. ` : ''}STRIDE entry coverage only; unlogged training is unknown.</div>`;
       })()
     : '';
-  printSheet(`<div class="ps-page">${_psHead('Coach Brief', team, `${c.roster} athletes · ${c.fresh}/${c.withPR} current primary marks · ${c.multiReady} multi-event`, [_psStamp()])}<div class="ps-section">Review queue</div>${priorities}${workoutRows}${meetRows}<div class="ps-foot">Coach-reviewed STRIDE OS snapshot · secondary-event dates and unlogged activity are not represented.</div></div>`);
+  const signalRows = ctx.data.signals.length
+    ? ctx.data.signals.map(s => `<div class="ps-callout"><strong>${esc(s.title)}</strong><br>${esc(s.detail)}${s.names.length?`<br>${esc(briefNames(s.names))}`:''}</div>`).join('')
+    : `<div class="ps-callout">No roster changes to flag from dated results and logged workouts.</div>`;
+  printSheet(`<div class="ps-page">${_psHead('Coach Brief', team, `${c.roster} athletes · ${c.fresh}/${c.withPR} current primary marks · ${c.multiReady} multi-event`, [_psStamp()])}<div class="ps-section">Athlete signals</div>${signalRows}<div class="ps-section">Roster inputs</div>${priorities}${workoutRows}${meetRows}<div class="ps-foot">Coach-reviewed STRIDE OS snapshot · secondary-event dates and unlogged activity are not represented.</div></div>`);
 }
 
 // ── XC COMMAND ─────────────────────────────────────────────────────────────
