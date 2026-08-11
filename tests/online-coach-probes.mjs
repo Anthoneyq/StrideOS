@@ -56,6 +56,7 @@ function extractConst(name,open='[',close=']'){
 }
 
 const queueSource = [
+  extractConst('ACTIVITY_EVIDENCE_SOURCES'),
   extractFn('localIsoDate'),
   extractFn('isoDateAdd'),
   extractFn('mondayForIso'),
@@ -178,11 +179,11 @@ const csv = [
   '102,2026-08-04,Duplicate,Running,10.00,1:25:00,150,175,',
   'bad,not-a-date,Bad Row,Running,0,nope,,,'
 ].join('\n');
-const imported = I.buildActivityImportRows(csv,{provider:'garmin',distanceUnit:'mi',athleteId:'cloud-a',coachId:'coach-1'});
+const imported = I.buildActivityImportRows(csv,{provider:'garmin_csv',distanceUnit:'mi',athleteId:'cloud-a',coachId:'coach-1'});
 eq(imported.error,'');
 eq(imported.rows.length,2);
 eq(imported.skipped.length,2);
-eq(imported.rows[0].source,'garmin');
+eq(imported.rows[0].source,'garmin_csv');
 eq(imported.rows[0].source_ref,'101');
 eq(imported.rows[0].total_distance_m,Math.round(5*1609.344));
 eq(imported.rows[0].total_duration_sec,2400);
@@ -190,7 +191,8 @@ eq(imported.rows[0].avg_hr_bpm,145);
 eq(imported.rows[0].prescribed_distance_m,null);
 eq(imported.rows[0].prescribed_notes,null);
 ok(!('readiness' in imported.rows[0]),'activity import does not infer readiness');
-ok(I.buildActivityImportRows('Name,Distance\nRun,5',{provider:'strava',distanceUnit:'km',athleteId:'a',coachId:'c'}).error,'required headers are enforced');
+ok(!('reconciliation_status' in imported.rows[0]),'re-import does not reset a coach reconciliation decision');
+ok(I.buildActivityImportRows('Name,Distance\nRun,5',{provider:'strava_csv',distanceUnit:'km',athleteId:'a',coachId:'c'}).error,'required headers are enforced');
 
 ok(/data-s="online"/.test(html),'online coaching route is in navigation');
 ok(/data-s="programs"/.test(html),'program builder route is in navigation');

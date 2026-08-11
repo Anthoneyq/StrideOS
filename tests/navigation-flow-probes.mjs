@@ -20,15 +20,23 @@ for (const route of ['overview', 'roster', 'eventfit']) {
   assert.match(primaryNav, new RegExp(`data-s="${route}"`), `${route} must remain primary`);
 }
 
-for (const route of ['brief', 'xc', 'import', 'squads', 'lineup', 'predict', 'multievent', 'profile', 'workouts', 'proof', 'methodology', 'raceshape', 'edit']) {
+// PER-ATHLETE analysis stays contextual (the athlete bar). Roster-level tools
+// (import, squads, lineup, proof, raceshape) moved BACK into the sidebar on
+// 2026-08-10 — Anthoney could not find them after the slim-nav reorg.
+for (const route of ['brief', 'xc', 'predict', 'multievent', 'profile', 'workouts', 'methodology', 'edit']) {
   assert.doesNotMatch(primaryNav, new RegExp(`data-s="${route}"`), `${route} must be contextual`);
+}
+for (const route of ['import', 'squads', 'lineup', 'proof', 'raceshape', 'paces']) {
+  assert.match(primaryNav, new RegExp(`data-s="${route}"`), `${route} must be findable in the sidebar`);
 }
 
 assert.match(primaryNav, /class="public-only"[^>]*><button class="nav-btn" data-s="home"/);
-assert.match(primaryNav, /class="public-only"[^>]*><button class="nav-btn" data-s="paces"/);
+// The calculator must stay visible AFTER sign-in (2026-08-10: it vanished for
+// signed-in coaches because it was marked public-only).
+assert.doesNotMatch(primaryNav, /class="public-only"[^>]*><button class="nav-btn" data-s="paces"/);
 
-assert.match(contextNav, /1 · Performance Curve/);
-assert.match(contextNav, /2 · Race Forecasts/);
+assert.match(contextNav, /Performance Curve/);
+assert.match(contextNav, /Race Forecasts/);
 assert.match(contextNav, /Training Paces/);
 assert.match(contextNav, /Training Log/);
 assert.match(contextNav, /Event Demands/);

@@ -101,6 +101,18 @@ probe('home: the promise is not shown to a signed-in coach', ()=>{ sbUser={id:'c
   if(/home-datapromise/.test(h)) throw new Error('shown when signed in'); sbUser=null; });
 
 probe('overview: athlete picker present', ()=>{ renderOverview(); const h=out('ov-body'); if(!/ov-athlete-picker/.test(h)) throw new Error('no picker select'); if(!/Compare athletes/.test(h)) throw new Error('no compare button'); });
+probe('overview: one graph includes every roster athlete', ()=>{ renderOverview(); const h=out('ov-body');
+  if(!/Roster Event Map/.test(h)) throw new Error('no roster map');
+  DB.athletes.forEach(a=>{ if(!h.includes(a.name)) throw new Error('map missing '+a.name); });
+  if(!/No primary mark/.test(h)) throw new Error('athlete without a usable mark disappeared');
+  if(!/not a readiness or talent ranking/.test(h)) throw new Error('map lacks interpretation boundary');
+});
+probe('roster map: sorts by event distance then time', ()=>{
+  const rows=rosterMapRows(DB.athletes);
+  const named=rows.map(r=>r.athlete.name);
+  if(named.indexOf('Dana Ruiz') > named.indexOf('Jo Ellis') || named.indexOf('Jo Ellis') > named.indexOf('Riley Chen')) throw new Error('event order wrong: '+named.join(', '));
+  if(named[named.length-1] !== 'Sam Park') throw new Error('no-mark athlete should remain visible at end');
+});
 probe('selectAthleteInPlace switches', ()=>{ currentScreen='overview'; selectAthleteInPlace(DB.athletes[1].id); if(!A || A.name!=='Dana Ruiz') throw new Error('active not switched: '+(A&&A.name)); A=DB.athletes[0]; DB.activeAthleteId=A.id; });
 
 probe('profile: known event shows its own demands', ()=>{ A=DB.athletes[0]; renderProfile(); const h=out('pr-body'); if(!/Event Demands · 5K/.test(h)) throw new Error('not 5K'); if(/closest supported event/.test(h)) throw new Error('unexpected substitution notice'); });
@@ -111,6 +123,30 @@ probe('predict renders for a merged athlete', ()=>{ A=DB.athletes[0]; renderPred
 probe('performance curve renders for a merged athlete', ()=>{ renderMultiEvent(); const h=out('me-body'); if(/Need at least 2 race results/.test(h)) throw new Error('empty state'); if(!/Performance Curve/.test(h)) throw new Error('no curve'); });
 probe('event fit is not 400/800 for a 5K runner', ()=>{ const h=out('me-body'); const m=h.match(/Strongest Distance<\\/p>\\s*<p[^>]*>([^<]+)</); const best=m?m[1].trim():'?'; if(['400m','800m'].includes(best)) throw new Error('classified as '+best); __res.push(['note ','strongest distance = '+best,'']); });
 probe('predict empty-state athlete still safe', ()=>{ A=DB.athletes[2]; renderPredict(); renderMultiEvent(); renderOverview(); });
+
+// ── CONSENSUS CURVE (2026-08-10) ──
+// The strength map was an artifact of anchor choice: an elite 5K anchor read
+// every shorter event as a gap, and a sprinter's weak 5K anchor read her whole
+// chart green with the curve floating far below the dots. The curve and every
+// verdict now come from the leave-one-out median of the athlete's OWN marks.
+probe('consensus: elite 5K athlete is not all-red at shorter events', ()=>{
+  A=DB.athletes[0]; renderMultiEvent(); const h=out('me-body');
+  const gaps=(h.match(/>GAP</g)||[]).length;
+  if(gaps>=4) throw new Error('most events still read GAP ('+gaps+') — anchor tilt not fixed');
+  if(!/PRIMARY/.test(h)) throw new Error('primary event has no verdict row of its own'); });
+probe('consensus: a weak primary 5K on a speed athlete reads as the gap it is', ()=>{
+  const mk2=(o)=>Object.assign({id:'x_'+Math.random().toString(36).slice(2), secondaryEvents:[], additionalPRs:{}, guardrail:null, weeklyMileage:null, trainingAge:2, raceDate:'2026-05-01', age:'', sex:'F', grade:'JR'}, o);
+  const spr=mk2({name:'Chachi Fixture',primaryEvent:'5K',raceDistance:'5K',raceDistanceM:5000,raceTime:'17:20.0',additionalPRs:{'200m':'25.94','400m':'57.30','1600m':'4:42.0','3200m':'10:24.9'}});
+  DB.athletes.push(spr); A=spr; renderMultiEvent(); const h=out('me-body');
+  const row=h.split('<tr>').find(r=>/5K/.test(r)&&/PRIMARY/.test(r));
+  if(!row) throw new Error('no primary 5K row');
+  if(!/DEVELOPMENT|GAP/.test(row)) throw new Error('slow primary 5K not flagged as development/gap');
+  DB.athletes.pop(); A=DB.athletes[0]; });
+probe('consensus: curve line hugs the marks (dots not systematically above line)', ()=>{
+  A=DB.athletes[0]; const prs=collectAllPRs(A);
+  let above=0, below=0;
+  prs.forEach(p=>{ const cons=consensusForecastAt(prs, p.distM, A, {leaveOneOut:true}); if(!cons) return; if(p.sec<cons) above++; else below++; });
+  if(above===prs.length||below===prs.length) throw new Error('every dot on one side of its consensus — median fit broken ('+above+'/'+below+')'); });
 
 probe('duplicate repair: banner hidden when roster is clean', ()=>{ renderRoster(); if(/MERGE AVAILABLE/.test(out('ro-body'))) throw new Error('banner shown on a clean roster'); });
 probe('duplicate repair: detects a one-row-per-race roster', ()=>{

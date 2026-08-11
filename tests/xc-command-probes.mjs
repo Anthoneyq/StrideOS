@@ -79,6 +79,7 @@ assert.equal(P.normalizeXcPlan({ distanceM:1234 }).distanceM, 5000, 'unsupported
 assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:9999 }).courseAdjustmentSec, 7200, 'slow adjustment clamps');
 assert.equal(P.normalizeXcPlan({ courseAdjustmentSec:-9999 }).courseAdjustmentSec, -1800, 'fast adjustment clamps');
 assert.equal(P.normalizeXcPlan({ meetDate:'08/04/2026' }).meetDate, '', 'non-ISO date is rejected');
+assert.equal(P.normalizeXcPlan({ distanceM:3200 }).distanceM, 3200, 'track 3200m remains exact in Race Command');
 
 assert.deepEqual(P.xcCheckpointDistances(3218).map(Math.round), [1000,1609,3000,3218]);
 assert.deepEqual(P.xcCheckpointDistances(5000).map(Math.round), [1000,1609,3000,5000]);
