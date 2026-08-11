@@ -4396,15 +4396,27 @@ async function persistDuplicateMergeToCloud(survivors, absorbed){
 function remoteAthleteToLocal(row, raceRows){
   const races = (raceRows || []).filter(r => r.athlete_id === row.id);
   const additionalPRs = {};
+  // Once meet history landed in this table, "any non-primary row" stopped being
+  // a safe definition of an additional PR: rows are hydrated in list order, so
+  // a slower history row arriving later would overwrite a faster mark and
+  // quietly damage the athlete's record. The rule is now simply FASTEST WINS,
+  // which is order-independent and cannot move a PR backwards — and it also
+  // repairs the reverse case, where a stale mirror row is slower than a real
+  // race the athlete actually ran.
+  const prCandidate = {};
   races.forEach(r => {
     // Classify by provenance (source_ref), NOT by name. A stale 'primary:<old>'
     // race left behind when the coach changed the primary event must not be
     // re-hydrated as a phantom additional PR.
     const isPrimaryRef = r.source_ref && r.source_ref.indexOf('primary:') === 0;
-    if(r.event && r.time_text && !isPrimaryRef && r.event !== row.race_distance){
-      additionalPRs[r.event] = r.time_text;
+    if(!r.event || !r.time_text || isPrimaryRef || r.event === row.race_distance) return;
+    const sec = Number(r.time_sec) > 0 ? Number(r.time_sec) : parseTime(String(r.time_text));
+    const held = prCandidate[r.event];
+    if(!held || (sec > 0 && (!(held.sec > 0) || sec < held.sec))){
+      prCandidate[r.event] = { sec, timeText:r.time_text };
     }
   });
+  Object.keys(prCandidate).forEach(ev => { additionalPRs[ev] = prCandidate[ev].timeText; });
 
   // Full dated race history, kept alongside additionalPRs rather than replacing
   // it. additionalPRs collapses to one best time per event, which can never
@@ -5022,11 +5034,16 @@ function computeRosterSignals(athletes, workoutItems, todayISO){
     for(const k of keys){ if(byAthlete.has(k)) return byAthlete.get(k); }
     return [];
   };
-  const didHappen = w =>
-    (isFinite(Number(w.total_distance_m)) && Number(w.total_distance_m) > 0) ||
-    (isFinite(Number(w.total_duration_sec)) && Number(w.total_duration_sec) > 0);
-  const wasPrescribed = w =>
-    Boolean(w.prescribed_distance_m || w.prescribed_zone_label || w.prescribed_notes);
+  // One completion predicate for the whole app. workoutHasCompletion also
+  // counts heart-rate and effort evidence: a session logged as "RPE 7, no
+  // watch" HAPPENED, and reporting it as unrecorded would be a false alarm
+  // aimed at the athletes least likely to carry a device.
+  const didHappen = w => workoutHasCompletion(w);
+  const wasPrescribed = w => workoutHasPrescription(w);
+  // Distance totals still need a real distance number — an RPE-only session
+  // is completed but contributes 0 to a week-over-week distance comparison.
+  const distOf = w => (isFinite(Number(w.total_distance_m)) && Number(w.total_distance_m) > 0)
+    ? Number(w.total_distance_m) : 0;
   const inRange = (w, start, end) => w.workout_date >= start && w.workout_date <= (end || R.today);
   const nameOf = a => a.name || 'Unnamed athlete';
   const dayGap = iso => {
@@ -5062,7 +5079,7 @@ function computeRosterSignals(athletes, workoutItems, todayISO){
     // 3. Recorded distance jumped week over week.
     const dist = (start, end) => logs
       .filter(w => didHappen(w) && inRange(w, start, end))
-      .reduce((s, w) => s + (Number(w.total_distance_m) > 0 ? Number(w.total_distance_m) : 0), 0);
+      .reduce((s, w) => s + distOf(w), 0);
     const thisWk = dist(R.week, R.today);
     const prevEnd = (() => { const p = R.week.split('-').map(Number);
       const d = new Date(Date.UTC(p[0], p[1] - 1, p[2])); d.setUTCDate(d.getUTCDate() - 1);
@@ -5417,6 +5434,38 @@ function briefGo(action){
   goTo(action || 'roster', null);
 }
 
+// What the signal layer could actually SEE. Screen, clipboard, and print all
+// read this one function so they can never disagree about whether silence means
+// "nothing to report" or "nothing was loaded".
+function coachBriefSignalEvidence(ctx){
+  const status = ctx && ctx.workouts ? ctx.workouts.status : 'idle';
+  if(status === 'loading' || status === 'idle'){
+    return { state:'loading', tag:'Checking',
+      message:'Reading the training log. Signals appear once it loads — this is not an all-clear yet.' };
+  }
+  if(status === 'unavailable'){
+    return { state:'unavailable', tag:'Log unavailable',
+      message:'The training log could not be read, so logging gaps, unrecorded sessions, distance jumps, and effort ratings were not checked. Race-result signals below are unaffected.' };
+  }
+  const logged = (ctx.workouts.items || []).length;
+  const withHistory = (DB.athletes || []).filter(a =>
+    Array.isArray(a.raceHistory) && a.raceHistory.length >= 2).length;
+  if(!logged && !withHistory){
+    return { state:'insufficient', tag:'Not enough data',
+      message:'No logged workouts in the last 28 days and no athlete with two dated results at the same distance. STRIDE will not guess at athlete state from PR fields alone — a PR never moves backwards, so it cannot show direction.' };
+  }
+  if(!logged){
+    return { state:'partial', tag:'Results only',
+      message:'No logged workouts in the last 28 days, so only race-result signals were checked. Logging gaps, unrecorded sessions, distance jumps, and effort ratings need the training log.' };
+  }
+  if(!withHistory){
+    return { state:'partial', tag:'Training log only',
+      message:'No athlete has two dated results at the same distance yet, so result-direction signals were not checked. Training-log signals are current.' };
+  }
+  return { state:'clear', tag:'All clear',
+    message:'No roster changes to flag. No 10-day logging gaps, no assigned sessions left unrecorded, no result more than 1.5% off a previous best, and no week-over-week distance jump above 50%.' };
+}
+
 function coachBriefContext(){
   const workoutItems = coachBriefWorkoutState && coachBriefWorkoutState.status === 'ready'
     ? (coachBriefWorkoutState.items || [])
@@ -5505,17 +5554,18 @@ function renderCoachBrief(){
       ${s.names.length ? `<p class="sq-flag-who">${esc(briefNames(s.names))}</p>` : ''}
       <button class="brief-action" style="margin-top:.6rem" onclick="briefGo('${esc(s.action)}')">${esc(s.actionLabel)} →</button>
     </div>`).join('');
-  const logReady = ctx.workouts && ctx.workouts.status === 'ready';
+  // "All clear" is a CLAIM, and it is only honest when the evidence actually
+  // arrived. Loading, a failed fetch, or a roster with nothing to read from all
+  // produce zero signals for reasons that have nothing to do with the athletes.
+  const ev = coachBriefSignalEvidence(ctx);
   const signalsHtml = signalRows || `
-    <div class="sq-flag sq-flag-clear">
-      <p class="sq-flag-detail">${logReady
-        ? 'No roster changes to flag. No 10-day logging gaps, no assigned sessions left unrecorded, no result more than 1.5% off a previous best, and no week-over-week distance jump above 50%.'
-        : 'Signals need the training log and at least two dated results at the same distance. STRIDE will not guess at athlete state from PR fields alone — a PR never moves backwards, so it cannot show direction.'}</p>
+    <div class="sq-flag sq-flag-${ev.state === 'clear' ? 'clear' : 'warn'}">
+      <p class="sq-flag-detail">${esc(ev.message)}</p>
     </div>`;
   const signalsPanel = `
     <div class="brief-panel-head">
       <p class="brief-panel-title">Athlete signals</p>
-      <span class="brief-panel-tag">${ctx.data.signals.length ? `${ctx.data.signals.length} to review` : 'All clear'}</span>
+      <span class="brief-panel-tag">${ctx.data.signals.length ? `${ctx.data.signals.length} to review` : esc(ev.tag)}</span>
     </div>
     ${signalsHtml}
     <p class="brief-source-note" style="margin-top:.75rem">Built from dated race results and logged workouts on this roster. Each line reports what was recorded — STRIDE does not infer fatigue, readiness, or injury risk, and an unlogged session is not a missed one.</p>`;
@@ -5628,8 +5678,18 @@ function coachBriefText(){
     `Generated: ${new Date().toLocaleString('en-US')}`,
     `Roster: ${c.roster} · Current primary marks: ${c.fresh}/${c.withPR} · Multi-event: ${c.multiReady} · Held-out checks: ${ctx.ledger.n}`,
     '',
-    'REVIEW QUEUE'
+    'ATHLETE SIGNALS'
   ];
+  if(ctx.data.signals.length){
+    ctx.data.signals.forEach(s => {
+      lines.push(`- ${s.title}`);
+      lines.push(`  ${s.detail}${s.names.length ? ` (${briefNames(s.names)})` : ''}`);
+    });
+  } else {
+    lines.push(`- ${coachBriefSignalEvidence(ctx).message}`);
+  }
+  lines.push('Recorded data only. STRIDE does not infer fatigue, readiness, or injury risk; an unlogged session is not a missed one.');
+  lines.push('', 'ROSTER INPUTS');
   ctx.data.priorities.forEach((p, i) => {
     lines.push(`${i+1}. ${p.title}`);
     lines.push(`   ${p.detail}${p.names.length ? ` (${briefNames(p.names)})` : ''}`);
@@ -5679,7 +5739,7 @@ function printCoachBrief(){
     : '';
   const signalRows = ctx.data.signals.length
     ? ctx.data.signals.map(s => `<div class="ps-callout"><strong>${esc(s.title)}</strong><br>${esc(s.detail)}${s.names.length?`<br>${esc(briefNames(s.names))}`:''}</div>`).join('')
-    : `<div class="ps-callout">No roster changes to flag from dated results and logged workouts.</div>`;
+    : `<div class="ps-callout">${esc(coachBriefSignalEvidence(ctx).message)}</div>`;
   printSheet(`<div class="ps-page">${_psHead('Coach Brief', team, `${c.roster} athletes · ${c.fresh}/${c.withPR} current primary marks · ${c.multiReady} multi-event`, [_psStamp()])}<div class="ps-section">Athlete signals</div>${signalRows}<div class="ps-section">Roster inputs</div>${priorities}${workoutRows}${meetRows}<div class="ps-foot">Coach-reviewed STRIDE OS snapshot · secondary-event dates and unlogged activity are not represented.</div></div>`);
 }
 
@@ -12807,10 +12867,56 @@ function previewMeetResults(){
   renderImport();
 }
 
+// Every dated matched result becomes its own row in public.races — including a
+// result SLOWER than a standing PR, which the PR fields structurally cannot
+// hold. This is the only source of race history, and race history is the only
+// thing that can answer "is this athlete going backwards".
+//
+// Identity is meet:<date>:<event>:<time>, so re-importing the same meet upserts
+// the same rows rather than duplicating them, while a prelim and a final on the
+// same day stay separate. source='meet_import' keeps these clear of the
+// local_storage_import PR-mirror rows and of the stale-row reconciliation that
+// only ever touches that source.
+function meetHistoryRows(updates, coachId){
+  const rows = [];
+  const seen = new Set();
+  (updates || []).forEach(u => {
+    if(!u || !u.ath || !u.res) return;
+    const athleteUuid = u.ath.supabaseId;
+    const date = u.res.date ? String(u.res.date).slice(0,10) : '';
+    const sec = Number(u.res.sec);
+    const distM = Number(u.res.distM || DIST[u.res.event]);
+    // Undated results cannot take a position in a sequence, so they are not
+    // history. They still update the PR fields through the normal path.
+    if(!athleteUuid || !date || !u.res.event || !(sec > 0) || !(distM > 0)) return;
+    const ref = `meet:${date}:${u.res.event}:${u.res.timeText}`;
+    const dedupe = `${athleteUuid}|${ref}`;
+    if(seen.has(dedupe)) return;
+    seen.add(dedupe);
+    rows.push({
+      athlete_id: athleteUuid,
+      coach_id: coachId,
+      source: 'meet_import',
+      source_ref: ref,
+      event: u.res.event,
+      distance_m: distM,
+      time_text: u.res.timeText,
+      time_sec: sec,
+      race_date: date
+    });
+  });
+  return rows.sort((a, b) =>
+    a.athlete_id.localeCompare(b.athlete_id) || a.source_ref.localeCompare(b.source_ref));
+}
+
 async function applyMeetResults(){
   if(!sbUser || isAthleteOnly()){ toast('Coach sign-in required'); return; }
   const updates = (meetState.preview || []).filter(u => u.status === 'pr' || u.status === 'new');
-  if(!updates.length){ toast('No PRs or new results to apply'); return; }
+  // Slower results change no PR field but are still part of the athlete's
+  // record, so applying is worthwhile whenever there is anything to record.
+  const historyCandidates = (meetState.preview || []).filter(u =>
+    u.status === 'pr' || u.status === 'new' || u.status === 'slower');
+  if(!updates.length && !historyCandidates.length){ toast('No results to apply'); return; }
   const beforeGroups = trainingGroupMembership(computeTrainingGroups(DB.athletes || []));
   const changed = new Set();
   updates.forEach(u => {
@@ -12826,8 +12932,28 @@ async function applyMeetResults(){
   const syncResults = sbClient && typeof syncAthleteToSupabase === 'function'
     ? await Promise.all([...changed].map(a => syncAthleteToSupabase(a)))
     : [];
-  const cloudStatus = !sbClient ? 'local_only' :
+  let cloudStatus = !sbClient ? 'local_only' :
     (syncResults.length && syncResults.every(result => result && result.ok) ? 'synced' : 'partial');
+
+  // History is written AFTER the athlete sync, because a brand-new athlete only
+  // has a supabaseId once that sync returns.
+  let historyWritten = 0;
+  if(sbClient){
+    const historyRows = meetHistoryRows(historyCandidates, sbUser.id);
+    if(historyRows.length){
+      try{
+        const { error } = await sbClient
+          .from('races')
+          .upsert(historyRows, { onConflict:'athlete_id,source,source_ref' });
+        if(error) throw error;
+        historyWritten = historyRows.length;
+        await loadRemoteAthletes();
+      }catch(err){
+        console.warn('race history write failed', err);
+        if(cloudStatus === 'synced') cloudStatus = 'partial';
+      }
+    }
+  }
   const afterGroups = trainingGroupMembership(computeTrainingGroups(DB.athletes || []));
   const appliedAt = new Date().toISOString();
   DB.lastMeetSummary = {
@@ -12851,7 +12977,10 @@ async function applyMeetResults(){
   const added = updates.filter(u => u.status === 'new').length;
   const syncNote = cloudStatus === 'synced' ? ' · cloud synced' :
     cloudStatus === 'partial' ? ' · saved locally; cloud sync needs review' : ' · saved locally';
-  toast(`Applied ${improved} PR${improved===1?'':'s'}${added?` + ${added} new result${added===1?'':'s'}`:''}${syncNote}`,
+  const historyNote = historyWritten ? ` · ${historyWritten} result${historyWritten===1?'':'s'} kept in race history` : '';
+  toast(improved || added
+    ? `Applied ${improved} PR${improved===1?'':'s'}${added?` + ${added} new result${added===1?'':'s'}`:''}${historyNote}${syncNote}`
+    : `No PR changes${historyNote || ' · nothing to record'}${syncNote}`,
     cloudStatus === 'partial' ? 'info' : undefined);
   meetState.preview = (meetState.preview || []).map(u =>
     (u.status === 'pr' || u.status === 'new') ? { ...u, status:'applied', appliedFrom:u.status } : u);

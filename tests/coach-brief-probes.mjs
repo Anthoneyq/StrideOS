@@ -93,9 +93,13 @@ try{
     extractFn('coachBriefSignalRanges'),
     extractSetSrc('BRIEF_EASY_TYPES'),
     extractConstLine('BRIEF_RACE_DELTA_PCT'),
+    extractFn('workoutHasCompletion'),
+    extractFn('workoutHasPrescription'),
+    extractFn('meetHistoryRows'),
+    extractFn('remoteAthleteToLocal'),
     extractFn('computeRosterSignals'),
     extractFn('computeCoachBriefData'),
-    'return { coachBriefDateState, coachBriefSignalRanges, computeRosterSignals, computeCoachBriefData };'
+    'return { coachBriefDateState, coachBriefSignalRanges, computeRosterSignals, computeCoachBriefData, meetHistoryRows, remoteAthleteToLocal, workoutHasCompletion };'
   ].join('\n');
   E = new Function(src)();
   passed++;
@@ -481,6 +485,149 @@ if(E){
   check(Array.isArray(data.priorities) && data.priorities.length > 0,
     'computeCoachBriefData: roster-input priorities are retained, not deleted');
 }
+
+// ── END-TO-END: MEET PASTE → APPLY → HYDRATE → SIGNAL ──────────────────────
+// The signal layer's headline claim ("behind their best") is only real if a
+// slower result survives the whole pipeline. The unit probes above use
+// hand-built raceHistory and would keep passing while the integration is
+// broken — which is exactly what happened: meet apply discarded slower results
+// and the PR-mirror rows overwrite each other on a fixed source_ref, so
+// raceHistory held one row per event and the signal could never fire.
+if(E){
+  const T2 = '2026-08-11';
+  const coach = 'coach-uuid';
+  // Two meets for one athlete: an early 800m, then a slower 800m.
+  const preview = [
+    { status:'new',    ath:{ id:'a', name:'Runner', supabaseId:'ath-uuid' },
+      res:{ event:'800m', distM:800, sec:120, timeText:'2:00.0', date:'2026-04-01' } },
+    { status:'slower', ath:{ id:'a', name:'Runner', supabaseId:'ath-uuid' },
+      res:{ event:'800m', distM:800, sec:126, timeText:'2:06.0', date:'2026-05-01' } }
+  ];
+  const rows = E.meetHistoryRows(preview, coach);
+  check(rows.length === 2,
+    'meet apply: a slower result is written to race history, not discarded');
+  check(rows.every(r => r.source === 'meet_import'),
+    'meet apply: history rows are kept clear of the local_storage_import PR mirror');
+  check(new Set(rows.map(r => r.source_ref)).size === 2,
+    'meet apply: two results at one event get distinct history identity');
+  check(E.meetHistoryRows(preview, coach).length === 2 &&
+        stableJSON(E.meetHistoryRows(preview, coach)) === stableJSON(rows),
+    'meet apply: history row generation is deterministic and re-import-safe');
+  check(E.meetHistoryRows([{ status:'new', ath:{ id:'a', supabaseId:'u' },
+    res:{ event:'800m', distM:800, sec:120, timeText:'2:00.0', date:'' } }], coach).length === 0,
+    'meet apply: an undated result cannot enter a dated sequence');
+
+  // Hydrate exactly as the cloud read does, then run the signal layer.
+  const dbRows = rows.map((r, i) => ({ ...r, athlete_id:'ath-uuid', id:`race-${i}` }));
+  const hydrated = E.remoteAthleteToLocal({
+    id:'ath-uuid', client_ref:'a', display_name:'Runner',
+    race_distance:'1600m', race_distance_m:1600, race_time:'4:40', race_date:'2026-04-01'
+  }, dbRows);
+  check(Array.isArray(hydrated.raceHistory) && hydrated.raceHistory.length === 2,
+    'hydration: both dated results survive the round trip into raceHistory');
+  const endToEnd = E.computeRosterSignals([hydrated], [], T2);
+  check(endToEnd.some(s => s.key === 'slower'),
+    'end to end: a slower meet result reaches the Coach Brief as a signal');
+
+  // The hydration hazard this created: a slower history row must never
+  // overwrite a faster additional PR.
+  const withPrMirror = E.remoteAthleteToLocal({
+    id:'ath-uuid', client_ref:'a', display_name:'Runner',
+    race_distance:'1600m', race_distance_m:1600, race_time:'4:40'
+  }, [
+    { athlete_id:'ath-uuid', source:'local_storage_import', source_ref:'additional:800m',
+      event:'800m', time_text:'2:00.0', time_sec:120, race_date:'2026-04-01' },
+    { athlete_id:'ath-uuid', source:'meet_import', source_ref:'meet:2026-05-01:800m:2:06.0',
+      event:'800m', time_text:'2:06.0', time_sec:126, race_date:'2026-05-01' }
+  ]);
+  check(withPrMirror.additionalPRs['800m'] === '2:00.0',
+    'hydration: a slower history row never overwrites the faster PR mirror');
+  const staleMirror = E.remoteAthleteToLocal({
+    id:'ath-uuid', client_ref:'a', display_name:'Runner',
+    race_distance:'1600m', race_distance_m:1600, race_time:'4:40'
+  }, [
+    { athlete_id:'ath-uuid', source:'local_storage_import', source_ref:'additional:800m',
+      event:'800m', time_text:'2:06.0', time_sec:126, race_date:'2026-04-01' },
+    { athlete_id:'ath-uuid', source:'meet_import', source_ref:'meet:2026-05-01:800m:2:00.0',
+      event:'800m', time_text:'2:00.0', time_sec:120, race_date:'2026-05-01' }
+  ]);
+  check(staleMirror.additionalPRs['800m'] === '2:00.0',
+    'hydration: a real race faster than a stale mirror row becomes the PR');
+  const historyOnly = E.remoteAthleteToLocal({
+    id:'ath-uuid', client_ref:'a', display_name:'Runner',
+    race_distance:'1600m', race_distance_m:1600, race_time:'4:40'
+  }, [
+    { athlete_id:'ath-uuid', source:'meet_import', source_ref:'meet:2026-05-01:800m:2:06.0',
+      event:'800m', time_text:'2:06.0', time_sec:126, race_date:'2026-05-01' },
+    { athlete_id:'ath-uuid', source:'meet_import', source_ref:'meet:2026-04-01:800m:2:00.0',
+      event:'800m', time_text:'2:00.0', time_sec:120, race_date:'2026-04-01' }
+  ]);
+  check(historyOnly.additionalPRs['800m'] === '2:00.0',
+    'hydration: with history only, the fastest time becomes the PR regardless of row order');
+
+  // RPE-only completion: a session logged without a watch still happened.
+  const rpeOnly = [{ athlete_id:'a', workout_date:shiftISO(T2,-1), workout_type:'easy',
+    prescribed_distance_m:6000, perceived_effort:6 },
+    { athlete_id:'a', workout_date:shiftISO(T2,-2), workout_type:'easy',
+      prescribed_distance_m:6000, perceived_effort:6 }];
+  check(!E.computeRosterSignals([{ id:'a', name:'A' }], rpeOnly, T2)
+    .some(s => s.key === 'missed'),
+    'RPE-only sessions count as recorded and are not reported as unrecorded');
+  check(!E.computeRosterSignals([{ id:'a', name:'A' }], rpeOnly, T2)
+    .some(s => s.key === 'quiet'),
+    'RPE-only sessions count as activity and do not make an athlete look quiet');
+  check(E.workoutHasCompletion({ avg_hr_bpm:150 }) === true,
+    'heart-rate-only evidence counts as completion');
+  check(!E.computeRosterSignals([{ id:'a', name:'A' }], [
+    { athlete_id:'a', workout_date:shiftISO(T2,-10), workout_type:'easy', total_distance_m:20000 },
+    { athlete_id:'a', workout_date:shiftISO(T2,-2),  workout_type:'easy', perceived_effort:7 }
+  ], T2).some(s => s.key === 'load-spike'),
+    'an RPE-only session contributes no distance and cannot fake a load spike');
+}
+
+// The races upsert needs a FULL unique index; the partial one PostgREST cannot
+// infer is the same defect that broke the Strava workout import.
+const raceIdxMigration = fs.readdirSync(path.join(root, 'supabase/migrations'))
+  .filter(f => /race_history_upsert_index/.test(f))
+  .map(f => fs.readFileSync(path.join(root, 'supabase/migrations', f), 'utf8'))
+  .join('\n');
+check(/drop index if exists public\.idx_races_source_ref/.test(raceIdxMigration),
+  'migration drops the partial races source_ref index');
+check(/create unique index if not exists idx_races_source_ref[\s\S]{0,120}\(athlete_id, source, source_ref\)\s*;/.test(raceIdxMigration),
+  'migration creates a FULL unique index ON CONFLICT can infer');
+check(/onConflict\s*:\s*'athlete_id,source,source_ref'/.test(html),
+  'the race history upsert targets that index');
+// The integration point the unit probes cannot see: apply must FEED slower
+// results to the history writer. This is the line whose absence made the
+// original "behind their best" signal unreachable in the real workflow.
+const applyFn = extractFn('applyMeetResults');
+check(/historyCandidates[\s\S]{0,200}u\.status === 'slower'/.test(applyFn),
+  'meet apply collects slower results as history candidates');
+check(/meetHistoryRows\(historyCandidates, sbUser\.id\)/.test(applyFn),
+  'meet apply hands those candidates to the history writer');
+check(applyFn.indexOf('syncAthleteToSupabase') < applyFn.indexOf('meetHistoryRows'),
+  'history is written after athlete sync, so a new athlete has a cloud id');
+
+// Copy and print output must lead with signals, not the retired framing.
+check(/'ATHLETE SIGNALS'/.test(html) && !/'REVIEW QUEUE'/.test(html),
+  'clipboard output leads with Athlete signals and drops the REVIEW QUEUE framing');
+check(html.indexOf("'ATHLETE SIGNALS'") < html.indexOf("'ROSTER INPUTS'"),
+  'clipboard output orders signals above roster inputs');
+check(/ps-section">Athlete signals/.test(html) &&
+      html.indexOf('ps-section">Athlete signals') < html.indexOf('ps-section">Roster inputs'),
+  'print output leads with Athlete signals');
+
+// "All clear" is a claim about evidence, not an absence of output.
+check(/function coachBriefSignalEvidence/.test(html),
+  'a single evidence-state helper backs screen, clipboard, and print');
+const evidenceFn = extractFn('coachBriefSignalEvidence');
+check(/status === 'loading' \|\| status === 'idle'/.test(evidenceFn),
+  'evidence state distinguishes a still-loading log from an all-clear');
+check(/unavailable/.test(evidenceFn) && /could not be read/.test(evidenceFn),
+  'evidence state reports an unreadable training log honestly');
+check((evidenceFn.match(/All clear/g) || []).length === 1 &&
+      /state:'clear', tag:'All clear'/.test(evidenceFn),
+  'All clear is reachable only from the fully-covered branch');
 
 // The signal panel must render ABOVE the roster-input queue, and the old
 // "Review queue / Evidence gaps first" framing must not lead the screen.
