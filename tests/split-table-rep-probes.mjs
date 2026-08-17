@@ -204,9 +204,19 @@ probe('fitness override: coach-only — athlete accounts cannot set or clear it'
   applyFitnessOverride();
   if(localStorage.getItem('strideFitnessOverrides') !== before) throw new Error('athlete role applied an override');
   const card = fitnessOverrideCard(A);
-  if(/foTime|Adjust paces|applyFitnessOverride/.test(card)) throw new Error('athlete account is shown adjustment controls');
-  if(!/[Cc]oach/.test(card)) throw new Error('athlete banner does not attribute the adjustment to the coach');
+  if(card !== '') throw new Error('athlete account should see no override UI at all — the override is coach-device-local and does not sync to athlete accounts');
   sbRole = null;
+});
+probe('fitness override: a linked athlete under their OWN user id gets plain PR paces', ()=>{
+  // Real athlete sign-ins have a different sbUser.id than the coach — the
+  // device-local override must be invisible to them, and nothing may claim
+  // otherwise.
+  if(!getFitnessOverride(A)) throw new Error('fixture lost the c1 override');
+  sbUser = { id:'athlete-user-9' }; sbRole = 'athlete';
+  if(getFitnessOverride(A) !== null) throw new Error('athlete user id retrieved the coach\\'s override');
+  if(paceAnchorForAthlete(A) !== A) throw new Error('athlete anchor should be the raw PR athlete');
+  if(fitnessOverrideCard(A) !== '') throw new Error('athlete shown override UI');
+  sbUser = { id:'c1' }; sbRole = null;
 });
 probe('fitness override: scoped per account — another sign-in does not inherit it', ()=>{
   if(!getFitnessOverride(A)) throw new Error('fixture lost the c1 override');

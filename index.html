@@ -8625,8 +8625,13 @@ function renderWeatherStatus(w, fromCache){
 function applyFetchedConditions(weather){
   const tempEl = document.getElementById('envTemp');
   const altEl = document.getElementById('envAlt');
+  const humEl = document.getElementById('envHum');
   if(tempEl && weather.tempF != null) tempEl.value = weather.tempF;
   if(altEl && weather.altitudeFt != null) altEl.value = weather.altitudeFt;
+  // The lookup already carries relative humidity — it must reach the model,
+  // not just the status line (a fetched 90% RH that never lands in envHum
+  // silently under-corrects every pace).
+  if(humEl && weather.humidity != null) humEl.value = Math.round(weather.humidity);
   // Trigger recalculation
   if(typeof updateBuilder === 'function') updateBuilder();
   if(typeof refreshDanielsTable === 'function') refreshDanielsTable();
@@ -8641,8 +8646,10 @@ function clearCachedWeather(){
   if(statusEl) statusEl.innerHTML = '';
   const tempEl = document.getElementById('envTemp');
   const altEl = document.getElementById('envAlt');
+  const humEl = document.getElementById('envHum');
   if(tempEl) tempEl.value = '';
   if(altEl) altEl.value = '';
+  if(humEl) humEl.value = '';
   if(typeof updateBuilder === 'function') updateBuilder();
   if(typeof refreshDanielsTable === 'function') refreshDanielsTable();
 }
@@ -8652,7 +8659,10 @@ function clearCachedWeather(){
 // current-fitness mark — the VDOT flow of typing a hypothetical 17:00 5K —
 // WITHOUT touching the athlete's PR record, so Race Forecasts, the
 // Performance Curve, and Team IQ stay anchored to real race evidence.
-// Stored locally per athlete id (device-local; not written to the roster row).
+// SCOPE: a device-local COACH tool (localStorage under the coach's user id).
+// It does not sync to other devices or to linked athlete accounts — an
+// athlete signing in sees plain PR-anchored paces. Making it visible to
+// athletes requires cloud persistence (schema + RLS), deliberately deferred.
 const FITNESS_OVERRIDE_KEY = 'strideFitnessOverrides';
 function _fitnessOverrides(){
   try{ return JSON.parse(localStorage.getItem(FITNESS_OVERRIDE_KEY) || '{}') || {}; }
@@ -8717,15 +8727,13 @@ function clearFitnessOverride(){
 const FITNESS_OVERRIDE_EVENTS = ['800m','1500m','1600m','Mile','3000m','3200m','2 Mile','5K','8K','10K'];
 function fitnessOverrideCard(ath){
   const o = getFitnessOverride(ath);
-  // Athlete accounts: paces reflect the coach's adjustment, but the controls
-  // (and the invitation to self-adjust) are coach-only.
-  if(!canAdjustFitness()){
-    return o ? `
-    <div style="background:var(--bg-card);border:1px solid var(--yellow);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
-      <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--yellow);text-transform:uppercase;margin-bottom:.25rem">● Coach-adjusted current fitness</p>
-      <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">Your coach set these paces from <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (coach-entered, not a race result). Your PR record is unchanged.</p>
-    </div>` : '';
-  }
+  // Athlete accounts see NOTHING here. The override is stored on the
+  // coach's device under the coach's user id (see _fitnessOverrideKeyFor),
+  // so a linked athlete signing in under their own id cannot retrieve it —
+  // showing them a "coach-adjusted" banner would claim a sync that does not
+  // exist. Cloud-persisting the override for athlete visibility is future
+  // schema work, not a display decision.
+  if(!canAdjustFitness()) return '';
   const opts = FITNESS_OVERRIDE_EVENTS.filter(e=>DIST[e]).map(e =>
     `<option value="${esc(e)}" ${((o && o.event === e) || (!o && ath.raceDistance === e)) ? 'selected' : ''}>${esc(e)}</option>`).join('');
   return `

@@ -74,6 +74,17 @@ probe('humidity: getEnvSettings exposes humidityPct from the envHum input', ()=>
   document.getElementById('envTemp').value = ''; document.getElementById('envHum').value = '';
 });
 
+probe('humidity: fetched race conditions land in envHum and clear with them', ()=>{
+  document.getElementById('envHum').value = '';
+  applyFetchedConditions({ tempF: 88, altitudeFt: 600, humidity: 87.4 });
+  if(document.getElementById('envHum').value != 87) throw new Error('fetched humidity not applied: "'+document.getElementById('envHum').value+'"');
+  if(document.getElementById('envTemp').value != 88) throw new Error('temp not applied');
+  A = { id:'w1', name:'Jo', raceWeather:{ success:true } }; DB = { athletes: [] }; saveDB = () => {};
+  clearCachedWeather();
+  if(document.getElementById('envHum').value !== '') throw new Error('humidity survived clear');
+  if(document.getElementById('envTemp').value !== '') throw new Error('temp survived clear');
+});
+
 // ── INDOOR TOGGLE ──
 probe('indoor: cloud row round-trips the flag inside race_weather', ()=>{
   const local = remoteAthleteToLocal({ id:'u1', client_ref:'a1', display_name:'Jo', race_weather:{ indoor:true },
