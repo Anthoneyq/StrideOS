@@ -7853,9 +7853,11 @@ const STRIDE_COACH_SPLITS = [
   { label: 'Speed',             pct: 112, range: '110–115%',
     desc: 'Mile / 800m race pace. Short, fast reps for sharpening.',
     reps: [200, 300, 400, 600] },
-  // Sprint intentionally stops at 300m: a 400m rep at 115–125% of race pace
-  // is a glycolytic time trial, not a stride — prescribing it as a table cell
-  // invites injury. 300m is included for 300m-track stride loops.
+  // reps lists define each zone's TYPICAL rep menu (and the union of them =
+  // the split table's columns). Display surfaces fill every column for every
+  // zone as a pace reference (Anthoney 2026-08-17); only physical guards
+  // blank cells. Coaches judge which cells are a sane workout — e.g. a 400m
+  // rep at Sprint 115–125% is a time trial, not a stride.
   { label: 'Sprint',            pct: 118, range: '115–125%',
     desc: 'Pure speed and economy. Strides (100–200m) at max velocity.',
     reps: [100, 150, 200, 300] },
@@ -8816,16 +8818,20 @@ function buildDanielsTable(ath){
   const guardrailKey = getActiveGuardrail();
   const guardrail = GUARDRAIL_LEVELS[guardrailKey];
 
-  // Calculate splits per zone × rep distance, with guardrail applied
+  // Full pace-reference grid (Anthoney 2026-08-17): every zone shows a time
+  // at EVERY rep-distance column, not just the zone's typical rep menu — the
+  // table reads as a pace wheel, and the coach decides which cells are a
+  // workout. Only PHYSICAL guards blank a cell: sprint anchors don't
+  // extrapolate long (repAllowedForAnchor), and a supra-race zone (pct>100)
+  // never prescribes a rep at/beyond the anchor distance itself — that time
+  // would be faster than the PR over the PR's own distance.
+  const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z => z.reps))].sort((a,b) => a-b);
   const rows = STRIDE_COACH_SPLITS.map(z => {
     const allowed = zoneAllowedForAnchor(z, ath);
     const adjustedPct = effectiveZonePct(z, ath, guardrailKey);
-    const cells = z.reps.map(d => {
-      // Sub-1500m anchors: also block supra-race paces at/beyond the race
-      // distance itself — a rep >= the PR distance prescribed FASTER than PR
-      // pace is physically impossible (the "VO2 breaks the world record" case).
+    const cells = allReps.map(d => {
       if(!allowed || !repAllowedForAnchor(d, ath) ||
-         (ath.raceDistanceM < 1500 && adjustedPct > 100 && d >= ath.raceDistanceM)){
+         (adjustedPct > 100 && d >= ath.raceDistanceM)){
         return { dist: d, sec: null, blocked: true };
       }
       let split = secPerM * d * pctToMult(adjustedPct);
@@ -8847,8 +8853,6 @@ function buildDanielsTable(ath){
     return { ...z, cells, mileStr, displayPct: adjustedPct.toFixed(0), allowed };
   });
 
-  // Union of all rep distances → table columns
-  const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z => z.reps))].sort((a,b) => a-b);
   const repLabel = d => {
     if(d === 1609) return '1mi';
     // Only whole kilometres get the km label — rounding 1200 to "1km" put two
@@ -11132,21 +11136,16 @@ function computeZoneSplits(athlete, opts){
     const mile = (allowed && athlete.raceDistanceM >= 1500)
       ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
     const repList = opts.repDists || z.reps;
-    // capToZoneReps: fixed-column DISPLAY surfaces (pace card, group sheet,
-    // Training Groups tables) set this so a shared column only renders for
-    // zones whose OWN reps list supports that distance — the same membership
-    // rule the on-screen Coach Split Table applies. So Sprint dashes 400m+
-    // (a 400m rep at 115–125% is a glycolytic time trial, not a stride) and
-    // Easy/Steady dash short interval columns they never prescribe.
-    // Deliberately OFF for coach-entered targets (programPaceForAthlete's
-    // per-1000m rate, group workout specs like VO2 1200s) — those pick one
-    // rep on purpose and are not bound by the table's column layout.
-    // ±15m tolerance treats the 1600 column and the 1609 (Mile) rep as one.
-    const zoneSupports = d => !opts.capToZoneReps || z.reps.some(r => Math.abs(r - d) <= 15);
+    // Full pace-reference grid (Anthoney 2026-08-17): every requested rep
+    // distance gets a time for every zone — the tables read as a pace wheel
+    // and the coach decides which cells are a workout. Only PHYSICAL guards
+    // blank a cell: sprint anchors don't extrapolate long, and a supra-race
+    // zone (pct>100) never prescribes a rep at/beyond the anchor distance
+    // itself (that time would beat the athlete's own PR).
     const reps = {};
     repList.forEach(d => {
-      if(!allowed || !zoneSupports(d) || !repAllowedForAnchor(d, athlete) ||
-         (athlete.raceDistanceM < 1500 && pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
+      if(!allowed || !repAllowedForAnchor(d, athlete) ||
+         (pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
       reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
     });
     return { label:z.label, range:z.range, pct:Math.round(pct), rawPct:pct, allowed, mile, reps, repDists:repList };
@@ -11301,7 +11300,7 @@ function paceCardPrintHTML(athlete){
   }
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
   const repCols = [300, 400, 800, 1000, 1200, 1600];
-  const cs = computeZoneSplits(athlete, { repDists: repCols, env, capToZoneReps: true });
+  const cs = computeZoneSplits(athlete, { repDists: repCols, env });
   // A raceTime that parses to 0 ("0:00") passes the truthiness guard above but
   // yields no splits — placeholder page, never a throw that kills a batch print.
   if(!cs){
@@ -11453,7 +11452,7 @@ function groupSessionZones(medianRefSec, repDists){
   // Same env correction as the on-screen split table and the printed pace card
   // — the same athlete must never get contradictory targets across surfaces.
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
-  const cs = computeZoneSplits(temp, { repDists: repDists || [300, 400, 800, 1000, 1200, 1600], guardrailKey:'standard', env, capToZoneReps: true });
+  const cs = computeZoneSplits(temp, { repDists: repDists || [300, 400, 800, 1000, 1200, 1600], guardrailKey:'standard', env });
   // Coaches want the working zones for a session, not recovery jog rows.
   const keep = new Set(['Steady', 'Tempo', 'Threshold', 'Critical Velocity', 'Race Pace', 'VO2 Max']);
   return cs.zones.filter(z => keep.has(z.label));
@@ -11728,7 +11727,7 @@ function groupSheetPrintHTML(group, opts){
   const zoneLabel = opts.zoneLabel || 'Threshold';
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
   const rows = group.members.map(m => {
-    const cs = computeZoneSplits(_distanceAthleteView(m.athlete), { repDists: repCols, env, capToZoneReps: true });
+    const cs = computeZoneSplits(_distanceAthleteView(m.athlete), { repDists: repCols, env });
     const z = cs ? cs.zones.find(x => x.label === zoneLabel && x.allowed) : null;
     const cells = repCols.map(d => `<td class="num">${z && z.reps[d] != null ? esc(fmtRepTime(z.reps[d])) : '—'}</td>`).join('');
     const mile = z && z.mile != null ? _mmss(z.mile, 0) : '—';

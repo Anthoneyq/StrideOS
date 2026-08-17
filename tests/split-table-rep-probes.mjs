@@ -1,20 +1,19 @@
 // ══════════════════════════════════════════════════════════════════════════
-// SPLIT TABLE REP-DISTANCE PROBES (2026-08-17)
+// SPLIT TABLE REP-DISTANCE PROBES (2026-08-17, full-grid doctrine)
 // ══════════════════════════════════════════════════════════════════════════
-// Locks the Kyle-request coverage: 300m and 400m splits must be populated on
-// every quality zone (Tempo, Threshold, Critical Velocity, Race Pace, VO2 Max,
-// Speed) across every surface a coach reads them from — the on-screen Coach
-// Split Table, the on-screen Training Groups tables, the printed pace card,
-// and the printed group sheet. A coach on a 300m track must never have to do
-// the split math by hand.
+// Anthoney's decision (2026-08-17, screenshot: "fill out these numbers across
+// the charts"): the split tables are a PACE-REFERENCE GRID — every zone shows
+// a time at every rep-distance column on every surface (on-screen Coach Split
+// Table, Training Groups tables, printed pace card, printed group sheet).
+// The coach decides which cells are a sane workout.
 //
-// Sprint is a DOCUMENTED EXCEPTION: it stops at 300m (a 400m rep at 115–125%
-// of race pace is a glycolytic time trial, not a stride). A probe locks the
-// exception so it can only change deliberately.
+// Only PHYSICAL guards may blank a cell, and those must render the exact
+// em-dash:
+//   1. supra-race zones (pct > 100) at/beyond the anchor distance itself —
+//      that time would beat the athlete's own PR;
+//   2. sprint anchors don't extrapolate long (repAllowedForAnchor).
 //
-// Same VM harness pattern as screen-render-probes.mjs: the single-file app can
-// only be proven by running it.
-//
+// Same VM harness pattern as screen-render-probes.mjs.
 // Run: node tests/split-table-rep-probes.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -58,50 +57,46 @@ A = DB.athletes[0];
 saveDB = function(){}; toast = function(){}; sbSubscription = { tier:'pro', hasProAccess:true }; sbUser = { id:'c1' }; sbRole = null;
 const probe=(label,fn)=>{ try{ fn(); __res.push(['OK   ',label,'']); }catch(e){ __res.push(['FAIL ',label,(e&&e.message)||String(e)]); } };
 
-// A cell is "populated" when it holds a digit-bearing time, not the em-dash.
 const isTime = s => /\\d/.test(s) && !/—/.test(s);
-// Split a rendered <table> body row for one zone into its <td> texts.
-const rowCells = (tableHtml, zoneLabel) => {
-  const rows = tableHtml.split(/<tr[\\s>]/).filter(r => r.includes('>'+zoneLabel+'<') || r.includes('>'+zoneLabel+' '));
-  if(rows.length !== 1) throw new Error(zoneLabel+': matched '+rows.length+' rows');
+// Split a rendered <table> body row for one zone/name into its <td> texts.
+const rowCells = (tableHtml, label) => {
+  const rows = tableHtml.split(/<tr[\\s>]/).filter(r => r.includes('>'+label+'<') || r.includes('>'+label+' '));
+  if(rows.length !== 1) throw new Error(label+': matched '+rows.length+' rows');
   return [...rows[0].matchAll(/<td[^>]*>([\\s\\S]*?)<\\/td>/g)].map(m => m[1].replace(/<[^>]*>/g,' ').trim());
 };
+// Rep cells are the LAST repCols.length tds of a row on every surface.
+const repCell = (cells, repCols, d) => {
+  const i = repCols.indexOf(d);
+  if(i < 0) throw new Error(d+' not in repCols '+JSON.stringify(repCols));
+  return cells.slice(-repCols.length)[i];
+};
 
-// ── SOURCE-OF-TRUTH ZONE DATA ──
-probe('zones: Tempo/Threshold/CV carry 300m AND 400m reps', ()=>{
-  ['Tempo','Threshold','Critical Velocity'].forEach(l=>{
-    const z = STRIDE_COACH_SPLITS.find(x=>x.label===l);
-    if(!z.reps.includes(300)) throw new Error(l+' missing 300');
-    if(!z.reps.includes(400)) throw new Error(l+' missing 400');
+// The full-grid expectation for one zone row on one surface: a cell is a
+// time unless a PHYSICAL guard applies — supra-race zone (pct > 100) at or
+// beyond the anchor's own distance — in which case it is the exact em-dash.
+const expectFullRow = (surface, cells, repCols, zoneLabel, anchorM) => {
+  const pct = STRIDE_COACH_SPLITS.find(z=>z.label===zoneLabel).pct;
+  repCols.forEach(d=>{
+    const c = repCell(cells, repCols, d);
+    const blocked = pct > 100 && d >= anchorM;
+    if(blocked){
+      if(c !== '—') throw new Error(surface+' '+zoneLabel+' '+d+'m should be exactly "—" (supra-race at/beyond anchor), got "'+c+'"');
+    } else {
+      if(!isTime(c)) throw new Error(surface+' '+zoneLabel+' '+d+'m should be a time, got "'+c+'"');
+    }
   });
-});
-probe('zones: Race Pace/VO2 Max/Speed carry 300m AND 400m reps', ()=>{
-  ['Race Pace','VO2 Max','Speed'].forEach(l=>{
-    const z = STRIDE_COACH_SPLITS.find(x=>x.label===l);
-    if(!z.reps.includes(300)) throw new Error(l+' missing 300');
-    if(!z.reps.includes(400)) throw new Error(l+' missing 400');
-  });
-});
-probe('zones: Sprint stops at 300m (documented exception — no 400m time trial)', ()=>{
-  const z = STRIDE_COACH_SPLITS.find(x=>x.label==='Sprint');
-  if(!z.reps.includes(300)) throw new Error('Sprint missing 300');
-  if(z.reps.includes(400)) throw new Error('Sprint gained 400 — that is a deliberate-decision change, update the doc comment and this probe together');
-});
+};
 
-// ── ON-SCREEN COACH SPLIT TABLE ──
-// Column order = zone label, Per Mile, then the sorted union of rep distances.
+// ── ON-SCREEN COACH SPLIT TABLE: every zone × every column ──
+const ALL_REPS = [...new Set(STRIDE_COACH_SPLITS.flatMap(z=>z.reps))].sort((a,b)=>a-b);
 const T = buildDanielsTable(A);
-const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z=>z.reps))].sort((a,b)=>a-b);
-const col = d => 2 + allReps.indexOf(d);   // td index of a rep-distance column
-probe('split table: header has 300m and 400m columns', ()=>{
-  if(!/>300m</.test(T)) throw new Error('no 300m column');
-  if(!/>400m</.test(T)) throw new Error('no 400m column');
+probe('split table: one column per union rep distance', ()=>{
+  ALL_REPS.forEach(d=>{ const l = d===1609?'1mi':(d%1000===0?(d/1000)+'km':d+'m');
+    if(!new RegExp('>'+l+'<','i').test(T)) throw new Error('missing column '+l); });
 });
-['Tempo','Threshold','Critical Velocity','Race Pace','VO2 Max','Speed'].forEach(l=>{
-  probe('split table: '+l+' row populates 300m and 400m for a 5K anchor', ()=>{
-    const cells = rowCells(T, l);
-    if(!isTime(cells[col(300)])) throw new Error(l+' 300m cell = "'+cells[col(300)]+'"');
-    if(!isTime(cells[col(400)])) throw new Error(l+' 400m cell = "'+cells[col(400)]+'"');
+STRIDE_COACH_SPLITS.forEach(z=>{
+  probe('split table: '+z.label+' row filled across all '+ALL_REPS.length+' distances (physical guards only)', ()=>{
+    expectFullRow('split table', rowCells(T, z.label), ALL_REPS, z.label, A.raceDistanceM);
   });
 });
 probe('split table: Threshold 300m split is the zone math, not a stray value', ()=>{
@@ -109,98 +104,71 @@ probe('split table: Threshold 300m split is the zone math, not a stray value', (
   const secPerM = parseTime(A.raceTime) / A.raceDistanceM;
   const z = STRIDE_COACH_SPLITS.find(x=>x.label==='Threshold');
   const expected = secPerM * 300 * pctToMult(effectiveZonePct(z, A, getActiveGuardrail()));
-  const got = parseTime(cells[col(300)].replace(/[^0-9:.]/g,''));
+  const got = parseTime(repCell(cells, ALL_REPS, 300).replace(/[^0-9:.]/g,''));
   if(!(got > expected*0.9 && got < expected*1.1)) throw new Error('300m split '+got+'s vs expected ~'+expected.toFixed(1)+'s');
 });
-probe('split table: Sprint row shows — at 400m (exception rendered, not broken)', ()=>{
-  const cells = rowCells(T, 'Sprint');
-  if(isTime(cells[col(400)])) throw new Error('Sprint 400m unexpectedly populated: "'+cells[col(400)]+'"');
-  if(!isTime(cells[col(300)])) throw new Error('Sprint 300m should be populated');
+probe('split table: supra-race guard — VO2/Speed/Sprint dash at 5K+ for a 5K anchor', ()=>{
+  ['VO2 Max','Speed','Sprint'].forEach(l=>{
+    const cells = rowCells(T, l);
+    [5000, 8000, 10000].forEach(d=>{
+      const c = repCell(cells, ALL_REPS, d);
+      if(c !== '—') throw new Error(l+' '+d+'m should be "—" (would beat the PR), got "'+c+'"');
+    });
+  });
 });
 
-// In every group/print surface the rep-distance cells are the LAST
-// repCols.length tds of the row (label/PR/mile cells come first), so exact
-// per-distance indexing is stable regardless of how many lead cells a
-// surface uses.
-const repCell = (cells, repCols, d) => {
-  const i = repCols.indexOf(d);
-  if(i < 0) throw new Error(d+' not in repCols '+JSON.stringify(repCols));
-  return cells.slice(-repCols.length)[i];
-};
-
-// Membership matrix shared by the fixed-column surfaces: a column renders a
-// time iff the zone's OWN reps list supports that distance (±15m so the 1600
-// column and the 1609 Mile rep are one); every unsupported cell must be the
-// exact em-dash — not empty, not any other placeholder.
-const zoneSupports = (label, d) => STRIDE_COACH_SPLITS.find(z=>z.label===label).reps.some(r => Math.abs(r - d) <= 15);
-const expectZoneRow = (surface, cells, repCols, label) => {
-  repCols.forEach(d=>{
-    const c = repCell(cells, repCols, d);
-    if(zoneSupports(label, d)){
-      if(!isTime(c)) throw new Error(surface+' '+label+' '+d+'m should be a time, got "'+c+'"');
-    } else {
-      if(c !== '—') throw new Error(surface+' '+label+' '+d+'m should be exactly "—", got "'+c+'"');
-    }
-  });
-};
-
-// ── PRINTED PACE CARD ──
-// repCols is hardcoded in paceCardPrintHTML; assert the header, then the full
-// supported/dash matrix for EVERY zone row (Sprint's 300m-only exception and
-// Easy/Steady's no-short-intervals rows both fall out of the membership rule).
-probe('pace card print: every zone row matches the supported/dash matrix', ()=>{
+// ── PRINTED PACE CARD: every zone × its 6 columns ──
+probe('pace card print: every zone row fully populated (all cols below a 5K anchor)', ()=>{
   const P = paceCardPrintHTML(A);
   const PACE_CARD_REPS = [300, 400, 800, 1000, 1200, 1600];
   PACE_CARD_REPS.forEach(d=>{ const l = d===1600?'1600m':d+'m';
     if(!P.includes('>'+l+'<')) throw new Error('missing header column '+l); });
   STRIDE_COACH_SPLITS.forEach(z=>{
-    expectZoneRow('pace card', rowCells(P, z.label), PACE_CARD_REPS, z.label);
+    expectFullRow('pace card', rowCells(P, z.label), PACE_CARD_REPS, z.label, A.raceDistanceM);
+  });
+});
+probe('pace card print: mile anchor — supra-race zones dash the 1600 column only', ()=>{
+  const P = paceCardPrintHTML(DB.athletes[1]);   // Jo, 1600m 5:20
+  const PACE_CARD_REPS = [300, 400, 800, 1000, 1200, 1600];
+  STRIDE_COACH_SPLITS.forEach(z=>{
+    expectFullRow('pace card (mile anchor)', rowCells(P, z.label), PACE_CARD_REPS, z.label, DB.athletes[1].raceDistanceM);
   });
 });
 
-probe('zone cap is opt-in: coach-entered reps beyond a zone cap still compute', ()=>{
-  // Group workout specs (VO2 1200s) and programPaceForAthlete's per-1000m
-  // rate deliberately bypass the display cap — lock that they keep working.
-  const cs = computeZoneSplits(A, { repDists:[1200] });
-  const vo2 = cs.zones.find(z=>z.label==='VO2 Max');
-  if(!(vo2 && isFinite(vo2.reps[1200]))) throw new Error('uncapped VO2 1200m target lost');
-  const sprintRate = programPaceForAthlete(A, 'sprint');
-  if(!isFinite(sprintRate)) throw new Error('programPaceForAthlete sprint per-1000m rate lost');
-});
-
-// ── PRINTED GROUP SHEET (default columns) ──
-// One row per athlete; assert BOTH fixture athletes' exact 300m/400m target
-// cells hold times (Riley 5K anchor, Jo 1600m anchor — both threshold-legal).
-probe('group sheet print: exact 300m and 400m cells populated per athlete', ()=>{
+// ── PRINTED GROUP SHEET: one Threshold row per athlete, all columns ──
+probe('group sheet print: every athlete row fully populated', ()=>{
   const G = groupSheetPrintHTML({ name:'Group A', label:'Group A', groupLabel:'Group A',
     paceLo:330, paceHi:345, medianRefSec: parseTime(A.raceTime),
     members:[{ athlete:A }, { athlete:DB.athletes[1] }] });
   const SHEET_REPS = [300, 400, 800, 1000, 1200, 1600];
   SHEET_REPS.forEach(d=>{ const l = d===1600?'1600m':d+'m';
     if(!G.includes('>'+l+'<')) throw new Error('missing header column '+l); });
-  // Group sheet rows are per-athlete at one zone (Threshold), so the matrix
-  // is the Threshold membership row for each athlete: all six columns are
-  // supported, so every cell must be a time (and would flag any dash).
-  ['Riley Chen','Jo Ellis'].forEach(name=>{
-    expectZoneRow('group sheet '+name, rowCells(G, name), SHEET_REPS, 'Threshold');
+  [['Riley Chen', 5000], ['Jo Ellis', 1600]].forEach(([name, anchorM])=>{
+    expectFullRow('group sheet '+name, rowCells(G, name), SHEET_REPS, 'Threshold', anchorM);
   });
 });
 
-// ── ON-SCREEN TRAINING GROUPS (renderSquads) ──
-// Row = zone-label td, /mi td, then one td per repCols entry; index the exact
-// 300m/400m cells for each quality zone rendered in the group tables.
-probe('training groups screen: exact 300m and 400m zone cells populated', ()=>{
+// ── ON-SCREEN TRAINING GROUPS: every rendered zone × its 6 columns ──
+probe('training groups screen: every zone row fully populated', ()=>{
   renderSquads();
   const h = String(__store['sq-body'] ? __store['sq-body'].innerHTML : '');
   if(!h) throw new Error('sq-body empty');
   const SQUAD_REPS = [300, 400, 800, 1000, 1200, 1600];
   // renderSquads headers are bare numbers ("300"), not "300m"
   [300, 400].forEach(d=>{ if(!new RegExp('>'+d+'<').test(h)) throw new Error('no '+d+' header column'); });
-  // Full supported/dash matrix for every zone groupSessionZones renders
-  // (its keep-set — no Easy/Speed/Sprint rows on this surface).
+  // groupSessionZones keep-set; anchor is the 5K-equivalent group median.
   ['Steady','Tempo','Threshold','Critical Velocity','Race Pace','VO2 Max'].forEach(label=>{
-    expectZoneRow('training groups', rowCells(h, label), SQUAD_REPS, label);
+    expectFullRow('training groups', rowCells(h, label), SQUAD_REPS, label, 5000);
   });
+});
+
+// ── COACH-ENTERED TARGETS: unaffected by any display rule ──
+probe('coach-entered reps still compute (program rates, workout specs)', ()=>{
+  const cs = computeZoneSplits(A, { repDists:[1200] });
+  const vo2 = cs.zones.find(z=>z.label==='VO2 Max');
+  if(!(vo2 && isFinite(vo2.reps[1200]))) throw new Error('VO2 1200m target lost');
+  const sprintRate = programPaceForAthlete(A, 'sprint');
+  if(!isFinite(sprintRate)) throw new Error('programPaceForAthlete sprint per-1000m rate lost');
 });
 `;
 
