@@ -7837,22 +7837,25 @@ const STRIDE_COACH_SPLITS = [
     reps: [1609, 3000, 5000, 8000] },
   { label: 'Tempo',             pct: 88,  range: '85–90%',
     desc: 'Tempo / cruise interval pace. Keep internal load below threshold.',
-    reps: [1609, 1000, 1200, 800, 600] },
+    reps: [1609, 1000, 1200, 800, 600, 400, 300] },
   { label: 'Threshold',         pct: 93,  range: '91–95%',
     desc: 'Lactate-controlled threshold. Longer reps usually need a slower pace.',
-    reps: [1609, 1000, 1200, 800, 600] },
+    reps: [1609, 1000, 1200, 800, 600, 400, 300] },
   { label: 'Critical Velocity', pct: 96,  range: '95–97%',
     desc: 'Just slower than 5K (~10K race pace). Verify by HR/RPE/lactate.',
-    reps: [1000, 1200, 800, 600] },
+    reps: [1000, 1200, 800, 600, 400, 300] },
   { label: 'Race Pace',         pct: 100, range: '100%',
     desc: 'Goal race pace exactly. Race-specific endurance.',
-    reps: [400, 600, 800, 1000, 1200] },
+    reps: [300, 400, 600, 800, 1000, 1200] },
   { label: 'VO2 Max',           pct: 105, range: '103–108%',
     desc: '~3K race pace. Aerobic-ceiling intervals (400–1200m).',
-    reps: [400, 600, 800, 1000] },
+    reps: [300, 400, 600, 800, 1000] },
   { label: 'Speed',             pct: 112, range: '110–115%',
     desc: 'Mile / 800m race pace. Short, fast reps for sharpening.',
     reps: [200, 300, 400, 600] },
+  // Sprint intentionally stops at 300m: a 400m rep at 115–125% of race pace
+  // is a glycolytic time trial, not a stride — prescribing it as a table cell
+  // invites injury. 300m is included for 300m-track stride loops.
   { label: 'Sprint',            pct: 118, range: '115–125%',
     desc: 'Pure speed and economy. Strides (100–200m) at max velocity.',
     reps: [100, 150, 200, 300] },
@@ -11286,7 +11289,7 @@ function paceCardPrintHTML(athlete){
     return `<div class="ps-page">${_psHead('Pace Card', athlete && athlete.name ? athlete.name : 'Athlete', 'No valid race PR on file.', [_psStamp()])}<div class="ps-callout">Add a race distance and time to generate this athlete’s pace card.</div></div>`;
   }
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
-  const repCols = [400, 800, 1000, 1200, 1600];
+  const repCols = [300, 400, 800, 1000, 1200, 1600];
   const cs = computeZoneSplits(athlete, { repDists: repCols, env });
   // A raceTime that parses to 0 ("0:00") passes the truthiness guard above but
   // yields no splits — placeholder page, never a throw that kills a batch print.
@@ -11439,7 +11442,7 @@ function groupSessionZones(medianRefSec, repDists){
   // Same env correction as the on-screen split table and the printed pace card
   // — the same athlete must never get contradictory targets across surfaces.
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
-  const cs = computeZoneSplits(temp, { repDists: repDists || [400, 800, 1000, 1200, 1600], guardrailKey:'standard', env });
+  const cs = computeZoneSplits(temp, { repDists: repDists || [300, 400, 800, 1000, 1200, 1600], guardrailKey:'standard', env });
   // Coaches want the working zones for a session, not recovery jog rows.
   const keep = new Set(['Steady', 'Tempo', 'Threshold', 'Critical Velocity', 'Race Pace', 'VO2 Max']);
   return cs.zones.filter(z => keep.has(z.label));
@@ -11659,7 +11662,7 @@ function renderSquads(){
     el.innerHTML = emptyStateCard('No distance athletes to group yet', 'Clustering runs on athletes with a 1500m+ result (it groups by projected 5K-equivalent pace). Add a distance PR to a few athletes to switch this on.', 'Back to Coach Tools', "goTo('overview',null)");
     return;
   }
-  const repCols = [400, 800, 1000, 1200, 1600];
+  const repCols = [300, 400, 800, 1000, 1200, 1600];
   const groupCards = res.groups.map(g => {
     const zones = groupSessionZones(g.medianRefSec, repCols);
     const zoneRows = zones.map(z => {
@@ -11710,7 +11713,7 @@ function renderSquads(){
 // athlete's own targets for the session (default: Threshold + CV reps).
 function groupSheetPrintHTML(group, opts){
   opts = opts || {};
-  const repCols = opts.repDists || [400, 800, 1000, 1200, 1600];
+  const repCols = opts.repDists || [300, 400, 800, 1000, 1200, 1600];
   const zoneLabel = opts.zoneLabel || 'Threshold';
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : undefined;
   const rows = group.members.map(m => {
