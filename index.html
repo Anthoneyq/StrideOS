@@ -8574,38 +8574,57 @@ function _fitnessOverrides(){
   try{ return JSON.parse(localStorage.getItem(FITNESS_OVERRIDE_KEY) || '{}') || {}; }
   catch(e){ return {}; }
 }
+// Overrides are keyed by ACCOUNT + athlete, never athlete id alone — on a
+// shared computer another signed-in account must not inherit this coach's
+// adjustments (or vice versa).
+function _fitnessOverrideKeyFor(ath){
+  return `${(sbUser && sbUser.id) || 'local'}:${ath.id}`;
+}
 function getFitnessOverride(ath){
   if(!ath || !ath.id) return null;
-  const o = _fitnessOverrides()[ath.id];
+  const o = _fitnessOverrides()[_fitnessOverrideKeyFor(ath)];
   if(!o || !DIST[o.event] || !parseTime(o.time || '')) return null;
   return o;
 }
 // The anchor every pace surface should calculate from: the athlete as-is, or
 // a shallow clone carrying the adjusted mark. PR fields on the real record
-// are never modified.
+// are never modified, and the clone carries fitnessOverrideMeta so every
+// downstream surface can label the mark as coach-entered — it must never be
+// presented as race evidence or as the PR.
 function paceAnchorForAthlete(ath){
   const o = getFitnessOverride(ath);
   if(!o) return ath;
   return Object.assign({}, ath, {
     raceDistance: o.event, raceDistanceM: DIST[o.event],
-    raceTime: o.time, raceDate: o.setOn
+    raceTime: o.time, raceDate: o.setOn,
+    fitnessOverrideMeta: {
+      event: o.event, time: o.time, setOn: o.setOn,
+      prEvent: ath.raceDistance, prTime: ath.raceTime, prDate: ath.raceDate
+    }
   });
 }
+// Setting/clearing a training-pace anchor is a COACH decision. Athlete
+// accounts see the resulting paces but cannot change the anchor.
+function canAdjustFitness(){
+  return !isAthleteOnly();
+}
 function applyFitnessOverride(){
+  if(!canAdjustFitness()){ toast('Training-pace adjustments are set by your coach'); return; }
   const ev = document.getElementById('foEvent');
   const t  = document.getElementById('foTime');
   if(!A || !ev || !t) return;
   if(!DIST[ev.value] || !parseTime(t.value || '')){ toast('Enter a valid time, e.g. 17:00'); return; }
   const all = _fitnessOverrides();
-  all[A.id] = { event: ev.value, time: t.value.trim(), setOn: new Date().toISOString().slice(0,10) };
+  all[_fitnessOverrideKeyFor(A)] = { event: ev.value, time: t.value.trim(), setOn: new Date().toISOString().slice(0,10) };
   localStorage.setItem(FITNESS_OVERRIDE_KEY, JSON.stringify(all));
   renderPaces();
-  toast('Paces adjusted to current fitness · PR unchanged');
+  toast('Paces adjusted to coach-entered current fitness · PR unchanged');
 }
 function clearFitnessOverride(){
+  if(!canAdjustFitness()){ toast('Training-pace adjustments are set by your coach'); return; }
   if(!A) return;
   const all = _fitnessOverrides();
-  delete all[A.id];
+  delete all[_fitnessOverrideKeyFor(A)];
   localStorage.setItem(FITNESS_OVERRIDE_KEY, JSON.stringify(all));
   renderPaces();
   toast('Back to PR-based paces');
@@ -8614,6 +8633,15 @@ function clearFitnessOverride(){
 const FITNESS_OVERRIDE_EVENTS = ['800m','1500m','1600m','Mile','3000m','3200m','2 Mile','5K','8K','10K'];
 function fitnessOverrideCard(ath){
   const o = getFitnessOverride(ath);
+  // Athlete accounts: paces reflect the coach's adjustment, but the controls
+  // (and the invitation to self-adjust) are coach-only.
+  if(!canAdjustFitness()){
+    return o ? `
+    <div style="background:var(--bg-card);border:1px solid var(--yellow);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
+      <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--yellow);text-transform:uppercase;margin-bottom:.25rem">● Coach-adjusted current fitness</p>
+      <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">Your coach set these paces from <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (coach-entered, not a race result). Your PR record is unchanged.</p>
+    </div>` : '';
+  }
   const opts = FITNESS_OVERRIDE_EVENTS.filter(e=>DIST[e]).map(e =>
     `<option value="${esc(e)}" ${((o && o.event === e) || (!o && ath.raceDistance === e)) ? 'selected' : ''}>${esc(e)}</option>`).join('');
   return `
@@ -8622,8 +8650,8 @@ function fitnessOverrideCard(ath){
         <div style="min-width:14rem">
           <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:${o ? 'var(--yellow)' : 'var(--text-3)'};text-transform:uppercase;margin-bottom:.25rem">${o ? '● Adjusted to current fitness' : 'Current fitness'}</p>
           <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${o
-            ? `All paces below anchor to <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (set ${esc(o.setOn || '')}). PR record unchanged — forecasts still use real races.`
-            : `Coming off injury or early season? Enter where you believe fitness is <em>today</em> and every zone recalculates from it. The PR record stays untouched.`}</p>
+            ? `All paces below anchor to the coach-entered mark <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (set ${esc(o.setOn || '')} — an estimate, not a race result). PR record unchanged — forecasts still use real races.`
+            : `Coming off injury or early season? Enter where you believe fitness is <em>today</em> and every zone recalculates from it. Your estimate is labeled as coach-entered; the PR record stays untouched.`}</p>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
           <select id="foEvent" aria-label="Current-fitness event" style="min-width:6rem">${opts}</select>
@@ -8990,8 +9018,14 @@ function buildDanielsTable(ath){
       <span>PACE GUARDRAIL · ${esc(guardrail.label.toUpperCase())} · sub-race zones shifted ${guardrail.shift > 0 ? '+' : ''}${guardrail.shift}%</span>
     </div>` : '';
 
+  const fitnessBadge = ath.fitnessOverrideMeta ? `
+    <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem">
+      <span>●</span>
+      <span>COACH-ENTERED CURRENT FITNESS · ${esc(ath.fitnessOverrideMeta.event)} ${esc(ath.fitnessOverrideMeta.time)} · NOT A RACE RESULT · PR UNCHANGED</span>
+    </div>` : '';
+
   return `
-    ${envBadge}${guardrailBadge}
+    ${fitnessBadge}${envBadge}${guardrailBadge}
     <div style="overflow-x:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem">
       <table style="width:100%;border-collapse:collapse;font-family:inherit;min-width:48rem">
         <thead>${header}</thead>
@@ -11277,15 +11311,21 @@ function pacesProvenance(athlete){
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
   const age = athleteAgeYears(athlete);
   if(age && age < 18) adjustments.push(`Youth (${athleteAgeLabel(athlete)}${athleteAgeIsEstimated(athlete) ? ', from their year' : ''}) — conservative aerobic default`);
+  const ovm = athlete.fitnessOverrideMeta || null;
+  if(ovm) adjustments.push('Anchor is a coach-entered current-fitness estimate — not race evidence');
   const reasons = [
-    'Training paces are a percentage of this athlete’s race-PR pace (STRIDE speed-% zones) — not %VO₂max, not heart rate, not a lab test.',
+    ovm
+      ? 'Training paces are a percentage of the coach-entered current-fitness pace (STRIDE speed-% zones) — not the race PR, not %VO₂max, not a lab test.'
+      : 'Training paces are a percentage of this athlete’s race-PR pace (STRIDE speed-% zones) — not %VO₂max, not heart rate, not a lab test.',
     athlete.raceDistanceM < 1500
       ? 'Short anchor (<1500m): Easy–CV aerobic zones are withheld until a 1500m+ result exists.'
       : 'Distance anchor (1500m+) supports the full aerobic ladder.'
   ];
   return provenancePanel({
     subtitle: 'this prescription',
-    anchor: `${athlete.raceDistance || '?'} in ${athlete.raceTime}${athlete.raceDate ? ` · ${athlete.raceDate}` : ''}`,
+    anchor: ovm
+      ? `Coach-entered current fitness: ${ovm.event} in ${ovm.time} · set ${ovm.setOn || '?'} (race PR: ${ovm.prEvent || '?'} in ${ovm.prTime || '?'})`
+      : `${athlete.raceDistance || '?'} in ${athlete.raceTime}${athlete.raceDate ? ` · ${athlete.raceDate}` : ''}`,
     model: 'STRIDE speed-percentage zones (Canova race-pace framework)',
     adjustments, reasons,
     note: `Coach judgment (HR, RPE, lactate, interval length, conditions) still governs the final call. Sources and methodology are linked in the footer.`
@@ -11436,16 +11476,21 @@ function paceCardPrintHTML(athlete){
     athlete.weeklyMileage ? athlete.weeklyMileage + ' mi/wk' : ''
   ].filter(Boolean);
 
-  const sub = `${esc(athlete.raceDistance)} PR ${esc(athlete.raceTime)}${athlete.raceDate ? ' · ' + esc(athlete.raceDate) : ''}${badges ? '<div style="margin-top:5px">' + badges + '</div>' : ''}`;
+  const ovm = athlete.fitnessOverrideMeta || null;
+  const sub = ovm
+    ? `Coach-entered current fitness ${esc(ovm.event)} ${esc(ovm.time)} (set ${esc(ovm.setOn || '?')}) · race PR ${esc(ovm.prEvent || '?')} ${esc(ovm.prTime || '?')}${badges ? '<div style="margin-top:5px">' + badges + '</div>' : ''}`
+    : `${esc(athlete.raceDistance)} PR ${esc(athlete.raceTime)}${athlete.raceDate ? ' · ' + esc(athlete.raceDate) : ''}${badges ? '<div style="margin-top:5px">' + badges + '</div>' : ''}`;
 
   return `<div class="ps-page">
     ${_psHead('Pace Card', athlete.name || 'Athlete', sub, meta)}
     <div class="ps-section">Training paces — seconds per rep (per-mile at left)</div>
     <table><thead><tr><th>Zone · % of race pace</th><th class="num">Per mile</th>${repHdr}</tr></thead><tbody>${bodyRows}</tbody></table>
-    <div class="ps-section">Goal race even-splits · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}</div>
+    <div class="ps-section">${ovm ? `Even-splits at coach-entered current fitness · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}` : `Goal race even-splits · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}`}</div>
     <table><thead><tr>${segHdr.join('')}</tr></thead><tbody><tr>${segCells.join('')}</tr></tbody></table>
     <div class="ps-note">Even-effort splits at goal pace; the second (grey) line is elapsed time at that point.${rd < 1500 ? ' Aerobic zones are intentionally blank — a sub-1500m PR can’t prescribe easy mileage or threshold work.' : ''}</div>
-    <div class="ps-foot">STRIDE speed-percentage zones from ${esc(athlete.name || 'the athlete')}’s race PR. Paces are a starting point — adjust by HR, RPE, lactate, interval length, and conditions. Guardrail eases Easy–Threshold only; race pace and faster are anchored to the actual result.</div>
+    <div class="ps-foot">${ovm
+      ? `STRIDE speed-percentage zones from a COACH-ENTERED current-fitness estimate (${esc(ovm.event)} ${esc(ovm.time)}) — not a race result; the race PR (${esc(ovm.prEvent || '?')} ${esc(ovm.prTime || '?')}) is unchanged. Paces are a starting point — adjust by HR, RPE, lactate, interval length, and conditions.`
+      : `STRIDE speed-percentage zones from ${esc(athlete.name || 'the athlete')}’s race PR. Paces are a starting point — adjust by HR, RPE, lactate, interval length, and conditions. Guardrail eases Easy–Threshold only; race pace and faster are anchored to the actual result.`}</div>
   </div>`;
 }
 

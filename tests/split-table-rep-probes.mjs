@@ -166,7 +166,8 @@ probe('training groups screen: every zone row fully populated', ()=>{
 // Adjust every pace to a coach-entered current-fitness mark without touching
 // the PR record — the VDOT "plug in 17:00 5K" flow.
 probe('fitness override: recalculates the split table, leaves the PR untouched', ()=>{
-  localStorage.setItem('strideFitnessOverrides', JSON.stringify({ [A.id]: { event:'5K', time:'17:00', setOn:'2026-08-17' } }));
+  // storage is keyed by account:athlete — sbUser is {id:'c1'} in this fixture
+  localStorage.setItem('strideFitnessOverrides', JSON.stringify({ ['c1:'+A.id]: { event:'5K', time:'17:00', setOn:'2026-08-17' } }));
   const anchor = paceAnchorForAthlete(A);
   if(anchor.raceTime !== '17:00' || anchor.raceDistanceM !== 5000) throw new Error('anchor did not adopt the override');
   if(A.raceTime !== '15:25.27') throw new Error('PR record was mutated: '+A.raceTime);
@@ -178,9 +179,42 @@ probe('fitness override: recalculates the split table, leaves the PR untouched',
   const got = parseTime(repCell(cells, ALL_REPS, 300).replace(/[^0-9:.]/g,''));
   if(!(got > expected*0.9 && got < expected*1.1)) throw new Error('override 300m split '+got+'s vs expected ~'+expected.toFixed(1)+'s');
 });
-probe('fitness override: printed pace card anchors to the adjusted mark', ()=>{
-  const P = paceCardPrintHTML(paceAnchorForAthlete(A));
+probe('fitness override: print + screen label the mark coach-entered, never as the PR', ()=>{
+  const anchor = paceAnchorForAthlete(A);
+  const P = paceCardPrintHTML(anchor);
   if(!/17:00/.test(P)) throw new Error('card does not show the adjusted anchor');
+  if(!/[Cc]oach-entered/.test(P)) throw new Error('card does not disclose the coach-entered provenance');
+  if(!/15:25\\.27/.test(P)) throw new Error('card no longer shows the real race PR for reference');
+  if(/PR 17:00/.test(P) || /5K PR 17:00/.test(P)) throw new Error('card presents the estimate as a PR');
+  if(/anchored to the actual result/.test(P)) throw new Error('card calls the estimate an actual result');
+  const prov = pacesProvenance(anchor);
+  if(!/[Cc]oach-entered current fitness/.test(prov)) throw new Error('provenance panel does not disclose the override');
+  if(!/15:25\\.27/.test(prov)) throw new Error('provenance panel omits the real race PR');
+  if(/race-PR pace/.test(prov)) throw new Error('provenance still claims race-PR anchoring under an override');
+  const T2 = buildDanielsTable();
+  if(!/COACH-ENTERED CURRENT FITNESS/.test(T2)) throw new Error('split table lacks the coach-entered badge');
+});
+probe('fitness override: coach-only — athlete accounts cannot set or clear it', ()=>{
+  const before = localStorage.getItem('strideFitnessOverrides');
+  sbRole = 'athlete';
+  clearFitnessOverride();                        // handler-level guard, not just hidden UI
+  if(localStorage.getItem('strideFitnessOverrides') !== before) throw new Error('athlete role cleared a coach override');
+  __store['foEvent'] = Object.assign(__store['foEvent']||{}, { value:'800m' });
+  __store['foTime']  = Object.assign(__store['foTime']||{},  { value:'2:00' });
+  applyFitnessOverride();
+  if(localStorage.getItem('strideFitnessOverrides') !== before) throw new Error('athlete role applied an override');
+  const card = fitnessOverrideCard(A);
+  if(/foTime|Adjust paces|applyFitnessOverride/.test(card)) throw new Error('athlete account is shown adjustment controls');
+  if(!/[Cc]oach/.test(card)) throw new Error('athlete banner does not attribute the adjustment to the coach');
+  sbRole = null;
+});
+probe('fitness override: scoped per account — another sign-in does not inherit it', ()=>{
+  if(!getFitnessOverride(A)) throw new Error('fixture lost the c1 override');
+  sbUser = { id:'c2' };
+  if(getFitnessOverride(A) !== null) throw new Error('account c2 inherited c1\\'s override for the same athlete id');
+  if(paceAnchorForAthlete(A) !== A) throw new Error('c2 anchor should be the raw athlete');
+  sbUser = { id:'c1' };
+  if(!getFitnessOverride(A)) throw new Error('c1 override lost after account switch');
 });
 probe('fitness override: clearing returns every pace to the PR anchor', ()=>{
   localStorage.setItem('strideFitnessOverrides', '{}');
