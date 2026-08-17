@@ -1209,6 +1209,30 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
 }
 /* On-screen "Print / PDF" trigger button, matches .btn but always visible */
 .btn-print::before{ content:"⎙ "; }
+
+/* CONFERENCE SCORER */
+.ms-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(18rem,.65fr);gap:1rem;align-items:start}
+.ms-controls{display:flex;gap:.75rem;align-items:flex-end;flex-wrap:wrap}
+.ms-controls label{font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
+.ms-controls select,.ms-controls input{display:block;margin-top:.25rem;min-height:2.35rem;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.45rem;color:var(--text);padding:.45rem .55rem;font:inherit;text-transform:none;letter-spacing:0}
+.ms-scoreboard{width:100%;border-collapse:collapse}
+.ms-scoreboard th,.ms-scoreboard td{padding:.55rem .45rem;border-bottom:1px solid var(--border);text-align:left;font-size:.8125rem}
+.ms-scoreboard th{font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.06em}
+.ms-scoreboard .num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.ms-event-list{display:grid;gap:.75rem}
+.ms-event-card{padding:0;overflow:hidden}
+.ms-event-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;padding:.85rem 1rem;border-bottom:1px solid var(--border)}
+.ms-event-head h3{margin:0;font-family:var(--font-display);font-size:1.15rem;font-weight:600}
+.ms-row{display:grid;grid-template-columns:2.5rem minmax(9rem,1.3fr) minmax(7rem,1fr) 4rem 4rem;gap:.55rem;align-items:center;min-height:2.65rem;padding:.45rem 1rem;border-bottom:1px solid var(--border);font-size:.8125rem}
+.ms-row:last-child{border-bottom:0}.ms-row.off{opacity:.56}.ms-row.capped{opacity:.72}
+.ms-place,.ms-points{font-family:var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-3)}
+.ms-points{text-align:right}.ms-row strong{font-weight:600}.ms-row small{color:var(--text-3)}
+.ms-toggle{display:flex;align-items:center;justify-content:center}.ms-toggle input{width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.ms-watch{display:flex;flex-wrap:wrap;gap:.45rem}.ms-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.35rem .5rem;border:1px solid var(--border-s);border-radius:999px;background:var(--bg-el);font-family:var(--font-mono);font-size:.6875rem;color:var(--text-2)}
+.ms-import{width:100%;min-height:10rem;background:var(--bg-el);border:1px solid var(--border-s);border-radius:.55rem;color:var(--text);padding:.75rem;font-family:var(--font-mono);font-size:.75rem;line-height:1.5;resize:vertical}
+.ms-boundary{font-family:var(--font-mono);font-size:.625rem;line-height:1.6;color:var(--text-4)}
+@media(max-width:56rem){.ms-grid{grid-template-columns:1fr}}
+@media(max-width:43.75rem){.ms-row{grid-template-columns:2.25rem minmax(8rem,1fr) 3.5rem 3.5rem}.ms-team{grid-column:2;color:var(--text-3);margin-top:-.35rem}.ms-controls>label{flex:1 1 9rem}.ms-controls select,.ms-controls input{width:100%}}
 </style>
 </head>
 <body class="workspace-locked">
@@ -1272,6 +1296,7 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
           <li><button class="nav-btn" data-s="compare"  onclick="goTo('compare',this)"><span class="nav-icon" aria-hidden="true">⇄</span>Compare</button></li>
           <li><button class="nav-btn" data-s="import"   onclick="goTo('import',this)"><span class="nav-icon" aria-hidden="true">↥</span>Import Roster</button></li>
           <li><button class="nav-btn" data-s="squads"   onclick="goTo('squads',this)"><span class="nav-icon" aria-hidden="true">◍</span>Training Groups</button></li>
+          <li><button class="nav-btn" data-s="meetscorer" onclick="goTo('meetscorer',this)"><span class="nav-icon" aria-hidden="true">Σ</span>Conference Scorer</button></li>
           <li><button class="nav-btn" data-s="lineup"   onclick="goTo('lineup',this)"><span class="nav-icon" aria-hidden="true">∴</span>Lineup Optimizer</button></li>
           <li><button class="nav-btn" data-s="proof"    onclick="goTo('proof',this)"><span class="nav-icon" aria-hidden="true">✓</span>Proof Ledger</button></li>
         </ul>
@@ -1512,6 +1537,15 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
         <div class="btn-row"><button class="btn btn-print" onclick="printGroupSheets()">Print group sheets</button></div>
       </header>
       <div id="sq-body"></div>
+    </section>
+
+    <!-- CONFERENCE SCORER -->
+    <section id="meetscorer" class="screen" aria-labelledby="ms-h" data-coach-scope="coach">
+      <header class="screen-header">
+        <div><p class="eyebrow">College meet scenarios</p><h1 class="screen-title" id="ms-h">Conference <em>Scorer</em></h1></div>
+        <div class="btn-row"><button class="btn btn-print" onclick="printMeetScorer()">Print scenario</button></div>
+      </header>
+      <div id="ms-body" role="region" aria-live="polite"></div>
     </section>
 
     <!-- LINEUP OPTIMIZER -->
@@ -1807,6 +1841,13 @@ function clearDB(){
   // Coach-entered lab thresholds are athlete data too — "clear local data" /
   // "delete account" must not leave them behind on the device.
   try{ localStorage.removeItem('strideos_tested_thresholds'); }catch(e){}
+  // Conference scenarios can contain names, teams, and marks. They are
+  // account-scoped local data and must leave with the account's local wipe.
+  try{
+    const owner = (typeof sbUser !== 'undefined' && sbUser && sbUser.id) ? String(sbUser.id) : 'signed-out';
+    localStorage.removeItem(`strideos_meet_scorer_v1_${owner}`);
+    if(typeof meetScorerState !== 'undefined') meetScorerState = Object.assign({}, meetScorerState, { ownerKey:'', sourceText:'', records:[], filterEvent:'', query:'', importMessage:'' });
+  }catch(e){}
   if(typeof _memKey === 'undefined' || _memKey === target){
     _mem=null;
     if(typeof _memKey !== 'undefined') _memKey=null;
@@ -1861,6 +1902,7 @@ const WORKSPACE_SCREEN_IDS = new Set([
   'xc',
   'overview',
   'squads',
+  'meetscorer',
   'lineup',
   'proof',
   'workouts',
@@ -4919,6 +4961,7 @@ function goTo(id,btn){
   if(id==='eventfit') renderEventFinder();
   if(id==='raceshape') renderRaceShape();
   if(id==='squads')   renderSquads();
+  if(id==='meetscorer') renderMeetScorer();
   if(id==='lineup')   renderLineup();
   if(id==='proof')    renderProof();
   if(id==='edit')     fillForm();
@@ -7373,7 +7416,7 @@ function renderOverview(){
       <button class="team-command-action" onclick="goTo('brief',null)"><span>This week</span><strong>Coach Brief →</strong></button>
       <button class="team-command-action" onclick="goTo('squads',null)"><span>Practice</span><strong>Training Groups →</strong></button>
       <button class="team-command-action" onclick="goTo('xc',null)"><span>Race day</span><strong>Race Command →</strong></button>
-      <button class="team-command-action" onclick="goTo('lineup',null)"><span>Track meet</span><strong>Lineup Optimizer →</strong></button>
+      <button class="team-command-action" onclick="goTo('meetscorer',null)"><span>Conference meet</span><strong>Scenario Scorer →</strong></button>
     </div>` + athletePickerHtml();
   if(!athleteOnly && DB.athletes && DB.athletes.length >= 1){
     squadHtml = hasProAccess()
@@ -7987,9 +8030,31 @@ function altitudeCorrection(altitudeFt){
   return 0.07;                           // 7.0%+ at 3000m+
 }
 
+// Humidity → effective temperature (Kyle 2026-08-17: 60°F at 90% RH runs
+// harder than the thermometer says). Above 80°F this is the NOAA Rothfusz
+// heat-index regression (the range it was fit for); from 65–80°F a small
+// smooth blend so the effect fades out instead of jumping at the boundary;
+// below 65°F or ≤40% RH humidity has no meaningful pace cost (Ely 2007).
+function effectiveTempF(tempF, humidityPct){
+  if(tempF == null || isNaN(tempF)) return tempF;
+  const rh = (humidityPct == null || isNaN(humidityPct)) ? null : Math.min(100, Math.max(0, humidityPct));
+  if(rh == null || rh <= 40 || tempF < 65) return tempF;
+  if(tempF >= 80){
+    const T = tempF, R = rh;
+    const hi = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R
+      - 0.00683783*T*T - 0.05481717*R*R + 0.00122874*T*T*R
+      + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
+    // Heat index can only add heat, and cap the add at +25°F so a typo'd
+    // RH can't produce an absurd correction.
+    return Math.max(tempF, Math.min(hi, tempF + 25));
+  }
+  // 65–80°F: up to +6°F at 100% RH, scaled by how close to 80°F it is
+  return tempF + ((rh - 40) / 60) * 6 * ((tempF - 65) / 15);
+}
+
 // Combined environmental correction (returns slowdown factor 0.0–0.20)
-function environmentalCorrection(tempF, altitudeFt){
-  const temp = tempCorrection(tempF);
+function environmentalCorrection(tempF, altitudeFt, humidityPct){
+  const temp = tempCorrection(effectiveTempF(tempF, humidityPct));
   const alt = altitudeCorrection(altitudeFt);
   // Combine: not purely additive at extremes; use sqrt-sum for physiological reality
   return temp + alt - (temp * alt * 0.5);
@@ -7997,8 +8062,8 @@ function environmentalCorrection(tempF, altitudeFt){
 
 // Apply environmental correction to a target time (in seconds)
 // Returns the adjusted (slower) target time
-function applyEnvironment(targetSec, tempF, altitudeFt){
-  const factor = environmentalCorrection(tempF, altitudeFt);
+function applyEnvironment(targetSec, tempF, altitudeFt, humidityPct){
+  const factor = environmentalCorrection(tempF, altitudeFt, humidityPct);
   return targetSec * (1 + factor);
 }
 
@@ -8006,11 +8071,22 @@ function applyEnvironment(targetSec, tempF, altitudeFt){
 function getEnvSettings(){
   const tempEl = document.getElementById('envTemp');
   const altEl = document.getElementById('envAlt');
+  const humEl = document.getElementById('envHum');
   return {
     tempF: tempEl && tempEl.value ? parseFloat(tempEl.value) : null,
     altitudeFt: altEl && altEl.value ? parseFloat(altEl.value) : null,
+    humidityPct: humEl && humEl.value ? parseFloat(humEl.value) : null,
   };
 }
+
+// Chrome mutates a FOCUSED <input type=number> on wheel/trackpad scroll —
+// typing 72°F then scrolling the page silently changed the temperature
+// (Kyle, 2026-08-17, Chrome; Safari doesn't do this). Blurring on wheel
+// keeps the scroll a scroll. Passive: we never preventDefault.
+document.addEventListener('wheel', () => {
+  const el = document.activeElement;
+  if(el && el.tagName === 'INPUT' && el.type === 'number') el.blur();
+}, { passive: true });
 
 // ══════════════════════════════════════
 // WEATHER API INTEGRATION
@@ -8831,10 +8907,14 @@ function renderPaces(){
         </div>
 
         <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.0625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.5rem">Manual Entry</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
           <div>
             <label for="envTemp" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Temperature (°F)</label>
             <input id="envTemp" type="number" min="20" max="120" placeholder="e.g. 75" value="" oninput="updateBuilder();refreshDanielsTable()">
+          </div>
+          <div>
+            <label for="envHum" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Humidity (%)</label>
+            <input id="envHum" type="number" min="0" max="100" placeholder="e.g. 90" value="" oninput="updateBuilder();refreshDanielsTable()">
           </div>
           <div>
             <label for="envAlt" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Altitude (ft)</label>
@@ -8842,7 +8922,7 @@ function renderPaces(){
           </div>
         </div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6">
-          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Combined effects compound but not linearly.
+          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly.
         </p>
       </div>
     </details>
@@ -8945,7 +9025,7 @@ function buildDanielsTable(ath){
         return { dist: d, sec: null, blocked: true };
       }
       let split = secPerM * d * pctToMult(adjustedPct);
-      split = applyEnvironment(split, env.tempF, env.altitudeFt);
+      split = applyEnvironment(split, env.tempF, env.altitudeFt, env.humidityPct);
       return { dist: d, sec: split };
     });
 
@@ -8954,7 +9034,7 @@ function buildDanielsTable(ath){
     let mileStr = 'Needs 1500m+ PR';
     if(allowed && ath.raceDistanceM >= 1500){
       const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
-      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
+      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt, env.humidityPct);
       mileStr = _mmss(correctedMile, 0);
     } else if(allowed){
       mileStr = '—';
@@ -9005,11 +9085,11 @@ function buildDanielsTable(ath){
       </tr>`;
   }).join('');
 
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   const envBadge = envFactor > 0 ? `
     <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem">
       <span>●</span>
-      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
+      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
     </div>` : '';
 
   const guardrailBadge = guardrail.shift !== 0 ? `
@@ -9411,7 +9491,7 @@ function updateBuilder(){
 
   // Environmental correction
   const env = getEnvSettings();
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
 
   // Update slider label (monochrome — let the number speak)
   const pctVal = document.getElementById('pcPctVal');
@@ -9436,7 +9516,7 @@ function updateBuilder(){
 
   // Target rep time — with environmental correction applied
   const rawTargetSec = targetRepTime(secPerM, rep, pct);
-  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt);
+  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt, env.humidityPct);
   const racePaceForRep = secPerM * rep;
 
   // Build display
@@ -11251,7 +11331,7 @@ function computeZoneSplits(athlete, opts){
     const pct = effectiveZonePct(z, athlete, gk);
     const mult = pctToMult(pct);
     const mile = (allowed && athlete.raceDistanceM >= 1500)
-      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
+      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt, env.humidityPct) : null;
     const repList = opts.repDists || z.reps;
     // Full pace-reference grid (Anthoney 2026-08-17): every requested rep
     // distance gets a time for every zone — the tables read as a pace wheel
@@ -11263,7 +11343,7 @@ function computeZoneSplits(athlete, opts){
     repList.forEach(d => {
       if(!allowed || !repAllowedForAnchor(d, athlete) ||
          (pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
-      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
+      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt, env.humidityPct);
     });
     return { label:z.label, range:z.range, pct:Math.round(pct), rawPct:pct, allowed, mile, reps, repDists:repList };
   });
@@ -11305,7 +11385,7 @@ function pacesProvenance(athlete){
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
   const adjustments = [];
   if(gl.shift !== 0) adjustments.push(`Guardrail: ${gl.label} (${gl.shift>0?'+':''}${gl.shift}% sub-race)`);
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
   const fresh = prFreshness(athlete.raceDate);
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
@@ -11430,7 +11510,7 @@ function paceCardPrintHTML(athlete){
     return `<div class="ps-page">${_psHead('Pace Card', athlete.name || 'Athlete', 'Race PR on file is not a usable time.', [_psStamp()])}<div class="ps-callout">Fix this athlete’s race time to generate their pace card.</div></div>`;
   }
   const gl = GUARDRAIL_LEVELS[cs.guardrailKey] || GUARDRAIL_LEVELS.standard;
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   const age = parseInt(athlete.age, 10) || null;
 
   const repHdr = repCols.map(d => `<th class="num">${d === 1600 ? '1600m' : d + 'm'}</th>`).join('');
@@ -12501,6 +12581,274 @@ function renderRaceShape(){
       <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-top:.85rem"><strong style="color:var(--text)">Coach read:</strong> ${esc(coachRead)}</p>
       <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.6rem">Assumes equal-distance splits. Green = faster than the race’s average, red = slower. Splits pasted here are analyzed on this screen only — never saved or sent anywhere.</p>
     </div>` : (rsState.text.trim() ? `<div class="card"><p style="font-size:.875rem;color:var(--text-2)">Couldn’t read at least two splits from that paste. Use times like <span style="font-family:var(--font-mono)">75</span> or <span style="font-family:var(--font-mono)">1:15</span>, separated by commas, spaces, or new lines.</p></div>` : '')}`;
+}
+
+// ── CONFERENCE SCENARIO SCORER ──────────────────────────────────────────────
+// Cloud Training Systems proves the demand for a quick conference projection,
+// but its whole-athlete exclusion forces coaches back into mental arithmetic
+// when one athlete drops only one event. This engine makes athlete×event rows
+// independently authoritative and recomputes every displaced scorer.
+//
+// Input is deliberately coach-supplied CSV. TFRRS's current Terms of Use bar
+// automated scraping/incorporation without express written permission, so this
+// client never fetches TFRRS or a competitor endpoint. Scenario data stays in
+// account-scoped local browser storage until a licensed source exists.
+const MEET_SCORER_POINTS = {
+  3: [5,3,1],
+  6: [10,8,6,4,2,1],
+  8: [10,8,6,5,4,3,2,1]
+};
+const MEET_SCORER_EXAMPLE = [
+  'Event,Athlete,Team,Rank,Grade,Mark',
+  '100m,Jordan Hale,North State,1,SR,10.22',
+  '100m,Micah Ross,Coastal Tech,2,JR,10.31',
+  '100m,Devin Brooks,Valley University,3,SO,10.38',
+  '100m,Cameron Lee,North State,4,FR,10.44',
+  '100m,Andre Ellis,Coastal Tech,5,SR,10.49',
+  '200m,Jordan Hale,North State,1,SR,20.61',
+  '200m,Andre Ellis,Coastal Tech,2,SR,20.72',
+  '200m,Cameron Lee,North State,3,FR,20.80',
+  '200m,Malik Young,Valley University,4,JR,20.91',
+  '200m,Micah Ross,Coastal Tech,5,JR,20.98',
+  '400m,Jordan Hale,North State,1,SR,45.81',
+  '400m,Malik Young,Valley University,2,JR,46.12',
+  '400m,Noah Grant,Coastal Tech,3,SO,46.31',
+  '400m,Isaiah Reed,North State,4,JR,46.55',
+  'Decathlon,Jordan Hale,North State,1,SR,7820',
+  'Decathlon,Evan Stone,Valley University,2,SR,7614',
+  'Decathlon,Liam Price,Coastal Tech,3,JR,7498'
+].join('\n');
+
+let meetScorerState = {
+  ownerKey:'', meetName:'Conference scenario', sourceText:'', records:[],
+  scoringDepth:8, entriesPerTeam:99, maxEventsPerAthlete:99,
+  filterEvent:'', query:'', importMessage:''
+};
+
+function meetScorerOwnerKey(){
+  return (typeof sbUser !== 'undefined' && sbUser && sbUser.id) ? String(sbUser.id) : 'signed-out';
+}
+function meetScorerStorageKey(owner){ return `strideos_meet_scorer_v1_${owner || meetScorerOwnerKey()}`; }
+function meetScorerEnsureOwner(){
+  const owner = meetScorerOwnerKey();
+  if(meetScorerState.ownerKey === owner) return;
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(meetScorerStorageKey(owner)) || 'null'); }catch(_e){}
+  meetScorerState = Object.assign({
+    ownerKey:owner, meetName:'Conference scenario', sourceText:'', records:[],
+    scoringDepth:8, entriesPerTeam:99, maxEventsPerAthlete:99,
+    filterEvent:'', query:'', importMessage:''
+  }, saved && typeof saved === 'object' ? saved : {}, { ownerKey:owner, query:'', importMessage:'' });
+  if(!Array.isArray(meetScorerState.records)) meetScorerState.records = [];
+}
+function saveMeetScorerState(){
+  meetScorerState.ownerKey = meetScorerOwnerKey();
+  const keep = {
+    meetName:meetScorerState.meetName, sourceText:meetScorerState.sourceText,
+    records:meetScorerState.records, scoringDepth:meetScorerState.scoringDepth,
+    entriesPerTeam:meetScorerState.entriesPerTeam,
+    maxEventsPerAthlete:meetScorerState.maxEventsPerAthlete,
+    filterEvent:meetScorerState.filterEvent
+  };
+  try{ localStorage.setItem(meetScorerStorageKey(meetScorerState.ownerKey), JSON.stringify(keep)); }catch(_e){}
+}
+function meetScorerHeaderKey(value){ return String(value || '').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function meetScorerColumn(headers, aliases){
+  const normalized = headers.map(meetScorerHeaderKey);
+  for(const alias of aliases){ const i = normalized.indexOf(meetScorerHeaderKey(alias)); if(i >= 0) return i; }
+  return -1;
+}
+function parseMeetScorerCsv(text){
+  const grid = parseCsvGrid(String(text || '')).filter(row => row.some(cell => String(cell || '').trim()));
+  if(grid.length < 2) return { error:'Paste a header row and at least one performance row.', records:[], invalid:[] };
+  const headers = grid[0];
+  const eventI = meetScorerColumn(headers, ['event','event name']);
+  const athleteI = meetScorerColumn(headers, ['athlete','athlete name','name']);
+  const teamI = meetScorerColumn(headers, ['team','school','institution']);
+  const rankI = meetScorerColumn(headers, ['rank','place','seed rank','performance rank']);
+  const gradeI = meetScorerColumn(headers, ['grade','year','eligibility']);
+  const markI = meetScorerColumn(headers, ['mark','time','performance','seed']);
+  const missing = [];
+  if(eventI < 0) missing.push('Event'); if(athleteI < 0) missing.push('Athlete');
+  if(teamI < 0) missing.push('Team'); if(rankI < 0) missing.push('Rank');
+  if(missing.length) return { error:`Missing required column${missing.length===1?'':'s'}: ${missing.join(', ')}.`, records:[], invalid:[] };
+  const invalid = [], bestByKey = new Map();
+  grid.slice(1).forEach((row, rowIndex) => {
+    const event = String(row[eventI] || '').trim();
+    const athlete = String(row[athleteI] || '').trim();
+    const team = String(row[teamI] || '').trim();
+    const rank = Number(String(row[rankI] || '').replace(/[^0-9.]/g,''));
+    if(!event || !athlete || !team || !isFinite(rank) || rank <= 0){ invalid.push(rowIndex + 2); return; }
+    const key = [event, athlete, team].map(meetScorerHeaderKey).join('|');
+    const candidate = { event, athlete, team, rank, grade:gradeI>=0?String(row[gradeI]||'').trim():'', mark:markI>=0?String(row[markI]||'').trim():'', order:rowIndex, enabled:true };
+    const existing = bestByKey.get(key);
+    if(!existing || candidate.rank < existing.rank) bestByKey.set(key, candidate);
+  });
+  const records = Array.from(bestByKey.values()).sort((a,b)=>a.order-b.order).map((row,i)=>Object.assign(row,{id:`ms-${i+1}-${meetScorerHeaderKey(row.event).slice(0,12)}-${meetScorerHeaderKey(row.athlete).slice(0,18)}`}));
+  if(!records.length) return { error:'No valid performance rows were found.', records:[], invalid };
+  return { error:'', records, invalid };
+}
+function meetScorerPoints(value){
+  const n = Number(value);
+  return (MEET_SCORER_POINTS[n] || MEET_SCORER_POINTS[8]).slice();
+}
+function scoreMeetScenarioCore(records, opts){
+  opts = opts || {};
+  const points = meetScorerPoints(opts.scoringDepth || 8);
+  const teamCap = Number(opts.entriesPerTeam) > 0 ? Number(opts.entriesPerTeam) : 99;
+  const athleteCap = Number(opts.maxEventsPerAthlete) > 0 ? Number(opts.maxEventsPerAthlete) : 99;
+  const rows = (records || []).map((raw,index)=>Object.assign({},raw,{order:Number.isFinite(raw.order)?raw.order:index,rank:Number(raw.rank),status:raw.enabled===false?'excluded':'candidate',place:null,points:0,tie:false}));
+  const sortRows = (a,b)=>(a.rank-b.rank)||(a.order-b.order)||a.athlete.localeCompare(b.athlete);
+  const byEvent = {};
+  rows.forEach(row=>{ (byEvent[row.event]||(byEvent[row.event]=[])).push(row); });
+  // Apply both caps in one rank-prioritized pass. Sequential caps can create
+  // a false vacancy: if an athlete-cap later removes a team's top row, the
+  // next teammate must be reconsidered for that now-open event slot.
+  const teamEventCounts = {}, athleteCounts = {};
+  rows.filter(row=>row.status==='candidate').sort(sortRows).forEach(row=>{
+    const teamEventKey=meetScorerHeaderKey(row.event)+'|'+meetScorerHeaderKey(row.team);
+    const athleteKey=meetScorerHeaderKey(row.athlete)+'|'+meetScorerHeaderKey(row.team);
+    if((teamEventCounts[teamEventKey]||0) >= teamCap){ row.status='team-cap'; return; }
+    if((athleteCounts[athleteKey]||0) >= athleteCap){ row.status='athlete-cap'; return; }
+    teamEventCounts[teamEventKey]=(teamEventCounts[teamEventKey]||0)+1;
+    athleteCounts[athleteKey]=(athleteCounts[athleteKey]||0)+1;
+  });
+  const eventResults = {};
+  Object.keys(byEvent).forEach(event=>{
+    const active = byEvent[event].filter(row=>row.status==='candidate').sort(sortRows);
+    let cursor = 0;
+    while(cursor < active.length){
+      let end = cursor + 1;
+      while(end < active.length && active[end].rank === active[cursor].rank) end++;
+      const group = active.slice(cursor,end), place = cursor + 1;
+      const available = points.slice(place-1, place-1+group.length);
+      const shared = available.length ? available.reduce((sum,n)=>sum+n,0)/group.length : 0;
+      group.forEach(row=>{ row.place=place; row.tie=group.length>1; row.points=shared; row.status=shared>0?'scored':'eligible'; });
+      cursor = end;
+    }
+    eventResults[event] = byEvent[event].sort(sortRows);
+  });
+  const teamMap = {}, athleteMap = {};
+  rows.forEach(row=>{
+    if(!teamMap[row.team]) teamMap[row.team]={team:row.team,points:0,scorers:0};
+    if(!athleteMap[row.athlete+'|'+row.team]) athleteMap[row.athlete+'|'+row.team]={athlete:row.athlete,team:row.team,points:0,events:0,activeEvents:0};
+    const a = athleteMap[row.athlete+'|'+row.team];
+    if(row.enabled!==false) a.activeEvents++;
+    if(row.points>0){ teamMap[row.team].points += row.points; teamMap[row.team].scorers++; a.points += row.points; a.events++; }
+  });
+  const teams = Object.values(teamMap).sort((a,b)=>(b.points-a.points)||a.team.localeCompare(b.team));
+  teams.forEach((team,i)=>{
+    const sameAsPrevious=i>0 && Math.abs(team.points-teams[i-1].points)<1e-9;
+    team.place=sameAsPrevious?teams[i-1].place:i+1;
+    team.tie=teams.some((other,j)=>j!==i&&Math.abs(other.points-team.points)<1e-9);
+  });
+  const athletes = Object.values(athleteMap).sort((a,b)=>(b.points-a.points)||a.athlete.localeCompare(b.athlete));
+  return { rows, rowById:Object.fromEntries(rows.map(row=>[row.id,row])), eventResults, teams, athletes, points, scoringDepth:points.length, entriesPerTeam:teamCap, maxEventsPerAthlete:athleteCap };
+}
+function computeMeetScenario(records, opts){
+  const current = scoreMeetScenarioCore(records, opts);
+  const baselineRecords = (records || []).map(row=>Object.assign({},row,{enabled:true}));
+  const baseline = scoreMeetScenarioCore(baselineRecords, opts);
+  const baselineByTeam = Object.fromEntries(baseline.teams.map(team=>[team.team,team]));
+  current.teams.forEach(team=>{ team.baseline=(baselineByTeam[team.team]||{points:0}).points; team.delta=team.points-team.baseline; });
+  current.baseline = baseline;
+  current.changedCount = (records || []).filter(row=>row.enabled===false).length;
+  return current;
+}
+function meetScorerFmtPoints(value){
+  const n = Number(value) || 0;
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+}
+function setMeetScorerOption(key,value){
+  if(['scoringDepth','entriesPerTeam','maxEventsPerAthlete'].includes(key)) value=parseInt(value,10)||99;
+  meetScorerState[key]=value; saveMeetScorerState(); renderMeetScorer();
+}
+function setMeetScorerQuery(value){ meetScorerState.query=String(value||''); renderMeetScorer(); }
+function toggleMeetScorerEntry(id,checked){
+  const row = meetScorerState.records.find(record=>record.id===id);
+  if(!row) return; row.enabled=Boolean(checked); saveMeetScorerState(); renderMeetScorer();
+}
+function resetMeetScorerScenario(){
+  meetScorerState.records.forEach(row=>{ row.enabled=true; });
+  saveMeetScorerState(); renderMeetScorer(); toast('All athlete-event assignments restored');
+}
+function loadMeetScorerExample(){
+  const parsed = parseMeetScorerCsv(MEET_SCORER_EXAMPLE);
+  meetScorerState.meetName='Example conference'; meetScorerState.sourceText=MEET_SCORER_EXAMPLE;
+  meetScorerState.records=parsed.records; meetScorerState.filterEvent=parsed.records.length?parsed.records[0].event:'';
+  meetScorerState.importMessage='Example loaded. Turn off Jordan Hale in one event to see every point reflow.';
+  saveMeetScorerState(); renderMeetScorer();
+}
+function importMeetScorerCsv(){
+  const textEl=document.getElementById('ms-import-text'), nameEl=document.getElementById('ms-meet-name');
+  const parsed=parseMeetScorerCsv(textEl?textEl.value:'');
+  if(parsed.error){ meetScorerState.importMessage=parsed.error; renderMeetScorer(); return; }
+  meetScorerState.sourceText=textEl.value; meetScorerState.records=parsed.records;
+  meetScorerState.meetName=(nameEl&&nameEl.value.trim())||'Conference scenario';
+  meetScorerState.filterEvent=parsed.records[0].event; meetScorerState.query='';
+  meetScorerState.importMessage=`Imported ${parsed.records.length} athlete-event row${parsed.records.length===1?'':'s'}${parsed.invalid.length?`; skipped invalid line${parsed.invalid.length===1?'':'s'} ${parsed.invalid.join(', ')}`:''}.`;
+  saveMeetScorerState(); renderMeetScorer();
+}
+function meetScorerFileSelected(input){
+  const file=input&&input.files&&input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{ const el=document.getElementById('ms-import-text'); if(el) el.value=String(reader.result||''); };
+  reader.onerror=()=>{ meetScorerState.importMessage='That CSV file could not be read.'; renderMeetScorer(); };
+  reader.readAsText(file);
+}
+function meetScorerImportPanel(open){
+  const msg=meetScorerState.importMessage ? `<div class="${/Missing|required|No valid|could not/.test(meetScorerState.importMessage)?'warn-box':'info-box'}" style="margin-top:.75rem">${esc(meetScorerState.importMessage)}</div>`:'';
+  return `<details class="card" ${open?'open':''} style="margin-bottom:1rem"><summary style="cursor:pointer;font-family:var(--font-display);font-weight:700">Import authorized performance rankings</summary>
+    <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin:.75rem 0">Required columns: <strong>Event, Athlete, Team, Rank</strong>. Optional: Grade, Mark. Rank controls order; marks stay visible as source context. Use a CSV/export you are authorized to use.</p>
+    <div class="form-grid" style="margin-bottom:.75rem"><div class="form-group"><label for="ms-meet-name">Meet / scenario name</label><input id="ms-meet-name" value="${esc(meetScorerState.meetName||'')}"></div><div class="form-group"><label for="ms-file">CSV file</label><input id="ms-file" type="file" accept=".csv,text/csv" onchange="meetScorerFileSelected(this)"></div></div>
+    <textarea id="ms-import-text" class="ms-import" spellcheck="false" placeholder="Event,Athlete,Team,Rank,Grade,Mark">${esc(meetScorerState.sourceText||'')}</textarea>
+    <div class="btn-row" style="margin-top:.75rem"><button class="btn btn-primary" onclick="importMeetScorerCsv()">Build scenario</button><button class="btn" onclick="loadMeetScorerExample()">Load fictional example</button></div>${msg}
+    <p class="ms-boundary" style="margin-top:.75rem">Data boundary: this browser does not fetch TFRRS or Cloud Training Systems. TFRRS requires express written permission for automated access or incorporation. Imported scenario data stays in this signed-in account's local browser storage.</p>
+  </details>`;
+}
+function renderMeetScorer(){
+  const el=document.getElementById('ms-body'); if(!el) return;
+  if(!hasProAccess()){
+    el.innerHTML=proGateCard('Conference Scorer','Turn a performance list into an editable conference scenario. Remove one athlete from one event and STRIDE immediately advances every displaced scorer and recalculates every team total.'); return;
+  }
+  meetScorerEnsureOwner();
+  if(!meetScorerState.records.length){
+    el.innerHTML=`<div class="card" style="margin-bottom:1rem"><p class="sq-kicker">The mental-math problem, removed</p><h2 class="sq-h">Edit the assignment. Recalculate the whole meet.</h2><p class="sq-sub">Unlike a whole-athlete exclusion, each athlete-event row is independent. Turn off a conflicted double, an unavailable event, or an implausible multi-event entry; the next finishers move up and every team total changes with them.</p></div>${meetScorerImportPanel(true)}`; return;
+  }
+  const opts={scoringDepth:meetScorerState.scoringDepth,entriesPerTeam:meetScorerState.entriesPerTeam,maxEventsPerAthlete:meetScorerState.maxEventsPerAthlete};
+  const result=computeMeetScenario(meetScorerState.records,opts);
+  const events=Object.keys(result.eventResults);
+  if(meetScorerState.filterEvent && !events.includes(meetScorerState.filterEvent)) meetScorerState.filterEvent=events[0]||'';
+  const q=meetScorerHeaderKey(meetScorerState.query);
+  const visibleEvents=q?events:meetScorerState.filterEvent==='all'?events:events.filter(event=>event===meetScorerState.filterEvent);
+  const scoreboard=result.teams.map(team=>`<tr><td>${team.tie?'T':''}${team.place}</td><td><strong>${esc(team.team)}</strong></td><td class="num">${meetScorerFmtPoints(team.points)}</td><td class="num">${meetScorerFmtPoints(team.baseline)}</td><td class="num" style="color:${team.delta<0?'var(--red)':team.delta>0?'var(--green)':'var(--text-4)'}">${team.delta>0?'+':''}${meetScorerFmtPoints(team.delta)}</td></tr>`).join('');
+  const assignments={}; meetScorerState.records.forEach(row=>{ const key=row.athlete+'|'+row.team; (assignments[key]||(assignments[key]=[])).push(row); });
+  const multi=Object.values(assignments).filter(rows=>rows.length>1).sort((a,b)=>b.length-a.length||a[0].athlete.localeCompare(b[0].athlete));
+  const watch=multi.length?multi.slice(0,12).map(rows=>`<div style="margin-bottom:.75rem"><p style="font-size:.8125rem;margin-bottom:.35rem"><strong>${esc(rows[0].athlete)}</strong> <span style="color:var(--text-3)">· ${esc(rows[0].team)} · ${rows.filter(r=>r.enabled!==false).length}/${rows.length} active</span></p><div class="ms-watch">${rows.sort((a,b)=>a.rank-b.rank).map(row=>`<label class="ms-chip"><input type="checkbox" ${row.enabled!==false?'checked':''} onchange="toggleMeetScorerEntry('${esc(row.id)}',this.checked)">${esc(row.event)} · #${esc(row.rank)}</label>`).join('')}</div></div>`).join(''):`<p style="font-size:.8125rem;color:var(--text-3)">No athlete appears in multiple imported events.</p>`;
+  const eventCards=visibleEvents.map(event=>{
+    let rows=result.eventResults[event]; if(q) rows=rows.filter(row=>meetScorerHeaderKey(row.athlete+' '+row.team+' '+row.event).includes(q));
+    if(!rows.length) return '';
+    const body=rows.map(row=>{
+      const scored=result.rowById[row.id], status=scored.status;
+      const statusText=status==='excluded'?'Out':status==='team-cap'?'Team cap':status==='athlete-cap'?'Athlete cap':status==='eligible'?'Below points':status==='scored'?'Scoring':'';
+      return `<div class="ms-row ${row.enabled===false?'off':''} ${/cap/.test(status)?'capped':''}"><label class="ms-toggle" title="Include ${esc(row.athlete)} in ${esc(row.event)}"><input type="checkbox" aria-label="Include ${esc(row.athlete)} in ${esc(row.event)}" ${row.enabled!==false?'checked':''} onchange="toggleMeetScorerEntry('${esc(row.id)}',this.checked)"></label><div><strong>${esc(row.athlete)}</strong>${row.grade?` <small>· ${esc(row.grade)}</small>`:''}<br><small>${esc(statusText)}</small></div><div class="ms-team">${esc(row.team)}${row.mark?`<br><small>${esc(row.mark)}</small>`:''}</div><div class="ms-place">${scored.place?(scored.tie?'T':'')+scored.place:'—'}</div><div class="ms-points">${scored.points?meetScorerFmtPoints(scored.points):'—'}</div></div>`;
+    }).join('');
+    const scoring=result.eventResults[event].filter(row=>result.rowById[row.id].points>0).length;
+    return `<article class="card ms-event-card"><div class="ms-event-head"><h3>${esc(event)}</h3><span class="ms-boundary">${scoring} scorer${scoring===1?'':'s'} · points reflow live</span></div>${body}</article>`;
+  }).join('');
+  el.innerHTML=`
+    <div class="card" style="margin-bottom:1rem"><div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap"><div><p class="sq-kicker">${esc(meetScorerState.meetName||'Conference scenario')}</p><h2 class="sq-h">${result.changedCount?`${result.changedCount} athlete-event decision${result.changedCount===1?'':'s'} changed`:'Baseline performance-list scenario'}</h2><p class="sq-sub">Scenario points, not a readiness or final-result prediction. Imported rank controls order; your include/exclude choices control the field.</p></div><div class="btn-row"><button class="btn" onclick="resetMeetScorerScenario()">Reset assignments</button><button class="btn" onclick="goTo('lineup',null)">Build team lineup →</button></div></div>
+      <div class="ms-controls" style="margin-top:1rem"><label>Score top<select onchange="setMeetScorerOption('scoringDepth',this.value)">${[3,6,8].map(n=>`<option value="${n}" ${n===Number(meetScorerState.scoringDepth)?'selected':''}>${n}</option>`).join('')}</select></label><label>Entries / team / event<select onchange="setMeetScorerOption('entriesPerTeam',this.value)">${[99,1,2,3,4].map(n=>`<option value="${n}" ${n===Number(meetScorerState.entriesPerTeam)?'selected':''}>${n===99?'Unlimited':n}</option>`).join('')}</select></label><label>Events / athlete<select onchange="setMeetScorerOption('maxEventsPerAthlete',this.value)">${[99,1,2,3,4].map(n=>`<option value="${n}" ${n===Number(meetScorerState.maxEventsPerAthlete)?'selected':''}>${n===99?'Coach decides':n}</option>`).join('')}</select></label><label>Event<select onchange="setMeetScorerOption('filterEvent',this.value)"><option value="all" ${meetScorerState.filterEvent==='all'?'selected':''}>All events</option>${events.map(event=>`<option value="${esc(event)}" ${event===meetScorerState.filterEvent?'selected':''}>${esc(event)}</option>`).join('')}</select></label><label>Find athlete<input value="${esc(meetScorerState.query)}" onchange="setMeetScorerQuery(this.value)" placeholder="Name or team"></label></div>
+    </div>
+    <div class="ms-grid"><div><div class="ms-event-list">${eventCards||'<div class="card"><p>No athlete-event rows match this search.</p></div>'}</div></div><aside><div class="card" style="margin-bottom:1rem"><p class="card-title"><span>Team scoreboard</span><span class="card-accent">LIVE SCENARIO</span></p><div style="overflow-x:auto"><table class="ms-scoreboard"><thead><tr><th>#</th><th>Team</th><th class="num">Now</th><th class="num">Base</th><th class="num">Δ</th></tr></thead><tbody>${scoreboard}</tbody></table></div><p class="ms-boundary" style="margin-top:.65rem">Base = every imported assignment active under the current caps. Δ isolates the exact score effect of your athlete-event decisions.</p></div><div class="card"><p class="card-title"><span>Multi-event watch</span><span class="card-accent">COACH DECIDES</span></p>${watch}</div></aside></div>
+    ${meetScorerImportPanel(false)}`;
+}
+function printMeetScorer(){
+  meetScorerEnsureOwner(); if(!meetScorerState.records.length){ toast('Import a scenario first','error'); return; }
+  const r=computeMeetScenario(meetScorerState.records,meetScorerState);
+  const scoreRows=r.teams.map(team=>`<tr><td>${team.tie?'T':''}${team.place}. ${esc(team.team)}</td><td class="num">${meetScorerFmtPoints(team.points)}</td><td class="num">${team.delta>0?'+':''}${meetScorerFmtPoints(team.delta)}</td></tr>`).join('');
+  const events=Object.keys(r.eventResults).map(event=>{ const rows=r.eventResults[event].filter(row=>row.points>0).map(row=>`<tr><td>${row.tie?'T':''}${row.place}. ${esc(row.athlete)}</td><td>${esc(row.team)}</td><td class="num">${meetScorerFmtPoints(row.points)}</td></tr>`).join('')||'<tr><td colspan="3">No active scorers</td></tr>'; return `<div style="break-inside:avoid"><div class="ps-section">${esc(event)}</div><table><tbody>${rows}</tbody></table></div>`; }).join('');
+  printSheet(`<div class="ps-page">${_psHead('Conference Scenario',meetScorerState.meetName||'Conference scenario',`${r.changedCount} athlete-event decision${r.changedCount===1?'':'s'} changed · score top ${r.scoringDepth}`,[_psStamp()])}<div class="ps-section">Team score</div><table><thead><tr><th>Team</th><th class="num">Scenario</th><th class="num">vs base</th></tr></thead><tbody>${scoreRows}</tbody></table>${events}<div class="ps-foot">Coach-reviewed STRIDE OS scenario · imported rank determines order · exclusions are coach decisions · not a readiness or final-result prediction.</div></div>`);
 }
 
 // ── FEATURE 7 · MEET LINEUP OPTIMIZER ───────────────────────────────────────
@@ -17197,12 +17545,28 @@ function toast(msg, type){
 
 // ── INIT ──
 let currentScreen = 'home';
+function localMeetScorerPreviewRequested(){
+  const local = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+  if(!local) return false;
+  try{ return new URLSearchParams(location.search || '').get('preview') === 'meetscorer'; }catch(_e){ return false; }
+}
 window.addEventListener('load',()=>{
   refreshActiveAthlete();
   renderSimpleHelpToggle();
   document.addEventListener('keydown', event => {
     if(event.key === 'Escape') toggleMobileNav(false);
   });
+  // Local-only visual fixture for browser QA. It cannot activate on the
+  // deployed domain and performs no auth, network, or cloud writes.
+  if(localMeetScorerPreviewRequested()){
+    sbUser={id:'local-meet-scorer-preview'};
+    sbSubscription={tier:'pro',trialEndsAt:null,status:'active',interval:null,hasProAccess:true,trialSecondsRemaining:null};
+    applyWorkspaceMode({redirect:false});
+    loadMeetScorerExample();
+    goTo('meetscorer',null);
+    updateChip();
+    return;
+  }
   // Deep links: #eventfinder opens the free Event Finder; #ef=<payload> also
   // restores a shared result. The payload lives in the URL FRAGMENT, so the
   // shared times/name never reach a server log.
