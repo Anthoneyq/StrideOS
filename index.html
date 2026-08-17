@@ -8698,7 +8698,9 @@ function paceAnchorForAthlete(ath){
   });
 }
 // Setting/clearing a training-pace anchor is a COACH decision. Athlete
-// accounts see the resulting paces but cannot change the anchor.
+// accounts never see or interact with the override at all — it is stored
+// under the coach's user id on the coach's device, so an athlete sign-in
+// gets plain PR-anchored paces (see fitnessOverrideCard).
 function canAdjustFitness(){
   return !isAthleteOnly();
 }
