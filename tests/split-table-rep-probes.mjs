@@ -128,32 +128,36 @@ const repCell = (cells, repCols, d) => {
   return cells.slice(-repCols.length)[i];
 };
 
+// Membership matrix shared by the fixed-column surfaces: a column renders a
+// time iff the zone's OWN reps list supports that distance (±15m so the 1600
+// column and the 1609 Mile rep are one); every unsupported cell must be the
+// exact em-dash — not empty, not any other placeholder.
+const zoneSupports = (label, d) => STRIDE_COACH_SPLITS.find(z=>z.label===label).reps.some(r => Math.abs(r - d) <= 15);
+const expectZoneRow = (surface, cells, repCols, label) => {
+  repCols.forEach(d=>{
+    const c = repCell(cells, repCols, d);
+    if(zoneSupports(label, d)){
+      if(!isTime(c)) throw new Error(surface+' '+label+' '+d+'m should be a time, got "'+c+'"');
+    } else {
+      if(c !== '—') throw new Error(surface+' '+label+' '+d+'m should be exactly "—", got "'+c+'"');
+    }
+  });
+};
+
 // ── PRINTED PACE CARD ──
-// repCols is hardcoded in paceCardPrintHTML; assert it via the header, then
-// index the exact 300m/400m cells of the Threshold row.
-probe('pace card print: exact 300m and 400m Threshold cells populated', ()=>{
+// repCols is hardcoded in paceCardPrintHTML; assert the header, then the full
+// supported/dash matrix for EVERY zone row (Sprint's 300m-only exception and
+// Easy/Steady's no-short-intervals rows both fall out of the membership rule).
+probe('pace card print: every zone row matches the supported/dash matrix', ()=>{
   const P = paceCardPrintHTML(A);
   const PACE_CARD_REPS = [300, 400, 800, 1000, 1200, 1600];
   PACE_CARD_REPS.forEach(d=>{ const l = d===1600?'1600m':d+'m';
     if(!P.includes('>'+l+'<')) throw new Error('missing header column '+l); });
-  const cells = rowCells(P, 'Threshold');
-  [300, 400].forEach(d=>{
-    const c = repCell(cells, PACE_CARD_REPS, d);
-    if(!isTime(c)) throw new Error('Threshold '+d+'m cell = "'+c+'"');
+  STRIDE_COACH_SPLITS.forEach(z=>{
+    expectZoneRow('pace card', rowCells(P, z.label), PACE_CARD_REPS, z.label);
   });
 });
 
-probe('pace card print: Sprint exception enforced — 300m populated, 400m+ dashed', ()=>{
-  const P = paceCardPrintHTML(A);
-  const PACE_CARD_REPS = [300, 400, 800, 1000, 1200, 1600];
-  const cells = rowCells(P, 'Sprint');
-  const c300 = repCell(cells, PACE_CARD_REPS, 300);
-  if(!isTime(c300)) throw new Error('Sprint 300m cell = "'+c300+'"');
-  [400, 800, 1000, 1200, 1600].forEach(d=>{
-    const c = repCell(cells, PACE_CARD_REPS, d);
-    if(isTime(c)) throw new Error('Sprint '+d+'m printed a target: "'+c+'" — zone cap not enforced on print');
-  });
-});
 probe('zone cap is opt-in: coach-entered reps beyond a zone cap still compute', ()=>{
   // Group workout specs (VO2 1200s) and programPaceForAthlete's per-1000m
   // rate deliberately bypass the display cap — lock that they keep working.
@@ -174,12 +178,11 @@ probe('group sheet print: exact 300m and 400m cells populated per athlete', ()=>
   const SHEET_REPS = [300, 400, 800, 1000, 1200, 1600];
   SHEET_REPS.forEach(d=>{ const l = d===1600?'1600m':d+'m';
     if(!G.includes('>'+l+'<')) throw new Error('missing header column '+l); });
+  // Group sheet rows are per-athlete at one zone (Threshold), so the matrix
+  // is the Threshold membership row for each athlete: all six columns are
+  // supported, so every cell must be a time (and would flag any dash).
   ['Riley Chen','Jo Ellis'].forEach(name=>{
-    const cells = rowCells(G, name);
-    [300, 400].forEach(d=>{
-      const c = repCell(cells, SHEET_REPS, d);
-      if(!isTime(c)) throw new Error(name+' '+d+'m cell = "'+c+'"');
-    });
+    expectZoneRow('group sheet '+name, rowCells(G, name), SHEET_REPS, 'Threshold');
   });
 });
 
@@ -193,12 +196,10 @@ probe('training groups screen: exact 300m and 400m zone cells populated', ()=>{
   const SQUAD_REPS = [300, 400, 800, 1000, 1200, 1600];
   // renderSquads headers are bare numbers ("300"), not "300m"
   [300, 400].forEach(d=>{ if(!new RegExp('>'+d+'<').test(h)) throw new Error('no '+d+' header column'); });
-  ['Tempo','Threshold','Critical Velocity'].forEach(label=>{
-    const cells = rowCells(h, label);
-    [300, 400].forEach(d=>{
-      const c = repCell(cells, SQUAD_REPS, d);
-      if(!isTime(c)) throw new Error(label+' '+d+'m cell = "'+c+'"');
-    });
+  // Full supported/dash matrix for every zone groupSessionZones renders
+  // (its keep-set — no Easy/Speed/Sprint rows on this surface).
+  ['Steady','Tempo','Threshold','Critical Velocity','Race Pace','VO2 Max'].forEach(label=>{
+    expectZoneRow('training groups', rowCells(h, label), SQUAD_REPS, label);
   });
 });
 `;

@@ -11133,18 +11133,19 @@ function computeZoneSplits(athlete, opts){
       ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
     const repList = opts.repDists || z.reps;
     // capToZoneReps: fixed-column DISPLAY surfaces (pace card, group sheet,
-    // Training Groups tables) set this so their shared columns cannot extend
-    // a zone past its longest supported rep — e.g. Sprint stops at 300m (a
-    // 400m rep at 115–125% is a glycolytic time trial, not a stride), so a
-    // printed card must dash Sprint 400m+, matching the on-screen table.
+    // Training Groups tables) set this so a shared column only renders for
+    // zones whose OWN reps list supports that distance — the same membership
+    // rule the on-screen Coach Split Table applies. So Sprint dashes 400m+
+    // (a 400m rep at 115–125% is a glycolytic time trial, not a stride) and
+    // Easy/Steady dash short interval columns they never prescribe.
     // Deliberately OFF for coach-entered targets (programPaceForAthlete's
     // per-1000m rate, group workout specs like VO2 1200s) — those pick one
     // rep on purpose and are not bound by the table's column layout.
-    // +15m tolerance treats the 1600 column and the 1609 (Mile) rep as one.
-    const zoneMaxRep = opts.capToZoneReps ? Math.max(...z.reps) + 15 : Infinity;
+    // ±15m tolerance treats the 1600 column and the 1609 (Mile) rep as one.
+    const zoneSupports = d => !opts.capToZoneReps || z.reps.some(r => Math.abs(r - d) <= 15);
     const reps = {};
     repList.forEach(d => {
-      if(!allowed || d > zoneMaxRep || !repAllowedForAnchor(d, athlete) ||
+      if(!allowed || !zoneSupports(d) || !repAllowedForAnchor(d, athlete) ||
          (athlete.raceDistanceM < 1500 && pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
       reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
     });
