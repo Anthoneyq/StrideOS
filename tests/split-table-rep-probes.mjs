@@ -162,6 +162,45 @@ probe('training groups screen: every zone row fully populated', ()=>{
   });
 });
 
+// ── CURRENT-FITNESS OVERRIDE (Kyle 2026-08-17) ──
+// Adjust every pace to a coach-entered current-fitness mark without touching
+// the PR record — the VDOT "plug in 17:00 5K" flow.
+probe('fitness override: recalculates the split table, leaves the PR untouched', ()=>{
+  localStorage.setItem('strideFitnessOverrides', JSON.stringify({ [A.id]: { event:'5K', time:'17:00', setOn:'2026-08-17' } }));
+  const anchor = paceAnchorForAthlete(A);
+  if(anchor.raceTime !== '17:00' || anchor.raceDistanceM !== 5000) throw new Error('anchor did not adopt the override');
+  if(A.raceTime !== '15:25.27') throw new Error('PR record was mutated: '+A.raceTime);
+  const T2 = buildDanielsTable();   // default path must flow through the override
+  const cells = rowCells(T2, 'Threshold');
+  const secPerM = parseTime('17:00') / 5000;
+  const z = STRIDE_COACH_SPLITS.find(x=>x.label==='Threshold');
+  const expected = secPerM * 300 * pctToMult(effectiveZonePct(z, anchor, getActiveGuardrail()));
+  const got = parseTime(repCell(cells, ALL_REPS, 300).replace(/[^0-9:.]/g,''));
+  if(!(got > expected*0.9 && got < expected*1.1)) throw new Error('override 300m split '+got+'s vs expected ~'+expected.toFixed(1)+'s');
+});
+probe('fitness override: printed pace card anchors to the adjusted mark', ()=>{
+  const P = paceCardPrintHTML(paceAnchorForAthlete(A));
+  if(!/17:00/.test(P)) throw new Error('card does not show the adjusted anchor');
+});
+probe('fitness override: clearing returns every pace to the PR anchor', ()=>{
+  localStorage.setItem('strideFitnessOverrides', '{}');
+  const anchor = paceAnchorForAthlete(A);
+  if(anchor.raceTime !== '15:25.27') throw new Error('anchor did not return to the PR');
+  const T3 = buildDanielsTable();
+  const cells = rowCells(T3, 'Threshold');
+  const secPerM = parseTime(A.raceTime) / A.raceDistanceM;
+  const z = STRIDE_COACH_SPLITS.find(x=>x.label==='Threshold');
+  const expected = secPerM * 300 * pctToMult(effectiveZonePct(z, A, getActiveGuardrail()));
+  const got = parseTime(repCell(cells, ALL_REPS, 300).replace(/[^0-9:.]/g,''));
+  if(!(got > expected*0.9 && got < expected*1.1)) throw new Error('post-clear 300m split '+got+'s vs expected ~'+expected.toFixed(1)+'s');
+});
+probe('fitness override: garbage stored state is ignored, never throws', ()=>{
+  localStorage.setItem('strideFitnessOverrides', 'not json');
+  if(getFitnessOverride(A) !== null) throw new Error('garbage state produced an override');
+  if(paceAnchorForAthlete(A) !== A) throw new Error('anchor should be the athlete itself');
+  localStorage.setItem('strideFitnessOverrides', '{}');
+});
+
 // ── COACH-ENTERED TARGETS: unaffected by any display rule ──
 probe('coach-entered reps still compute (program rates, workout specs)', ()=>{
   const cs = computeZoneSplits(A, { repDists:[1200] });

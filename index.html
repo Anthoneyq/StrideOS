@@ -8562,6 +8562,80 @@ function clearCachedWeather(){
   if(typeof updateBuilder === 'function') updateBuilder();
   if(typeof refreshDanielsTable === 'function') refreshDanielsTable();
 }
+// ── CURRENT-FITNESS OVERRIDE (Kyle's ask, 2026-08-17) ──
+// A coach often knows today's fitness is not the stored PR (injury, early
+// season). The override recomputes every training pace from a coach-entered
+// current-fitness mark — the VDOT flow of typing a hypothetical 17:00 5K —
+// WITHOUT touching the athlete's PR record, so Race Forecasts, the
+// Performance Curve, and Team IQ stay anchored to real race evidence.
+// Stored locally per athlete id (device-local; not written to the roster row).
+const FITNESS_OVERRIDE_KEY = 'strideFitnessOverrides';
+function _fitnessOverrides(){
+  try{ return JSON.parse(localStorage.getItem(FITNESS_OVERRIDE_KEY) || '{}') || {}; }
+  catch(e){ return {}; }
+}
+function getFitnessOverride(ath){
+  if(!ath || !ath.id) return null;
+  const o = _fitnessOverrides()[ath.id];
+  if(!o || !DIST[o.event] || !parseTime(o.time || '')) return null;
+  return o;
+}
+// The anchor every pace surface should calculate from: the athlete as-is, or
+// a shallow clone carrying the adjusted mark. PR fields on the real record
+// are never modified.
+function paceAnchorForAthlete(ath){
+  const o = getFitnessOverride(ath);
+  if(!o) return ath;
+  return Object.assign({}, ath, {
+    raceDistance: o.event, raceDistanceM: DIST[o.event],
+    raceTime: o.time, raceDate: o.setOn
+  });
+}
+function applyFitnessOverride(){
+  const ev = document.getElementById('foEvent');
+  const t  = document.getElementById('foTime');
+  if(!A || !ev || !t) return;
+  if(!DIST[ev.value] || !parseTime(t.value || '')){ toast('Enter a valid time, e.g. 17:00'); return; }
+  const all = _fitnessOverrides();
+  all[A.id] = { event: ev.value, time: t.value.trim(), setOn: new Date().toISOString().slice(0,10) };
+  localStorage.setItem(FITNESS_OVERRIDE_KEY, JSON.stringify(all));
+  renderPaces();
+  toast('Paces adjusted to current fitness · PR unchanged');
+}
+function clearFitnessOverride(){
+  if(!A) return;
+  const all = _fitnessOverrides();
+  delete all[A.id];
+  localStorage.setItem(FITNESS_OVERRIDE_KEY, JSON.stringify(all));
+  renderPaces();
+  toast('Back to PR-based paces');
+}
+// Distances a coach realistically states current fitness in.
+const FITNESS_OVERRIDE_EVENTS = ['800m','1500m','1600m','Mile','3000m','3200m','2 Mile','5K','8K','10K'];
+function fitnessOverrideCard(ath){
+  const o = getFitnessOverride(ath);
+  const opts = FITNESS_OVERRIDE_EVENTS.filter(e=>DIST[e]).map(e =>
+    `<option value="${esc(e)}" ${((o && o.event === e) || (!o && ath.raceDistance === e)) ? 'selected' : ''}>${esc(e)}</option>`).join('');
+  return `
+    <div style="background:var(--bg-card);border:1px solid ${o ? 'var(--yellow)' : 'var(--border)'};border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="min-width:14rem">
+          <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:${o ? 'var(--yellow)' : 'var(--text-3)'};text-transform:uppercase;margin-bottom:.25rem">${o ? '● Adjusted to current fitness' : 'Current fitness'}</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${o
+            ? `All paces below anchor to <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (set ${esc(o.setOn || '')}). PR record unchanged — forecasts still use real races.`
+            : `Coming off injury or early season? Enter where you believe fitness is <em>today</em> and every zone recalculates from it. The PR record stays untouched.`}</p>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <select id="foEvent" aria-label="Current-fitness event" style="min-width:6rem">${opts}</select>
+          <input id="foTime" class="auth-input" style="width:6.5rem" placeholder="17:00" value="${o ? esc(o.time) : ''}" aria-label="Current-fitness time"
+                 onkeydown="if(event.key==='Enter')applyFitnessOverride()">
+          <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="applyFitnessOverride()">${o ? 'Update' : 'Adjust paces'}</button>
+          ${o ? `<button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="clearFitnessOverride()">Clear · back to PR</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderPaces(){
   const el=document.getElementById('pc-body');
 
@@ -8572,13 +8646,18 @@ function renderPaces(){
     return;
   }
 
+  // Every pace surface on this screen derives from the ANCHOR — the PR, or
+  // the coach's current-fitness override when one is set.
+  const anchor = paceAnchorForAthlete(A);
+  const fitnessOv = getFitnessOverride(A);
+
   const fresh = prFreshness(A.raceDate);
   const fColor = fresh==='fresh'?'var(--green)':fresh==='stale'?'var(--yellow)':(fresh==='expired'||fresh==='future')?'var(--red)':'var(--text-3)';
   const guardrailKey = getActiveGuardrail();
   const pacePresets = STRIDE_ZONES.map(z => {
-    const allowed = zoneAllowedForAnchor(z, A);
+    const allowed = zoneAllowedForAnchor(z, anchor);
     return {
-      pct: Math.round(effectiveZonePct(z, A, guardrailKey)),
+      pct: Math.round(effectiveZonePct(z, anchor, guardrailKey)),
       label: z.label,
       allowed
     };
@@ -8590,7 +8669,7 @@ function renderPaces(){
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
         <span style="width:.5rem;height:.5rem;border-radius:50%;background:${fColor};flex-shrink:0" aria-label="${esc(fresh)} PR"></span>
         <span style="font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2)">
-          <strong style="color:var(--text)">${esc(A.name)}</strong> · ${esc(A.raceDistance || '?')} in ${esc(A.raceTime || '?')}
+          <strong style="color:var(--text)">${esc(A.name)}</strong> · PR ${esc(A.raceDistance || '?')} in ${esc(A.raceTime || '?')}${fitnessOv ? ` · <span style="color:var(--yellow)">paces from ${esc(fitnessOv.event)} ${esc(fitnessOv.time)}</span>` : ''}
         </span>
       </div>
       <div style="display:flex;gap:.5rem">
@@ -8601,7 +8680,8 @@ function renderPaces(){
     </div>
 
     ${youthGuardrailBanner(A)}
-    ${aerobicPaceAnchorWarning(A)}
+    ${aerobicPaceAnchorWarning(anchor)}
+    ${fitnessOverrideCard(A)}
 
     <!-- THE PRESCRIPTION — HERO -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem">
@@ -8621,7 +8701,7 @@ function renderPaces(){
       </div>
     </div>
 
-    ${pacesProvenance(A)}
+    ${pacesProvenance(anchor)}
 
     <!-- CONTROLS -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1rem">
@@ -8809,7 +8889,9 @@ function buildLadderRows(){
 // Shows percentage RANGE beside each zone (e.g. "Easy · 78–82%") so coaches
 // see the math being applied without assuming we're using Daniels VDOT.
 function buildDanielsTable(ath){
-  ath = ath || A;   // defaults to the active athlete; a temp anchor (free calc) also works
+  // Defaults to the active athlete THROUGH the current-fitness override; a
+  // temp anchor (free calc) also works.
+  ath = ath || paceAnchorForAthlete(A);
   if(!ath || !ath.raceDistanceM || !ath.raceTime) return '';
   const raceSec = parseTime(ath.raceTime);
   if(!raceSec) return '';
@@ -9278,11 +9360,12 @@ function refreshDanielsTable(){
 }
 
 function updateBuilder(){
-  if(!A || !A.raceDistanceM || !A.raceTime) return;
-  const raceSec = parseTime(A.raceTime);
+  const src = paceAnchorForAthlete(A);   // current-fitness override, if set
+  if(!src || !src.raceDistanceM || !src.raceTime) return;
+  const raceSec = parseTime(src.raceTime);
   if(!raceSec) return;
 
-  const secPerM = raceSec / A.raceDistanceM;
+  const secPerM = raceSec / src.raceDistanceM;
 
   const pctEl = document.getElementById('pcPct');
   const repEl = document.getElementById('pcRep');
@@ -9305,7 +9388,7 @@ function updateBuilder(){
   // Short-race anchors can't prescribe aerobic zones, reps meaningfully beyond
   // the race distance, or supra-race pace AT/BEYOND the race distance (faster
   // than the athlete's own PR) — same rules as the Coach Split Table.
-  if(A.raceDistanceM < 1500 && (pct < 100 || !repAllowedForAnchor(rep, A) || (pct > 100 && rep >= A.raceDistanceM))){
+  if(src.raceDistanceM < 1500 && (pct < 100 || !repAllowedForAnchor(rep, src) || (pct > 100 && rep >= src.raceDistanceM))){
     const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
     setEl('build-rep', repLabel);
     setEl('build-time', pct < 100 ? 'Need 1500m+ PR' : 'Pick a shorter rep');
@@ -11369,7 +11452,7 @@ function paceCardPrintHTML(athlete){
 function printPaceCard(athleteId){
   const ath = athleteId ? (DB.athletes || []).find(a => a.id === athleteId) : A;
   if(!ath){ toast('Select an athlete first'); return; }
-  printSheet(paceCardPrintHTML(ath));
+  printSheet(paceCardPrintHTML(paceAnchorForAthlete(ath)));
 }
 
 function printAllPaceCards(){
@@ -11378,7 +11461,7 @@ function printAllPaceCards(){
   if(!list.length){ toast('No athletes with a race PR to print'); return; }
   const skipped = all.length - list.length;
   if(skipped) toast(`Printing ${list.length} card${list.length===1?'':'s'} · ${skipped} athlete${skipped===1?'':'s'} skipped (no race PR)`);
-  printSheet(list.map(paceCardPrintHTML).join(''));
+  printSheet(list.map(a => paceCardPrintHTML(paceAnchorForAthlete(a))).join(''));
 }
 
 // ── FEATURE 8 · TRAINING-GROUP CLUSTERING ───────────────────────────────────
