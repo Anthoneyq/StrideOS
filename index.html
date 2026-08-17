@@ -1713,6 +1713,13 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
               <input id="fRStartTime" type="text" placeholder="e.g. 09:00 or 7pm">
               <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);margin-top:.25rem;display:block;line-height:1.4">Enables hour-specific weather. Leave blank for daily summary.</span>
             </div>
+            <div class="form-group">
+              <label for="fIndoor" style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+                <input id="fIndoor" type="checkbox" style="width:auto;accent-color:var(--accent)">
+                Indoor race
+              </label>
+              <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);margin-top:.25rem;display:block;line-height:1.4">Climate-controlled — outdoor weather for this date won't be fetched or applied (a January indoor PR shouldn't get a 20°F correction).</span>
+            </div>
           </div>
         </fieldset>
 
@@ -4494,6 +4501,9 @@ function remoteAthleteToLocal(row, raceRows){
     raceLocation: row.race_location || '',
     raceStartTime: row.race_start_time || '',
     raceWeather: row.race_weather || null,
+    // Indoor flag piggybacks on the race_weather jsonb column — an indoor PR
+    // HAS no outdoor weather, so the slot is naturally exclusive.
+    indoorRace: Boolean(row.race_weather && row.race_weather.indoor),
     additionalPRs,
     guardrail: row.guardrail_setting === 'auto' ? null : row.guardrail_setting,
     // Phase 2 fields: invitation status for athlete login.
@@ -8030,31 +8040,9 @@ function altitudeCorrection(altitudeFt){
   return 0.07;                           // 7.0%+ at 3000m+
 }
 
-// Humidity → effective temperature (Kyle 2026-08-17: 60°F at 90% RH runs
-// harder than the thermometer says). Above 80°F this is the NOAA Rothfusz
-// heat-index regression (the range it was fit for); from 65–80°F a small
-// smooth blend so the effect fades out instead of jumping at the boundary;
-// below 65°F or ≤40% RH humidity has no meaningful pace cost (Ely 2007).
-function effectiveTempF(tempF, humidityPct){
-  if(tempF == null || isNaN(tempF)) return tempF;
-  const rh = (humidityPct == null || isNaN(humidityPct)) ? null : Math.min(100, Math.max(0, humidityPct));
-  if(rh == null || rh <= 40 || tempF < 65) return tempF;
-  if(tempF >= 80){
-    const T = tempF, R = rh;
-    const hi = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R
-      - 0.00683783*T*T - 0.05481717*R*R + 0.00122874*T*T*R
-      + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
-    // Heat index can only add heat, and cap the add at +25°F so a typo'd
-    // RH can't produce an absurd correction.
-    return Math.max(tempF, Math.min(hi, tempF + 25));
-  }
-  // 65–80°F: up to +6°F at 100% RH, scaled by how close to 80°F it is
-  return tempF + ((rh - 40) / 60) * 6 * ((tempF - 65) / 15);
-}
-
 // Combined environmental correction (returns slowdown factor 0.0–0.20)
-function environmentalCorrection(tempF, altitudeFt, humidityPct){
-  const temp = tempCorrection(effectiveTempF(tempF, humidityPct));
+function environmentalCorrection(tempF, altitudeFt){
+  const temp = tempCorrection(tempF);
   const alt = altitudeCorrection(altitudeFt);
   // Combine: not purely additive at extremes; use sqrt-sum for physiological reality
   return temp + alt - (temp * alt * 0.5);
@@ -8062,8 +8050,8 @@ function environmentalCorrection(tempF, altitudeFt, humidityPct){
 
 // Apply environmental correction to a target time (in seconds)
 // Returns the adjusted (slower) target time
-function applyEnvironment(targetSec, tempF, altitudeFt, humidityPct){
-  const factor = environmentalCorrection(tempF, altitudeFt, humidityPct);
+function applyEnvironment(targetSec, tempF, altitudeFt){
+  const factor = environmentalCorrection(tempF, altitudeFt);
   return targetSec * (1 + factor);
 }
 
@@ -8071,22 +8059,11 @@ function applyEnvironment(targetSec, tempF, altitudeFt, humidityPct){
 function getEnvSettings(){
   const tempEl = document.getElementById('envTemp');
   const altEl = document.getElementById('envAlt');
-  const humEl = document.getElementById('envHum');
   return {
     tempF: tempEl && tempEl.value ? parseFloat(tempEl.value) : null,
     altitudeFt: altEl && altEl.value ? parseFloat(altEl.value) : null,
-    humidityPct: humEl && humEl.value ? parseFloat(humEl.value) : null,
   };
 }
-
-// Chrome mutates a FOCUSED <input type=number> on wheel/trackpad scroll —
-// typing 72°F then scrolling the page silently changed the temperature
-// (Kyle, 2026-08-17, Chrome; Safari doesn't do this). Blurring on wheel
-// keeps the scroll a scroll. Passive: we never preventDefault.
-document.addEventListener('wheel', () => {
-  const el = document.activeElement;
-  if(el && el.tagName === 'INPUT' && el.type === 'number') el.blur();
-}, { passive: true });
 
 // ══════════════════════════════════════
 // WEATHER API INTEGRATION
@@ -8529,6 +8506,11 @@ async function autoFillConditions(){
   const btn = document.getElementById('weatherFetchBtn');
   const statusEl = document.getElementById('weatherStatus');
 
+  if(A.indoorRace){
+    if(statusEl) statusEl.innerHTML = `<span style="color:var(--text-3)">○ Indoor race — climate controlled, no weather adjustment applies.</span>`;
+    return;
+  }
+
   if(!A.raceLocation || !A.raceDate){
     if(statusEl){
       statusEl.innerHTML = `<span style="color:var(--yellow)">▲ Add a race location and race date to the athlete profile first. <button onclick="goTo('edit',null)" style="background:none;border:none;color:var(--text);text-decoration:underline;cursor:pointer;padding:0;font:inherit">Edit profile →</button></span>`;
@@ -8899,22 +8881,18 @@ function renderPaces(){
               <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${A.raceLocation ? `Can fetch the source race conditions for <strong style="color:var(--text-2)">${esc(A.raceLocation)}</strong> on <strong style="color:var(--text-2)">${esc(A.raceDate||'?')}</strong>${A.raceStartTime ? ` at <strong style="color:var(--text-2)">${esc(A.raceStartTime)}</strong>` : ' <span style="color:var(--text-4)">(daily summary)</span>'}. Apply only if you want the target workout adjusted to those same conditions.` : 'Add a race location to the athlete profile to enable source-condition lookup.'}</p>
             </div>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              ${A.raceLocation && A.raceDate ? `<button id="weatherFetchBtn" class="btn" onclick="autoFillConditions()" style="font-size:.6875rem;padding:.4rem .75rem">${A.raceWeather && A.raceWeather.success ? 'Use cached source conditions' : '⤓ Fetch source race conditions'}</button>` : `<button class="btn" onclick="goTo('edit',null)" style="font-size:.6875rem;padding:.4rem .75rem">Edit profile</button>`}
-              ${A.raceWeather ? `<button class="btn" onclick="clearCachedWeather()" style="font-size:.6875rem;padding:.4rem .75rem;color:var(--text-3)">Clear</button>` : ''}
+              ${A.indoorRace ? `<span style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3)">Indoor PR — climate controlled, source-condition lookup disabled.</span>` : A.raceLocation && A.raceDate ? `<button id="weatherFetchBtn" class="btn" onclick="autoFillConditions()" style="font-size:.6875rem;padding:.4rem .75rem">${A.raceWeather && A.raceWeather.success ? 'Use cached source conditions' : '⤓ Fetch source race conditions'}</button>` : `<button class="btn" onclick="goTo('edit',null)" style="font-size:.6875rem;padding:.4rem .75rem">Edit profile</button>`}
+              ${A.raceWeather && !A.indoorRace ? `<button class="btn" onclick="clearCachedWeather()" style="font-size:.6875rem;padding:.4rem .75rem;color:var(--text-3)">Clear</button>` : ''}
             </div>
           </div>
           <div id="weatherStatus" style="font-family:var(--font-mono);font-size:.6875rem;line-height:1.6;margin-top:.5rem;min-height:1em">${A.raceWeather && A.raceWeather.success ? renderWeatherStatus(A.raceWeather, true) : ''}</div>
         </div>
 
         <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.0625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.5rem">Manual Entry</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
           <div>
             <label for="envTemp" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Temperature (°F)</label>
             <input id="envTemp" type="number" min="20" max="120" placeholder="e.g. 75" value="" oninput="updateBuilder();refreshDanielsTable()">
-          </div>
-          <div>
-            <label for="envHum" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Humidity (%)</label>
-            <input id="envHum" type="number" min="0" max="100" placeholder="e.g. 90" value="" oninput="updateBuilder();refreshDanielsTable()">
           </div>
           <div>
             <label for="envAlt" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Altitude (ft)</label>
@@ -8922,7 +8900,7 @@ function renderPaces(){
           </div>
         </div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6">
-          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly.
+          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Combined effects compound but not linearly.
         </p>
       </div>
     </details>
@@ -9025,7 +9003,7 @@ function buildDanielsTable(ath){
         return { dist: d, sec: null, blocked: true };
       }
       let split = secPerM * d * pctToMult(adjustedPct);
-      split = applyEnvironment(split, env.tempF, env.altitudeFt, env.humidityPct);
+      split = applyEnvironment(split, env.tempF, env.altitudeFt);
       return { dist: d, sec: split };
     });
 
@@ -9034,7 +9012,7 @@ function buildDanielsTable(ath){
     let mileStr = 'Needs 1500m+ PR';
     if(allowed && ath.raceDistanceM >= 1500){
       const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
-      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt, env.humidityPct);
+      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
       mileStr = _mmss(correctedMile, 0);
     } else if(allowed){
       mileStr = '—';
@@ -9085,11 +9063,11 @@ function buildDanielsTable(ath){
       </tr>`;
   }).join('');
 
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
   const envBadge = envFactor > 0 ? `
     <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem">
       <span>●</span>
-      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
+      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
     </div>` : '';
 
   const guardrailBadge = guardrail.shift !== 0 ? `
@@ -9491,7 +9469,7 @@ function updateBuilder(){
 
   // Environmental correction
   const env = getEnvSettings();
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
 
   // Update slider label (monochrome — let the number speak)
   const pctVal = document.getElementById('pcPctVal');
@@ -9516,7 +9494,7 @@ function updateBuilder(){
 
   // Target rep time — with environmental correction applied
   const rawTargetSec = targetRepTime(secPerM, rep, pct);
-  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt, env.humidityPct);
+  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt);
   const racePaceForRep = secPerM * rep;
 
   // Build display
@@ -11331,7 +11309,7 @@ function computeZoneSplits(athlete, opts){
     const pct = effectiveZonePct(z, athlete, gk);
     const mult = pctToMult(pct);
     const mile = (allowed && athlete.raceDistanceM >= 1500)
-      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt, env.humidityPct) : null;
+      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
     const repList = opts.repDists || z.reps;
     // Full pace-reference grid (Anthoney 2026-08-17): every requested rep
     // distance gets a time for every zone — the tables read as a pace wheel
@@ -11343,7 +11321,7 @@ function computeZoneSplits(athlete, opts){
     repList.forEach(d => {
       if(!allowed || !repAllowedForAnchor(d, athlete) ||
          (pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
-      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt, env.humidityPct);
+      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
     });
     return { label:z.label, range:z.range, pct:Math.round(pct), rawPct:pct, allowed, mile, reps, repDists:repList };
   });
@@ -11385,7 +11363,7 @@ function pacesProvenance(athlete){
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
   const adjustments = [];
   if(gl.shift !== 0) adjustments.push(`Guardrail: ${gl.label} (${gl.shift>0?'+':''}${gl.shift}% sub-race)`);
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
   if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
   const fresh = prFreshness(athlete.raceDate);
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
@@ -11510,7 +11488,7 @@ function paceCardPrintHTML(athlete){
     return `<div class="ps-page">${_psHead('Pace Card', athlete.name || 'Athlete', 'Race PR on file is not a usable time.', [_psStamp()])}<div class="ps-callout">Fix this athlete’s race time to generate their pace card.</div></div>`;
   }
   const gl = GUARDRAIL_LEVELS[cs.guardrailKey] || GUARDRAIL_LEVELS.standard;
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
   const age = parseInt(athlete.age, 10) || null;
 
   const repHdr = repCols.map(d => `<th class="num">${d === 1600 ? '1600m' : d + 'm'}</th>`).join('');
@@ -16764,6 +16742,7 @@ function fillForm(){
   set('fPrimary',A.primaryEvent); set('fTAge',A.trainingAge); set('fMiles',A.weeklyMileage);
   set('fRDist',A.raceDistance); set('fRTime',A.raceTime); set('fRDate',A.raceDate);
   set('fRLocation', A.raceLocation);
+  { const ind = document.getElementById('fIndoor'); if(ind) ind.checked = Boolean(A.indoorRace); }
   set('fRStartTime', A.raceStartTime);
   document.querySelectorAll('.sec').forEach(cb=>{ cb.checked=(A.secondaryEvents||[]).includes(cb.value); });
 
@@ -16845,7 +16824,10 @@ async function saveAthlete(){
     raceDate:  document.getElementById('fRDate').value,
     raceLocation: (document.getElementById('fRLocation') || {}).value || '',
     raceStartTime: (document.getElementById('fRStartTime') || {}).value || '',
-    raceWeather: A ? A.raceWeather : null,  // cached weather lookup
+    indoorRace: Boolean((document.getElementById('fIndoor') || {}).checked),
+    raceWeather: (document.getElementById('fIndoor') || {}).checked
+      ? { indoor: true }
+      : (A && A.raceWeather && !A.raceWeather.indoor ? A.raceWeather : null),  // cached weather lookup
     inviteEmail: ((document.getElementById('fInviteEmail') || {}).value || '').trim().toLowerCase() || null,
     additionalPRs: additionalPRs,
     guardrail: A ? A.guardrail : null,  // preserve coach's guardrail choice if set
