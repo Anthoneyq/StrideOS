@@ -143,6 +143,27 @@ probe('pace card print: exact 300m and 400m Threshold cells populated', ()=>{
   });
 });
 
+probe('pace card print: Sprint exception enforced — 300m populated, 400m+ dashed', ()=>{
+  const P = paceCardPrintHTML(A);
+  const PACE_CARD_REPS = [300, 400, 800, 1000, 1200, 1600];
+  const cells = rowCells(P, 'Sprint');
+  const c300 = repCell(cells, PACE_CARD_REPS, 300);
+  if(!isTime(c300)) throw new Error('Sprint 300m cell = "'+c300+'"');
+  [400, 800, 1000, 1200, 1600].forEach(d=>{
+    const c = repCell(cells, PACE_CARD_REPS, d);
+    if(isTime(c)) throw new Error('Sprint '+d+'m printed a target: "'+c+'" — zone cap not enforced on print');
+  });
+});
+probe('zone cap is opt-in: coach-entered reps beyond a zone cap still compute', ()=>{
+  // Group workout specs (VO2 1200s) and programPaceForAthlete's per-1000m
+  // rate deliberately bypass the display cap — lock that they keep working.
+  const cs = computeZoneSplits(A, { repDists:[1200] });
+  const vo2 = cs.zones.find(z=>z.label==='VO2 Max');
+  if(!(vo2 && isFinite(vo2.reps[1200]))) throw new Error('uncapped VO2 1200m target lost');
+  const sprintRate = programPaceForAthlete(A, 'sprint');
+  if(!isFinite(sprintRate)) throw new Error('programPaceForAthlete sprint per-1000m rate lost');
+});
+
 // ── PRINTED GROUP SHEET (default columns) ──
 // One row per athlete; assert BOTH fixture athletes' exact 300m/400m target
 // cells hold times (Riley 5K anchor, Jo 1600m anchor — both threshold-legal).
