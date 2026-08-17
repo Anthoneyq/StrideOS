@@ -8040,9 +8040,28 @@ function altitudeCorrection(altitudeFt){
   return 0.07;                           // 7.0%+ at 3000m+
 }
 
+// Humidity → effective temperature (Kyle 2026-08-17: 60°F at 90% RH runs
+// harder than the thermometer says). Above 80°F this is the NOAA Rothfusz
+// heat-index regression (the range it was fit for); from 65–80°F a small
+// smooth blend so the effect fades out instead of jumping at the boundary;
+// below 65°F or ≤40% RH humidity has no meaningful pace cost (Ely 2007).
+function effectiveTempF(tempF, humidityPct){
+  if(tempF == null || isNaN(tempF)) return tempF;
+  const rh = (humidityPct == null || isNaN(humidityPct)) ? null : Math.min(100, Math.max(0, humidityPct));
+  if(rh == null || rh <= 40 || tempF < 65) return tempF;
+  if(tempF >= 80){
+    const T = tempF, R = rh;
+    const hi = -42.379 + 2.04901523*T + 10.14333127*R - 0.22475541*T*R
+      - 0.00683783*T*T - 0.05481717*R*R + 0.00122874*T*T*R
+      + 0.00085282*T*R*R - 0.00000199*T*T*R*R;
+    return Math.max(tempF, Math.min(hi, tempF + 25));
+  }
+  return tempF + ((rh - 40) / 60) * 6 * ((tempF - 65) / 15);
+}
+
 // Combined environmental correction (returns slowdown factor 0.0–0.20)
-function environmentalCorrection(tempF, altitudeFt){
-  const temp = tempCorrection(tempF);
+function environmentalCorrection(tempF, altitudeFt, humidityPct){
+  const temp = tempCorrection(effectiveTempF(tempF, humidityPct));
   const alt = altitudeCorrection(altitudeFt);
   // Combine: not purely additive at extremes; use sqrt-sum for physiological reality
   return temp + alt - (temp * alt * 0.5);
@@ -8050,8 +8069,8 @@ function environmentalCorrection(tempF, altitudeFt){
 
 // Apply environmental correction to a target time (in seconds)
 // Returns the adjusted (slower) target time
-function applyEnvironment(targetSec, tempF, altitudeFt){
-  const factor = environmentalCorrection(tempF, altitudeFt);
+function applyEnvironment(targetSec, tempF, altitudeFt, humidityPct){
+  const factor = environmentalCorrection(tempF, altitudeFt, humidityPct);
   return targetSec * (1 + factor);
 }
 
@@ -8059,11 +8078,18 @@ function applyEnvironment(targetSec, tempF, altitudeFt){
 function getEnvSettings(){
   const tempEl = document.getElementById('envTemp');
   const altEl = document.getElementById('envAlt');
+  const humEl = document.getElementById('envHum');
   return {
     tempF: tempEl && tempEl.value ? parseFloat(tempEl.value) : null,
     altitudeFt: altEl && altEl.value ? parseFloat(altEl.value) : null,
+    humidityPct: humEl && humEl.value ? parseFloat(humEl.value) : null,
   };
 }
+
+document.addEventListener('wheel', () => {
+  const el = document.activeElement;
+  if(el && el.tagName === 'INPUT' && el.type === 'number') el.blur();
+}, { passive: true });
 
 // ══════════════════════════════════════
 // WEATHER API INTEGRATION
@@ -8889,10 +8915,14 @@ function renderPaces(){
         </div>
 
         <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.0625rem;color:var(--text-4);text-transform:uppercase;margin-bottom:.5rem">Manual Entry</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
           <div>
             <label for="envTemp" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Temperature (°F)</label>
             <input id="envTemp" type="number" min="20" max="120" placeholder="e.g. 75" value="" oninput="updateBuilder();refreshDanielsTable()">
+          </div>
+          <div>
+            <label for="envHum" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Humidity (%)</label>
+            <input id="envHum" type="number" min="0" max="100" placeholder="e.g. 90" value="" oninput="updateBuilder();refreshDanielsTable()">
           </div>
           <div>
             <label for="envAlt" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Altitude (ft)</label>
@@ -8900,7 +8930,7 @@ function renderPaces(){
           </div>
         </div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6">
-          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Combined effects compound but not linearly.
+          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly.
         </p>
       </div>
     </details>
@@ -9003,7 +9033,7 @@ function buildDanielsTable(ath){
         return { dist: d, sec: null, blocked: true };
       }
       let split = secPerM * d * pctToMult(adjustedPct);
-      split = applyEnvironment(split, env.tempF, env.altitudeFt);
+      split = applyEnvironment(split, env.tempF, env.altitudeFt, env.humidityPct);
       return { dist: d, sec: split };
     });
 
@@ -9012,7 +9042,7 @@ function buildDanielsTable(ath){
     let mileStr = 'Needs 1500m+ PR';
     if(allowed && ath.raceDistanceM >= 1500){
       const milePace = secPerM * 1609.34 * pctToMult(adjustedPct);
-      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt);
+      const correctedMile = applyEnvironment(milePace, env.tempF, env.altitudeFt, env.humidityPct);
       mileStr = _mmss(correctedMile, 0);
     } else if(allowed){
       mileStr = '—';
@@ -9063,11 +9093,11 @@ function buildDanielsTable(ath){
       </tr>`;
   }).join('');
 
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   const envBadge = envFactor > 0 ? `
     <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem">
       <span>●</span>
-      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
+      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
     </div>` : '';
 
   const guardrailBadge = guardrail.shift !== 0 ? `
@@ -9469,7 +9499,7 @@ function updateBuilder(){
 
   // Environmental correction
   const env = getEnvSettings();
-  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
 
   // Update slider label (monochrome — let the number speak)
   const pctVal = document.getElementById('pcPctVal');
@@ -9494,7 +9524,7 @@ function updateBuilder(){
 
   // Target rep time — with environmental correction applied
   const rawTargetSec = targetRepTime(secPerM, rep, pct);
-  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt);
+  const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt, env.humidityPct);
   const racePaceForRep = secPerM * rep;
 
   // Build display
@@ -11309,7 +11339,7 @@ function computeZoneSplits(athlete, opts){
     const pct = effectiveZonePct(z, athlete, gk);
     const mult = pctToMult(pct);
     const mile = (allowed && athlete.raceDistanceM >= 1500)
-      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt) : null;
+      ? applyEnvironment(secPerM * 1609.34 * mult, env.tempF, env.altitudeFt, env.humidityPct) : null;
     const repList = opts.repDists || z.reps;
     // Full pace-reference grid (Anthoney 2026-08-17): every requested rep
     // distance gets a time for every zone — the tables read as a pace wheel
@@ -11321,7 +11351,7 @@ function computeZoneSplits(athlete, opts){
     repList.forEach(d => {
       if(!allowed || !repAllowedForAnchor(d, athlete) ||
          (pct > 100 && d >= athlete.raceDistanceM)){ reps[d] = null; return; }
-      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt);
+      reps[d] = applyEnvironment(secPerM * d * mult, env.tempF, env.altitudeFt, env.humidityPct);
     });
     return { label:z.label, range:z.range, pct:Math.round(pct), rawPct:pct, allowed, mile, reps, repDists:repList };
   });
@@ -11363,7 +11393,7 @@ function pacesProvenance(athlete){
   const env = (typeof getEnvSettings === 'function') ? getEnvSettings() : { tempF:null, altitudeFt:null };
   const adjustments = [];
   if(gl.shift !== 0) adjustments.push(`Guardrail: ${gl.label} (${gl.shift>0?'+':''}${gl.shift}% sub-race)`);
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
   const fresh = prFreshness(athlete.raceDate);
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
@@ -11488,7 +11518,7 @@ function paceCardPrintHTML(athlete){
     return `<div class="ps-page">${_psHead('Pace Card', athlete.name || 'Athlete', 'Race PR on file is not a usable time.', [_psStamp()])}<div class="ps-callout">Fix this athlete’s race time to generate their pace card.</div></div>`;
   }
   const gl = GUARDRAIL_LEVELS[cs.guardrailKey] || GUARDRAIL_LEVELS.standard;
-  const envF = environmentalCorrection(env.tempF, env.altitudeFt);
+  const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   const age = parseInt(athlete.age, 10) || null;
 
   const repHdr = repCols.map(d => `<th class="num">${d === 1600 ? '1600m' : d + 'm'}</th>`).join('');
