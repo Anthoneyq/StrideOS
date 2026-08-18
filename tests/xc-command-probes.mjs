@@ -40,13 +40,27 @@ function extractConst(name, open = '[', close = ']'){
   return `const ${name} = ${extractBlock(html, start, open, close)};`;
 }
 
+function extractScalarConst(name){
+  const sig = `const ${name} = `;
+  const at = html.indexOf(sig);
+  assert.ok(at >= 0, `missing const ${name}`);
+  const end = html.indexOf(';', at);
+  return html.slice(at, end + 1);
+}
+
 const planningSource = [
   extractConst('XC_DISTANCES'),
+  extractScalarConst('RE3_MIN_GRADE_PCT'),
+  extractScalarConst('RE3_MAX_GRADE_PCT'),
   extractFn('defaultXcPlan'),
   extractFn('normalizeXcPlan'),
   extractFn('xcCheckpointDistances'),
   extractFn('xcCheckpointLabel'),
   extractFn('xcElapsedAt'),
+  extractFn('re3MetabolicPower'),
+  extractFn('roadGradeTargetPace'),
+  extractFn('parseRaceSegmentLines'),
+  extractFn('roadGradeCourseEstimate'),
   `const collectAllPRs = athlete => athlete.distanceCapable === false ? [] : [{ distM: athlete.anchorDistanceM || 5000 }];`,
   `const nearestAnchorForTarget = athlete => ({ event: athlete.anchorEvent || '5K', distM: athlete.anchorDistanceM || 5000 });`,
   `const labelForDistance = distanceM => ({3218:'2 Mile',5000:'5K',6000:'6K',8000:'8K'}[distanceM] || distanceM + 'm');`,
@@ -107,6 +121,14 @@ assert.equal(slowCourse.rows[0].conservative, 1010);
 assert.equal(slowCourse.rows[1].packGapSec, 30);
 assert.equal(slowCourse.topFiveSpreadSec, 180);
 assert.match(slowCourse.rows[0].evidence, /Observed PR/);
+
+const gradeSignal = P.xcPlanningRows(athletes.slice(0,1), {
+  meetName:'Hilly 5K', distanceM:5000, courseAdjustmentSec:30,
+  segmentText:'Climb | 1.5534 | 410.1 | controlled\nDescend | 1.5535 | -410.1 | quick feet'
+});
+assert.equal(gradeSignal.rows[0].likely,990,'RE3 signal never overwrites the coach-applied adjustment');
+assert.ok(gradeSignal.rows[0].gradeModel,'complete segments expose a grade-only signal');
+assert.ok(gradeSignal.rows[0].gradeModel.deltaSec > 0,'equal-distance +5/-5 grades do not metabolically cancel');
 
 const fastCourse = P.xcPlanningRows(athletes.slice(0,2), {
   meetName:'Fast course', distanceM:6000, courseAdjustmentSec:-15

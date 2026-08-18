@@ -5848,10 +5848,11 @@ function printCoachBrief(){
 }
 
 // ── XC COMMAND ─────────────────────────────────────────────────────────────
-// This first XC release deliberately does NOT invent an automatic course
-// conversion. The coach supplies one transparent whole-race adjustment and
-// STRIDE applies it to the same visible planning range for every athlete.
-// Terrain-segment normalization needs its own validated course dataset.
+// Race Command keeps the coach's transparent whole-race adjustment as the
+// applied planning decision. Complete course segments may also produce a
+// separate RE3 grade-only metabolic signal; it is labeled and never silently
+// applied because surface, turns, footing, tactics, and course-specific field
+// validation remain outside that model.
 const XC_DISTANCES = [
   { value:400, label:'400m' },
   { value:800, label:'800m' },
@@ -5999,6 +6000,39 @@ function buildRaceExecutionPlan(rawPlan, totalSec){
   };
 }
 
+// Grade-only course signal for Race Command. This never overwrites the coach's
+// course adjustment. It answers one narrower question: if the athlete held the
+// same modeled metabolic demand as their flat forecast through each entered
+// segment, how much time would grade alone add/remove? Exact segment distances
+// are required; net elevation for an entire loop is not enough.
+function roadGradeCourseEstimate(segmentText, flatTotalSec, raceDistanceM){
+  const rows = parseRaceSegmentLines(segmentText);
+  if(!rows.length || rows.some(row => row.invalid) || !isFinite(flatTotalSec) || flatTotalSec <= 0 ||
+     !isFinite(raceDistanceM) || raceDistanceM <= 0) return null;
+  const segments = rows.filter(row => !row.invalid);
+  const raceMiles = raceDistanceM / 1609.344;
+  const segmentMiles = segments.reduce((sum,row) => sum + row.distanceMi, 0);
+  // Completeness is PROPORTIONAL to the race: a flat 0.15mi allowance let a
+  // 0.10mi segment pass as a "complete" 400m course (40% of the race) and
+  // produce a confident false signal. 2% of race distance, capped at 0.15mi
+  // for the marathon end, keeps short races honest without demanding
+  // GPS-perfect segment math on long ones.
+  if(Math.abs(segmentMiles - raceMiles) > Math.min(0.15, raceMiles * 0.02)) return null;
+  const flatPace = flatTotalSec / raceMiles;
+  let totalSec = 0;
+  const modeled = [];
+  for(const row of segments){
+    const gradePct = row.elevationFt / (row.distanceMi * 5280) * 100;
+    if(gradePct < RE3_MIN_GRADE_PCT || gradePct > RE3_MAX_GRADE_PCT) return null;
+    const paceSecPerMile = roadGradeTargetPace(flatPace, gradePct);
+    if(!paceSecPerMile || !isFinite(paceSecPerMile)) return null;
+    const seconds = paceSecPerMile * row.distanceMi;
+    totalSec += seconds;
+    modeled.push({ ...row, gradePct, paceSecPerMile, seconds });
+  }
+  return { totalSec, deltaSec:totalSec-flatTotalSec, flatPaceSecPerMile:flatPace, segments:modeled };
+}
+
 function xcPlanningRows(athletes, rawPlan){
   const plan = normalizeXcPlan(rawPlan);
   const rows = [], excluded = [];
@@ -6020,6 +6054,7 @@ function xcPlanningRows(athletes, rawPlan){
       excluded.push({ athlete, reason:'no usable forecast' });
       return;
     }
+    const gradeModel = roadGradeCourseEstimate(plan.segmentText, forecast.likely, plan.distanceM);
     const adjust = plan.courseAdjustmentSec;
     const likely = Math.max(1, forecast.likely + adjust);
     const aggressive = Math.max(1, forecast.aggressive + adjust);
@@ -6037,6 +6072,7 @@ function xcPlanningRows(athletes, rawPlan){
       aggressive,
       conservative,
       checkpoints,
+      gradeModel,
       paceMileSec:likely / (plan.distanceM / 1609.344),
       evidence:forecast.isObserved
         ? `${forecast.confLabel} · ${labelForDistance(plan.distanceM)} result`
@@ -6073,7 +6109,7 @@ function xcFormHTML(plan){
           <small>Positive = plan slower; negative = plan faster. This is your coaching assumption, not an automatic STRIDE course grade.</small>
         </label>
         <label class="xc-label xc-wide"><span>Course / race notes</span><textarea id="xcNotes" class="auth-input" rows="4" maxlength="1200" placeholder="Narrow first mile, exposed final hill, pack cue at 3K…">${esc(plan.notes)}</textarea></label>
-        <label class="xc-label xc-wide"><span>Course segments</span><textarea id="xcSegments" class="auth-input" rows="5" maxlength="4000" placeholder="Start to 5K | 3.1 | 80 | Stay patient&#10;5K to Half | 10.0 | 220 | Settle and fuel&#10;Half to finish | 13.1 | -40 | Race the final 10K">${esc(plan.segmentText)}</textarea><small>One per line: label | segment miles | net elevation feet | coach cue. STRIDE does not infer terrain effects.</small></label>
+        <label class="xc-label xc-wide"><span>Course segments</span><textarea id="xcSegments" class="auth-input" rows="5" maxlength="4000" placeholder="Start to 5K | 3.1 | 80 | Stay patient&#10;5K to Half | 10.0 | 220 | Settle and fuel&#10;Half to finish | 13.1 | -40 | Race the final 10K">${esc(plan.segmentText)}</textarea><small>One per line: label | segment miles | net elevation feet | coach cue. When segment distances match the race, STRIDE shows an RE3 grade-only signal; it does not silently apply it.</small></label>
         <label class="xc-label"><span>Carbohydrate target (g/hour)</span><input id="xcCarbs" class="auth-input" type="number" min="0" max="200" step="1" value="${plan.carbsPerHour || ''}" placeholder="Coach-entered"></label>
         <label class="xc-label"><span>Fluid target (oz/hour)</span><input id="xcFluid" class="auth-input" type="number" min="0" max="100" step="1" value="${plan.fluidOzPerHour || ''}" placeholder="Coach-entered"></label>
         <label class="xc-label"><span>Sodium target (mg/hour)</span><input id="xcSodium" class="auth-input" type="number" min="0" max="3000" step="10" value="${plan.sodiumMgPerHour || ''}" placeholder="Coach-entered"></label>
@@ -6189,10 +6225,14 @@ function xcPlanTableHTML(result){
     const coursePlan = row.isObserved
       ? `${esc(fmtT(row.likely))}<p class="xc-evidence">adjusted reference</p>`
       : `${esc(fmtT(row.aggressive))}–${esc(fmtT(row.conservative))}<p class="xc-evidence">planning range</p>`;
+    const gradeSignal = row.gradeModel
+      ? `${row.gradeModel.deltaSec>=0?'+':'−'}${esc(fmtT(Math.abs(row.gradeModel.deltaSec)))}<p class="xc-evidence">RE3 grade only · not applied</p>`
+      : `—<p class="xc-evidence">needs complete segments</p>`;
     return `<tr>
       <td class="num">${row.rank}</td>
       <td><strong>${esc(row.athlete.name)}</strong><p class="xc-evidence">${esc(row.evidence)}</p></td>
       <td class="num">${coursePlan}</td>
+      <td class="num">${gradeSignal}</td>
       <td class="num">${esc(_mmss(row.paceMileSec,0))}/mi</td>
       ${checkpointCells}
       <td class="num">${row.packGapSec == null ? '—' : `+${esc(fmtT(row.packGapSec))}`}</td>
@@ -6210,12 +6250,12 @@ function xcPlanTableHTML(result){
     </div>
     <div style="overflow-x:auto;border:1px solid var(--border);border-radius:.65rem">
       <table class="xc-table">
-        <thead><tr><th class="num">#</th><th>Athlete / evidence</th><th class="num">Course range</th><th class="num">/mile</th>${checkpointHeaders}<th class="num">Pack gap</th></tr></thead>
+        <thead><tr><th class="num">#</th><th>Athlete / evidence</th><th class="num">Course range</th><th class="num">Grade-only signal</th><th class="num">/mile</th>${checkpointHeaders}<th class="num">Pack gap</th></tr></thead>
         <tbody>${tableRows}</tbody>
       </table>
     </div>
     ${excludedNote}
-    <p class="brief-source-note" style="margin-top:.75rem">Equal-effort checkpoints use even average pace. Hills, turns, footing, tactics, and pack decisions remain coach context; STRIDE has not modeled individual course segments.</p>`;
+    <p class="brief-source-note" style="margin-top:.75rem">The RE3 signal estimates steady metabolic cost from each segment's grade and the athlete's flat forecast; it is not automatically applied. Equal-time checkpoints remain based on the coach-adjusted race plan. Wind, turns, footing, technical terrain, tactics, and downhill muscle damage remain coach context.</p>`;
 }
 
 function renderXcCommand(){
@@ -8170,6 +8210,100 @@ function getEnvSettings(){
   };
 }
 
+// ── ROAD-GRADE EFFORT (RE3) ──
+// Looney, Hoogkamer & Kram (2026), Eur J Appl Physiol.
+// Estimates steady-state metabolic power (W/kg) from surface speed S (m/s)
+// and grade G (decimal). The app deliberately limits coach-facing use to
+// ±15%: steeper terrain increasingly involves gait changes, technical footing,
+// and walking transitions that a pace-equivalence number cannot represent.
+const RE3_MIN_GRADE_PCT = -15;
+const RE3_MAX_GRADE_PCT = 15;
+
+function re3MetabolicPower(speedMps, gradeDecimal){
+  const s = Number(speedMps), g = Number(gradeDecimal);
+  if(!isFinite(s) || s <= 0 || !isFinite(g)) return null;
+  return 4.43 + 1.51*s + 0.37*s*s + 30.4269*s*g *
+    (1 - Math.pow(1.1334, 1 - Math.pow(1.0563, 100*g + 43.4446)));
+}
+
+function re3LevelSpeedForPower(powerWkg){
+  const p = Number(powerWkg);
+  if(!isFinite(p) || p <= 4.43) return null;
+  const disc = 1.51*1.51 + 4*0.37*(p - 4.43);
+  return disc > 0 ? (-1.51 + Math.sqrt(disc)) / (2*0.37) : null;
+}
+
+function roadGradeEquivalentFlatPace(paceSecPerMile, gradePct){
+  const pace = Number(paceSecPerMile), grade = Number(gradePct);
+  if(!isFinite(pace) || pace <= 0 || !isFinite(grade) ||
+     grade < RE3_MIN_GRADE_PCT || grade > RE3_MAX_GRADE_PCT) return null;
+  const speed = 1609.344 / pace;
+  const levelSpeed = re3LevelSpeedForPower(re3MetabolicPower(speed, grade/100));
+  return levelSpeed && isFinite(levelSpeed) ? 1609.344 / levelSpeed : null;
+}
+
+function roadGradeTargetPace(flatPaceSecPerMile, gradePct){
+  const pace = Number(flatPaceSecPerMile), grade = Number(gradePct);
+  if(!isFinite(pace) || pace <= 0 || !isFinite(grade) ||
+     grade < RE3_MIN_GRADE_PCT || grade > RE3_MAX_GRADE_PCT) return null;
+  if(Math.abs(grade) < 1e-9) return pace;
+  const targetPower = re3MetabolicPower(1609.344/pace, 0);
+  let lo = 0.35, hi = 12;
+  if(re3MetabolicPower(lo, grade/100) > targetPower || re3MetabolicPower(hi, grade/100) < targetPower) return null;
+  for(let i=0;i<70;i++){
+    const mid = (lo + hi) / 2;
+    if(re3MetabolicPower(mid, grade/100) < targetPower) lo = mid;
+    else hi = mid;
+  }
+  const speed = (lo + hi) / 2;
+  return speed > 0 ? 1609.344 / speed : null;
+}
+
+function roadGradeToolHTML(prefix, initialPace, useCalculatorAnchor){
+  const p = esc(initialPace == null ? '8:00' : initialPace);
+  const paceLabel = useCalculatorAnchor ? 'Race pace from above' : 'Pace per mile';
+  const paceAttrs = useCalculatorAnchor ? 'readonly aria-readonly="true"' : '';
+  return `
+    <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem;margin-top:1rem">
+      <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:.75rem">
+        <div style="max-width:38rem">
+          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.25rem">Road Grade Effort · RE3</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.55">Convert a steady pace on a smooth, firm road to flat-equivalent metabolic effort—or prescribe the grade pace that matches a flat target.</p>
+        </div>
+        <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">PEER-REVIEWED MODEL · ±15%</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.75rem;align-items:end">
+        <div><label for="${prefix}Mode" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">Coach question</label><select id="${prefix}Mode" onchange="updateRoadGradeTool('${prefix}')"><option value="observed">What effort was this?</option><option value="target">What pace should I run?</option></select></div>
+        <div><label for="${prefix}Pace" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">${paceLabel}</label><input id="${prefix}Pace" class="auth-input" value="${p}" placeholder="${useCalculatorAnchor?'Enter race time above':'8:00'}" ${paceAttrs} oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div><label for="${prefix}Grade" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">Road grade (%)</label><input id="${prefix}Grade" class="auth-input" type="number" min="-15" max="15" step="0.1" value="3" oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div id="${prefix}Result" aria-live="polite" style="background:var(--bg-card);border:1px solid var(--border-s);border-radius:.4rem;padding:.65rem .8rem;min-height:3.25rem"></div>
+      </div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.55;margin-top:.75rem">Metabolic estimate only. Enter the grade of the segment, not total elevation gain or a loop's net grade. Wind, surface, turns, technical terrain, drafting, tactics, and downhill muscle damage are not included.</p>
+    </div>`;
+}
+
+function updateRoadGradeTool(prefix){
+  const modeEl = document.getElementById(prefix+'Mode');
+  const paceEl = document.getElementById(prefix+'Pace');
+  const gradeEl = document.getElementById(prefix+'Grade');
+  const out = document.getElementById(prefix+'Result');
+  if(!modeEl || !paceEl || !gradeEl || !out) return;
+  const pace = parseTime(paceEl.value || '');
+  const grade = Number(gradeEl.value);
+  if(!pace || pace < 180 || pace > 1800 || !isFinite(grade) || grade < RE3_MIN_GRADE_PCT || grade > RE3_MAX_GRADE_PCT){
+    out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">Enter a running pace from 3:00–30:00/mi and grade from −15% to +15%.</span>`;
+    return;
+  }
+  const observed = modeEl.value === 'observed';
+  const result = observed ? roadGradeEquivalentFlatPace(pace, grade) : roadGradeTargetPace(pace, grade);
+  if(!result || !isFinite(result)){
+    out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
+    return;
+  }
+  const label = observed ? 'Flat-equivalent effort' : `Same-effort pace at ${grade>0?'+':''}${grade}%`;
+  out.innerHTML = `<span style="font-family:var(--font-mono);font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em">${esc(label)}</span><strong style="font-family:var(--font-stat);font-size:1.35rem;display:block;color:var(--text);margin-top:.1rem">${esc(_mmss(result,0))}/mi</strong>`;
+}
+
 document.addEventListener('wheel', () => {
   const el = document.activeElement;
   if(el && el.tagName === 'INPUT' && el.type === 'number') el.blur();
@@ -8860,6 +8994,10 @@ function renderPaces(){
   const fresh = prFreshness(A.raceDate);
   const fColor = fresh==='fresh'?'var(--green)':fresh==='stale'?'var(--yellow)':(fresh==='expired'||fresh==='future')?'var(--red)':'var(--text-3)';
   const guardrailKey = getActiveGuardrail();
+  const anchorSec = parseTime(anchor.raceTime || '');
+  const gradeToolPace = anchorSec && anchor.raceDistanceM
+    ? _mmss(anchorSec / (anchor.raceDistanceM / 1609.344), 0)
+    : '8:00';
   const pacePresets = STRIDE_ZONES.map(z => {
     const allowed = zoneAllowedForAnchor(z, anchor);
     return {
@@ -9026,6 +9164,7 @@ function renderPaces(){
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6">
           Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly.
         </p>
+        ${roadGradeToolHTML('coachGrade', gradeToolPace)}
       </div>
     </details>
 
@@ -9069,6 +9208,7 @@ function renderPaces(){
   `;
 
   updateBuilder();
+  updateRoadGradeTool('coachGrade');
   paintGuardrail();
 }
 
@@ -9274,6 +9414,7 @@ function renderFreeTierCalculator(){
           <input id="ftT" type="text" placeholder="e.g. 5:30 or 22:00" oninput="freeTierUpdate()">
         </div>
       </div>
+      ${roadGradeToolHTML('ftGrade', '', true)}
     </div>
 
     <!-- THE PRESCRIPTION — HERO -->
@@ -9406,7 +9547,9 @@ function renderPricingTiers(){
 }
 
 function wireFreeTierCalc(){
-  // No-op: handlers wired via oninput/onchange inline
+  // Handlers are wired inline. Before a race is entered the integrated grade
+  // result correctly waits instead of inventing a standalone 8:00/mi anchor.
+  updateRoadGradeTool('ftGrade');
 }
 
 // Lead-magnet card floated over the blurred lower zones of the basic-tier pace table.
@@ -9483,6 +9626,11 @@ function freeTierUpdate(){
   const rep = repEl ? parseFloat(repEl.value) : 800;
 
   const secPerM = timeSec / distM;
+  // Grade is part of this calculator: its pace anchor always follows the race
+  // distance + time above. It does not maintain a second, divergent pace input.
+  const gradePaceEl = document.getElementById('ftGradePace');
+  if(gradePaceEl) gradePaceEl.value = _mmss(secPerM * 1609.344, 0);
+  updateRoadGradeTool('ftGrade');
   const set = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
   const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
 
@@ -15538,6 +15686,9 @@ function renderMethodology(){
         ${cite('Ely, M. R., Cheuvront, S. N., Roberts, W. O. & Montain, S. J.','2007','Impact of weather on marathon-running performance','Medicine & Science in Sports & Exercise, 39(3):487-493','Quantified pace decrement per degree of temperature above 50°F. Foundation of environmental correction factors.')}
         ${cite('Maughan, R. J., Otani, H. & Watson, P.','2012','Influence of relative humidity on prolonged exercise capacity in a warm environment','European Journal of Applied Physiology, 112(6):2313-2321','Humidity-specific physiology. Combines with temperature for total environmental load assessment.')}
         ${cite('Wehrlin, J. P. & Hallén, J.','2006','Linear decrease in VO2max and performance with increasing altitude in endurance athletes','European Journal of Applied Physiology, 96(4):404-412','Altitude-pace adjustment factors. Established the 6.3% per 1000m VO₂max decrement.')}
+        ${cite('Looney, D. P., Hoogkamer, W. & Kram, R.','2026','Metabolic energy expenditure during level, uphill, and downhill running','European Journal of Applied Physiology, 126:1621-1633','Pooled original and prior-study data to update the RE3 graded-running equation. STRIDE uses it for smooth-road, steady metabolic-equivalence estimates from −15% to +15%; it is not a race guarantee or a downhill loading model.')}
+        ${cite('Minetti, A. E., Moia, C., Roi, G. S., Susta, D. & Ferretti, G.','2002','Energy cost of walking and running at extreme uphill and downhill slopes','Journal of Applied Physiology, 93(3):1039-1046','Foundational measurement of graded running cost across uphill and downhill slopes. Supports the non-linear relationship between grade and metabolic cost.')}
+        ${cite('Foreman, N. A. et al.','2022','Assessment of a treadmill speed incline conversion chart: a validation study','International Journal of Sports Physiology and Performance','The HillRunner chart was supported through 0–4% in trained runners but underestimated demand at 6% and above. STRIDE therefore uses RE3 rather than extending that chart.')}
         ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work','Journal of Physiology, 213(2):255-276','Original quantification of wind resistance in running. Basis for headwind/tailwind corrections.')}
       </ul>
     </div>
@@ -15558,7 +15709,7 @@ function renderMethodology(){
       <p class="card-title"><span>What STRIDE OS Cannot Do</span><span class="card-accent">HONEST LIMITATIONS</span></p>
       <ul style="list-style:none;padding:0">
         ${limitItem('Measure VO₂max, lactate threshold, running economy, or critical speed directly. These require laboratory testing or specific time-trial protocols (e.g., 3-min all-out test for CS).', 'Field test protocols available; lab tests preferred')}
-        ${limitItem('Account for environmental conditions (heat, humidity, altitude, wind) automatically. Coaches should adjust prescriptions manually based on conditions.', 'Daniels (2014), Ely (2007), Maughan (2012) provide reference')}
+        ${limitItem('Turn every condition into a universal time correction. STRIDE estimates heat, humidity, altitude, and smooth-road grade where a bounded model exists; wind, surface, turns, technical terrain, tactics, drafting, acclimatization, and downhill muscle damage remain explicit coach context.', 'Looney et al. (2026); Ely (2007); Wehrlin & Hallén (2006)')}
         ${limitItem('Predict performance for athletes whose biological maturation status is changing (typical of athletes under 18). Maturation introduces 20–40% variance in adaptation rates.', 'Lloyd & Oliver (2012); Malina et al. (2004)')}
         ${limitItem('Replace coach judgment for individual response to training. Predictions are statistical averages; your athlete may be the outlier.', 'Hopkins et al. (2009); Bouchard & Rankinen (2001)')}
         ${limitItem('Automatically match every forecast to future race outcomes. STRIDE OS now logs source-excluded forecast snapshots for calibration, but coaches still need to record actual race outcomes before accuracy can be audited in their context.', 'Prediction log v2026-06-20; outcome matching roadmap')}
