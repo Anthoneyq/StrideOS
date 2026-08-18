@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 
 const html = fs.readFileSync(new URL('../index.html', import.meta.url),'utf8');
 const migration = fs.readFileSync(new URL('../supabase/migrations/20260804170000_online_coach_os.sql', import.meta.url),'utf8');
+const sessionMigration = fs.readFileSync(new URL('../supabase/migrations/20260818110000_session_checkins.sql', import.meta.url),'utf8');
 let assertions = 0;
 const ok = (value,message) => { assertions++; assert.ok(value,message); };
 const eq = (actual,expected,message) => { assertions++; assert.equal(actual,expected,message); };
@@ -61,12 +62,13 @@ const queueSource = [
   extractFn('isoDateAdd'),
   extractFn('mondayForIso'),
   extractFn('normalizeCheckIn'),
+  extractFn('normalizeSessionCheckIn'),
   `const workoutTypeLabel=value=>value;`,
   `const fmtDistance=value=>value?value+'m':'—';`,
   `const fmtDuration=value=>value?value+'s':'—';`,
   `const labelForDistance=value=>value===42195?'Marathon':value+'m';`,
   extractFn('buildOnlineCoachQueue'),
-  `return {localIsoDate,isoDateAdd,mondayForIso,normalizeCheckIn,buildOnlineCoachQueue};`
+  `return {localIsoDate,isoDateAdd,mondayForIso,normalizeCheckIn,normalizeSessionCheckIn,buildOnlineCoachQueue};`
 ].join('\n');
 const Q = new Function(queueSource)();
 
@@ -85,6 +87,18 @@ eq(check.sleepHours,24);
 eq(check.athleteNote,'Athlete report');
 ok(!('readiness' in check),'check-in does not synthesize readiness');
 ok(!('recommendation' in check),'check-in does not synthesize recommendation');
+const sessionCheck=Q.normalizeSessionCheckIn({
+  id:'session-1',clientRef:'session:a:1',athleteId:'a',sessionDate:'2026-08-04',
+  sleepQuality:9,trainingReadiness:0,totalStress:3,preHealthStatus:'yes',
+  preConcernType:'pain_injury',wholeSessionEffort:4,expectationOutcome:5,
+  postHealthStatus:'no',postSubmittedAt:'2026-08-04T10:00:00Z'
+});
+eq(sessionCheck.sleepQuality,5,'sleep report clamps to five choices');
+eq(sessionCheck.trainingReadiness,1,'readiness report clamps to five choices');
+eq(sessionCheck.totalStress,3);
+eq(sessionCheck.preHealthStatus,'yes');
+ok(!('readinessScore' in sessionCheck),'session report does not synthesize a readiness score');
+ok(!('recommendation' in sessionCheck),'session report does not synthesize a recommendation');
 
 const queue = Q.buildOnlineCoachQueue({
   athletes:[{id:'a',supabaseId:'cloud-a',name:'Runner A'}],
@@ -92,6 +106,7 @@ const queue = Q.buildOnlineCoachQueue({
     {id:'ci-open',athleteId:'a',weekOf:'2026-08-03',submittedAt:'2026-08-04T08:00:00Z',energy:2,soreness:4,confidence:3,athleteNote:'Question'},
     {id:'ci-done',athleteId:'a',weekOf:'2026-07-27',submittedAt:'2026-07-29T08:00:00Z',energy:5,soreness:1,confidence:5,coachResponse:'Received'}
   ],
+  sessionCheckIns:[],
   workouts:[
     {id:'note',athlete_id:'cloud-a',workout_date:'2026-08-03',workout_type:'easy',athlete_notes:'Can we move Friday?'},
     {id:'planned',athlete_id:'cloud-a',workout_date:'2026-08-02',workout_type:'long',prescribed_distance_m:16000,prescribed_zone_label:'Long'},
@@ -107,6 +122,18 @@ ok(queue.find(item=>item.kind==='Athlete report').detail.includes('Athlete-repor
 ok(queue.find(item=>item.kind==='No completion').detail.includes('completion is unknown'),'a blank completion is not called missed');
 ok(queue.find(item=>item.kind==='Upcoming race').detail.includes('Marathon'),'marathon plan reaches queue');
 ok(!queue.some(item=>item.id.includes('ci-done')),'responded check-in leaves queue');
+
+const sessionQueue=Q.buildOnlineCoachQueue({
+  athletes:[{id:'a',supabaseId:'cloud-a',name:'Runner A'}],checkIns:[],workouts:[],racePlans:[],todayISO:'2026-08-04',
+  sessionCheckIns:[
+    {...sessionCheck,id:'session-open',athleteId:'cloud-a',coachResponse:'',preHealthStatus:'yes'},
+    {...sessionCheck,id:'session-done',athleteId:'cloud-a',coachResponse:'Reviewed'}
+  ]
+});
+eq(sessionQueue.length,1,'responded session report leaves queue');
+eq(sessionQueue[0].kind,'Session report');
+ok(sessionQueue[0].detail.includes('Athlete-reported; not interpreted by STRIDE.'),'session report remains visibly bounded');
+ok(sessionQueue[0].detail.includes('health concern reported'),'health concern reaches coach queue without diagnosis');
 
 const programSource = [
   extractConst('WORKOUT_TYPES'),
@@ -198,13 +225,26 @@ ok(/data-s="online"/.test(html),'online coaching route is in navigation');
 ok(/data-s="programs"/.test(html),'program builder route is in navigation');
 ok(/Import CSV/.test(html),'training log surfaces activity import');
 ok(/Half Marathon/.test(html)&&/Marathon/.test(html),'Race Command supports long road distances');
-ok(/submit_athlete_checkin/.test(html),'athlete check-in uses constrained RPC');
+ok(/submit_athlete_checkin/.test(migration),'legacy weekly check-in retains its constrained RPC');
+ok(/submit_athlete_preworkout_checkin/.test(html),'pre-workout report uses constrained RPC');
+ok(/submit_athlete_postworkout_checkin/.test(html),'post-workout report uses constrained RPC');
+ok(/Compared with your usual, how was your sleep last night\?/.test(html),'pre-workout sleep wording is present');
+ok(/How ready do you feel for today’s planned workout\?/.test(html),'pre-workout readiness wording is present');
+ok(/How much total stress are you carrying right now\?/.test(html),'pre-workout stress wording is present');
+ok(/Compared with what you expected, how did the workout go\?/.test(html),'post-workout expectation wording is present');
+ok(/Check-in complete/.test(html)&&/Start another session check-in/.test(html),'completed report returns a receipt before another session');
+ok(/does not turn this report into a readiness score/.test(html),'athlete receipt preserves the report boundary');
 ok(/security definer/i.test(migration),'athlete check-in RPC derives ownership server-side');
 ok(/revoke execute on function public\.submit_athlete_checkin[\s\S]*from public/i.test(migration),'anonymous RPC execution is revoked');
 ok(/a\.athlete_user_id = auth\.uid\(\)/.test(migration),'athlete writes require the linked athlete account');
 ok(/auth\.uid\(\) = coach_id/.test(migration),'coach policies remain account scoped');
 ok(/course_adjustment_sec between -1800 and 7200/.test(migration),'database enforces race adjustment bounds');
 ok(/carbs_per_hour between 0 and 200/.test(migration),'database enforces coach-entered carbohydrate bounds');
+ok(/create table if not exists public\.athlete_session_checkins/.test(sessionMigration),'session reports use a dedicated table');
+ok(/security definer[\s\S]*submit_athlete_postworkout_checkin|submit_athlete_postworkout_checkin[\s\S]*security definer/i.test(sessionMigration),'session report RPCs are security definer');
+ok(/revoke execute on function public\.submit_athlete_preworkout_checkin[\s\S]*from public/i.test(sessionMigration),'anonymous pre-workout RPC execution is revoked');
+ok(/revoke execute on function public\.submit_athlete_postworkout_checkin[\s\S]*from public/i.test(sessionMigration),'anonymous post-workout RPC execution is revoked');
+ok(/'athlete_session_checkins'/.test(sessionMigration),'privacy export includes session reports');
 
 const raceSource = [
   extractConst('XC_DISTANCES'),

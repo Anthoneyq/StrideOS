@@ -340,6 +340,20 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .xc-form .xc-wide{grid-column:1 / -1}
 .xc-label{display:flex;flex-direction:column;gap:.3rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--text-2)}
 .xc-label small{font-size:.625rem;line-height:1.45;color:var(--text-4)}
+.session-checkin{display:grid;gap:1rem;margin-top:.8rem}
+.session-question{display:grid;gap:.55rem;border:0;padding:0;margin:0;min-width:0}
+.session-question legend{font-family:var(--font-display);font-size:1rem;font-weight:700;line-height:1.35;color:var(--text);padding:0}
+.session-helper{font-size:.6875rem;line-height:1.5;color:var(--text-3);margin-top:-.2rem}
+.session-scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:.4rem}
+.session-scale.session-scale-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.session-choice{position:relative;display:flex;min-width:0}
+.session-choice input{position:absolute;opacity:0;pointer-events:none}
+.session-choice span{display:grid;place-items:center;width:100%;min-height:3rem;padding:.55rem .35rem;text-align:center;border:1px solid var(--border-s);border-radius:.5rem;background:var(--bg-el);color:var(--text-2);font-family:var(--font-mono);font-size:.6875rem;line-height:1.25;cursor:pointer}
+.session-choice input:checked+span{border-color:var(--accent);background:var(--accent-soft);color:var(--text)}
+.session-choice input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.session-choice:hover span{border-color:var(--border-h);color:var(--text)}
+.session-receipt{padding:.85rem;border:1px solid var(--border);border-radius:.55rem;background:var(--bg-el);font-size:.8125rem;line-height:1.55;color:var(--text-2)}
+.session-concern-fields[hidden]{display:none}
 .xc-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:1rem}
 .xc-stat{background:var(--bg-el);border:1px solid var(--border);border-radius:.55rem;padding:.8rem}
 .xc-stat strong{display:block;font-family:var(--font-stat);font-size:1.25rem}
@@ -439,7 +453,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .race-execution-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
 @media(max-width:900px){.xc-layout{grid-template-columns:1fr}.xc-summary{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){.online-grid{grid-template-columns:1fr}.online-metrics,.team-calendar-summary{grid-template-columns:1fr 1fr}.program-session-grid{grid-template-columns:1fr 1fr}.program-session-grid .program-wide{grid-column:1 / -1}}
-@media(max-width:520px){#xc-body,.xc-layout,.xc-layout>.brief-panel{min-width:0;max-width:100%}.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary,.online-metrics,.team-calendar-summary,.race-execution-grid{grid-template-columns:1fr}.team-calendar{padding:.85rem}.team-calendar-controls{display:grid;width:100%}.team-calendar-filter{min-width:0}.team-calendar-week{justify-content:space-between}.xc-layout .brief-panel-head{align-items:flex-start;flex-direction:column}.xc-layout .brief-panel-tag{white-space:normal}.queue-item,.message-row,.activity-inbox-row{grid-template-columns:1fr}.activity-inbox-actions{min-width:0}.activity-inbox-actions select{min-width:0;width:100%}.program-session-grid{grid-template-columns:1fr}.program-session-grid .program-wide{grid-column:auto}}
+@media(max-width:520px){#xc-body,.xc-layout,.xc-layout>.brief-panel{min-width:0;max-width:100%}.xc-form{grid-template-columns:1fr}.xc-form .xc-wide{grid-column:auto}.xc-summary,.online-metrics,.team-calendar-summary,.race-execution-grid{grid-template-columns:1fr}.team-calendar{padding:.85rem}.team-calendar-controls{display:grid;width:100%}.team-calendar-filter{min-width:0}.team-calendar-week{justify-content:space-between}.xc-layout .brief-panel-head,.session-checkin-card .brief-panel-head{align-items:flex-start;flex-direction:column}.xc-layout .brief-panel-tag{white-space:normal}.session-checkin-card .brief-panel-tag{white-space:nowrap}.queue-item,.message-row,.activity-inbox-row{grid-template-columns:1fr}.activity-inbox-actions{min-width:0}.activity-inbox-actions select{min-width:0;width:100%}.program-session-grid{grid-template-columns:1fr}.program-session-grid .program-wide{grid-column:auto}.session-scale{gap:.25rem}.session-choice span{min-height:3.25rem;padding:.4rem .2rem;font-size:.6rem}}
 @media(max-width:900px){.team-command-bar{grid-template-columns:1fr 1fr}.team-command-intro{grid-column:1 / -1}.athlete-context{top:4.65rem}}
 @media(max-width:600px){.athlete-context{align-items:stretch;flex-direction:column;gap:.55rem;padding:.65rem;position:relative;top:auto}.athlete-context-id{display:flex;align-items:center;justify-content:space-between;gap:1rem;min-width:0}.athlete-context-name{max-width:65vw}.team-command-bar{grid-template-columns:1fr}.team-command-intro{grid-column:auto}.app-footer{align-items:flex-start;flex-direction:column}}
 .auth-feedback.err{color:#ffb4a6;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2)}
@@ -5001,6 +5015,7 @@ function newDB(){
     lastMeetSummary:null,
     xcPlan:null,
     checkIns:[],
+    sessionCheckIns:[],
     coachMessages:[],
     programTemplates:[],
     racePlans:[]
@@ -5016,6 +5031,7 @@ DB.workouts = DB.workouts || [];
 DB.lastMeetSummary = DB.lastMeetSummary || null;
 DB.xcPlan = DB.xcPlan || null;
 DB.checkIns = Array.isArray(DB.checkIns) ? DB.checkIns : [];
+DB.sessionCheckIns = Array.isArray(DB.sessionCheckIns) ? DB.sessionCheckIns : [];
 DB.coachMessages = Array.isArray(DB.coachMessages) ? DB.coachMessages : [];
 DB.programTemplates = Array.isArray(DB.programTemplates) ? DB.programTemplates : [];
 DB.racePlans = Array.isArray(DB.racePlans) ? DB.racePlans : [];
@@ -6618,10 +6634,11 @@ function renderXcCommand(){
 // Reported, prescribed, and completed are deliberately separate states.
 // Queue ordering helps the coach find work; it never interprets readiness or
 // changes a prescription.
-let onlineCoachState = { status:'idle', ownerId:null, checkIns:[], workouts:[], racePlans:[], messages:[], error:'' };
+let onlineCoachState = { status:'idle', ownerId:null, checkIns:[], sessionCheckIns:[], workouts:[], racePlans:[], messages:[], error:'' };
 let programTemplateState = { status:'idle', ownerId:null, error:'' };
 let activityImportPreview = null;
 let teamCalendarState = { weekStart:'', athleteId:'all' };
+let sessionCheckInNewRequested = false;
 
 function localIsoDate(value){
   const raw = String(value || '');
@@ -6669,6 +6686,38 @@ function normalizeCheckIn(input){
   };
 }
 
+function normalizeSessionCheckIn(input){
+  const raw=input&&typeof input==='object'?input:{};
+  const bounded=value=>{
+    const number=Number(value);
+    return isFinite(number)?Math.max(1,Math.min(5,Math.round(number))):null;
+  };
+  const health=value=>['no','unsure','yes'].includes(String(value))?String(value):null;
+  const concern=value=>['pain_injury','illness','both','other'].includes(String(value))?String(value):null;
+  const today=new Date().toISOString().slice(0,10);
+  return {
+    id:String(raw.id||raw.clientRef||raw.client_ref||`sci_${Date.now().toString(36)}`),
+    clientRef:String(raw.clientRef||raw.client_ref||'').slice(0,180),
+    athleteId:String(raw.athleteId||raw.athlete_id||'').slice(0,120),
+    coachId:String(raw.coachId||raw.coach_id||'').slice(0,120),
+    sessionDate:localIsoDate(raw.sessionDate||raw.session_date||today),
+    sleepQuality:bounded(raw.sleepQuality??raw.sleep_quality),
+    trainingReadiness:bounded(raw.trainingReadiness??raw.training_readiness),
+    totalStress:bounded(raw.totalStress??raw.total_stress),
+    preHealthStatus:health(raw.preHealthStatus??raw.pre_health_status),
+    preConcernType:concern(raw.preConcernType??raw.pre_concern_type),
+    preNote:String(raw.preNote||raw.pre_note||'').trim().slice(0,1000),
+    preSubmittedAt:raw.preSubmittedAt||raw.pre_submitted_at||new Date().toISOString(),
+    wholeSessionEffort:bounded(raw.wholeSessionEffort??raw.whole_session_effort),
+    expectationOutcome:bounded(raw.expectationOutcome??raw.expectation_outcome),
+    postHealthStatus:health(raw.postHealthStatus??raw.post_health_status),
+    postNote:String(raw.postNote||raw.post_note||'').trim().slice(0,1000),
+    postSubmittedAt:raw.postSubmittedAt||raw.post_submitted_at||null,
+    coachResponse:String(raw.coachResponse||raw.coach_response||'').trim().slice(0,2000),
+    respondedAt:raw.respondedAt||raw.responded_at||null
+  };
+}
+
 function normalizeCoachMessage(input){
   const raw=input&&typeof input==='object'?input:{};
   const status=String(raw.status||'draft')==='published'?'published':'draft';
@@ -6712,7 +6761,7 @@ function mergeCoachMessages(localRows,remoteRows){
   return [...map.values()];
 }
 
-function buildOnlineCoachQueue({ athletes, checkIns, workouts, racePlans, todayISO }){
+function buildOnlineCoachQueue({ athletes, checkIns, sessionCheckIns, workouts, racePlans, todayISO }){
   const today = localIsoDate(todayISO) || new Date().toISOString().slice(0,10);
   const athleteById = new Map();
   (athletes || []).forEach(athlete => {
@@ -6733,6 +6782,30 @@ function buildOnlineCoachQueue({ athletes, checkIns, workouts, racePlans, todayI
       detail:`Energy ${checkIn.energy || '—'}/5 · soreness ${checkIn.soreness || '—'}/5 · confidence ${checkIn.confidence || '—'}/5. Athlete-reported; not interpreted by STRIDE.`,
       checkInId:checkIn.id,
       rank:1
+    });
+  });
+  const sleepLabels=['','much worse','worse','about usual','better','much better'];
+  const readinessLabels=['','not ready','slightly ready','moderately ready','very ready','fully ready'];
+  const stressLabels=['','very little','a little','moderate','a lot','extreme'];
+  const effortLabels=['','very easy','easy','moderate','hard','very hard'];
+  const outcomeLabels=['','much worse','worse','as expected','better','much better'];
+  (sessionCheckIns||[]).map(normalizeSessionCheckIn).forEach(checkIn=>{
+    if(checkIn.coachResponse) return;
+    const athlete=athleteById.get(String(checkIn.athleteId));
+    const healthConcern=checkIn.preHealthStatus!=='no'||(checkIn.postSubmittedAt&&checkIn.postHealthStatus!=='no');
+    const post=Boolean(checkIn.postSubmittedAt);
+    items.push({
+      id:`session:${checkIn.id}`,
+      kind:'Session report',
+      athleteId:athlete?athlete.id:checkIn.athleteId,
+      athleteName:athlete?athlete.name:'Athlete',
+      date:checkIn.sessionDate,
+      title:post?'Pre/post workout report awaiting coach response':'Pre-workout report awaiting coach response',
+      detail:post
+        ?`Sleep ${sleepLabels[checkIn.sleepQuality]} · readiness ${readinessLabels[checkIn.trainingReadiness]} · stress ${stressLabels[checkIn.totalStress]} · workout ${effortLabels[checkIn.wholeSessionEffort]} and ${outcomeLabels[checkIn.expectationOutcome]}${healthConcern?' · health concern reported':''}. Athlete-reported; not interpreted by STRIDE.`
+        :`Sleep ${sleepLabels[checkIn.sleepQuality]} · readiness ${readinessLabels[checkIn.trainingReadiness]} · stress ${stressLabels[checkIn.totalStress]}${healthConcern?' · health concern reported':''}. Athlete-reported; not interpreted by STRIDE.`,
+      sessionCheckInId:checkIn.id,
+      rank:healthConcern?0:1
     });
   });
   (workouts || []).filter(Boolean).forEach(workout => {
@@ -6787,6 +6860,7 @@ function buildOnlineCoachQueue({ athletes, checkIns, workouts, racePlans, todayI
 function onlineCoachRows(){
   return {
     checkIns:mergeByClientRef(DB.checkIns || [],onlineCoachState.checkIns || [],normalizeCheckIn),
+    sessionCheckIns:mergeByClientRef(DB.sessionCheckIns || [],onlineCoachState.sessionCheckIns || [],normalizeSessionCheckIn),
     workouts:[...(DB.workouts || []),...(onlineCoachState.workouts || [])],
     racePlans:[...(DB.racePlans || []),...(onlineCoachState.racePlans || [])],
     messages:mergeCoachMessages(DB.coachMessages || [],onlineCoachState.messages || [])
@@ -7254,7 +7328,7 @@ function trainingResponseLedgerHTML(athletes,workouts,checkIns){
 
 async function loadOnlineCoachState(force){
   if(!sbClient || !sbUser || typeof sbClient.from !== 'function'){
-    onlineCoachState = { status:'local', ownerId:sbUser && sbUser.id || null, checkIns:[], workouts:[], racePlans:[], messages:[], error:'' };
+    onlineCoachState = { status:'local', ownerId:sbUser && sbUser.id || null, checkIns:[], sessionCheckIns:[], workouts:[], racePlans:[], messages:[], error:'' };
     if(currentScreen === 'online') renderOnlineCoach();
     return;
   }
@@ -7263,79 +7337,162 @@ async function loadOnlineCoachState(force){
   if(currentScreen === 'online') renderOnlineCoach();
   try{
     const since = isoDateAdd(new Date().toISOString().slice(0,10),-35);
-    const [checkResult,workoutResult,raceResult,messageResult] = await Promise.all([
+    const [checkResult,sessionResult,workoutResult,raceResult,messageResult] = await Promise.all([
       sbClient.from('athlete_checkins').select('*').order('submitted_at',{ascending:false}),
+      sbClient.from('athlete_session_checkins').select('*').order('pre_submitted_at',{ascending:false}),
       sbClient.from('workouts').select('*').gte('workout_date',since).is('deleted_at',null).order('workout_date',{ascending:false}),
       sbClient.from('race_plans').select('*').gte('race_date',new Date().toISOString().slice(0,10)).order('race_date',{ascending:true}),
       sbClient.from('coach_messages').select('*').order('updated_at',{ascending:false}).limit(100)
     ]);
     if(checkResult.error) throw checkResult.error;
+    if(sessionResult.error) console.warn('session check-ins unavailable until migration is applied',sessionResult.error);
     if(workoutResult.error) throw workoutResult.error;
     if(raceResult.error) throw raceResult.error;
     if(messageResult.error) throw messageResult.error;
-    onlineCoachState = { status:'ready',ownerId:sbUser.id,checkIns:checkResult.data||[],workouts:workoutResult.data||[],racePlans:raceResult.data||[],messages:messageResult.data||[],error:'' };
+    onlineCoachState = { status:'ready',ownerId:sbUser.id,checkIns:checkResult.data||[],sessionCheckIns:sessionResult.error?[]:(sessionResult.data||[]),workouts:workoutResult.data||[],racePlans:raceResult.data||[],messages:messageResult.data||[],error:'' };
   }catch(err){
     console.warn('loadOnlineCoachState failed',err);
-    onlineCoachState = { status:'unavailable',ownerId:sbUser.id,checkIns:[],workouts:[],racePlans:[],messages:[],error:err.message||'Cloud coaching data unavailable' };
+    onlineCoachState = { status:'unavailable',ownerId:sbUser.id,checkIns:[],sessionCheckIns:[],workouts:[],racePlans:[],messages:[],error:err.message||'Cloud coaching data unavailable' };
   }
   if(currentScreen === 'online') renderOnlineCoach();
 }
 
-function checkInFormHTML(){
-  const week = mondayForIso(new Date().toISOString().slice(0,10));
-  const previous = (DB.checkIns || []).map(normalizeCheckIn)
-    .filter(item => A && String(item.athleteId) === String(A.id))
-    .sort((a,b) => String(b.submittedAt).localeCompare(String(a.submittedAt)))[0];
-  return `
-    <div class="brief-panel">
-      <div class="brief-panel-head"><div><p class="brief-panel-title">Weekly check-in</p><p class="brief-source-note">Report what you experienced. Your coach interprets it; STRIDE does not score readiness.</p></div><span class="brief-panel-tag">Week of ${esc(week)}</span></div>
-      <form class="xc-form" onsubmit="saveWeeklyCheckIn();return false">
-        <input id="ciWeek" type="hidden" value="${esc(week)}">
-        ${[['ciEnergy','Energy'],['ciSoreness','Soreness'],['ciConfidence','Training confidence']].map(([id,label])=>`<label class="xc-label"><span>${label} · athlete-reported</span><select id="${id}" class="auth-input" required><option value="">Select</option>${[1,2,3,4,5].map(n=>`<option value="${n}">${n} / 5</option>`).join('')}</select></label>`).join('')}
-        <label class="xc-label"><span>Average sleep (hours)</span><input id="ciSleep" class="auth-input" type="number" min="0" max="24" step=".25" placeholder="Optional"></label>
-        <label class="xc-label xc-wide"><span>What should your coach know?</span><textarea id="ciNote" class="auth-input" rows="5" maxlength="2000" placeholder="What felt good, what was difficult, questions, schedule changes…"></textarea></label>
-        <button class="btn btn-primary xc-wide" type="submit">Send check-in to coach</button>
-      </form>
-      ${previous && previous.coachResponse ? `<div class="auth-feedback ok"><strong>Latest coach response</strong><br>${esc(previous.coachResponse)}</div>` : ''}
-    </div>`;
+function sessionChoicesHTML(name,labels){
+  return `<div class="session-scale ${labels.length===3?'session-scale-3':''}">${labels.map((label,index)=>`<label class="session-choice"><input type="radio" name="${esc(name)}" value="${index+1}" required><span>${esc(label)}</span></label>`).join('')}</div>`;
 }
 
-async function saveWeeklyCheckIn(){
-  if(!sbUser || !A) return toast('Sign in and load your athlete profile first','error');
-  const value = id => { const element=document.getElementById(id); return element?element.value:''; };
-  const athleteCloudId = await resolveAthleteCloudId(A);
-  const coachId = isAthleteOnly() ? (sbLinkedAthlete && sbLinkedAthlete.coach_id) : sbUser.id;
-  const weekOf = value('ciWeek');
-  const clientRef = `checkin:${A.id}:${weekOf}`;
-  const item = normalizeCheckIn({
-    id:clientRef,clientRef,athleteId:A.id,coachId,weekOf,
-    energy:value('ciEnergy'),soreness:value('ciSoreness'),confidence:value('ciConfidence'),
-    sleepHours:value('ciSleep'),athleteNote:value('ciNote')
-  });
-  if(!item.energy || !item.soreness || !item.confidence) return toast('Complete the three reported ratings','error');
-  DB.checkIns = (DB.checkIns || []).filter(row => normalizeCheckIn(row).clientRef !== clientRef);
-  DB.checkIns.push(item);
-  saveDB(DB);
-  let cloudSaved = false;
-  if(sbClient && athleteCloudId && coachId){
-    try{
-      const { error } = await sbClient.rpc('submit_athlete_checkin',{
-        athlete_row_id:athleteCloudId,
-        checkin_client_ref:clientRef,
-        checkin_week_of:item.weekOf,
-        reported_energy:item.energy,
-        reported_soreness:item.soreness,
-        reported_confidence:item.confidence,
-        reported_sleep_hours:item.sleepHours,
-        reported_note:item.athleteNote||null
-      });
-      if(error) throw error;
-      cloudSaved = true;
-    }catch(err){ console.warn('check-in cloud save unavailable',err); }
+function sessionHealthChoicesHTML(name,prefix){
+  return `<div class="session-scale session-scale-3">${[['no','No'],['unsure','Not sure'],['yes','Yes']].map(([value,label])=>`<label class="session-choice"><input type="radio" name="${esc(name)}" value="${value}" required onchange="toggleSessionConcern('${esc(prefix)}')"><span>${label}</span></label>`).join('')}</div>`;
+}
+
+function toggleSessionConcern(prefix){
+  const selected=document.querySelector(`input[name="${prefix}Health"]:checked`);
+  const fields=document.getElementById(`${prefix}ConcernFields`);
+  if(fields) fields.hidden=!selected||selected.value==='no';
+}
+
+function sessionCheckInFormHTML(sessionCheckIns){
+  const rows=(sessionCheckIns||[]).map(normalizeSessionCheckIn)
+    .filter(item=>A&&(String(item.athleteId)===String(A.id)||String(item.athleteId)===String(A.supabaseId||'')))
+    .sort((a,b)=>String(b.preSubmittedAt).localeCompare(String(a.preSubmittedAt)));
+  const open=rows.find(item=>!item.postSubmittedAt);
+  const latest=rows[0];
+  const today=new Date().toISOString().slice(0,10);
+  const coachResponse=latest&&latest.coachResponse?`<div class="auth-feedback ok"><strong>Latest coach response</strong><br>${esc(latest.coachResponse)}</div>`:'';
+  if(open){
+    return `<div class="brief-panel session-checkin-card">
+      <div class="brief-panel-head"><div><p class="brief-panel-title">After your workout</p><p class="brief-source-note">Reflect on the whole session. Your report gives your coach context; STRIDE does not grade the workout.</p></div><span class="brief-panel-tag">${esc(open.sessionDate)}</span></div>
+      <div class="session-receipt">Pre-workout check-in saved. This is information, not a grade. One response does not automatically change your training.</div>
+      <form class="session-checkin" onsubmit="savePostWorkoutCheckIn();return false">
+        <input id="sessionClientRef" type="hidden" value="${esc(open.clientRef)}">
+        <fieldset class="session-question"><legend>How hard did the whole workout feel?</legend>${sessionChoicesHTML('postEffort',['Very easy','Easy','Moderate','Hard','Very hard'])}</fieldset>
+        <fieldset class="session-question"><legend>Compared with what you expected, how did the workout go?</legend>${sessionChoicesHTML('postOutcome',['Much worse','Worse','As expected','Better','Much better'])}</fieldset>
+        <fieldset class="session-question"><legend>Did any pain, injury, or illness start or get worse during the workout?</legend>${sessionHealthChoicesHTML('postHealth','post')}</fieldset>
+        <label class="xc-label"><span>Optional note</span><textarea id="postNote" class="auth-input" rows="4" maxlength="1000" placeholder="Anything you want your coach to know?"></textarea></label>
+        <button class="btn btn-primary" type="submit">Send workout reflection</button>
+      </form>${coachResponse}
+    </div>`;
   }
-  onlineCoachState.status='idle';
+  if(latest&&latest.postSubmittedAt&&latest.sessionDate===today&&!sessionCheckInNewRequested){
+    const effort=['','Very easy','Easy','Moderate','Hard','Very hard'][latest.wholeSessionEffort]||'Reported';
+    const outcome=['','Much worse than expected','Worse than expected','As expected','Better than expected','Much better than expected'][latest.expectationOutcome]||'Reported';
+    const health=latest.postHealthStatus==='no'?'No new or worsening health concern reported':latest.postHealthStatus==='yes'?'Health concern reported':'Health concern marked not sure';
+    return `<div class="brief-panel session-checkin-card">
+      <div class="brief-panel-head"><div><p class="brief-panel-title">Check-in complete</p><p class="brief-source-note">Your answers help you and your coach notice patterns over time. STRIDE does not turn this report into a readiness score.</p></div><span class="brief-panel-tag">${esc(today)}</span></div>
+      <div class="session-receipt"><strong>${esc(effort)} · ${esc(outcome)}</strong><br>${esc(health)}</div>
+      <button class="btn" type="button" style="margin-top:1rem" onclick="startAnotherSessionCheckIn()">Start another session check-in</button>
+      ${coachResponse}
+    </div>`;
+  }
+  return `<div class="brief-panel session-checkin-card">
+    <div class="brief-panel-head"><div><p class="brief-panel-title">Before your workout</p><p class="brief-source-note">Four quick questions. Be honest—one answer will not automatically change your workout or determine whether you can train.</p></div><span class="brief-panel-tag">${esc(today)}</span></div>
+    <form class="session-checkin" onsubmit="savePreWorkoutCheckIn();return false">
+      <fieldset class="session-question"><legend>Compared with your usual, how was your sleep last night?</legend>${sessionChoicesHTML('preSleep',['Much worse','Worse','About usual','Better','Much better'])}</fieldset>
+      <fieldset class="session-question"><legend>How ready do you feel for today’s planned workout?</legend>${sessionChoicesHTML('preReadiness',['Not ready','Slightly','Moderately','Very ready','Fully ready'])}</fieldset>
+      <fieldset class="session-question"><legend>How much total stress are you carrying right now?</legend><p class="session-helper">Include training, school, work, relationships, travel, and anything else affecting you.</p>${sessionChoicesHTML('preStress',['Very little','A little','Moderate','A lot','Extreme'])}</fieldset>
+      <fieldset class="session-question"><legend>Is pain, injury, or illness affecting your ability to train today?</legend>${sessionHealthChoicesHTML('preHealth','pre')}</fieldset>
+      <div id="preConcernFields" class="session-concern-fields" hidden>
+        <label class="xc-label"><span>What is affecting you?</span><select id="preConcernType" class="auth-input"><option value="">Select if helpful</option><option value="pain_injury">Pain or injury</option><option value="illness">Illness</option><option value="both">Both</option><option value="other">Other</option></select></label>
+        <label class="xc-label"><span>Optional detail</span><textarea id="preConcernNote" class="auth-input" rows="3" maxlength="1000" placeholder="Briefly tell your coach what is going on."></textarea></label>
+      </div>
+      <button class="btn btn-primary" type="submit">Send pre-workout check-in</button>
+    </form>${coachResponse}
+  </div>`;
+}
+
+function startAnotherSessionCheckIn(){
+  sessionCheckInNewRequested=true;
   renderOnlineCoach();
-  toast(cloudSaved?'Check-in sent to your coach':'Check-in saved on this device — cloud sync unavailable',cloudSaved?'success':'info');
+}
+
+function sessionRadioValue(name){
+  const selected=document.querySelector(`input[name="${name}"]:checked`);
+  return selected?selected.value:'';
+}
+
+async function savePreWorkoutCheckIn(){
+  if(!sbUser||!A) return toast('Sign in and load your athlete profile first','error');
+  const athleteCloudId=await resolveAthleteCloudId(A);
+  const coachId=isAthleteOnly()?(sbLinkedAthlete&&sbLinkedAthlete.coach_id):sbUser.id;
+  const now=new Date();
+  const clientRef=`session:${A.id}:${now.toISOString()}:${Math.random().toString(36).slice(2,7)}`;
+  const health=sessionRadioValue('preHealth');
+  const item=normalizeSessionCheckIn({
+    id:clientRef,clientRef,athleteId:A.id,coachId,sessionDate:now.toISOString().slice(0,10),
+    sleepQuality:sessionRadioValue('preSleep'),trainingReadiness:sessionRadioValue('preReadiness'),
+    totalStress:sessionRadioValue('preStress'),preHealthStatus:health,
+    preConcernType:health==='no'?null:(document.getElementById('preConcernType')||{}).value,
+    preNote:health==='no'?'':(document.getElementById('preConcernNote')||{}).value,
+    preSubmittedAt:now.toISOString()
+  });
+  if(!item.sleepQuality||!item.trainingReadiness||!item.totalStress||!item.preHealthStatus) return toast('Complete the four pre-workout questions','error');
+  DB.sessionCheckIns=(DB.sessionCheckIns||[]).filter(row=>normalizeSessionCheckIn(row).clientRef!==clientRef);
+  DB.sessionCheckIns.push(item);saveDB(DB);
+  sessionCheckInNewRequested=false;
+  let cloudSaved=false;
+  if(sbClient&&athleteCloudId&&coachId){
+    try{
+      const {error}=await sbClient.rpc('submit_athlete_preworkout_checkin',{
+        athlete_row_id:athleteCloudId,checkin_client_ref:clientRef,checkin_session_date:item.sessionDate,
+        reported_sleep_quality:item.sleepQuality,reported_training_readiness:item.trainingReadiness,
+        reported_total_stress:item.totalStress,reported_health_status:item.preHealthStatus,
+        reported_concern_type:item.preConcernType||null,reported_note:item.preNote||null
+      });
+      if(error) throw error;cloudSaved=true;
+    }catch(err){console.warn('pre-workout check-in cloud save unavailable',err);}
+  }
+  if(cloudSaved) onlineCoachState.status='idle';renderOnlineCoach();
+  toast(cloudSaved?'Pre-workout check-in sent to your coach':'Pre-workout check-in saved on this device — cloud sync unavailable',cloudSaved?'success':'info');
+}
+
+async function savePostWorkoutCheckIn(){
+  if(!sbUser||!A) return toast('Sign in and load your athlete profile first','error');
+  const clientRef=(document.getElementById('sessionClientRef')||{}).value||'';
+  const existing=onlineCoachRows().sessionCheckIns.find(item=>item.clientRef===clientRef);
+  if(!existing) return toast('Pre-workout check-in not found on this device','error');
+  const now=new Date().toISOString();
+  const item=normalizeSessionCheckIn({...existing,
+    wholeSessionEffort:sessionRadioValue('postEffort'),expectationOutcome:sessionRadioValue('postOutcome'),
+    postHealthStatus:sessionRadioValue('postHealth'),postNote:(document.getElementById('postNote')||{}).value,
+    postSubmittedAt:now
+  });
+  if(!item.wholeSessionEffort||!item.expectationOutcome||!item.postHealthStatus) return toast('Complete the three post-workout questions','error');
+  DB.sessionCheckIns=(DB.sessionCheckIns||[]).filter(row=>normalizeSessionCheckIn(row).clientRef!==clientRef);
+  DB.sessionCheckIns.push(item);saveDB(DB);
+  sessionCheckInNewRequested=false;
+  let cloudSaved=false;
+  if(sbClient){
+    try{
+      const {error}=await sbClient.rpc('submit_athlete_postworkout_checkin',{
+        checkin_client_ref:clientRef,reported_whole_session_effort:item.wholeSessionEffort,
+        reported_expectation_outcome:item.expectationOutcome,reported_health_status:item.postHealthStatus,
+        reported_note:item.postNote||null
+      });
+      if(error) throw error;cloudSaved=true;
+    }catch(err){console.warn('post-workout check-in cloud save unavailable',err);}
+  }
+  if(cloudSaved) onlineCoachState.status='idle';renderOnlineCoach();
+  toast(cloudSaved?'Workout reflection sent to your coach':'Workout reflection saved on this device — cloud sync unavailable',cloudSaved?'success':'info');
 }
 
 function openCheckInResponse(checkInId){
@@ -7371,8 +7528,41 @@ async function saveCheckInResponse(item,response){
   renderOnlineCoach();
 }
 
+function openSessionCheckInResponse(sessionCheckInId){
+  if(isAthleteOnly()) return;
+  const item=onlineCoachRows().sessionCheckIns.find(row=>String(row.id)===String(sessionCheckInId)||String(row.clientRef)===String(sessionCheckInId));
+  if(!item) return toast('Session report not found','error');
+  const athlete=(DB.athletes||[]).find(row=>String(row.id)===String(item.athleteId)||String(row.supabaseId)===String(item.athleteId));
+  const summary=`Pre-workout: sleep ${item.sleepQuality}/5, readiness ${item.trainingReadiness}/5, stress ${item.totalStress}/5, health ${item.preHealthStatus}.\n${item.postSubmittedAt?`Post-workout: effort ${item.wholeSessionEffort}/5, outcome ${item.expectationOutcome}/5, health ${item.postHealthStatus}.\n`:''}${item.preNote||item.postNote?`Athlete note: ${[item.preNote,item.postNote].filter(Boolean).join(' | ')}`:'No written note.'}`;
+  const response=prompt(`Response to ${athlete?athlete.name:'athlete'}:\n\n${summary}`,item.coachResponse||'');
+  if(response!=null) saveSessionCheckInResponse(item,response);
+}
+
+async function saveSessionCheckInResponse(item,response){
+  const clean=String(response||'').trim().slice(0,2000);
+  if(!clean) return toast('Add a response before saving','error');
+  const normalized=normalizeSessionCheckIn({...item,coachResponse:clean,respondedAt:new Date().toISOString()});
+  DB.sessionCheckIns=(DB.sessionCheckIns||[]).filter(row=>{
+    const check=normalizeSessionCheckIn(row);
+    return check.clientRef!==normalized.clientRef&&String(check.id)!==String(normalized.id);
+  });
+  DB.sessionCheckIns.push(normalized);saveDB(DB);
+  if(sbClient){
+    try{
+      let query=sbClient.from('athlete_session_checkins').update({coach_response:clean,responded_at:normalized.respondedAt});
+      query=isUuid(item.id)?query.eq('id',item.id):query.eq('client_ref',item.clientRef);
+      const {error}=await query;if(error) throw error;
+    }catch(err){
+      console.warn('session response cloud save unavailable',err);
+      toast('Response saved on this device — cloud sync unavailable','info');
+    }
+  }
+  renderOnlineCoach();
+}
+
 function openQueueItem(kindId,athleteId,checkInId){
   if(checkInId) return openCheckInResponse(checkInId);
+  if(String(kindId).startsWith('session:')) return openSessionCheckInResponse(String(kindId).slice(8));
   const athlete = (DB.athletes || []).find(row => String(row.id)===String(athleteId) || String(row.supabaseId)===String(athleteId));
   if(athlete){
     DB.activeAthleteId=athlete.id; saveDB(DB); refreshActiveAthlete(); updateChip();
@@ -7384,8 +7574,8 @@ function renderOnlineCoach(){
   const element=document.getElementById('on-body');
   if(!element) return;
   const eyebrow=document.getElementById('on-eyebrow'), heading=document.getElementById('on-h');
-  if(eyebrow) eyebrow.textContent=isAthleteOnly()?'Athlete-reported weekly context':'Daily online coaching workflow';
-  if(heading) heading.innerHTML=isAthleteOnly()?'Weekly <em>Check-in</em>':'Coaching <em>Queue</em>';
+  if(eyebrow) eyebrow.textContent=isAthleteOnly()?'Athlete-reported training context':'Daily online coaching workflow';
+  if(heading) heading.innerHTML=isAthleteOnly()?'Session <em>Check-in</em>':'Coaching <em>Queue</em>';
   if(!sbUser){
     element.innerHTML=emptyStateCard('Sign in required','Your coaching queue and check-ins stay scoped to your account.','Sign in',"showAuthModal('signin')");
     return;
@@ -7395,17 +7585,17 @@ function renderOnlineCoach(){
     const athleteCloudNote=onlineCoachState.status==='unavailable'
       ?'<p class="auth-feedback err">Cloud messages are unavailable. Device-local records are shown; this is not proof that your coach has not published a message.</p>'
       :onlineCoachState.status==='loading'?'<p class="auth-feedback info">Refreshing coach messages and check-ins…</p>':'';
-    element.innerHTML=A?`${athleteCloudNote}${athleteMessageInboxHTML(rows.messages)}${checkInFormHTML()}`:emptyStateCard('Athlete profile unavailable','Open the invitation link from your coach or ask them to verify the account link.','','');
+    element.innerHTML=A?`${athleteCloudNote}${sessionCheckInFormHTML(rows.sessionCheckIns)}${athleteMessageInboxHTML(rows.messages)}`:emptyStateCard('Athlete profile unavailable','Open the invitation link from your coach or ask them to verify the account link.','','');
     if(onlineCoachState.status==='idle'||onlineCoachState.ownerId!==sbUser.id) loadOnlineCoachState(false);
     return;
   }
-  const queue=buildOnlineCoachQueue({athletes:DB.athletes||[],checkIns:rows.checkIns,workouts:rows.workouts,racePlans:rows.racePlans,todayISO:new Date().toISOString().slice(0,10)});
-  const reportCount=queue.filter(item=>item.kind==='Athlete report'||item.kind==='Athlete note').length;
+  const queue=buildOnlineCoachQueue({athletes:DB.athletes||[],checkIns:rows.checkIns,sessionCheckIns:rows.sessionCheckIns,workouts:rows.workouts,racePlans:rows.racePlans,todayISO:new Date().toISOString().slice(0,10)});
+  const reportCount=queue.filter(item=>item.kind==='Athlete report'||item.kind==='Session report'||item.kind==='Athlete note').length;
   const unknownCount=queue.filter(item=>item.kind==='No completion').length;
   const completedCount=queue.filter(item=>item.kind==='Completed entry'||item.kind==='Imported activity').length;
   const raceCount=queue.filter(item=>item.kind==='Upcoming race').length;
   const queueHtml=queue.length?queue.map(item=>`
-    <div class="queue-item"><span class="queue-kind">${esc(item.kind)}</span><div class="queue-copy"><strong>${esc(item.athleteName)} · ${esc(item.title)}</strong><span>${esc(item.detail)}${item.date?` · ${esc(item.date)}`:''}</span></div><button class="btn" onclick="openQueueItem('${esc(item.id)}','${esc(item.athleteId||'')}','${esc(item.checkInId||'')}')">${item.checkInId?'Respond':'Review'} →</button></div>`).join('')
+    <div class="queue-item"><span class="queue-kind">${esc(item.kind)}</span><div class="queue-copy"><strong>${esc(item.athleteName)} · ${esc(item.title)}</strong><span>${esc(item.detail)}${item.date?` · ${esc(item.date)}`:''}</span></div><button class="btn" onclick="openQueueItem('${esc(item.id)}','${esc(item.athleteId||'')}','${esc(item.checkInId||'')}')">${item.checkInId||item.sessionCheckInId?'Respond':'Review'} →</button></div>`).join('')
     :`<div class="empty-state"><p class="empty-title">Queue clear</p><p class="empty-sub">No unanswered check-ins, athlete notes, recent completions, past prescriptions with unknown completion, or races inside 21 days are represented in STRIDE.</p></div>`;
   const cloudNote=onlineCoachState.status==='unavailable'
     ?`<p class="auth-feedback err">Cloud coaching data is unavailable. Showing device-local records only; this is not proof that the remote queue is empty.</p>`
