@@ -23,3 +23,4 @@ output/
 
 # ai-review.sh working copy (canonical: vault AI Control Center/Reviews/)
 review.md
+tests/tmp/

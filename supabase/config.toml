@@ -103,3 +103,6 @@ verify_jwt = true
 
 [functions.strava-sync-activities]
 verify_jwt = true
+
+[functions.manage-subscription]
+verify_jwt = true

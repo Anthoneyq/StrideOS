@@ -32,6 +32,11 @@ const admin = createClient(
 
 const PRICE_MONTHLY = Deno.env.get('STRIPE_PRICE_MONTHLY');
 const PRICE_ANNUAL = Deno.env.get('STRIPE_PRICE_ANNUAL');
+// The $1.99/mo data-storage price (see manage-subscription). Matched by env
+// var when set, and always by lookup_key — the price object rides along on
+// the subscription item, so no extra API call is needed.
+const PRICE_FREEZE = Deno.env.get('STRIPE_PRICE_FREEZE');
+const FREEZE_LOOKUP_KEY = 'strideos_freeze_199';
 
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
@@ -210,8 +215,33 @@ async function applySubscriptionState(
   customerId: string,
   subscription: Stripe.Subscription,
 ) {
+  // Frozen: on the $1.99 data-storage price. No Pro access, but the status
+  // lets the UI show "Frozen — data safe" and an Unfreeze button instead of
+  // a generic upgrade pitch.
+  const item = subscription.items.data[0];
+  const isFrozen =
+    Boolean(item) &&
+    ((PRICE_FREEZE && item.price.id === PRICE_FREEZE) ||
+      item.price.lookup_key === FREEZE_LOOKUP_KEY);
+  if (isFrozen) {
+    const { error } = await admin.rpc('apply_stripe_subscription', {
+      stripe_customer: customerId,
+      new_tier: 'free',
+      new_status: 'frozen',
+      new_interval: 'monthly',
+      subscription_id: subscription.id,
+    });
+    if (error) {
+      console.error('apply_stripe_subscription RPC failed', error);
+      throw error;
+    }
+    return;
+  }
+
   // Map Stripe subscription status → our coach tier.
   // active, trialing → pro. anything else (canceled, unpaid, paused) → free.
+  // Note: a pause (pause_collection) keeps status 'active' — a paused coach
+  // deliberately keeps Pro for the free month; that's the retention gift.
   const status = subscription.status;
   const isPaying = status === 'active' || status === 'trialing';
   const tier = isPaying ? 'pro' : 'free';

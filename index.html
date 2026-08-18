@@ -2163,16 +2163,27 @@ function authStatusHtml(){
     }
     const tier = sbSubscription && sbSubscription.tier;
     const isPro = ['pro','team','athlete'].includes(tier);
+    const isFrozen = sbSubscription && sbSubscription.status === 'frozen';
+    if(isFrozen){
+      return `<div class="auth-status">Signed In <span class="auth-tier-badge auth-tier-free">FROZEN</span></div>
+        <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
+        <div class="auth-copy">Your account is frozen — every athlete, PR &amp; workout is stored safe for $1.99/mo. Unfreeze anytime and pick up exactly where you left off.</div>
+        <div class="auth-actions"><button class="btn btn-primary" onclick="unfreezeSubscription()">Unfreeze — return to Pro</button><button class="btn" onclick="openCustomerPortal()">Manage Subscription</button><button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
+        <div class="auth-note" style="margin-top:.5rem"><a onclick="showPrivacyModal()" style="cursor:pointer;text-decoration:underline">Data &amp; privacy</a></div>${authFeedbackHtml()}`;
+    }
     const tierBadge = tier
       ? `<span class="auth-tier-badge auth-tier-${esc(tier)}">${esc(tier.toUpperCase())}</span>`
       : '';
     const manageBtn = isPro
       ? `<button class="btn" onclick="openCustomerPortal()">Manage Subscription</button>`
       : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
+    const retentionLink = isPro && tier !== 'athlete'
+      ? ` &middot; <a onclick="showRetentionFlow()" style="cursor:pointer;text-decoration:underline">Pause, freeze or cancel</a>`
+      : '';
     return `<div class="auth-status">Signed In ${tierBadge}</div>
       <div class="auth-copy">${esc(sbUser.email || 'Coach account')}</div>
       <div class="auth-actions"><button class="btn" onclick="startNewAthlete()">+ Add athlete</button>${manageBtn}<button class="btn" onclick="signOutSupabase()">Sign Out</button></div>
-      <div class="auth-note" style="margin-top:.5rem"><a onclick="showPrivacyModal()" style="cursor:pointer;text-decoration:underline">Data &amp; privacy</a></div>${authFeedbackHtml()}`;
+      <div class="auth-note" style="margin-top:.5rem"><a onclick="showPrivacyModal()" style="cursor:pointer;text-decoration:underline">Data &amp; privacy</a>${retentionLink}</div>${authFeedbackHtml()}`;
   }
   return `<div class="auth-status">Coach Account</div>
     <div class="auth-copy">Save athletes &amp; open the coach workspace. <strong style="color:var(--text)">30-day Pro trial</strong> · no card.</div>
@@ -3835,7 +3846,19 @@ function renderTierBanner(){
     `;
     return;
   }
-  // tier === 'free'
+  // tier === 'free' — frozen coaches get their own banner: their data is
+  // deliberately parked, so the pitch is "unfreeze", not "upgrade".
+  if(sbSubscription.status === 'frozen'){
+    host.innerHTML = `
+      <div class="tier-banner tier-banner-free">
+        <div class="tier-banner-text">
+          <strong>Account frozen</strong> &middot; all your data is stored safe ($1.99/mo). Unfreeze to get Pro back instantly.
+        </div>
+        <button class="btn btn-primary tier-banner-cta" onclick="unfreezeSubscription()">Unfreeze</button>
+      </div>
+    `;
+    return;
+  }
   const hiddenCount = Math.max(0, (DB.athletes || []).length - FREE_ATHLETE_LIMIT);
   const hiddenMsg = hiddenCount > 0
     ? ` ${hiddenCount} athlete${hiddenCount===1?'':'s'} hidden — upgrade to restore.`
@@ -4100,6 +4123,290 @@ async function openCustomerPortal(){
     console.error('openCustomerPortal failed', err);
     toast(err.message || 'Could not open subscription portal');
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// RETENTION FLOW — pause / freeze / cancel, in-app (2026-08-18)
+// ══════════════════════════════════════════════════════════════════════════
+// Doctrine (from cancelling GHL, 2026-08-18): cancellation must be easy to
+// find, a made-up mind gets a short path, and the honest alternatives come
+// first. At most ONE extra save screen, and only for coaches who hesitate:
+// how long they sit on the offers screen before clicking "just cancel"
+// decides whether they see it. Fast click = decided → straight to confirm.
+const RETENTION_DWELL_MS = 10000;
+let retentionFlow = null;
+
+const RETENTION_REASONS = [
+  ['setup',    "I'm struggling to set things up or get results"],
+  ['price',    "The price doesn't fit my budget right now"],
+  ['feature',  "A tool or feature isn't working how I need"],
+  ['switching',"I'm switching to a different platform"],
+  ['season',   "My season is over / taking a break"],
+];
+
+// Pure decision: after the offers screen, where does "just cancel" go?
+// Hesitation (>= dwell threshold) earns one last-chance screen, once ever.
+function retentionDecideAfterOffers(dwellMs, lastChanceShown){
+  if(lastChanceShown) return 'confirm';
+  return dwellMs >= RETENTION_DWELL_MS ? 'lastchance' : 'confirm';
+}
+
+async function manageSubscriptionRequest(action, reason){
+  const { data: { session } } = await sbClient.auth.getSession();
+  const token = session ? session.access_token : null;
+  if(!token) throw new Error('Not signed in');
+  const res = await fetch(`${STRIDE_SUPABASE_CONFIG.url}/functions/v1/manage-subscription`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': STRIDE_SUPABASE_CONFIG.anonKey
+    },
+    body: JSON.stringify(reason ? { action, reason } : { action })
+  });
+  const bodyText = await res.text();
+  let data = {};
+  try{ data = JSON.parse(bodyText); }catch(_e){}
+  if(!res.ok) throw new Error(data.error || bodyText || `Request failed (${res.status})`);
+  return data;
+}
+
+function retentionPeriodEndLabel(){
+  const end = retentionFlow && retentionFlow.status && retentionFlow.status.current_period_end;
+  if(!end) return 'the end of your current billing period';
+  return new Date(end * 1000).toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+}
+
+async function showRetentionFlow(){
+  if(!sbClient || !sbUser){ toast('Sign in first'); return; }
+  closeRetentionFlow();
+  retentionFlow = {
+    step: 'reason', reason: '', status: null, statusError: null,
+    offersShownAt: null, lastChanceShown: false, busy: false, done: null,
+    freezeWhyOpen: false,
+  };
+  const overlay = document.createElement('div');
+  overlay.id = 'retentionOverlay';
+  overlay.className = 'upgrade-overlay';
+  overlay.onclick = (e) => { if(e.target === overlay) closeRetentionFlow(); };
+  document.body.appendChild(overlay);
+  renderRetentionFlow();
+  // Fetch real subscription state in the background — the reason screen
+  // doesn't need it, and by the offers screen it has usually landed.
+  try{
+    retentionFlow.status = await manageSubscriptionRequest('status');
+  }catch(err){
+    console.warn('retention status fetch failed', err);
+    if(retentionFlow) retentionFlow.statusError = err.message || 'Could not load subscription state';
+  }
+  if(retentionFlow) renderRetentionFlow();
+}
+
+function closeRetentionFlow(){
+  const el = document.getElementById('retentionOverlay');
+  if(el && el.parentNode) el.parentNode.removeChild(el);
+  retentionFlow = null;
+}
+
+function retentionPickReason(key){
+  if(!retentionFlow) return;
+  retentionFlow.reason = key;
+  retentionFlow.step = 'offers';
+  renderRetentionFlow();
+}
+
+function retentionCancelClicked(){
+  if(!retentionFlow) return;
+  const dwell = retentionFlow.offersShownAt ? (Date.now() - retentionFlow.offersShownAt) : 0;
+  // The last-chance screen is a freeze pitch — pointless if the backend says
+  // the freeze offer isn't configured/available.
+  const freezeOff = retentionFlow.status && retentionFlow.status.freeze_available === false;
+  const next = freezeOff ? 'confirm' : retentionDecideAfterOffers(dwell, retentionFlow.lastChanceShown);
+  if(next === 'lastchance') retentionFlow.lastChanceShown = true;
+  retentionFlow.step = next;
+  renderRetentionFlow();
+}
+
+function retentionToggleFreezeWhy(){
+  if(!retentionFlow) return;
+  retentionFlow.freezeWhyOpen = !retentionFlow.freezeWhyOpen;
+  renderRetentionFlow();
+}
+
+async function retentionAction(action){
+  if(!retentionFlow || retentionFlow.busy) return;
+  retentionFlow.busy = true;
+  renderRetentionFlow();
+  try{
+    const reasonLabel = (RETENTION_REASONS.find(r => r[0] === retentionFlow.reason) || [])[1] || retentionFlow.reason || '';
+    retentionFlow.status = await manageSubscriptionRequest(action, reasonLabel);
+    retentionFlow.done = action;
+    retentionFlow.step = 'done';
+    retentionFlow.busy = false;
+    renderRetentionFlow();
+    // Let the webhook land, then refresh tier state everywhere.
+    setTimeout(async () => { await loadSubscription(); renderAuthPanel(); renderTierBanner(); }, 2500);
+  }catch(err){
+    console.error(`retention ${action} failed`, err);
+    retentionFlow.busy = false;
+    renderRetentionFlow();
+    toast(err.message || `Could not ${action} — try again or use Manage Subscription`, 'error');
+  }
+}
+
+// Unfreeze lives OUTSIDE the flow (auth card / banner button). Restarts
+// billing today at full price — say so before doing it.
+async function unfreezeSubscription(){
+  if(!sbClient || !sbUser){ toast('Sign in first'); return; }
+  // Disclose the REAL restored price before confirming — the backend reports
+  // exactly what unfreezing will charge, never a hardcoded guess.
+  let resumeLabel = BILLING_MONTHLY_LABEL;
+  try{
+    const st = await manageSubscriptionRequest('status');
+    if(st && st.resume_amount_cents){
+      const amt = '$' + (st.resume_amount_cents / 100).toFixed(2);
+      resumeLabel = st.resume_interval === 'year' ? `${amt}/yr` : `${amt}/mo`;
+    }
+  }catch(_e){ /* backend unreachable — fall back to the monthly label */ }
+  if(!confirm(`Unfreeze your account? Pro billing (${resumeLabel}) restarts today with a fresh billing cycle, and all your athletes come back instantly.`)) return;
+  toast('Unfreezing your account…');
+  try{
+    await manageSubscriptionRequest('unfreeze');
+    toast('Welcome back! Restoring Pro…');
+    setTimeout(async () => { await loadSubscription(); renderAuthPanel(); renderTierBanner(); refreshCurrentScreen(); }, 2000);
+    setTimeout(async () => { await loadSubscription(); renderAuthPanel(); renderTierBanner(); refreshCurrentScreen(); }, 5000);
+  }catch(err){
+    console.error('unfreeze failed', err);
+    toast(err.message || 'Could not unfreeze — try Manage Subscription', 'error');
+  }
+}
+
+function retentionOfferCardsHtml(){
+  const st = retentionFlow.status;
+  const cardStyle = 'border:1px solid var(--border-s);border-radius:.5rem;padding:.85rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap';
+  const noteStyle = 'font-family:var(--font-mono);font-size:.75rem;line-height:1.55;color:var(--text-2)';
+  let cards = '';
+  if(st && st.pause_available){
+    cards += `
+      <div style="${cardStyle}">
+        <div style="${noteStyle};flex:1;min-width:220px">
+          <strong style="color:var(--text)">Pause for a month — free.</strong><br>
+          No charge, nothing changes. You keep full access and billing skips a month, then resumes automatically. No strings.
+        </div>
+        <button class="btn" onclick="retentionAction('pause')" ${retentionFlow.busy?'disabled':''}>Pause my plan</button>
+      </div>`;
+  }
+  if(st && st.freeze_available === false){
+    if(!cards){
+      cards = `<div style="${noteStyle};margin-bottom:.75rem">No hold options apply to your plan right now — cancelling below works as normal, and your data stays safe on the free plan.</div>`;
+    }
+    return cards;
+  }
+  const whyOpen = retentionFlow.freezeWhyOpen;
+  cards += `
+    <div style="${cardStyle}">
+      <div style="${noteStyle};flex:1;min-width:220px">
+        <strong style="color:var(--text)">Freeze your account — $1.99/mo.</strong><br>
+        Every athlete, PR &amp; workout stays stored, ready to reactivate instantly. Kicks in when your paid time ends (${esc(retentionPeriodEndLabel())}) — you keep Pro until then.<br>
+        <a onclick="retentionToggleFreezeWhy()" style="cursor:pointer;text-decoration:underline">Why does freezing cost $1.99?</a>
+      </div>
+      <button class="btn btn-primary" onclick="retentionAction('freeze')" ${retentionFlow.busy?'disabled':''}>Freeze my account</button>
+      ${whyOpen ? `
+      <div style="${noteStyle};flex-basis:100%;border-top:1px dashed var(--accent-line);padding-top:.65rem">
+        Honestly? Because storing your data isn't free — and we didn't want to charge you ${esc(BILLING_MONTHLY_LABEL)} just to hold onto it.
+        A frozen account isn't files in a drawer: your roster and training history stay stored, backed up, and ready to reactivate
+        instantly. After card-processing fees we keep about $1.60 of your $1.99 — the goal isn't to make money off coaches taking a
+        break, it's the minimum that keeps your data safe until you're back. Rather pay nothing? Export everything below and cancel
+        free — no hard feelings.
+      </div>` : ''}
+    </div>`;
+  return cards;
+}
+
+function renderRetentionFlow(){
+  const overlay = document.getElementById('retentionOverlay');
+  if(!overlay || !retentionFlow) return;
+  const step = retentionFlow.step;
+  const keepLink = `<div style="text-align:center;margin-top:1rem"><a onclick="closeRetentionFlow()" style="cursor:pointer;color:var(--accent);text-decoration:underline;font-family:var(--font-mono);font-size:.8rem">Never mind — keep my plan</a></div>`;
+  const noteStyle = 'font-family:var(--font-mono);font-size:.75rem;line-height:1.55;color:var(--text-2)';
+  let body = '';
+
+  if(step === 'reason'){
+    const btns = RETENTION_REASONS.map(([key,label]) =>
+      `<button class="btn" style="display:block;width:100%;text-align:left;margin-bottom:.5rem" onclick="retentionPickReason('${key}')">${esc(label)}</button>`
+    ).join('');
+    body = `
+      <p class="upgrade-eyebrow">Your plan</p>
+      <h2 class="upgrade-title">Before you go — what's not working?</h2>
+      <p class="upgrade-sub">One tap, honest answer. It genuinely shapes what gets built.</p>
+      ${btns}
+      <button class="btn" style="display:block;width:100%;text-align:left" onclick="retentionPickReason('other')">Something else / I just want to cancel</button>
+      ${keepLink}`;
+  } else if(step === 'offers'){
+    if(!retentionFlow.offersShownAt) retentionFlow.offersShownAt = Date.now();
+    const loading = !retentionFlow.status && !retentionFlow.statusError
+      ? `<div style="${noteStyle};margin-bottom:.75rem">Checking your plan…</div>` : '';
+    const errNote = retentionFlow.statusError
+      ? `<div style="${noteStyle};margin-bottom:.75rem;color:var(--warn,#b45309)">Couldn't load live plan details — the options below still work, or use Manage Subscription.</div>` : '';
+    body = `
+      <p class="upgrade-eyebrow">Your plan</p>
+      <h2 class="upgrade-title">You don't have to lose your data.</h2>
+      <p class="upgrade-sub">Two honest alternatives — or cancel below, no hoops.</p>
+      ${loading}${errNote}
+      ${retentionOfferCardsHtml()}
+      <div style="text-align:center;margin-top:1rem"><a onclick="retentionCancelClicked()" style="cursor:pointer;text-decoration:underline;font-family:var(--font-mono);font-size:.8rem;color:var(--text-2)">I just want to cancel &rarr;</a></div>
+      ${keepLink}`;
+  } else if(step === 'lastchance'){
+    body = `
+      <p class="upgrade-eyebrow">Your plan</p>
+      <h2 class="upgrade-title">Last thing — your data can wait for you.</h2>
+      <p class="upgrade-sub">Cancelling drops you to the free plan (${FREE_ATHLETE_LIMIT} visible athletes). A $1.99/mo freeze keeps every athlete, PR &amp; workout stored and ready — so a break doesn't cost you your history.</p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">
+        <button class="btn btn-primary" onclick="retentionAction('freeze')" ${retentionFlow.busy?'disabled':''}>Freeze for $1.99/mo</button>
+        <button class="btn" onclick="retentionFlow.step='confirm';renderRetentionFlow()">No thanks — cancel my plan &rarr;</button>
+      </div>
+      ${keepLink}`;
+  } else if(step === 'confirm'){
+    body = `
+      <p class="upgrade-eyebrow">Your plan</p>
+      <h2 class="upgrade-title">Cancel your Pro plan?</h2>
+      <div style="${noteStyle};margin-bottom:1rem">
+        <div style="margin-bottom:.4rem">&bull; You keep full Pro access until <strong style="color:var(--text)">${esc(retentionPeriodEndLabel())}</strong> — no further charges.</div>
+        <div style="margin-bottom:.4rem">&bull; After that: the free plan — calculator + up to ${FREE_ATHLETE_LIMIT} athletes.</div>
+        <div style="margin-bottom:.4rem">&bull; <strong style="color:var(--text)">Nothing is deleted.</strong> Extra athletes are hidden, not erased — they come back if you ever upgrade again.</div>
+        <div>&bull; Want a copy anyway? <a onclick="exportMyData()" style="cursor:pointer;text-decoration:underline">Download all your data</a> — free, right now.</div>
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center">
+        <button class="btn" style="border-color:var(--danger,#b91c1c);color:var(--danger,#b91c1c)" onclick="retentionAction('cancel')" ${retentionFlow.busy?'disabled':''}>${retentionFlow.busy?'Cancelling…':'Cancel my subscription'}</button>
+      </div>
+      ${keepLink}`;
+  } else if(step === 'done'){
+    const done = retentionFlow.done;
+    let msg = '';
+    if(done === 'pause'){
+      const until = retentionFlow.status && retentionFlow.status.paused_until
+        ? new Date(retentionFlow.status.paused_until * 1000).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})
+        : 'about a month from your period end';
+      msg = `Paused. You keep full access, the next invoice is skipped, and billing resumes automatically around <strong style="color:var(--text)">${esc(until)}</strong>. Nothing else changes.`;
+    } else if(done === 'freeze'){
+      msg = `Frozen from <strong style="color:var(--text)">${esc(retentionPeriodEndLabel())}</strong> — you keep Pro until then. After that it's $1.99/mo to keep everything stored. Unfreeze anytime from this panel.`;
+    } else if(done === 'cancel'){
+      msg = `Done — your plan is cancelled. Pro access runs until <strong style="color:var(--text)">${esc(retentionPeriodEndLabel())}</strong>, then you drop to the free plan. Your data stays safe, and you're welcome back anytime.`;
+    } else {
+      msg = 'All set.';
+    }
+    body = `
+      <p class="upgrade-eyebrow">Your plan</p>
+      <h2 class="upgrade-title">${done === 'cancel' ? 'Cancelled.' : done === 'pause' ? 'Paused.' : 'Frozen.'}</h2>
+      <div style="${noteStyle};margin-bottom:1.25rem">${msg}</div>
+      <div style="text-align:center"><button class="btn btn-primary" onclick="closeRetentionFlow()">Back to STRIDE OS</button></div>`;
+  }
+
+  overlay.innerHTML = `
+    <div class="upgrade-modal" role="dialog" aria-modal="true">
+      <button class="upgrade-close" aria-label="Close" onclick="closeRetentionFlow()">&times;</button>
+      ${body}
+    </div>`;
 }
 
 // On page load, check if we just came back from a successful Stripe Checkout

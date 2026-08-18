@@ -59,6 +59,32 @@ supabase login
 echo "==> [3/5] Linking project $PROJECT_REF..."
 supabase link --project-ref "$PROJECT_REF"
 
+echo "==> [3.5/5] Verifying the pause/freeze DB migration is applied remotely..."
+# HARD PREREQUISITE: stripe-webhook now writes subscription_status='frozen',
+# which the remote DB rejects until migration 20260818120000 (frozen status
+# check constraint) is applied. Deploying freeze-capable functions against an
+# unmigrated DB would strand a $1.99 customer with Pro access — refuse.
+FREEZE_MIGRATION="20260818120000"
+MIG_ROW=$(supabase migration list --linked 2>/dev/null | grep "$FREEZE_MIGRATION" || true)
+migration_applied(){
+  # Applied rows show the version under BOTH the Local and Remote columns.
+  printf '%s' "$MIG_ROW" | grep -qE "$FREEZE_MIGRATION.*$FREEZE_MIGRATION"
+}
+if ! migration_applied; then
+  echo "  ⚠ Migration $FREEZE_MIGRATION (frozen status) is NOT applied on the remote DB."
+  read -rp "  Apply pending migrations now via 'supabase db push'? (yes/no) → " APPLY_MIG
+  if [ "$APPLY_MIG" = "yes" ]; then
+    supabase db push
+    MIG_ROW=$(supabase migration list --linked 2>/dev/null | grep "$FREEZE_MIGRATION" || true)
+  fi
+  if ! migration_applied; then
+    echo "⛔ Aborting: the functions in this deploy require migration $FREEZE_MIGRATION."
+    echo "   Apply it ('supabase db push'), verify with 'supabase migration list --linked', then re-run."
+    exit 1
+  fi
+fi
+echo "  ✓ Migration $FREEZE_MIGRATION applied."
+
 echo "==> [4/5] Setting secrets (secret key + webhook input hidden)..."
 read -rsp "Stripe SECRET key (sk_live_...): " STRIPE_KEY; echo
 read -rsp "Stripe WEBHOOK signing secret (whsec_...), or blank to skip: " WEBHOOK_SECRET; echo
@@ -98,6 +124,31 @@ else
   validate_price "$PRICE_MONTHLY" 1999  month "Monthly \$19.99" || PRICE_OK=0
   validate_price "$PRICE_ANNUAL"  19900 year  "Annual \$199"    || PRICE_OK=0
 fi
+# --- Freeze price ($1.99/mo data-storage tier for the retention flow) ---
+# The manage-subscription function NEVER creates prices at runtime; the freeze
+# offer only turns on when a pre-created, validated price is deployed here.
+# Resolution order: env STRIPE_PRICE_FREEZE → read-only lookup_key search.
+# Not found / invalid → deploy proceeds with freeze DISABLED (pause + cancel
+# keep working), with instructions to create it.
+PRICE_FREEZE="${STRIPE_PRICE_FREEZE:-}"
+if [ -z "$PRICE_FREEZE" ] && command -v curl >/dev/null 2>&1; then
+  fr=$(curl -s -u "$STRIPE_KEY:" "https://api.stripe.com/v1/prices?lookup_keys[]=strideos_freeze_199&limit=1")
+  PRICE_FREEZE=$(printf '%s' "$fr" | grep -oE '"id": *"price_[A-Za-z0-9]+"' | head -1 | sed -E 's/.*"(price_[A-Za-z0-9]+)"$/\1/')
+  [ -n "$PRICE_FREEZE" ] && echo "  · Found freeze price by lookup_key strideos_freeze_199: $PRICE_FREEZE"
+fi
+FREEZE_OK=0
+if [ -n "$PRICE_FREEZE" ]; then
+  if validate_price "$PRICE_FREEZE" 199 month "Freeze \$1.99"; then FREEZE_OK=1; else
+    echo "  ⛔ Freeze price failed validation — deploying with the freeze offer DISABLED."
+    PRICE_FREEZE=""
+  fi
+else
+  echo "  ⚠ No freeze price found. Freeze offer will be DISABLED (pause + cancel still work)."
+  echo "    To enable: Stripe Dashboard → create recurring price \$1.99/mo USD,"
+  echo "    lookup_key strideos_freeze_199 (product e.g. 'STRIDE OS · Frozen (data storage)'),"
+  echo "    then re-run this script (or export STRIPE_PRICE_FREEZE=<id>)."
+fi
+
 if [ "$PRICE_OK" != "1" ]; then
   echo "⚠ Prices were NOT auto-confirmed against Stripe (network down, or amounts mismatch)."
   echo "   Override only if you have personally verified these IDs are the live \$19.99 + \$199 prices."
@@ -109,6 +160,12 @@ supabase secrets set STRIPE_SECRET_KEY="$STRIPE_KEY"
 supabase secrets set STRIPE_PRICE_MONTHLY="$PRICE_MONTHLY"
 supabase secrets set STRIPE_PRICE_ANNUAL="$PRICE_ANNUAL"
 supabase secrets set STRIPE_PRICE_TEAM_ANNUAL="$PRICE_TEAM_ANNUAL"
+if [ "$FREEZE_OK" = "1" ]; then
+  supabase secrets set STRIPE_PRICE_FREEZE="$PRICE_FREEZE"
+else
+  # Explicitly unset so a stale/invalid freeze price can never linger.
+  supabase secrets unset STRIPE_PRICE_FREEZE >/dev/null 2>&1 || true
+fi
 supabase secrets set APP_BASE_URL="$APP_URL"
 if [ -n "$FOUNDING_COUPON" ]; then
   supabase secrets set STRIPE_FOUNDING_COUPON="$FOUNDING_COUPON"
@@ -122,6 +179,7 @@ fi
 echo "==> [5/5] Deploying functions..."
 supabase functions deploy create-checkout-session --project-ref "$PROJECT_REF" --use-api
 supabase functions deploy create-portal-session --project-ref "$PROJECT_REF" --use-api
+supabase functions deploy manage-subscription --project-ref "$PROJECT_REF" --use-api
 supabase functions deploy stripe-webhook --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
 
 echo ""
