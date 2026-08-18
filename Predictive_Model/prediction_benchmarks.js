@@ -40,6 +40,8 @@ const NEEDED = [
   'freshnessPenaltyFor', 'confidenceLabel', 'primaryPRForAthlete',
   'observedPRForTarget', 'collectAllPRs', 'personalFatigueExponent',
   '_selectBestAnchor', 'nearestAnchorForTarget', '_med', 'raceForecastForTarget',
+  // raceForecastForTarget calls the age helpers (youth range widening):
+  'athleteAgeYears', 'athleteAgeIsEstimated', 'gradeLadderIndex',
   // Math-audit minors + BUG-033/034/037 probes:
   '_mmss', 'fmtT', 'fmt400', 'parseDurationToSec', 'altitudeCorrection',
   '_normDate', 'vToSpkm', 'vAtPct', 'taMod', 'calcZones', 'vdotPctForZone',
@@ -63,7 +65,9 @@ const stackSrc = (html.match(/const ADAPTIVE_STACKING_ENABLED = (?:true|false);/
 if(stackSrc.trim().split('\n').length < 4) throw new Error('Stacking constants missing from index.html');
 
 // `const` inside the vm script doesn't attach to the context object — export explicitly.
-const engineSrc = distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + nudgeFlagSrc + '\n' + stackSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;' + '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;';
+const gradeAgeSrc = (html.match(/const GRADE_TYPICAL_AGE = \{[^}]*\};/) || [''])[0];
+if(!gradeAgeSrc) throw new Error('GRADE_TYPICAL_AGE missing from index.html');
+const engineSrc = distSrc + '\n' + domainsSrc + '\n' + flagSrc + '\n' + nudgeFlagSrc + '\n' + stackSrc + '\n' + gradeAgeSrc + '\n' + NEEDED.map(grab).join('\n') + '\n' + ratiosSrc + '\nthis.OBSERVED_RATIOS = OBSERVED_RATIOS;' + '\nthis.VDOT_ZONE_RECONCILIATION_ENABLED = VDOT_ZONE_RECONCILIATION_ENABLED;' + '\nthis.OBSERVED_RATIO_NUDGE_ENABLED = OBSERVED_RATIO_NUDGE_ENABLED;';
 const ctx = { Math, Date, console };
 vm.createContext(ctx);
 vm.runInContext(engineSrc, ctx);
