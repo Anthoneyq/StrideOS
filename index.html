@@ -1164,6 +1164,26 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
 
 .hidden { display: none; }
 
+/* ── PACE CALCULATOR UX (2026-08-18) ─────────────────────────── */
+/* Change-flash: paces recalc live on every input; this makes the
+   recalculation VISIBLE so nobody hunts for a Recalculate button. */
+@keyframes strideFlash{0%{background-color:rgba(255,69,0,.14)}100%{background-color:transparent}}
+.flash-upd{animation:strideFlash .7s ease-out}
+/* Editable hero: the big "800m in 2:46" is the control surface. */
+.hero-edit{background:transparent;border:none;border-bottom:2px dotted var(--text-4);color:inherit;font:inherit;letter-spacing:inherit;padding:0 .125rem;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center;border-radius:0;width:auto;display:inline-block;vertical-align:baseline}
+select.hero-edit{width:auto;max-width:100%}
+.hero-edit:hover,.hero-edit:focus{border-bottom-color:var(--accent);outline:none;color:var(--text)}
+select.hero-edit option{background:var(--bg-card);color:var(--text);font-size:1rem;letter-spacing:normal}
+.hero-hint{font-family:var(--font-mono);font-size:.625rem;letter-spacing:.0625rem;color:var(--text-4);margin-top:.5rem}
+/* Sentence-case section headers — one visual tier above field labels. */
+.pc-section-h{font-family:var(--font-display);font-weight:700;font-size:1.0625rem;letter-spacing:-.01em;color:var(--text);text-transform:none}
+/* Disclosure toggle that reports its own state (+ closed, − open). */
+.d-tgl::before{content:'+';color:var(--text-4)}
+details[open]>summary .d-tgl::before{content:'−'}
+/* Mode tabs: Athlete | Quick paces */
+.pc-tab{background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.45rem .9rem;border-radius:999px;cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.0625rem;transition:all .15s}
+.pc-tab[aria-selected="true"]{background:var(--bg-raised);border-color:var(--accent);color:var(--text);font-weight:600}
+
 /* ══════════════════════════════════════════════════════════════
    PRINT — track-side pace sheets (Feature 1)
    The app is a dark on-screen SPA. For print we render a clean,
@@ -1503,7 +1523,9 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
     <section id="paces" class="screen" aria-labelledby="pc-h">
       <header class="screen-header">
         <div><p class="eyebrow">STRIDE Pace Engine</p><h1 class="screen-title" id="pc-h">STRIDE Pace <em>Calculator</em></h1></div>
-        <div class="btn-row"><button class="btn" onclick="calcPaces()">Recalculate</button></div>
+        <!-- No Recalculate button: every input live-updates, and a button implying
+             otherwise teaches coaches the page is stale (Alex, 2026-08-18). -->
+        <div class="btn-row"><span id="pcLiveChip" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.0625rem;color:var(--text-4);transition:color .3s">● Live · updates as you type</span></div>
       </header>
       <div id="pc-body"></div>
     </section>
@@ -8574,8 +8596,8 @@ function roadGradeToolHTML(prefix, initialPace, useCalculatorAnchor){
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem;margin-top:1rem">
       <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:.75rem">
         <div style="max-width:38rem">
-          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.25rem">Road Grade Effort · RE3</p>
-          <p style="font-size:.75rem;color:var(--text-3);line-height:1.55">Convert a steady pace on a smooth, firm road to flat-equivalent metabolic effort—or prescribe the grade pace that matches a flat target.</p>
+          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.25rem">Running hills?</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.55">Find the uphill or downhill pace that matches the same effort on flat ground — or ask what a hill split was really worth.</p>
         </div>
         <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">PEER-REVIEWED MODEL · ±15%</span>
       </div>
@@ -9263,23 +9285,41 @@ function fitnessOverrideCard(ath){
   if(!canAdjustFitness()) return '';
   const opts = FITNESS_OVERRIDE_EVENTS.filter(e=>DIST[e]).map(e =>
     `<option value="${esc(e)}" ${((o && o.event === e) || (!o && ath.raceDistance === e)) ? 'selected' : ''}>${esc(e)}</option>`).join('');
-  return `
-    <div style="background:var(--bg-card);border:1px solid ${o ? 'var(--yellow)' : 'var(--border)'};border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
-        <div style="min-width:14rem">
-          <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:${o ? 'var(--yellow)' : 'var(--text-3)'};text-transform:uppercase;margin-bottom:.25rem">${o ? '● Adjusted to current fitness' : 'Current fitness'}</p>
-          <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${o
-            ? `All paces below anchor to the coach-entered mark <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (set ${esc(o.setOn || '')} — an estimate, not a race result). PR record unchanged — forecasts still use real races.`
-            : `Coming off injury or early season? Enter where you believe fitness is <em>today</em> and every zone recalculates from it. Your estimate is labeled as coach-entered; the PR record stays untouched.`}</p>
-        </div>
+  const controls = `
         <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
           <select id="foEvent" aria-label="Current-fitness event" style="min-width:6rem">${opts}</select>
-          <input id="foTime" class="auth-input" style="width:6.5rem" placeholder="17:00" value="${o ? esc(o.time) : ''}" aria-label="Current-fitness time"
+          <input id="foTime" class="auth-input" style="width:6.5rem" placeholder="e.g. 19:45" value="${o ? esc(o.time) : ''}" aria-label="Current-fitness time"
                  onkeydown="if(event.key==='Enter')applyFitnessOverride()">
-          <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="applyFitnessOverride()">${o ? 'Update' : 'Adjust paces'}</button>
+          <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="applyFitnessOverride()">${o ? 'Update' : 'Set current fitness'}</button>
           ${o ? `<button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="clearFitnessOverride()">Clear · back to PR</button>` : ''}
-        </div>
+        </div>`;
+  const quickLink = `<p style="font-size:.6875rem;color:var(--text-4);margin-top:.75rem">Not about this athlete? <a onclick="setPacesMode('quick')" style="color:var(--text-3);cursor:pointer;text-decoration:underline">Quick paces</a> gives targets from any race time — no athlete needed.</p>`;
+  // No override → one quiet line, not a full card competing with the hero.
+  // The full card only earns its size once an override is actually ACTIVE.
+  if(!o){
+    return `
+    <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-bottom:1rem">
+      <summary style="padding:.875rem 1.25rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:1rem">
+        <span style="font-size:.8125rem;color:var(--text-2)"><strong style="color:var(--text)">Current fitness</strong> — fitter or slower than the PR today? Adjust paces without touching the record.</span>
+        <span class="d-tgl" aria-hidden="true"></span>
+      </summary>
+      <div style="padding:0 1.25rem 1rem">
+        <p style="font-size:.75rem;color:var(--text-3);line-height:1.5;margin-bottom:.75rem">Coming off injury or early season? Enter where you believe fitness is <em>today</em> and every zone recalculates from it. Your estimate is labeled as coach-entered; the PR record stays untouched.</p>
+        ${controls}
+        ${quickLink}
       </div>
+    </details>`;
+  }
+  return `
+    <div style="background:var(--bg-card);border:1px solid var(--yellow);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="min-width:14rem">
+          <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--yellow);text-transform:uppercase;margin-bottom:.25rem">● Adjusted to current fitness</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">All paces on this screen anchor to the coach-entered mark <strong style="color:var(--text)">${esc(o.event)} in ${esc(o.time)}</strong> (set ${esc(o.setOn || '')} — an estimate, not a race result). PR record unchanged — forecasts still use real races.</p>
+        </div>
+        ${controls}
+      </div>
+      ${quickLink}
     </div>`;
 }
 
@@ -9289,6 +9329,16 @@ function renderPaces(){
   // Public mode and no-athlete signed-in mode use the anonymous calculator.
   if(!hasWorkspaceAccess() || !A){
     el.innerHTML = renderFreeTierCalculator();
+    wireFreeTierCalc();
+    return;
+  }
+
+  // Quick paces: the athlete-independent calculator, inside the workspace.
+  // "10 kids doing 2:45 800s" is a coach question, not an athlete record —
+  // before this tab the tool existed but was unreachable while signed in
+  // (Alex, 2026-08-18: "it's not apparent").
+  if(pacesMode === 'quick'){
+    el.innerHTML = pacesModeTabs('quick') + renderFreeTierCalculator({ quick: true });
     wireFreeTierCalc();
     return;
   }
@@ -9315,6 +9365,7 @@ function renderPaces(){
   });
 
   el.innerHTML = `
+    ${pacesModeTabs('athlete')}
     <!-- TINY ATHLETE CONTEXT STRIP -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;margin-bottom:1.5rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:1rem">
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
@@ -9330,98 +9381,106 @@ function renderPaces(){
       </div>
     </div>
 
-    ${youthGuardrailBanner(A)}
-    ${aerobicPaceAnchorWarning(anchor)}
-    ${fitnessOverrideCard(A)}
-
-    <!-- THE PRESCRIPTION — HERO -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem">
-      <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:1.5rem">Workout Target</p>
+    <!-- THE PRESCRIPTION — HERO. The answer leads the page; the big number IS
+         the control surface (Alex, 2026-08-18): distance is an inline select,
+         the time is click-to-edit and back-solves the intensity %. -->
+    <div id="pc-hero-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:1rem;padding:3rem 2rem;text-align:center;margin-bottom:1.5rem">
+      <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.1875rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.75rem">Workout Target</p>
+      <p id="build-adjusted" style="display:none;font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.0625rem;color:var(--yellow);margin-bottom:.75rem"></p>
       <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
-        <span id="build-rep">800m</span>
+        <select id="pcRep" class="hero-edit" onchange="updateBuilder();refreshDanielsTable()" aria-label="Rep distance">
+          <option value="100">100m</option>
+          <option value="150">150m</option>
+          <option value="200">200m</option>
+          <option value="300">300m</option>
+          <option value="400">400m</option>
+          <option value="500">500m</option>
+          <option value="600">600m</option>
+          <option value="800" selected>800m</option>
+          <option value="1000">1km</option>
+          <option value="1200">1200m</option>
+          <option value="1600">1600m</option>
+          <option value="1609">1 mile</option>
+          <option value="2000">2km</option>
+          <option value="3000">3km</option>
+          <option value="5000">5K</option>
+          <option value="8000">8km</option>
+          <option value="10000">10K</option>
+        </select>
         <span style="color:var(--text-4);font-weight:400">in</span>
-        <span id="build-time">—</span>
+        <span id="build-time" class="hero-edit" role="button" tabindex="0" onclick="heroTimeEdit()" onkeydown="if(event.key==='Enter'){event.preventDefault();heroTimeEdit();}" title="Click to type a target time — the intensity % adjusts to match">—</span>
       </p>
-      <p style="font-family:var(--font-mono);font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
+      <p style="font-family:var(--font-mono);font-size:.875rem;color:var(--text-3);margin-bottom:.75rem">
         <span id="build-pct" style="color:var(--text);font-weight:600">100%</span> of race speed · <span id="build-offset">—</span>
       </p>
-      <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-3);padding-top:1.5rem;border-top:1px solid var(--border)">
+      <p class="hero-hint">Tap the distance or the time to change them — everything on this page updates instantly.</p>
+      ${isAthleteOnly() ? `<p style="font-size:.8125rem;color:var(--text-2);margin-top:.5rem">This is your rep target at the shown effort. Everything below is extra detail — you don't need it to run today's workout.</p>` : ''}
+      <div style="display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-3);padding-top:1.5rem;border-top:1px solid var(--border);margin-top:1.5rem">
         <span><strong style="color:var(--text-2);font-size:1rem" id="build-100">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER 100M</span></span>
         <span><strong style="color:var(--text-2);font-size:1rem" id="build-400">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER 400M</span></span>
         <span><strong style="color:var(--text-2);font-size:1rem" id="build-mile">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER MILE</span></span>
       </div>
     </div>
 
-    ${pacesProvenance(anchor)}
-
-    <!-- CONTROLS -->
+    <!-- CONTROLS — slider + zone presets (rep distance now lives in the hero) -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1rem">
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:2rem;align-items:end">
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.625rem">
-            <label for="pcPct" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin:0">Training Intensity</label>
-            <span id="pcPctVal" style="color:var(--text);font-family:var(--font-mono);font-size:1.125rem;font-weight:700">100%</span>
-          </div>
-          <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="Percentage of race speed">
-          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);margin-top:.375rem">
-            <span>60%</span><span>RACE</span><span>130%</span>
-          </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.625rem">
+          <label for="pcPct" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin:0">Training Intensity</label>
+          <span id="pcPctVal" style="color:var(--text);font-family:var(--font-mono);font-size:1.125rem;font-weight:700">100%</span>
         </div>
-        <div>
-          <label for="pcRep" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Rep distance</label>
-          <select id="pcRep" onchange="updateBuilder()">
-            <option value="100">100m</option>
-            <option value="150">150m</option>
-            <option value="200">200m</option>
-            <option value="300">300m</option>
-            <option value="400">400m</option>
-            <option value="500">500m</option>
-            <option value="600">600m</option>
-            <option value="800" selected>800m</option>
-            <option value="1000">1km</option>
-            <option value="1200">1200m</option>
-            <option value="1600">1600m</option>
-            <option value="1609">1 mile</option>
-            <option value="2000">2km</option>
-            <option value="3000">3km</option>
-            <option value="5000">5K</option>
-            <option value="8000">8km</option>
-            <option value="10000">10K</option>
-          </select>
+        <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="Percentage of race speed">
+        <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);margin-top:.375rem">
+          <span>60%</span><span>RACE</span><span>130%</span>
         </div>
       </div>
 
       <!-- QUICK PERCENTAGE PRESETS — visual pills not buttons -->
       <div style="display:flex;gap:.375rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
         <span style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;margin-right:.5rem;align-self:center">Presets</span>
-        ${pacePresets.map(p => `<button class="preset-btn" data-pct="${p.pct}" onclick="${p.allowed ? `setPct(${p.pct})` : ''}" ${p.allowed ? '' : 'disabled'} style="background:var(--bg-el);border:1px solid var(--border);color:${p.allowed ? 'var(--text-2)' : 'var(--text-4)'};padding:.4rem .75rem;border-radius:999px;cursor:${p.allowed ? 'pointer' : 'not-allowed'};font-family:var(--font-mono);font-size:.6875rem;transition:all .15s;opacity:${p.allowed ? '1' : '.55'}">${p.allowed ? p.pct + '%' : '—'} <span style="color:var(--text-4);margin-left:.25rem">${esc(p.label)}</span></button>`).join('')}
+        ${pacePresets.map(p => `<button class="preset-btn" data-pct="${p.pct}" onclick="${p.allowed ? `setPct(${p.pct})` : ''}" ${p.allowed ? '' : 'disabled'} ${p.allowed ? '' : `title="Needs a 1500m+ result on file — aerobic zones are blocked for a sprint anchor"`} style="background:var(--bg-el);border:1px solid var(--border);color:${p.allowed ? 'var(--text-2)' : 'var(--text-4)'};padding:.4rem .75rem;border-radius:999px;cursor:${p.allowed ? 'pointer' : 'not-allowed'};font-family:var(--font-mono);font-size:.6875rem;transition:all .15s;opacity:${p.allowed ? '1' : '.55'}">${p.allowed ? p.pct + '%' : '🔒'} <span style="color:var(--text-4);margin-left:.25rem">${esc(p.label)}</span></button>`).join('')}
       </div>
     </div>
 
-    <!-- ADVANCED SETTINGS (hidden by default) -->
-    <div style="margin-bottom:1rem">
-      <button onclick="document.getElementById('advanced-toggle').classList.toggle('hidden')" style="background:none;border:none;color:var(--text-2);cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;text-transform:uppercase;padding:.5rem 0;text-decoration:underline">⚙ Advanced Settings</button>
-      <div id="advanced-toggle" class="hidden" style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1rem 1.25rem;margin-top:.75rem">
+    ${pacesProvenance(anchor)}
+    ${youthGuardrailBanner(A)}
+    ${aerobicPaceAnchorWarning(anchor)}
+    ${fitnessOverrideCard(A)}
+
+    <!-- ADVANCED SETTINGS — same disclosure pattern as every other section -->
+    <details id="advanced-settings" style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-bottom:1rem">
+      <summary style="padding:1rem 1.5rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+        <span class="pc-section-h" style="font-size:.9375rem">Advanced settings · pace guardrail</span>
+        <span class="d-tgl" aria-hidden="true"></span>
+      </summary>
+      <div id="advanced-toggle" style="padding:0 1.5rem 1.25rem">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:.75rem">
-          <div>
-            <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.25rem">Pace Guardrail</p>
+          <div style="min-width:14rem;flex:1">
             <p id="guardrail-desc" style="font-size:.75rem;color:var(--text-3);line-height:1.5">—</p>
           </div>
           <div style="display:flex;gap:.375rem;flex-wrap:wrap">
             ${Object.keys(GUARDRAIL_LEVELS).map(k => {
               const gl = GUARDRAIL_LEVELS[k];
-              return `<button class="guardrail-btn" data-key="${k}" onclick="setGuardrail('${k}')" style="background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.4rem .75rem;border-radius:999px;cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;transition:all .15s">${esc(gl.label)}</button>`;
+              // Show what each setting DOES before the coach commits: the
+              // resulting Easy pace, not just an adjective (Alex review M7).
+              let effect = '';
+              if(anchorSec && anchor.raceDistanceM >= 1500){
+                const easyZone = STRIDE_COACH_SPLITS[0];
+                const p = effectiveZonePct(easyZone, anchor, k);
+                effect = `<span style="display:block;font-size:.5625rem;color:var(--text-4);margin-top:.125rem">Easy ${_mmss((anchorSec / anchor.raceDistanceM) * 1609.34 * pctToMult(p), 0)}/mi</span>`;
+              }
+              return `<button class="guardrail-btn" data-key="${k}" onclick="setGuardrail('${k}')" style="background:var(--bg-el);border:1px solid var(--border);color:var(--text-2);padding:.4rem .75rem;border-radius:.625rem;cursor:pointer;font-family:var(--font-mono);font-size:.6875rem;transition:all .15s;text-align:center">${esc(gl.label)}${effect}</button>`;
             }).join('')}
           </div>
         </div>
         <p id="guardrail-default-note" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.5;margin-top:.5rem"></p>
       </div>
-    </div>
+    </details>
 
     <!-- COACH SPLIT TABLE — always visible -->
     <div style="margin-bottom:1rem">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.75rem">
-        <p style="font-family:var(--font-mono);font-size:.75rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase">Coach Split Table</p>
+        <h2 class="pc-section-h">Coach split table</h2>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">STRIDE zones · all rep distances</p>
       </div>
       <div id="daniels-table-wrap">${buildDanielsTable()}</div>
@@ -9429,13 +9488,13 @@ function renderPaces(){
 
     <!-- COLLAPSIBLE: Environmental conditions -->
     <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-bottom:1rem">
-      <summary style="padding:1rem 1.5rem;cursor:pointer;font-family:var(--font-mono);font-size:.75rem;letter-spacing:.125rem;color:var(--text-2);text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center">
-        <span>Condition Adjustment</span>
-        <span style="color:var(--text-4)">+</span>
+      <summary style="padding:1rem 1.5rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+        <span class="pc-section-h" style="font-size:.9375rem">Hot, humid, or at altitude today?</span>
+        <span class="d-tgl" aria-hidden="true"></span>
       </summary>
       <div style="padding:0 1.5rem 1.5rem">
-        <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);line-height:1.6;margin-bottom:1rem">
-          Adjusts target workout paces for heat and altitude using published correction tables (Ely 2007, Daniels 2014, Wehrlin &amp; Hallén 2006). Leave blank when you are using the source PR as-is; applying source-race weather here slows the target session, it does not normalize the PR.
+        <p style="font-size:.8125rem;color:var(--text-2);line-height:1.6;margin-bottom:1rem">
+          Enter today's conditions and every pace on this screen slows to match — the change applies instantly, nothing else to press. Leave blank to train at the paces as shown.
         </p>
 
         <!-- AUTO-FILL FROM RACE LOCATION -->
@@ -9469,7 +9528,7 @@ function renderPaces(){
           </div>
         </div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6">
-          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly.
+          Reference: 50°F &amp; sea level = no adjustment. 75°F = +4.5%. 85°F = +8%. 5000ft altitude = +4%. Humidity above 40% raises the <em>effective</em> temperature (NOAA heat index) — 85°F at 90% RH corrects like ~99°F. Below 65°F humidity has no meaningful pace cost. Combined effects compound but not linearly. Corrections follow published tables (Ely 2007, Daniels 2014, Wehrlin &amp; Hallén 2006) — see Sources &amp; Methodology in the footer. Applying source-race weather here slows the target session; it does not normalize the PR.
         </p>
         ${roadGradeToolHTML('coachGrade', gradeToolPace)}
       </div>
@@ -9477,9 +9536,9 @@ function renderPaces(){
 
     <!-- COLLAPSIBLE: Full ladder reference -->
     <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-bottom:1rem">
-      <summary style="padding:1rem 1.5rem;cursor:pointer;font-family:var(--font-mono);font-size:.75rem;letter-spacing:.125rem;color:var(--text-2);text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center">
-        <span>Full Training Intensity Ladder</span>
-        <span style="color:var(--text-4)">+</span>
+      <summary style="padding:1rem 1.5rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+        <span class="pc-section-h" style="font-size:.9375rem">Full training intensity ladder</span>
+        <span class="d-tgl" aria-hidden="true"></span>
       </summary>
       <div style="padding:0 1.5rem 1.5rem;overflow-x:auto">
         <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);line-height:1.6;margin-bottom:1rem">
@@ -9503,9 +9562,9 @@ function renderPaces(){
 
     <!-- COLLAPSIBLE: How this is calculated -->
     <details style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;margin-top:1.5rem">
-      <summary style="padding:1rem 1.5rem;cursor:pointer;font-family:var(--font-mono);font-size:.75rem;letter-spacing:.125rem;color:var(--text-2);text-transform:uppercase;list-style:none;display:flex;justify-content:space-between;align-items:center">
-        <span>How is this calculated?</span>
-        <span style="color:var(--text-4)">+</span>
+      <summary style="padding:1rem 1.5rem;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center">
+        <span class="pc-section-h" style="font-size:.9375rem">How is this calculated?</span>
+        <span class="d-tgl" aria-hidden="true"></span>
       </summary>
       <div style="padding:0 1.5rem 1.5rem;font-size:.875rem;color:var(--text-2);line-height:1.7">
         <p style="margin-bottom:.75rem">Training paces start from ${esc(A.name)}'s measured race result. Each named zone is a percentage of that race PR's <em>pace</em> (Canova race-pace framework) — <strong>not</strong> a percentage of VO₂max or heart rate, and not a measured lactate-threshold or running-economy test. Coach adjustment by HR, RPE, lactate, conditions, and interval length still governs the final prescription.</p>
@@ -9514,7 +9573,7 @@ function renderPaces(){
     </details>
   `;
 
-  updateBuilder();
+  updateBuilder({ noFlash: true });   // first paint isn't a change — don't flash
   updateRoadGradeTool('coachGrade');
   paintGuardrail();
 }
@@ -9565,6 +9624,12 @@ function buildDanielsTable(ath){
   // never prescribes a rep at/beyond the anchor distance itself — that time
   // would be faster than the PR over the PR's own distance.
   const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z => z.reps))].sort((a,b) => a-b);
+  // The hero's selected rep distance gets a highlighted column so the coach's
+  // eye lands on the numbers they actually asked for. Defaults to 800 on the
+  // first paint (before the select exists in the DOM).
+  const _selRepEl = document.getElementById('pcRep');
+  const selRep = _selRepEl ? parseFloat(_selRepEl.value) : 800;
+  const colBg = d => Math.abs(d - selRep) < 2 ? 'background:var(--bg-el);' : '';
   const rows = STRIDE_COACH_SPLITS.map(z => {
     const allowed = zoneAllowedForAnchor(z, ath);
     const adjustedPct = effectiveZonePct(z, ath, guardrailKey);
@@ -9604,7 +9669,7 @@ function buildDanielsTable(ath){
     <tr style="border-bottom:1px solid var(--border-s)">
       <th style="padding:.625rem .75rem;text-align:left;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600;position:sticky;left:0;background:var(--bg-card);min-width:10rem">Zone · % of race pace</th>
       <th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Per Mile</th>
-      ${allReps.map(d => `<th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">${esc(repLabel(d))}</th>`).join('')}
+      ${allReps.map(d => `<th style="${colBg(d)}padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:${Math.abs(d - selRep) < 2 ? 'var(--text-2)' : 'var(--text-4)'};text-transform:uppercase;font-weight:600">${esc(repLabel(d))}</th>`).join('')}
     </tr>`;
 
   const bodyRows = rows.map(z => {
@@ -9627,22 +9692,54 @@ function buildDanielsTable(ath){
         ${allReps.map(d => {
           const cell = cellsByDist[d];
           if(!cell || cell.blocked || cell.sec == null){
-            return `<td style="padding:.875rem .75rem;text-align:right;color:var(--text-4);font-family:var(--font-mono);font-size:.75rem">—</td>`;
+            const why = !z.allowed
+              ? 'Aerobic zones need a 1500m+ result on file'
+              : (z.pct > 100 && d >= ath.raceDistanceM)
+                ? 'Would be faster than this PR over the PR distance'
+                : 'Outside this anchor’s valid range';
+            return `<td title="${esc(why)}" style="${colBg(d)}padding:.875rem .75rem;text-align:right;color:var(--text-4);font-family:var(--font-mono);font-size:.75rem;cursor:help">—</td>`;
           }
-          return `<td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2)">${esc(fmtRepTime(cell.sec))}</td>`;
+          return `<td style="${colBg(d)}padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.8125rem;color:${Math.abs(d - selRep) < 2 ? 'var(--text)' : 'var(--text-2)'}">${esc(fmtRepTime(cell.sec))}</td>`;
         }).join('')}
       </tr>`;
   }).join('');
 
   const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
   const envConf = conditionConfidence(env);
+  // Plain English at the decision point (Alex review M4): the coach calling
+  // out paces in 95° heat needs "how much slower, in seconds", not a citation
+  // stack. The evidence score and its reasons live in the tooltip + the
+  // low-evidence note below.
+  const envPer400 = secPerM * 400 * envFactor;
   const envBadge = envFactor > 0 ? `
-    <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem"${envConf && envConf.notes.length ? ` title="Why not higher: ${esc(envConf.notes.join('; '))}"` : ''}>
+    <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem" title="Evidence ${envConf ? envConf.pct : '?'}/100 (heuristic)${envConf && envConf.notes.length ? ` — ${esc(envConf.notes.join('; '))}` : ''}">
       <span>●</span>
-      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}${envConf?` · EVIDENCE ${envConf.pct}/100 (HEURISTIC)`:''}</span>
+      <span>Conditions: plan ~${(envFactor*100).toFixed(1)}% slower today (≈ +${envPer400 < 60 ? envPer400.toFixed(1) + 's' : _mmss(envPer400, 0)} per 400m at race pace)${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
     </div>` : '';
   const envConfNote = envFactor > 0 && envConf && envConf.pct < 85 ? `
-    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--yellow);line-height:1.6;margin-bottom:.75rem">Low evidence rating — a heuristic guide, not a measured probability: ${esc(envConf.notes.join(' · '))}. Err on the conservative side — treat the adjusted pace as a starting hypothesis, not a target to defend.</p>` : '';
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--yellow);line-height:1.6;margin-bottom:.75rem">Weaker evidence for this exact combination (${envConf.pct}/100, heuristic): ${esc(envConf.notes.join(' · '))}. Err conservative — treat the adjusted pace as a starting point, not a target to defend.</p>` : '';
+
+  // Honesty note (Alex review M3): the grid scales ONE anchor at even pace.
+  // When the athlete's own entered PR at a column distance is materially
+  // slower than the even-speed cell, say so — otherwise an educated coach
+  // reads the cell as a bad prediction and stops trusting the whole table.
+  const prDisagreements = [];
+  const _addl = ath.additionalPRs || {};
+  Object.keys(_addl).forEach(k => {
+    const dM = (typeof DIST === 'object' && DIST[k]) || null;
+    const prSec = parseTime(_addl[k] || '');
+    if(!dM || !prSec || !allReps.some(r => Math.abs(r - dM) < 2)) return;
+    const evenSec = secPerM * dM;
+    if(evenSec < prSec * 0.97) prDisagreements.push(`${k} at even race speed reads ${_mmss(evenSec,0)} vs their entered ${k} PR of ${_addl[k]}`);
+  });
+  const prNote = prDisagreements.length ? `
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);line-height:1.6;margin-top:.5rem">Not a forecast: ${esc(prDisagreements.slice(0,2).join(' · '))}. This grid holds the ${esc(ath.raceDistance || 'anchor')} anchor's speed even across every distance — real race predictions live in <strong style="color:var(--text-2)">Race Forecasts</strong>.</p>` : '';
+
+  // If aerobic zones are dashed but a 1500m+ mark exists on the profile,
+  // tell the coach the one action that unlocks them.
+  const hasDistanceAddl = Object.keys(_addl).some(k => (DIST[k] || 0) >= 1500 && parseTime(_addl[k] || ''));
+  const unlockNote = rows.some(r => !r.allowed) && hasDistanceAddl ? `
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--yellow);line-height:1.6;margin-top:.5rem">This athlete has a 1500m+ mark on file — set it as the primary race PR (Edit PR) to unlock the aerobic rows, or enter it under Current fitness above.</p>` : '';
 
   const guardrailBadge = guardrail.shift !== 0 ? `
     <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid ${guardrail.color};border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:${guardrail.color};margin-bottom:.75rem">
@@ -9665,8 +9762,8 @@ function buildDanielsTable(ath){
       </table>
     </div>
     <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · STRIDE speed-percentage zones with workout split targets across rep distances. For custom percentages outside these zones, use the slider above.
-    </p>`;
+      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · Even-split workout targets at each zone's % of the anchor's race speed — a pace reference, not race predictions. For custom percentages, use the slider above.
+    </p>${prNote}${unlockNote}`;
 }
 
 // ── FREE TIER ANONYMOUS CALCULATOR ──
@@ -9678,7 +9775,8 @@ function calcTier(){
   if(!hasWorkspaceAccess()) return 'basic';
   return ((typeof hasProAccess === 'function') && hasProAccess()) ? 'pro' : 'advanced';
 }
-function renderFreeTierCalculator(){
+function renderFreeTierCalculator(opts){
+  const quick = !!(opts && opts.quick);
   const tier = calcTier();
   const tierLabel = tier==='pro' ? 'Pro Calculator' : tier==='advanced' ? 'Advanced Calculator' : 'Basic Calculator';
   const ctaText   = tier==='basic' ? 'Sign in to save athletes →' : 'Create an athlete →';
@@ -9688,7 +9786,13 @@ function renderFreeTierCalculator(){
     : tier==='pro'
       ? 'Pro is unlocked. Add an athlete to run Race Forecasts, the Performance Curve, and Team IQ across your roster.'
       : 'You are signed in. Add an athlete to unlock Multi-Event Analysis, race forecasts, and the Performance Curve.';
-  return `
+  // Quick-paces mode (inside the coach workspace): the athlete-independent
+  // group tool. No tier pitch — just say what it is and that nothing saves.
+  const banner = quick ? `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.25rem 1.5rem;margin-bottom:1.5rem">
+      <p style="font-family:var(--font-display);font-weight:700;font-size:1.25rem;letter-spacing:-.02em;line-height:1.15">Quick paces — any race time, no athlete.</p>
+      <p style="font-size:.8125rem;color:var(--text-2);line-height:1.5;margin-top:.375rem;max-width:38rem">Group workouts, hypotheticals, a kid who isn't on the roster: enter a race time and read targets straight off the table. Nothing here saves to a profile.</p>
+    </div>` : `
     <!-- WELCOME BANNER (tier-aware) -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:14rem">
@@ -9697,7 +9801,9 @@ function renderFreeTierCalculator(){
         <p style="font-size:.875rem;color:var(--text-2);line-height:1.5;margin-top:.5rem;max-width:32rem">${subhead}</p>
       </div>
         <button class="btn btn-ghost" onclick="${ctaAction}">${ctaText}</button>
-    </div>
+    </div>`;
+  return `
+    ${banner}
 
     <!-- INPUT -->
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem;padding:1.5rem;margin-bottom:1.5rem">
@@ -9980,6 +10086,69 @@ function setPct(p){
   if(s){ s.value = p; updateBuilder(); }
 }
 
+// ── PACES SCREEN MODE — Athlete | Quick paces ──
+// Session-scoped; "quick" renders the athlete-independent calculator inside
+// the workspace shell for group questions ("10 kids at 2:45 800s").
+let pacesMode = 'athlete';
+function setPacesMode(m){
+  pacesMode = m === 'quick' ? 'quick' : 'athlete';
+  renderPaces();
+}
+function pacesModeTabs(active){
+  return `
+    <div role="tablist" aria-label="Calculator mode" style="display:flex;gap:.5rem;margin-bottom:1.25rem">
+      <button class="pc-tab" role="tab" aria-selected="${active === 'athlete'}" onclick="setPacesMode('athlete')">Athlete${A && A.name ? ` · ${esc(A.name)}` : ''}</button>
+      <button class="pc-tab" role="tab" aria-selected="${active === 'quick'}" onclick="setPacesMode('quick')">Quick paces · any time, no athlete</button>
+    </div>`;
+}
+
+// Click-to-edit hero time: type the rep time you want, the intensity %
+// back-solves from the anchor (inverse of pctToMult: mult = 2 − pct/100).
+function heroTimeEdit(){
+  const span = document.getElementById('build-time');
+  if(!span || document.getElementById('build-time-input')) return;
+  const prev = span.textContent;
+  span.innerHTML = `<input id="build-time-input" class="hero-edit" style="width:${Math.max(5, prev.length + 1)}ch" value="${esc(prev === '—' ? '' : prev)}" aria-label="Target rep time" inputmode="numeric" placeholder="1:24">`;
+  const inp = document.getElementById('build-time-input');
+  let done = false;
+  const finish = (commit) => {
+    if(done) return;
+    done = true;
+    const typedRaw = inp.value;
+    span.textContent = prev;                    // restore; updateBuilder repaints
+    if(commit){
+      const typed = parseTime(typedRaw || '');
+      const src = paceAnchorForAthlete(A);
+      const raceSec = src ? parseTime(src.raceTime || '') : null;
+      const repEl = document.getElementById('pcRep');
+      const rep = repEl ? parseFloat(repEl.value) : NaN;
+      if(typed && raceSec && src.raceDistanceM && rep){
+        const env = getEnvSettings();
+        const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+        const secPerM = raceSec / src.raceDistanceM;
+        const mult = (typed / (1 + envFactor)) / (secPerM * rep);
+        let pct = Math.round((2 - mult) * 100);
+        const clamped = Math.min(130, Math.max(60, pct));
+        const s = document.getElementById('pcPct');
+        if(s){ s.value = clamped; }
+        if(clamped !== pct) toast(`${typedRaw} is outside the 60–130% training band — set to ${clamped}%`);
+      } else if(typedRaw && typedRaw.trim()){
+        toast('Enter a time like 1:24 or 84.5');
+      }
+    }
+    updateBuilder();
+  };
+  inp.addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); finish(true); }
+    if(e.key === 'Escape'){ e.preventDefault(); finish(false); }
+    e.stopPropagation();   // the span's own Enter handler must not re-open the editor
+  });
+  inp.addEventListener('blur', () => finish(true));
+  inp.addEventListener('click', e => e.stopPropagation());
+  inp.focus();
+  inp.select();
+}
+
 // ── PACE GUARDRAIL ──
 function setGuardrail(key){
   if(!A) return;
@@ -10028,12 +10197,39 @@ function paintGuardrail(){
   }
 }
 
-function refreshDanielsTable(){
+function refreshDanielsTable(opts){
   const wrap = document.getElementById('daniels-table-wrap');
   if(wrap) wrap.innerHTML = buildDanielsTable();
+  if(!(opts && opts.noFlash)) flashPacesUpdated();
 }
 
-function updateBuilder(){
+// Make the live recalculation VISIBLE. Every input already recalculates the
+// whole screen instantly; without feedback, 150 numbers changing silently
+// reads as "nothing happened" and coaches go hunting for a Recalculate
+// button that no longer exists (Alex, 2026-08-18).
+let _pcFlashTimer = null;
+function flashPacesUpdated(){
+  ['pc-hero-card','daniels-table-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove('flash-upd');
+    void el.offsetWidth;   // restart the animation
+    el.classList.add('flash-upd');
+  });
+  const chip = document.getElementById('pcLiveChip');
+  if(chip){
+    chip.textContent = '● Paces updated';
+    chip.style.color = 'var(--accent)';
+    clearTimeout(_pcFlashTimer);
+    _pcFlashTimer = setTimeout(() => {
+      chip.textContent = '● Live · updates as you type';
+      chip.style.color = 'var(--text-4)';
+    }, 1400);
+  }
+}
+
+function updateBuilder(opts){
+  const flash = !(opts && opts.noFlash);
   const src = paceAnchorForAthlete(A);   // current-fitness override, if set
   if(!src || !src.raceDistanceM || !src.raceTime) return;
   const raceSec = parseTime(src.raceTime);
@@ -10059,18 +10255,29 @@ function updateBuilder(){
     pctVal.textContent = pct + '%';
   }
 
+  // Hero disclosure: when the number is compound (coach-entered fitness,
+  // conditions), say so AT the number — never make the coach scroll to two
+  // separate badges to learn why the target moved.
+  const adjEl = document.getElementById('build-adjusted');
+  if(adjEl){
+    const parts = [];
+    if(src.fitnessOverrideMeta) parts.push(`coach-entered fitness ${src.fitnessOverrideMeta.event} ${src.fitnessOverrideMeta.time}`);
+    if(envFactor > 0) parts.push(`conditions +${(envFactor*100).toFixed(1)}%`);
+    adjEl.textContent = parts.length ? `● Adjusted · ${parts.join(' · ')}` : '';
+    adjEl.style.display = parts.length ? 'inline-block' : 'none';
+  }
+
   // Short-race anchors can't prescribe aerobic zones, reps meaningfully beyond
   // the race distance, or supra-race pace AT/BEYOND the race distance (faster
   // than the athlete's own PR) — same rules as the Coach Split Table.
   if(src.raceDistanceM < 1500 && (pct < 100 || !repAllowedForAnchor(rep, src) || (pct > 100 && rep >= src.raceDistanceM))){
-    const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
-    setEl('build-rep', repLabel);
     setEl('build-time', pct < 100 ? 'Need 1500m+ PR' : 'Pick a shorter rep');
     setEl('build-pct', pct + '%');
     setEl('build-offset', pct < 100 ? 'aerobic target blocked for short-race anchor' : 'rep beyond this PR’s valid range');
     setEl('build-100', '—');
     setEl('build-400', '—');
     setEl('build-mile', '—');
+    if(flash) flashPacesUpdated();
     return;
   }
 
@@ -10079,12 +10286,11 @@ function updateBuilder(){
   const targetSec = applyEnvironment(rawTargetSec, env.tempF, env.altitudeFt, env.humidityPct);
   const racePaceForRep = secPerM * rep;
 
-  // Build display
-  const repLabel = rep < 1000 ? `${rep}m` : rep === 1609 ? '1 mile' : `${rep}m`;
-
-  setEl('build-rep',    repLabel);
-  setEl('build-time',   fmtRepTime(targetSec));
-  setEl('build-pct',    pct + '%' + (envFactor>0 ? ` · +${(envFactor*100).toFixed(1)}% env` : ''));
+  // Build display — the rep distance is the hero <select> itself now, so only
+  // the time needs writing. Skip it mid-edit so a background recalc (e.g. an
+  // env input) never clobbers the coach's in-progress typing.
+  if(!document.getElementById('build-time-input')) setEl('build-time', fmtRepTime(targetSec));
+  setEl('build-pct',    pct + '%');   // env effect is disclosed in #build-adjusted
   setEl('build-offset', fmtOffset(targetSec, racePaceForRep));
 
   // All three unit views for the builder
@@ -10129,6 +10335,8 @@ function updateBuilder(){
     // Highlight active zone
     tr.style.background = Math.abs(zPct - pct) < 2.5 ? 'var(--bg-raised)' : '';
   });
+
+  if(flash) flashPacesUpdated();
 }
 
 // Backward-compat shim (predictions screen still calls calcPaces)
@@ -12022,7 +12230,7 @@ function youthGuardrailBanner(athlete){
           <p style="font-size:.9375rem;line-height:1.55;color:var(--text);margin-bottom:.25rem"><strong>Paces are set to <span style="color:${color}">${esc(gl.label)}</span>.</strong> ${why.join(' ')}</p>
           <p style="font-size:.75rem;color:var(--text-3);line-height:1.5">${usingDefault ? 'This is STRIDE’s smart default for this athlete. A coach can override it below.' : 'Set manually by the coach.'} Race pace and faster reps are never softened — only Easy through Threshold shift.</p>
         </div>
-        <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem;white-space:nowrap" onclick="(function(){var t=document.getElementById('advanced-toggle');if(t){t.classList.remove('hidden');t.scrollIntoView({behavior:'smooth',block:'center'});}})()">Adjust guardrail</button>
+        <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem;white-space:nowrap" onclick="(function(){var d=document.getElementById('advanced-settings');if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'center'});}})()">Adjust guardrail</button>
       </div>
     </div>`;
 }
