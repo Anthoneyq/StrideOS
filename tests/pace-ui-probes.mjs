@@ -129,6 +129,19 @@ probe('quick-paces cross-link is a real button (keyboard-reachable)', () => {
   assert(/<button type="button" onclick="setPacesMode\\('quick'\\)"/.test(el), 'quick-paces link is not a button');
 });
 
+// ── 2b. Quick paces column highlight follows ftRep, not the absent pcRep ───
+probe('quick paces: highlighted column follows the ftRep selection', () => {
+  document.getElementById('pcRep').value = '';       // athlete-mode select absent in quick mode
+  document.getElementById('ftRep').value = '400';
+  const t = buildDanielsTable(quickAnchor());
+  assert(/background:var\\(--bg-el\\);[^>]*>400m</.test(t), '400m column not highlighted');
+  assert(!/background:var\\(--bg-el\\);[^>]*>800m</.test(t), '800m column wrongly highlighted');
+  document.getElementById('ftRep').value = '200';
+  const t2 = buildDanielsTable(quickAnchor());
+  assert(/background:var\\(--bg-el\\);[^>]*>200m</.test(t2), 'highlight did not follow ftRep to 200m');
+  document.getElementById('ftRep').value = '';
+});
+
 // ── 4. Mile gate follows the EFFECTIVE anchor, not the raw PR ──────────────
 probe('fitness override: 5K override on an 800m-PR athlete unlocks the mile view', () => {
   const sprinter = mk({name:'Ana Bolt',primaryEvent:'800m',raceDistance:'800m',raceDistanceM:800,raceTime:'2:10.00'});
@@ -143,7 +156,13 @@ probe('fitness override: 5K override on an 800m-PR athlete unlocks the mile view
   updateBuilder({ noFlash: true });
   const mile = document.getElementById('build-mile').textContent;
   assert(mile !== '—' && /\\d/.test(mile), 'mile view stayed gated despite a 1500m+ effective anchor, got: ' + mile);
+  // The LADDER must follow the same effective anchor: with the override
+  // active no zone row may be blocked; with it cleared, aerobic rows are.
+  const unlocked = buildLadderRows();
+  assert(!/data-allowed="0"/.test(unlocked), 'ladder rows still blocked despite a 1500m+ effective anchor');
   localStorage.removeItem('strideFitnessOverrides');
+  const relocked = buildLadderRows();
+  assert(/data-allowed="0"/.test(relocked), 'aerobic ladder rows should re-block on a raw 800m anchor');
 });
 `;
 ctx.html_src = main;

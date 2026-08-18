@@ -9580,9 +9580,14 @@ function renderPaces(){
 
 function buildLadderRows(){
   const guardrailKey = getActiveGuardrail();
+  // The EFFECTIVE anchor governs the ladder, exactly like the hero and split
+  // table: an 800m-PR athlete with a 5K current-fitness override has a
+  // distance anchor, so aerobic rows must not stay blocked off the raw PR
+  // (Codex review cycle 2, 2026-08-18).
+  const src = paceAnchorForAthlete(A);
   return CANOVA_ZONES.map(z => {
-    const allowed = !A || zoneAllowedForAnchor(z, A);
-    const pct = allowed && A ? Math.round(effectiveZonePct(z, A, guardrailKey)) : z.pct;
+    const allowed = !src || zoneAllowedForAnchor(z, src);
+    const pct = allowed && src ? Math.round(effectiveZonePct(z, src, guardrailKey)) : z.pct;
     return `
     <tr data-pct="${pct}" data-allowed="${allowed ? '1' : '0'}" style="transition:background .2s">
       <td style="padding:.75rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle">
@@ -9632,11 +9637,15 @@ function buildDanielsTable(ath){
   // never prescribes a rep at/beyond the anchor distance itself — that time
   // would be faster than the PR over the PR's own distance.
   const allReps = [...new Set(STRIDE_COACH_SPLITS.flatMap(z => z.reps))].sort((a,b) => a-b);
-  // The hero's selected rep distance gets a highlighted column so the coach's
-  // eye lands on the numbers they actually asked for. Defaults to 800 on the
-  // first paint (before the select exists in the DOM).
-  const _selRepEl = document.getElementById('pcRep');
-  const selRep = _selRepEl ? parseFloat(_selRepEl.value) : 800;
+  // The selected rep distance gets a highlighted column so the coach's eye
+  // lands on the numbers they actually asked for. Athlete mode selects via
+  // the hero (#pcRep); Quick paces / free calc selects via #ftRep — only one
+  // exists at a time. Defaults to 800 before either is in the DOM.
+  const _pcRepEl = document.getElementById('pcRep');
+  const _ftRepEl = document.getElementById('ftRep');
+  const selRep = (_pcRepEl && _pcRepEl.value) ? parseFloat(_pcRepEl.value)
+    : (_ftRepEl && _ftRepEl.value) ? parseFloat(_ftRepEl.value)
+    : 800;
   const colBg = d => Math.abs(d - selRep) < 2 ? 'background:var(--bg-el);' : '';
   const rows = STRIDE_COACH_SPLITS.map(z => {
     const allowed = zoneAllowedForAnchor(z, ath);
