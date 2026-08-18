@@ -9293,7 +9293,7 @@ function fitnessOverrideCard(ath){
           <button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="applyFitnessOverride()">${o ? 'Update' : 'Set current fitness'}</button>
           ${o ? `<button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="clearFitnessOverride()">Clear · back to PR</button>` : ''}
         </div>`;
-  const quickLink = `<p style="font-size:.6875rem;color:var(--text-4);margin-top:.75rem">Not about this athlete? <a onclick="setPacesMode('quick')" style="color:var(--text-3);cursor:pointer;text-decoration:underline">Quick paces</a> gives targets from any race time — no athlete needed.</p>`;
+  const quickLink = `<p style="font-size:.6875rem;color:var(--text-4);margin-top:.75rem">Not about this athlete? <button type="button" onclick="setPacesMode('quick')" style="background:none;border:none;padding:0;font:inherit;color:var(--text-3);cursor:pointer;text-decoration:underline">Quick paces</button> gives targets from any race time — no athlete needed.</p>`;
   // No override → one quiet line, not a full card competing with the hero.
   // The full card only earns its size once an override is actually ACTIVE.
   if(!o){
@@ -9606,14 +9606,22 @@ function buildLadderRows(){
 // see the math being applied without assuming we're using Daniels VDOT.
 function buildDanielsTable(ath){
   // Defaults to the active athlete THROUGH the current-fitness override; a
-  // temp anchor (free calc) also works.
+  // temp anchor (free calc / Quick paces) also works. An EXPLICIT anchor is
+  // athlete-independent by contract: it must never inherit the selected
+  // athlete's guardrail via getActiveGuardrail(), or Quick-paces results
+  // would silently change with whoever happens to be selected (Codex
+  // review, 2026-08-18). Explicit anchors use their own guardrail or the
+  // neutral 'standard'.
+  const explicitAnchor = !!ath;
   ath = ath || paceAnchorForAthlete(A);
   if(!ath || !ath.raceDistanceM || !ath.raceTime) return '';
   const raceSec = parseTime(ath.raceTime);
   if(!raceSec) return '';
   const secPerM = raceSec / ath.raceDistanceM;
   const env = getEnvSettings();
-  const guardrailKey = getActiveGuardrail();
+  const guardrailKey = explicitAnchor
+    ? ((ath.guardrail && GUARDRAIL_LEVELS[ath.guardrail]) ? ath.guardrail : 'standard')
+    : getActiveGuardrail();
   const guardrail = GUARDRAIL_LEVELS[guardrailKey];
 
   // Full pace-reference grid (Anthoney 2026-08-17): every zone shows a time
@@ -10102,6 +10110,15 @@ function pacesModeTabs(active){
     </div>`;
 }
 
+// Pure inverse of pctToMult for the hero editor: given a desired rep time,
+// the anchor's sec/m, the rep distance, and the env slowdown factor, return
+// the (unclamped) whole-number intensity %. Null on invalid input.
+function backSolvePct(typedSec, secPerM, repM, envFactor){
+  if(!(typedSec > 0) || !(secPerM > 0) || !(repM > 0)) return null;
+  const mult = (typedSec / (1 + (envFactor || 0))) / (secPerM * repM);
+  return Math.round((2 - mult) * 100);
+}
+
 // Click-to-edit hero time: type the rep time you want, the intensity %
 // back-solves from the anchor (inverse of pctToMult: mult = 2 − pct/100).
 function heroTimeEdit(){
@@ -10125,9 +10142,7 @@ function heroTimeEdit(){
       if(typed && raceSec && src.raceDistanceM && rep){
         const env = getEnvSettings();
         const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
-        const secPerM = raceSec / src.raceDistanceM;
-        const mult = (typed / (1 + envFactor)) / (secPerM * rep);
-        let pct = Math.round((2 - mult) * 100);
+        const pct = backSolvePct(typed, raceSec / src.raceDistanceM, rep, envFactor);
         const clamped = Math.min(130, Math.max(60, pct));
         const s = document.getElementById('pcPct');
         if(s){ s.value = clamped; }
@@ -10298,8 +10313,9 @@ function updateBuilder(opts){
   setEl('build-100',  (targetSecPerM * 100).toFixed(1) + 's');
   setEl('build-400',  (targetSecPerM * 400).toFixed(1) + 's');
   // Mile view only for distance anchors — a sub-1500m PR pace extrapolated to
-  // a full mile is not a real training target.
-  setEl('build-mile', A.raceDistanceM >= 1500 ? _mmss(targetSecPerM * 1609.34, 0) : '—');
+  // a full mile is not a real training target. Checked against the EFFECTIVE
+  // anchor (current-fitness override included), not the raw PR record.
+  setEl('build-mile', src.raceDistanceM >= 1500 ? _mmss(targetSecPerM * 1609.34, 0) : '—');
 
   // Update the ladder table (raw pace, no env correction in reference table)
   document.querySelectorAll('#ladder-body tr').forEach(tr => {
@@ -10328,7 +10344,7 @@ function updateBuilder(opts){
     if(e100)  e100.textContent  = (zSecPerM * 100).toFixed(1) + 's/100m';
     if(e400)  e400.textContent  = (zSecPerM * 400).toFixed(1) + 's/400m';
     if(eMile){
-      eMile.textContent = A.raceDistanceM >= 1500 ? _mmss(zSecPerM * 1609.34, 0) + '/mi' : '—';
+      eMile.textContent = src.raceDistanceM >= 1500 ? _mmss(zSecPerM * 1609.34, 0) + '/mi' : '—';
     }
     if(eOff) eOff.textContent = fmtOffset(zTargetForRep, zRaceSec);
 
