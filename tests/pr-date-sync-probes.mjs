@@ -68,7 +68,13 @@ function builder(table){
     is(k,v){ st.filters[k]=v; return b; },
     in(k,v){ st.filters[k]=v; return b; },
     maybeSingle(){ const r = run(); return Promise.resolve({ data: r.error ? null : (r.data && r.data[0]) || null, error: r.error }); },
-    then(res, rej){ return Promise.resolve(run()).then(res, rej); }
+    then(res, rej){
+      // A REJECTED promise (network throw) is a different failure shape than a
+      // returned {error} — the app must map both to {ok:false}.
+      const rejMsg = __fail[st.table + ':' + st.op + ':reject'];
+      if(rejMsg) return Promise.reject(new Error(rejMsg)).then(res, rej);
+      return Promise.resolve(run()).then(res, rej);
+    }
   };
   return b;
 }
@@ -151,6 +157,13 @@ await probe('failure: a failed date patch fails the sync (no silent ok)', async 
   const r = await S('syncAthleteToSupabase')(athlete({ '1600m': '2026-05-10' }));
   delete S('__fail')['races:update'];
   if(r.ok) throw new Error('sync returned ok despite failed race_date patch');
+});
+
+await probe('rejection: a REJECTED date patch promise also fails the sync', async () => {
+  S('__fail')['races:update:reject'] = 'network down';
+  const r = await S('syncAthleteToSupabase')(athlete({ '1600m': '2026-05-10' }));
+  delete S('__fail')['races:update:reject'];
+  if(r.ok) throw new Error('sync returned ok despite rejected race_date patch');
 });
 
 let fail = 0;

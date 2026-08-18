@@ -4219,6 +4219,12 @@ async function syncAthleteToSupabase(athlete){
             .then(({ error: e4 }) => {
               if(e4) console.warn('PR date update failed for ' + ev, e4);
               return e4 || null;
+            }, err => {
+              // A REJECTED promise (network throw) must not ride the
+              // reconciliation catch back to {ok:true} — map it to an error
+              // value so it fails the sync like a returned {error} does.
+              console.warn('PR date update rejected for ' + ev, err);
+              return err || new Error('PR date update rejected');
             })
         ));
         prDateError = dateResults.find(Boolean) || null;
