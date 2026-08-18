@@ -1233,6 +1233,8 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
 .ms-boundary{font-family:var(--font-mono);font-size:.625rem;line-height:1.6;color:var(--text-4)}
 @media(max-width:56rem){.ms-grid{grid-template-columns:1fr}}
 @media(max-width:43.75rem){.ms-row{grid-template-columns:2.25rem minmax(8rem,1fr) 3.5rem 3.5rem}.ms-team{grid-column:2;color:var(--text-3);margin-top:-.35rem}.ms-controls>label{flex:1 1 9rem}.ms-controls select,.ms-controls input{width:100%}}
+.pr-date-input{margin-top:.375rem;font-size:.75rem;color:var(--text-3)}
+.pr-date-input:not(:placeholder-shown){color:var(--text-2)}
 </style>
 </head>
 <body class="workspace-locked">
@@ -1727,68 +1729,83 @@ select{appearance:none;-webkit-appearance:none;padding-right:2.25rem;cursor:poin
         <fieldset>
           <legend>Other event times</legend>
           <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--dim);line-height:1.6;margin-bottom:1rem;clear:both">
-            Logging multiple race times reveals where the athlete is strong, weak, or balanced. This powers the <strong style="color:var(--accent)">Multi-Event Analysis</strong> tab. Leave blank if no recent result for that distance.
+            Logging multiple race times reveals where the athlete is strong, weak, or balanced. This powers the <strong style="color:var(--accent)">Multi-Event Analysis</strong> tab. Leave blank if no recent result for that distance. <strong style="color:var(--text-2)">Add the date each mark was set when you know it</strong> — marks from the last 90 days steer the consensus curve hardest; a four-year-old PR stays on the chart but stops driving the forecast.
           </p>
           <div class="form-grid" id="addPRGrid">
             <div class="form-group">
               <label for="fPR100">100m time</label>
               <input id="fPR100" type="text" placeholder="e.g. 12.4">
+              <input id="fPR100Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR200">200m time</label>
               <input id="fPR200" type="text" placeholder="e.g. 26.8">
+              <input id="fPR200Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR400">400m time</label>
               <input id="fPR400" type="text" placeholder="e.g. 61.2">
+              <input id="fPR400Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR800">800m time</label>
               <input id="fPR800" type="text" placeholder="e.g. 2:18.4">
+              <input id="fPR800Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR1500">1500m time</label>
               <input id="fPR1500" type="text" placeholder="e.g. 4:48">
+              <input id="fPR1500Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR1600">1600m time</label>
               <input id="fPR1600" type="text" placeholder="e.g. 5:12">
+              <input id="fPR1600Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPRMile">1 mile time</label>
               <input id="fPRMile" type="text" placeholder="e.g. 5:15">
+              <input id="fPRMileDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR3000">3000m time</label>
               <input id="fPR3000" type="text" placeholder="e.g. 10:45">
+              <input id="fPR3000Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR3200">3200m time</label>
               <input id="fPR3200" type="text" placeholder="e.g. 11:30">
+              <input id="fPR3200Date" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR2Mile">2 mile time</label>
               <input id="fPR2Mile" type="text" placeholder="e.g. 11:36">
+              <input id="fPR2MileDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR5K">5K time</label>
               <input id="fPR5K" type="text" placeholder="e.g. 20:00">
+              <input id="fPR5KDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR8K">8K time</label>
               <input id="fPR8K" type="text" placeholder="e.g. 33:30">
+              <input id="fPR8KDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPR10K">10K time</label>
               <input id="fPR10K" type="text" placeholder="e.g. 42:00">
+              <input id="fPR10KDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPRHalf">Half marathon time</label>
               <input id="fPRHalf" type="text" placeholder="e.g. 1:32:00">
+              <input id="fPRHalfDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
             <div class="form-group">
               <label for="fPRMarathon">Marathon time</label>
               <input id="fPRMarathon" type="text" placeholder="e.g. 3:20:00">
+              <input id="fPRMarathonDate" type="date" class="pr-date-input" aria-label="Date this mark was set" title="When was this mark set? Recent marks steer the Performance Curve; old ones fade to context.">
             </div>
           </div>
         </fieldset>
@@ -4185,6 +4202,20 @@ async function syncAthleteToSupabase(athlete){
           const { error: e3 } = await sbClient.from('races').delete().in('id', stale);
           if(e3) console.warn('stale race cleanup failed', e3);
         }
+        // Persist per-event PR dates: import_local_athlete predates them (it
+        // writes additional-PR race rows with no race_date), so patch the date
+        // onto each row afterward — same pattern as invite_email above. This
+        // is what lets a coach-entered date survive a cloud reload and keep
+        // steering the recency-weighted consensus curve.
+        const prDates = athlete.additionalPRDates || {};
+        await Promise.all(Object.keys(prDates).map(ev =>
+          sbClient.from('races')
+            .update({ race_date: prDates[ev] })
+            .eq('athlete_id', aRow.id)
+            .eq('source', 'local_storage_import')
+            .eq('source_ref', 'additional:' + ev)
+            .then(({ error: e4 }) => { if(e4) console.warn('PR date update failed for ' + ev, e4); })
+        ));
       }
     }catch(reconErr){ console.warn('race reconciliation skipped', reconErr); }
     return { ok: true };
@@ -4462,10 +4493,16 @@ function remoteAthleteToLocal(row, raceRows){
     const sec = Number(r.time_sec) > 0 ? Number(r.time_sec) : parseTime(String(r.time_text));
     const held = prCandidate[r.event];
     if(!held || (sec > 0 && (!(held.sec > 0) || sec < held.sec))){
-      prCandidate[r.event] = { sec, timeText:r.time_text };
+      prCandidate[r.event] = { sec, timeText:r.time_text, date: r.race_date ? String(r.race_date).slice(0,10) : null };
     }
   });
-  Object.keys(prCandidate).forEach(ev => { additionalPRs[ev] = prCandidate[ev].timeText; });
+  const additionalPRDates = {};
+  Object.keys(prCandidate).forEach(ev => {
+    additionalPRs[ev] = prCandidate[ev].timeText;
+    // The date rides with the WINNING row (fastest wins, above), so the date
+    // always describes the run that produced the PR — never a slower race.
+    if(prCandidate[ev].date) additionalPRDates[ev] = prCandidate[ev].date;
+  });
 
   // Full dated race history, kept alongside additionalPRs rather than replacing
   // it. additionalPRs collapses to one best time per event, which can never
@@ -4505,6 +4542,7 @@ function remoteAthleteToLocal(row, raceRows){
     // HAS no outdoor weather, so the slot is naturally exclusive.
     indoorRace: Boolean(row.race_weather && row.race_weather.indoor),
     additionalPRs,
+    additionalPRDates,
     guardrail: row.guardrail_setting === 'auto' ? null : row.guardrail_setting,
     // Phase 2 fields: invitation status for athlete login.
     inviteEmail: row.invite_email || '',
@@ -16093,19 +16131,59 @@ function predictFromFixedAnchor(anchor, targetDistM, athlete){
   return result.predSec;
 }
 
-// Consensus forecast at a distance: the median prediction across ALL of the
-// athlete's logged marks used as anchors — the same leave-one-out discipline
-// buildEventFit uses (BUG-031). A single fixed anchor made the whole strength
-// map an artifact of anchor choice: a sprinter anchored on her weak 5K read
-// all-green, an elite 5K anchor read every shorter event as a gap.
-// leaveOneOut excludes same-distance marks so a PR never forecasts itself.
+// Recency weight per anchor (Anthoney 2026-08-17, Alex call): "the orange
+// curve should be based on current data — it should be predicting where they
+// are on the curve." A mark run in the last 90 days speaks loudest; a mark
+// from four years ago still shows on the chart but no longer steers the
+// consensus. Undated marks sit in the middle: they can't prove they're
+// current, and they can't be dismissed as ancient either.
+function freshnessWeightFor(state){
+  switch(state){
+    case 'fresh':   return 1.0;   // ≤90 days — this is current fitness
+    case 'stale':   return 0.6;   // 90 days–1 yr
+    case 'expired': return 0.3;   // >1 yr — historical context only
+    case 'future':  return 0;     // invalid date — never steers
+    default:        return 0.5;   // no date on file
+  }
+}
+
+// Weighted median: sort by value, walk cumulative weight to half the total.
+// With equal weights this reproduces _med exactly (even counts average the
+// middle pair), so recency weighting degrades gracefully to the old behavior
+// when nothing is dated.
+function _weightedMed(pairs){
+  const sorted = pairs.slice().sort((a, b) => a.v - b.v);
+  const total = sorted.reduce((s, p) => s + p.w, 0);
+  if(!(total > 0)) return _med(sorted.map(p => p.v));
+  let cum = 0;
+  for(let i = 0; i < sorted.length; i++){
+    cum += sorted[i].w;
+    if(cum > total / 2) return sorted[i].v;
+    if(cum === total / 2) return (sorted[i].v + sorted[i + 1].v) / 2;
+  }
+  return sorted[sorted.length - 1].v;
+}
+
+// Consensus forecast at a distance: the RECENCY-WEIGHTED median prediction
+// across ALL of the athlete's logged marks used as anchors — the same
+// leave-one-out discipline buildEventFit uses (BUG-031). A single fixed anchor
+// made the whole strength map an artifact of anchor choice: a sprinter
+// anchored on her weak 5K read all-green, an elite 5K anchor read every
+// shorter event as a gap. leaveOneOut excludes same-distance marks so a PR
+// never forecasts itself. Recent marks (dated ≤90 days) out-vote old ones, so
+// the curve tracks where the athlete is NOW, not their all-time composite.
 function consensusForecastAt(allPRs, targetDistM, athlete, opts){
   const loo = opts && opts.leaveOneOut;
-  const preds = allPRs
+  const pairs = allPRs
     .filter(p => !loo || !sameDistanceM(p.distM, targetDistM))
-    .map(p => predictFromFixedAnchor(p, targetDistM, athlete))
-    .filter(v => v && isFinite(v));
-  return preds.length ? _med(preds) : null;
+    .map(p => ({
+      v: predictFromFixedAnchor(p, targetDistM, athlete),
+      w: freshnessWeightFor(prFreshness(p.raceDate))
+    }))
+    .filter(p => p.v && isFinite(p.v));
+  if(!pairs.length) return null;
+  const weighted = pairs.filter(p => p.w > 0);
+  return weighted.length ? _weightedMed(weighted) : _med(pairs.map(p => p.v));
 }
 
 // ══════════════════════════════════════
@@ -16154,6 +16232,8 @@ function renderMultiEvent(){
       predicted: predictedSec,
       diffPct: diffPct,
       diffSec: predictedSec - actualSec,
+      raceDate: p.raceDate || null,
+      freshness: prFreshness(p.raceDate),
       verdict: classifyStrength(diffPct)
     };
   }).filter(Boolean);
@@ -16161,7 +16241,7 @@ function renderMultiEvent(){
   // Build the table
   const tableRows = comparisons.map(c => `
     <tr>
-      <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-display);font-size:1rem">${esc(c.event)}${sameDistanceM(c.distM, anchor.distM) ? ' <span style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;color:var(--accent)">PRIMARY</span>' : ''}</td>
+      <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-display);font-size:1rem">${esc(c.event)}${sameDistanceM(c.distM, anchor.distM) ? ' <span style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;color:var(--accent)">PRIMARY</span>' : ''}<div style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.05em;color:${c.freshness==='fresh'?'var(--green)':c.freshness==='stale'?'var(--yellow)':c.freshness==='expired'?'var(--red)':'var(--text-4)'};margin-top:.2rem">${c.raceDate ? `SET ${esc(c.raceDate)} · WEIGHT ×${freshnessWeightFor(c.freshness).toFixed(1)}` : 'NO DATE · WEIGHT ×0.5'}</div></td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:.875rem;text-align:right">${esc(fmtT(c.actual))}</td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:.875rem;text-align:right;color:var(--dim)">${esc(fmtT(c.predicted))}</td>
       <td style="padding:.875rem 1rem;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:.875rem;text-align:right;color:${c.diffPct>0?'var(--green)':c.diffPct<0?'var(--red)':'var(--text)'}">${c.diffPct>0?'+':''}${c.diffSec.toFixed(1)}s<br><span style="font-size:.6875rem">(${c.diffPct>0?'+':''}${c.diffPct.toFixed(1)}%)</span></td>
@@ -16174,6 +16254,8 @@ function renderMultiEvent(){
   // Build overall profile summary
   const profile = buildProfileSummary(anchor, comparisons, A);
 
+  const rosterCurve = buildRosterConsensus(A);
+
   el.innerHTML = `
     ${(() => {
       const fit = buildEventFit(A);
@@ -16181,7 +16263,7 @@ function renderMultiEvent(){
     })()}
 
     <div class="info-box">
-      <strong>How this works:</strong> Each of ${esc(A.name)}'s logged race times is compared to the <strong style="color:var(--text)">consensus of their other marks</strong> — every other PR forecasts this distance, and the median of those forecasts is the yardstick. No single race (including the primary event) gets to define the curve, so one weak or elite mark can't tilt the whole map. Faster than consensus = relative strength; slower = development opportunity; within ±1.5% = balanced.
+      <strong>How this works:</strong> Each of ${esc(A.name)}'s logged race times is compared to the <strong style="color:var(--text)">consensus of their other marks</strong> — every other PR forecasts this distance, and the <strong style="color:var(--text)">recency-weighted</strong> median of those forecasts is the yardstick. Marks set in the last 90 days steer hardest (×1.0); older marks fade (90 days–1 yr ×0.6, over a year ×0.3, undated ×0.5) — so the curve predicts where the athlete is <em>now</em>, not their all-time composite. No single race (including the primary event) gets to define the curve. Faster than consensus = relative strength; slower = development opportunity; within ±1.5% = balanced.
     </div>
 
     <div class="card">
@@ -16206,9 +16288,15 @@ function renderMultiEvent(){
     <div class="card">
       <p class="card-title"><span>Performance Curve</span><span class="card-accent">VISUAL STRENGTH MAP</span></p>
       <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--dim);line-height:1.6;margin-bottom:1rem">
-        The <strong style="color:var(--accent)">orange line</strong> is the STRIDE consensus curve fit from <em>all</em> of ${esc(A.name)}'s logged marks — it runs through the middle of what their body of work says. Each <strong style="color:var(--text)">dot</strong> is an actual race (the ringed dot is the primary event). Dots <strong style="color:var(--green)">above</strong> the line = stronger than the athlete's own consensus at that distance. Dots <strong style="color:var(--red)">below</strong> the line = development opportunity. The further from the line, the more pronounced the strength or gap.
+        The <strong style="color:var(--accent)">orange line</strong> is the STRIDE consensus curve fit from ${esc(A.name)}'s logged marks, <strong style="color:var(--text)">weighted toward the most recent ones</strong> — it predicts where they are now, not a career average. Each <strong style="color:var(--text)">dot</strong> is an actual race (the ringed dot is the primary event; faded dots are marks over 90 days old, which still show but no longer steer). Dots <strong style="color:var(--green)">above</strong> the line = stronger than the athlete's own consensus at that distance. Dots <strong style="color:var(--red)">below</strong> the line = development opportunity. The further from the line, the more pronounced the strength or gap.
       </p>
-      ${buildPerformanceCurve(anchor, allPRs)}
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.75rem">
+        ${rosterCurve
+          ? `<button class="btn" style="font-size:.6875rem;padding:.4rem .75rem" onclick="toggleRosterOverlay()">${ME_ROSTER_OVERLAY ? 'Hide' : 'Show'} roster consensus (${rosterCurve.nAthletes} athletes)</button>`
+          : `<span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">Roster consensus overlay needs 2+ other athletes with marks at 3+ distances.</span>`}
+        <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)" title="Regional comparison lines land when district/area/state result data is collected — pay-as-you-go scraping, on the roadmap.">District · Area · State — coming with regional data</span>
+      </div>
+      ${buildPerformanceCurve(anchor, allPRs, ME_ROSTER_OVERLAY ? rosterCurve : null)}
     </div>
 
     <div class="card">
@@ -16246,11 +16334,41 @@ function renderMultiEvent(){
   `;
 }
 
+// ── ROSTER CONSENSUS OVERLAY ──
+// "Here's what other athletes are running, and here's where she sits" (the
+// Alex call, 2026-08-17). Today the comparison population is the coach's OWN
+// roster — the same athletes Anthoney demoed against — and it is labeled that
+// way. District/area/state populations arrive when regional result data is
+// collected; those toggles stay visibly parked until the data exists, never
+// silently faked from the roster.
+let ME_ROSTER_OVERLAY = false;
+function toggleRosterOverlay(){ ME_ROSTER_OVERLAY = !ME_ROSTER_OVERLAY; renderMultiEvent(); }
+
+function buildRosterConsensus(activeAthlete){
+  if(!activeAthlete || !DB || !Array.isArray(DB.athletes)) return null;
+  const byDist = {};   // distM → [secPerM…]
+  const contributors = new Set();
+  DB.athletes.forEach(a => {
+    if(!a || a.id === activeAthlete.id) return;
+    collectAllPRs(a).forEach(p => {
+      if(!(p.sec > 0) || !(p.distM > 0)) return;
+      (byDist[p.distM] = byDist[p.distM] || []).push(p.sec / p.distM);
+      contributors.add(a.id);
+    });
+  });
+  const points = Object.keys(byDist)
+    .map(d => ({ distM: Number(d), secPerM: _med(byDist[d]) }))
+    .sort((a, b) => a.distM - b.distM);
+  if(contributors.size < 2 || points.length < 3) return null;
+  return { points, nAthletes: contributors.size };
+}
+
 // ── PERFORMANCE CURVE CHART ──
 // SVG line chart: X = distance (log scale), Y = pace in sec/meter
 // Orange line = STRIDE ensemble prediction curve from anchor
 // Dots = actual race results
-function buildPerformanceCurve(anchor, allPRs){
+// rosterCurve (optional) = dashed roster-consensus line for context
+function buildPerformanceCurve(anchor, allPRs, rosterCurve){
   // SVG dimensions — extra padding on left for "PACE (MIN/MILE)" label,
   // and on bottom for the legend below the chart
   const W = 860, H = 430;
@@ -16271,10 +16389,12 @@ function buildPerformanceCurve(anchor, allPRs){
     const predSec = consensusForecastAt(allPRs, d, A);
     if(predSec) predictedPaces.push({ d: d, secPerM: predSec / d });
   }
-  const actualPaces = allPRs.map(p => ({ d: p.distM, secPerM: p.sec / p.distM, event: p.event, sec: p.sec }));
+  const actualPaces = allPRs.map(p => ({ d: p.distM, secPerM: p.sec / p.distM, event: p.event, sec: p.sec, raceDate: p.raceDate || null }));
 
-  // Y range: include all data points with padding
-  const allSecPerM = [...predictedPaces.map(p => p.secPerM), ...actualPaces.map(p => p.secPerM)];
+  // Y range: include all data points with padding (roster overlay included,
+  // so a slower/faster roster line can never draw outside the plot)
+  const rosterPts = rosterCurve && rosterCurve.points ? rosterCurve.points.filter(p => p.distM >= 80 && p.distM <= curveMaxDist * 1.1) : [];
+  const allSecPerM = [...predictedPaces.map(p => p.secPerM), ...actualPaces.map(p => p.secPerM), ...rosterPts.map(p => p.secPerM)];
   let yMin = Math.min(...allSecPerM) * 0.95;
   let yMax = Math.max(...allSecPerM) * 1.05;
 
@@ -16284,6 +16404,11 @@ function buildPerformanceCurve(anchor, allPRs){
 
   // Build STRIDE ensemble curve path
   const curvePath = smoothPath(predictedPaces.map(p => ({ x: xScale(p.d), y: yScale(p.secPerM) })));
+
+  // Roster consensus overlay path (dashed, grey — context, not a verdict)
+  const rosterPath = rosterPts.length >= 3
+    ? smoothPath(rosterPts.map(p => ({ x: xScale(p.distM), y: yScale(p.secPerM) })))
+    : null;
 
   // X-axis ticks
   const xTicks = [100, 200, 400, 800, 1600, 3200, 5000, 10000, 21097, 42195].filter(d => d <= curveMaxDist * 1.05);
@@ -16317,9 +16442,15 @@ function buildPerformanceCurve(anchor, allPRs){
     else if(diffPct < -3) dotColor = '#dc2626';  // GAP red
     else if(diffPct < -1.5)dotColor = '#fbbf24'; // development yellow
 
+    // Marks over 90 days old fade — they still show (history matters) but the
+    // eye should land on what the athlete has run recently, matching how the
+    // recency-weighted consensus treats them.
+    const fr = prFreshness(p.raceDate);
+    const dotOpacity = fr === 'fresh' ? 1 : fr === 'stale' ? 0.7 : fr === 'expired' ? 0.45 : 0.85;
+
     return {
       cx: xScale(p.d), cy: yScale(p.secPerM),
-      color: dotColor, isAnchor: isAnchor,
+      color: dotColor, isAnchor: isAnchor, opacity: dotOpacity,
       event: p.event, time: fmtT(p.sec)
     };
   }).sort((a, b) => a.cx - b.cx);
@@ -16338,7 +16469,7 @@ function buildPerformanceCurve(anchor, allPRs){
   });
 
   const mark = d => `
-        <circle cx="${d.cx.toFixed(1)}" cy="${d.cy.toFixed(1)}" r="${d.isAnchor ? 8 : 6}" fill="${d.color}" stroke="#0a0a0a" stroke-width="2"/>
+        <circle cx="${d.cx.toFixed(1)}" cy="${d.cy.toFixed(1)}" r="${d.isAnchor ? 8 : 6}" fill="${d.color}" stroke="#0a0a0a" stroke-width="2" opacity="${d.opacity != null ? d.opacity : 1}"/>
         ${d.isAnchor ? `<circle cx="${d.cx.toFixed(1)}" cy="${d.cy.toFixed(1)}" r="14" fill="none" stroke="#ff6b35" stroke-width="1.5" opacity="0.55"/>` : ''}`;
 
   const placedPanels = [];   // panel rects already committed, for collision nudging
@@ -16451,6 +16582,9 @@ function buildPerformanceCurve(anchor, allPRs){
 
       <line x1="535" y1="0" x2="555" y2="0" stroke="#ff6b35" stroke-width="2.5"/>
       <text x="563" y="4" fill="#b0b0b0" font-family="Inter, system-ui, sans-serif" font-size="10">STRIDE consensus curve</text>
+      ${rosterPath ? `
+      <line x1="0" y1="22" x2="20" y2="22" stroke="#8b8b8b" stroke-width="2" stroke-dasharray="6,4"/>
+      <text x="28" y="26" fill="#b0b0b0" font-family="Inter, system-ui, sans-serif" font-size="10">Roster consensus (${rosterCurve.nAthletes} other athletes' median pace — your roster, not district/state)</text>` : ''}
     </g>`;
 
   return `
@@ -16463,6 +16597,9 @@ function buildPerformanceCurve(anchor, allPRs){
 
         ${yAxisTicks}
         ${xAxisTicks}
+
+        <!-- Roster consensus overlay (behind the athlete's own curve) -->
+        ${rosterPath ? `<path d="${rosterPath}" fill="none" stroke="#8b8b8b" stroke-width="2" stroke-dasharray="6,4" opacity="0.7" stroke-linecap="round"/>` : ''}
 
         <!-- Forecast curve -->
         <path d="${curvePath}" fill="none" stroke="#ff6b35" stroke-width="2.5" opacity="0.85" stroke-linecap="round"/>
@@ -16503,19 +16640,30 @@ function collectAllPRs(athlete){
 
   // Additional PRs
   const additional = athlete.additionalPRs || {};
+  const additionalDates = athlete.additionalPRDates || {};
+  const history = Array.isArray(athlete.raceHistory) ? athlete.raceHistory : [];
   Object.keys(additional).forEach(key => {
     // Skip if it's the same as primary
     if(key === athlete.raceDistance) return;
     const sec = parseTime(additional[key]);
     if(sec && DIST[key]){
+      // Per-event date resolution (Alex call 2026-08-17 — recency must steer
+      // the curve): a coach-entered date wins; otherwise, if the dated race
+      // history contains the run that produced this PR (same event, same time
+      // within 0.5s), that race's date stands in. No match → honest null,
+      // which weighs as "unknown", never as "current".
+      let raceDate = additionalDates[key] || null;
+      if(!raceDate){
+        const match = history
+          .filter(h => h.event === key && h.date && Math.abs(h.sec - sec) <= 0.5)
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+        if(match) raceDate = match.date;
+      }
       prs.push({
         event: key,
         distM: DIST[key],
         sec,
-        // Data-model limitation: additional PRs store only a time, no race
-        // date, so every additional-PR anchor scores freshness "unknown"
-        // (−7.5 conf pts). Adding per-event dates needs schema + UI work.
-        raceDate: null,
+        raceDate,
         source: `${key} PR`,
         sourceType: 'additional'
       });
@@ -16774,6 +16922,16 @@ function buildProfileSummary(anchor, comparisons, athlete){
 }
 
 // ── FORM ──
+// One field map for the additional-PR grid — fillForm populates from it and
+// saveAthlete captures from it, so the two can never drift apart.
+const ADDL_PR_FIELDS = [
+  ['fPR100',  '100m'],   ['fPR200',  '200m'],   ['fPR400',  '400m'],
+  ['fPR800',  '800m'],   ['fPR1500', '1500m'],  ['fPR1600', '1600m'],
+  ['fPRMile', 'Mile'],   ['fPR3000', '3000m'],  ['fPR3200', '3200m'],
+  ['fPR2Mile','2 Mile'], ['fPR5K',   '5K'],     ['fPR8K',   '8K'],
+  ['fPR10K',  '10K'],    ['fPRHalf', 'Half Marathon'], ['fPRMarathon', 'Marathon']
+];
+
 function fillForm(){
   if(!A) return;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';};
@@ -16786,23 +16944,13 @@ function fillForm(){
   set('fRStartTime', A.raceStartTime);
   document.querySelectorAll('.sec').forEach(cb=>{ cb.checked=(A.secondaryEvents||[]).includes(cb.value); });
 
-  // Populate additional PRs
+  // Populate additional PRs (times + the date each mark was set)
   const prs = A.additionalPRs || {};
-  set('fPR100',  prs['100m']);
-  set('fPR200',  prs['200m']);
-  set('fPR400',  prs['400m']);
-  set('fPR800',  prs['800m']);
-  set('fPR1500', prs['1500m']);
-  set('fPR1600', prs['1600m']);
-  set('fPRMile', prs['Mile']);
-  set('fPR3000', prs['3000m']);
-  set('fPR3200', prs['3200m']);
-  set('fPR2Mile',prs['2 Mile']);
-  set('fPR5K',   prs['5K']);
-  set('fPR8K',   prs['8K']);
-  set('fPR10K',  prs['10K']);
-  set('fPRHalf', prs['Half Marathon']);
-  set('fPRMarathon', prs['Marathon']);
+  const prDates = A.additionalPRDates || {};
+  ADDL_PR_FIELDS.forEach(([id, key]) => {
+    set(id, prs[key]);
+    set(id + 'Date', prDates[key]);
+  });
 }
 
 async function saveAthlete(){
@@ -16832,19 +16980,18 @@ async function saveAthlete(){
 
   const distKey=document.getElementById('fRDist').value;
 
-  // Capture additional PRs (multi-event analysis input)
+  // Capture additional PRs (multi-event analysis input) and the date each
+  // mark was set. A date only persists alongside a valid time, and a
+  // future-dated mark is rejected the same way the primary race date is.
   const additionalPRs = {};
-  const prFields = [
-    ['fPR100',  '100m'],   ['fPR200',  '200m'],   ['fPR400',  '400m'],
-    ['fPR800',  '800m'],   ['fPR1500', '1500m'],  ['fPR1600', '1600m'],
-    ['fPRMile', 'Mile'],   ['fPR3000', '3000m'],  ['fPR3200', '3200m'],
-    ['fPR2Mile','2 Mile'], ['fPR5K',   '5K'],     ['fPR8K',   '8K'],
-    ['fPR10K',  '10K'],    ['fPRHalf', 'Half Marathon'], ['fPRMarathon', 'Marathon']
-  ];
-  prFields.forEach(([id, key]) => {
+  const additionalPRDates = {};
+  ADDL_PR_FIELDS.forEach(([id, key]) => {
     const el = document.getElementById(id);
     if(el && el.value && el.value.trim() && parseTime(el.value.trim()) !== null){
       additionalPRs[key] = el.value.trim();
+      const dEl = document.getElementById(id + 'Date');
+      const dVal = dEl && dEl.value ? dEl.value : '';
+      if(dVal && prFreshness(dVal) !== 'future') additionalPRDates[key] = dVal;
     }
   });
 
@@ -16870,6 +17017,8 @@ async function saveAthlete(){
       : (A && A.raceWeather && !A.raceWeather.indoor ? A.raceWeather : null),  // cached weather lookup
     inviteEmail: ((document.getElementById('fInviteEmail') || {}).value || '').trim().toLowerCase() || null,
     additionalPRs: additionalPRs,
+    additionalPRDates: additionalPRDates,
+    raceHistory: A && Array.isArray(A.raceHistory) ? A.raceHistory : [],  // dated meet history survives a profile edit
     guardrail: A ? A.guardrail : null,  // preserve coach's guardrail choice if set
     createdAt: A ? A.createdAt : new Date().toISOString(),
     updatedAt: new Date().toISOString()
