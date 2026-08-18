@@ -8112,6 +8112,37 @@ function applyEnvironment(targetSec, tempF, altitudeFt, humidityPct){
   return targetSec * (1 + factor);
 }
 
+// Confidence rating on a condition-adjusted target (Alex 2026-08-17: "if it
+// shoots back 50% confidence I can look at that and err on the side of
+// caution"). This is HONEST GROUNDING, not statistics theater: it starts at
+// the tables' home turf and only drops for named, explainable reasons — the
+// adjustment leaves the range the source study was fit for, an interpolated
+// blend zone is in play, or several corrections are stacked (their
+// interactions were never studied together). It never climbs above 95%: no
+// published table knows an individual athlete's heat tolerance or
+// acclimatization.
+function conditionConfidence(env){
+  const hasTemp = env && env.tempF != null && !isNaN(env.tempF);
+  const hasHum = env && env.humidityPct != null && !isNaN(env.humidityPct);
+  const hasAlt = env && env.altitudeFt != null && !isNaN(env.altitudeFt);
+  if(!hasTemp && !hasHum && !hasAlt) return null;
+  let pct = 95;
+  const notes = [];
+  if(hasTemp){
+    const effT = effectiveTempF(env.tempF, hasHum ? env.humidityPct : null);
+    if(effT > 100){ pct -= 20; notes.push('effective temp beyond the studied heat range (Ely 2007 tops out near 90°F)'); }
+    else if(effT > 90){ pct -= 10; notes.push('upper edge of the published heat data'); }
+    if(hasHum && env.humidityPct > 40 && env.tempF >= 65 && env.tempF < 80){
+      pct -= 5; notes.push('65–80°F humidity effect is interpolated, not measured');
+    }
+  }
+  if(hasHum && !hasTemp){ pct -= 10; notes.push('humidity entered without temperature — effect can\'t be grounded'); }
+  if(hasAlt && env.altitudeFt > 8200){ pct -= 5; notes.push('above 2500m the table coarsens'); }
+  const factorCount = (hasTemp || hasHum ? 1 : 0) + (hasAlt ? 1 : 0);
+  if(factorCount > 1){ pct -= 4; notes.push('stacked corrections — combined effects are estimates'); }
+  return { pct: Math.max(40, pct), notes };
+}
+
 // Pull stored environmental settings from athlete or session
 function getEnvSettings(){
   const tempEl = document.getElementById('envTemp');
@@ -9142,11 +9173,14 @@ function buildDanielsTable(ath){
   }).join('');
 
   const envFactor = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
+  const envConf = conditionConfidence(env);
   const envBadge = envFactor > 0 ? `
-    <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem">
+    <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid var(--yellow);border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:var(--yellow);margin-bottom:.75rem;margin-right:.5rem"${envConf && envConf.notes.length ? ` title="Why not higher: ${esc(envConf.notes.join('; '))}"` : ''}>
       <span>●</span>
-      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}</span>
+      <span>CONDITIONS APPLIED · +${(envFactor*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.humidityPct?` · ${env.humidityPct}% RH`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}${envConf?` · ~${envConf.pct}% CONFIDENCE`:''}</span>
     </div>` : '';
+  const envConfNote = envFactor > 0 && envConf && envConf.pct < 85 ? `
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--yellow);line-height:1.6;margin-bottom:.75rem">Lower confidence: ${esc(envConf.notes.join(' · '))}. Err on the conservative side — treat the adjusted pace as a starting hypothesis, not a target to defend.</p>` : '';
 
   const guardrailBadge = guardrail.shift !== 0 ? `
     <div style="display:inline-flex;align-items:center;gap:.5rem;padding:.375rem .75rem;background:var(--bg-el);border:1px solid ${guardrail.color};border-radius:.25rem;font-family:var(--font-mono);font-size:.6875rem;color:${guardrail.color};margin-bottom:.75rem">
@@ -9161,7 +9195,7 @@ function buildDanielsTable(ath){
     </div>` : '';
 
   return `
-    ${fitnessBadge}${envBadge}${guardrailBadge}
+    ${fitnessBadge}${envBadge}${guardrailBadge}${envConfNote}
     <div style="overflow-x:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:.5rem">
       <table style="width:100%;border-collapse:collapse;font-family:inherit;min-width:48rem">
         <thead>${header}</thead>
@@ -11442,7 +11476,10 @@ function pacesProvenance(athlete){
   const adjustments = [];
   if(gl.shift !== 0) adjustments.push(`Guardrail: ${gl.label} (${gl.shift>0?'+':''}${gl.shift}% sub-race)`);
   const envF = environmentalCorrection(env.tempF, env.altitudeFt, env.humidityPct);
-  if(envF > 0) adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}`);
+  if(envF > 0){
+    const conf = conditionConfidence(env);
+    adjustments.push(`Conditions +${(envF*100).toFixed(1)}%${env.tempF?` · ${env.tempF}°F`:''}${env.altitudeFt?` · ${env.altitudeFt}ft`:''}${conf?` · ~${conf.pct}% conf`:''}`);
+  }
   const fresh = prFreshness(athlete.raceDate);
   if(fresh && fresh !== 'fresh') adjustments.push(`PR freshness: ${fresh}`);
   const age = athleteAgeYears(athlete);

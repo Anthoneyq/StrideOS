@@ -117,6 +117,36 @@ probe('scroll fix: a wheel event blurs a focused number input (passive)', ()=>{
   reg.fn({});
   if(blurred) throw new Error('text input wrongly blurred');
 });
+
+// ── CONDITION-ADJUSTMENT CONFIDENCE (Alex 2026-08-17) ──
+probe('confidence: null when no conditions entered', ()=>{
+  if(conditionConfidence({ tempF:null, altitudeFt:null, humidityPct:null }) !== null)
+    throw new Error('empty env must not print a confidence number');
+});
+probe('confidence: caps at 95 — tables never know the individual athlete', ()=>{
+  const c = conditionConfidence({ tempF:70, altitudeFt:null, humidityPct:null });
+  if(c.pct > 95) throw new Error('confidence above 95: ' + c.pct);
+});
+probe('confidence: extreme heat drops it with a named reason', ()=>{
+  const mild = conditionConfidence({ tempF:75, altitudeFt:null, humidityPct:null });
+  const extreme = conditionConfidence({ tempF:98, altitudeFt:null, humidityPct:90 });
+  if(!(extreme.pct < mild.pct)) throw new Error('extreme heat should be less confident than mild');
+  if(!extreme.notes.length) throw new Error('a deduction must carry a reason');
+});
+probe('confidence: stacked heat + altitude less confident than either alone', ()=>{
+  const heat = conditionConfidence({ tempF:85, altitudeFt:null, humidityPct:null });
+  const alt = conditionConfidence({ tempF:null, altitudeFt:5000, humidityPct:null });
+  const both = conditionConfidence({ tempF:85, altitudeFt:5000, humidityPct:null });
+  if(!(both.pct < heat.pct && both.pct < alt.pct)) throw new Error('stacking must cost confidence');
+});
+probe('confidence: floors at 40 — never pretends total ignorance is precision', ()=>{
+  const worst = conditionConfidence({ tempF:110, altitudeFt:12000, humidityPct:100 });
+  if(worst.pct < 40) throw new Error('floor breached: ' + worst.pct);
+});
+probe('confidence: humidity blend zone (65–80°F) is marked interpolated', ()=>{
+  const c = conditionConfidence({ tempF:72, altitudeFt:null, humidityPct:90 });
+  if(!c.notes.some(n => /interpolated/.test(n))) throw new Error('blend-zone note missing');
+});
 `;
 
 try { await vm.runInContext(`(async()=>{${probeSrc}})()`, ctx, { filename: 'conditions-probes' }); }
