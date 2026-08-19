@@ -8407,6 +8407,25 @@ function repAllowedForAnchor(repDistM, athlete){
   return repDistM <= athlete.raceDistanceM * 1.25;
 }
 
+const PACE_REP_OPTIONS = [
+  [100,'100m'],[150,'150m'],[200,'200m'],[300,'300m'],[400,'400m'],
+  [500,'500m'],[600,'600m'],[800,'800m'],[1000,'1km'],[1200,'1200m'],
+  [1600,'1600m'],[1609,'1 mile'],[2000,'2km'],[3000,'3km'],[5000,'5K'],
+  [8000,'8km'],[10000,'10K']
+];
+
+// Start the hero on the athlete's own race distance for sprint anchors. The
+// old universal 800m default immediately put 100m/200m/400m athletes into a
+// blocked state even though a valid race-pace target was available.
+function defaultRepForAnchor(anchorM){
+  anchorM = Number(anchorM);
+  if(anchorM > 0 && anchorM < 1500){
+    const valid = PACE_REP_OPTIONS.map(x => x[0]).filter(d => d <= anchorM);
+    return valid.length ? valid[valid.length - 1] : 100;
+  }
+  return 800;
+}
+
 // ⚠️ INTENTIONALLY DISABLED (BUG-014 / BUG-037). This VDOT→speed-% zone
 // reconciliation has NEVER been live: the vToSpkm units bug returned min/km
 // and every guard below rejected the result. The math is now corrected — the
@@ -9462,8 +9481,10 @@ function clearFitnessOverride(){
   renderPaces();
   toast('Back to PR-based paces');
 }
-// Distances a coach realistically states current fitness in.
-const FITNESS_OVERRIDE_EVENTS = ['800m','1500m','1600m','Mile','3000m','3200m','2 Mile','5K','8K','10K'];
+// Current fitness can be stated at every event STRIDE supports. Keep this
+// derived from the canonical distance map so the pace calculator cannot drift
+// behind athlete profiles when an event is added.
+const FITNESS_OVERRIDE_EVENTS = Object.keys(DIST);
 function fitnessOverrideCard(ath){
   const o = getFitnessOverride(ath);
   // Athlete accounts see NOTHING here. The override is stored on the
@@ -9542,6 +9563,7 @@ function renderPaces(){
   const fColor = fresh==='fresh'?'var(--green)':fresh==='stale'?'var(--yellow)':(fresh==='expired'||fresh==='future')?'var(--red)':'var(--text-3)';
   const guardrailKey = getActiveGuardrail();
   const anchorSec = parseTime(anchor.raceTime || '');
+  const defaultRep = defaultRepForAnchor(anchor.raceDistanceM);
   const gradeToolPace = anchorSec && anchor.raceDistanceM
     ? _mmss(anchorSec / (anchor.raceDistanceM / 1609.344), 0)
     : '8:00';
@@ -9579,23 +9601,7 @@ function renderPaces(){
       <p id="build-adjusted" style="display:none;font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.0625rem;color:var(--yellow);margin-bottom:.75rem"></p>
       <p style="font-family:var(--font-stat);font-size:clamp(2.5rem, 6vw, 4.5rem);font-weight:800;letter-spacing:-.125rem;line-height:1;margin-bottom:1rem;color:var(--text)">
         <select id="pcRep" class="hero-edit" onchange="updateBuilder();refreshDanielsTable()" aria-label="Rep distance">
-          <option value="100">100m</option>
-          <option value="150">150m</option>
-          <option value="200">200m</option>
-          <option value="300">300m</option>
-          <option value="400">400m</option>
-          <option value="500">500m</option>
-          <option value="600">600m</option>
-          <option value="800" selected>800m</option>
-          <option value="1000">1km</option>
-          <option value="1200">1200m</option>
-          <option value="1600">1600m</option>
-          <option value="1609">1 mile</option>
-          <option value="2000">2km</option>
-          <option value="3000">3km</option>
-          <option value="5000">5K</option>
-          <option value="8000">8km</option>
-          <option value="10000">10K</option>
+          ${PACE_REP_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === defaultRep ? 'selected' : ''}>${label}</option>`).join('')}
         </select>
         <span style="color:var(--text-4);font-weight:400">in</span>
         <span id="build-time" class="hero-edit" role="button" tabindex="0" onclick="heroTimeEdit()" onkeydown="if(event.key==='Enter'){event.preventDefault();heroTimeEdit();}" title="Click to type a target time — the intensity % adjusts to match">—</span>
@@ -9830,12 +9836,13 @@ function buildDanielsTable(ath){
   // The selected rep distance gets a highlighted column so the coach's eye
   // lands on the numbers they actually asked for. Athlete mode selects via
   // the hero (#pcRep); Quick paces / free calc selects via #ftRep — only one
-  // exists at a time. Defaults to 800 before either is in the DOM.
+  // exists at a time. Before either is in the DOM, use a valid default for
+  // the supplied anchor instead of assuming every athlete runs 800m reps.
   const _pcRepEl = document.getElementById('pcRep');
   const _ftRepEl = document.getElementById('ftRep');
   const selRep = (_pcRepEl && _pcRepEl.value) ? parseFloat(_pcRepEl.value)
     : (_ftRepEl && _ftRepEl.value) ? parseFloat(_ftRepEl.value)
-    : 800;
+    : defaultRepForAnchor(ath.raceDistanceM);
   const colBg = d => Math.abs(d - selRep) < 2 ? 'background:var(--bg-el);' : '';
   const rows = STRIDE_COACH_SPLITS.map(z => {
     const allowed = zoneAllowedForAnchor(z, ath);
@@ -10018,15 +10025,7 @@ function renderFreeTierCalculator(opts){
         <div>
           <label for="ftD" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Race Distance</label>
           <select id="ftD" onchange="freeTierUpdate()">
-            <option value="100">100m</option>
-            <option value="200">200m</option>
-            <option value="400">400m</option>
-            <option value="800">800m</option>
-            <option value="1600" selected>1600m</option>
-            <option value="1609">1 mile</option>
-            <option value="3200">3200m</option>
-            <option value="5000">5K</option>
-            <option value="10000">10K</option>
+            ${Object.entries(DIST).map(([label, value]) => `<option value="${value}" ${label === '1600m' ? 'selected' : ''}>${esc(label)}</option>`).join('')}
           </select>
         </div>
         <div>
@@ -10071,14 +10070,7 @@ function renderFreeTierCalculator(opts){
         <div>
           <label for="ftRep" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin-bottom:.375rem;display:block">Rep distance</label>
           <select id="ftRep" onchange="freeTierUpdate()">
-            <option value="100">100m</option>
-            <option value="200">200m</option>
-            <option value="400">400m</option>
-            <option value="800" selected>800m</option>
-            <option value="1000">1km</option>
-            <option value="1600">1600m</option>
-            <option value="1609">1 mile</option>
-            <option value="5000">5K</option>
+            ${PACE_REP_OPTIONS.map(([value, label]) => `<option value="${value}" ${value === 800 ? 'selected' : ''}>${label}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -10243,7 +10235,14 @@ function freeTierUpdate(){
   const pctEl = document.getElementById('ftPct');
   const repEl = document.getElementById('ftRep');
   const pct = pctEl ? parseFloat(pctEl.value) : 100;
-  const rep = repEl ? parseFloat(repEl.value) : 800;
+  let rep = repEl ? parseFloat(repEl.value) : defaultRepForAnchor(distM);
+  // Changing the race event should never strand the calculator on an invalid
+  // longer rep. Snap only when the current selection is physically outside
+  // the short anchor's range; shorter coach-selected reps remain untouched.
+  if(distM < 1500 && !repAllowedForAnchor(rep, { raceDistanceM: distM })){
+    rep = defaultRepForAnchor(distM);
+    if(repEl) repEl.value = String(rep);
+  }
 
   const secPerM = timeSec / distM;
   // Grade is part of this calculator: its pace anchor always follows the race

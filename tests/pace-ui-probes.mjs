@@ -122,6 +122,35 @@ probe('athlete mode: renders editable hero, live chip machinery, and tabs', () =
   assert(/pacesModeTabs|pc-tab/.test(el), 'mode tabs missing');
   assert(!/onclick="calcPaces\\(\\)">Recalculate/.test(html_src), 'vestigial Recalculate button resurfaced');
 });
+probe('current fitness: every canonical race event is available', () => {
+  assert(JSON.stringify(FITNESS_OVERRIDE_EVENTS) === JSON.stringify(Object.keys(DIST)), 'current-fitness event list drifted from DIST');
+  const card = fitnessOverrideCard(A);
+  Object.keys(DIST).forEach(event => assert(card.includes('>' + event + '</option>'), 'missing current-fitness event ' + event));
+});
+probe('100m athlete: hero starts on a valid 100m race-pace target', () => {
+  const sprinter = mk({name:'Sam Swift',primaryEvent:'100m',raceDistance:'100m',raceDistanceM:100,raceTime:'11.50'});
+  DB.athletes.push(sprinter); A = sprinter;
+  pacesMode = 'athlete';
+  renderPaces();
+  const el = document.getElementById('pc-body').innerHTML;
+  assert(el.includes('<option value="100" selected>100m</option>'), '100m rep was not selected');
+  document.getElementById('pcPct').value = '100';
+  document.getElementById('pcRep').value = '100';
+  updateBuilder({ noFlash: true });
+  assert(document.getElementById('build-100').textContent === '11.5s', '100m split did not calculate');
+  assert(document.getElementById('build-offset').textContent === '= race pace', '100m target remained blocked');
+});
+probe('quick paces: race selector contains every canonical event', () => {
+  const calc = renderFreeTierCalculator({ quick:true });
+  Object.entries(DIST).forEach(([event, meters]) => assert(calc.includes('value="' + meters + '"') && calc.includes('>' + event + '</option>'), 'missing quick event ' + event));
+});
+probe('short anchors: invalid universal 800m default clamps to the race distance', () => {
+  assert(defaultRepForAnchor(100) === 100, '100m default');
+  assert(defaultRepForAnchor(200) === 200, '200m default');
+  assert(defaultRepForAnchor(400) === 400, '400m default');
+  assert(defaultRepForAnchor(800) === 800, '800m default');
+  assert(defaultRepForAnchor(1600) === 800, 'distance default');
+});
 probe('quick-paces cross-link is a real button (keyboard-reachable)', () => {
   pacesMode = 'athlete';
   renderPaces();
