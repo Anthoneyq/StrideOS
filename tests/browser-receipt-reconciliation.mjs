@@ -186,9 +186,10 @@ try {
     set('wfPrescribedDist','8000'); set('wfPrescribedNotes','Easy 8k');
     set('wfTotalDist','9999'); set('wfDuration','40:30'); set('wfAvgHr',''); set('wfMaxHr',''); set('wfRpe','');
     window.__updates = [];
-    sbClient = { rpc: async () => ({ data:null, error:null }),
+    window.__workoutClient = { rpc: async () => ({ data:null, error:null }),
       from: () => ({ update: (row) => { __updates.push(row); return { eq: async () => ({ error:null }) }; },
                      insert: async (row) => { __updates.push(row); return { error:null }; } }) };
+    sbClient = window.__workoutClient;
     await saveWorkout();
     return true;
   `);
@@ -203,6 +204,11 @@ try {
     __fixture();
     workoutCache = { athleteId:'a1', items:[ {...__plan} ] };
     sbRole = 'coach';
+    // Re-pin the network seam just like the user/athlete fixture. A late auth
+    // callback may restore the real client between scenarios; that is app
+    // lifecycle noise, not a failed prescription edit.
+    window.__updates = [];
+    sbClient = window.__workoutClient;
     document.getElementById('wfTotalDist').value = '8100';
     document.getElementById('wfDuration').value = '40:30';
     document.getElementById('wfPrescribedNotes').value = 'Easy 8k — HR low';

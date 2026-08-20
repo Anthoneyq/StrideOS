@@ -120,7 +120,23 @@ probe('athlete mode: renders editable hero, live chip machinery, and tabs', () =
   assert(/id="pcRep" class="hero-edit"/.test(el), 'hero rep select missing');
   assert(/heroTimeEdit\\(\\)/.test(el), 'hero time click-to-edit missing');
   assert(/pacesModeTabs|pc-tab/.test(el), 'mode tabs missing');
+  assert(/class="pc-mode-tabs"/.test(el), 'compact mode tab layout missing');
+  assert(!/Quick paces · any time, no athlete/.test(el), 'long quick-mode label resurfaced');
   assert(!/onclick="calcPaces\\(\\)">Recalculate/.test(html_src), 'vestigial Recalculate button resurfaced');
+});
+probe('mobile pace UI: compact hierarchy and selected-rep table rules exist', () => {
+  assert(full_html.includes('#paces .screen-title{font-size:1.25rem'), 'mobile pace title is not compact');
+  assert(full_html.includes('.pc-table-scroll .pc-rep-col:not(.is-selected){display:none}'), 'mobile table does not hide non-selected reps');
+  const table = buildDanielsTable();
+  assert(/pc-rep-col is-selected/.test(table), 'selected rep column is not identified');
+  assert(/pc-mobile-table-note/.test(table), 'phone table guidance missing');
+});
+probe('quick mode: target precedes optional hill conversion', () => {
+  const calc = renderFreeTierCalculator({ quick:true });
+  const targetAt = calc.indexOf('id="ft-result"');
+  const hillsAt = calc.indexOf('class="pc-grade-details"');
+  assert(targetAt >= 0 && hillsAt > targetAt, 'hill tool still blocks the primary target');
+  assert(/<details class="pc-grade-details">/.test(calc), 'hill tool is not optional disclosure');
 });
 probe('current fitness: every canonical race event is available', () => {
   assert(JSON.stringify(FITNESS_OVERRIDE_EVENTS) === JSON.stringify(Object.keys(DIST)), 'current-fitness event list drifted from DIST');
@@ -195,6 +211,7 @@ probe('fitness override: 5K override on an 800m-PR athlete unlocks the mile view
 });
 `;
 ctx.html_src = main;
+ctx.full_html = html;
 try { vm.runInContext(probeSrc, ctx, { filename: 'pace-ui-probes' }); } catch (e) { console.log('PROBE HARNESS ERROR:', e.message); process.exitCode = 1; }
 
 let fails = 0;
