@@ -8991,6 +8991,39 @@ function gradeFlatEquivalentPace(speedMps, gradePct, surface){
 const RE3_STEADY_MIN_REP_SEC = 90;
 const RE3_ISOEFFORT_VALIDATION = { source:'Held 2023', gradePct:8, repSec:300,
   flatMps:4.47, upMps:3.17, agreementPct:1.2 };
+
+// ── THE SHORT-REP CEILING (Delaney et al. 2022) ──
+// A short rep is not bound by steady metabolic cost, so cost-matching is only
+// its FLOOR. The other edge is the least metabolically constrained case there
+// is: an all-out sprint. Delaney measured maximal sprint velocity on flat and
+// on 5.2 / 8.8 / 17.6% hills in 24 collegiate athletes and found velocity
+// falls 1.7% per DEGREE of angle (note: degree, not grade-percent — the
+// conversion is theta = atan(G)). Retention cannot exceed that, because
+// nothing about a 40s rep is less metabolically constrained than a sprint.
+// So the honest answer for a short rep is a bracket: cost-matched at the
+// bottom, sprint retention at the top, and no published measurement in
+// between. Tested 5.2-17.6%; below that it is extrapolation toward the
+// identity it correctly returns at zero grade.
+const DELANEY_LOSS_PER_DEGREE = 0.017;
+const DELANEY_TESTED_MIN_PCT = 5.2;
+const DELANEY_TESTED_MAX_PCT = 17.6;
+function sprintRetentionAtGrade(gradePct){
+  const g = Number(gradePct);
+  if(!isFinite(g) || g < 0 || g > DELANEY_TESTED_MAX_PCT) return null;
+  const deg = Math.atan(g / 100) * 180 / Math.PI;
+  const retained = 1 - DELANEY_LOSS_PER_DEGREE * deg;
+  return retained > 0 ? retained : null;
+}
+// Upper edge of the bracket, in the same units the tool prints. This is a
+// CEILING on the conversion ratio, never a target: it answers "what would the
+// grade cost if the rep were short enough to be a sprint", not "how fast
+// should they run 40 seconds".
+function sprintCeilingSpeedMps(anchorPaceSecPerMile, gradePct){
+  const pace = Number(anchorPaceSecPerMile);
+  const retained = sprintRetentionAtGrade(gradePct);
+  if(!isFinite(pace) || pace <= 0 || !retained) return null;
+  return (1609.344 / pace) * retained;
+}
 const MPS_TO_MPH = 2.2369362920544;
 
 function paceSecPerMileToMph(secPerMile){
@@ -9147,10 +9180,19 @@ function updateRoadGradeTool(prefix){
     const crossText = cross && isFinite(cross)
       ? `${belt?'RE3':'RE3'} ${belt?targetMph.toFixed(1)+' mph':_mmss(targetPace,0)+'/mi'} · Minetti 2002 ${belt?(cross*MPS_TO_MPH).toFixed(1)+' mph':_mmss(1609.344/cross,0)+'/mi'}`
       : '';
+    const ceiling = sprintCeilingSpeedMps(pace, grade);
+    const fmtSpeed = v => belt ? `${(v*MPS_TO_MPH).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`;
+    const bracket = ceiling && ceiling > speed ? `
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:.25rem .7rem;margin:.55rem 0;font-family:var(--font-mono);font-size:.6875rem">
+          <span style="color:var(--text-4)">FLOOR</span><span style="color:var(--text-2)"><strong>${esc(fmtSpeed(speed))}</strong> — steady cost-matched · ${Math.round(speed/(1609.344/pace)*100)}% of flat speed</span>
+          <span style="color:var(--text-4)">CEILING</span><span style="color:var(--text-2)"><strong>${esc(fmtSpeed(ceiling))}</strong> — all-out sprint retention at ${esc(gradeLabel)} · ${Math.round(sprintRetentionAtGrade(grade)*100)}% of flat speed</span>
+        </div>` : '';
     blocks.push(`
       <div style="border:1px solid var(--yellow);border-radius:.45rem;padding:.7rem .8rem;margin-top:.75rem;background:rgba(234,179,8,.06)">
-        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s — this number is a floor, not the prescription</p>
-        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices. Two independent published models agree on the floor${crossText?` (${esc(crossText)})`:''} — so the answer is not a calculator error, it is a steady-state answer to a rep that is not steady state. Expect it to read easy.</p>
+        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s — the answer is a range, and these are its edges</p>
+        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices. Two independent published models agree on the floor${crossText?` (${esc(crossText)})`:''} — the number is not wrong, it is a steady-state answer to a rep that is not steady state. Expect it to read easy.</p>
+        ${bracket}
+        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">The ceiling is the least metabolically constrained case there is: maximal sprint velocity falls 1.7% per degree of angle (Delaney 2022, n=24). A rep this short cannot keep <em>more</em> speed than an all-out sprint does. So the honest answer sits between those two lines, and no one has measured where.</p>
         <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">Over <em>long</em> reps this conversion has been checked against effort directly: 17 trained runners matching perceived effort on an 8% treadmill picked a speed within 1.2% of the cost-matched prediction (Held 2023, 5-minute reps). Nobody has run that experiment at 40 seconds. So if your athletes match RPE at a faster ${belt?'belt':'pace'}, they are running the rep at a harder <em>anchor</em> — move up the ladder and log which row matched. Your own paired sessions are the only evidence that will settle the short end.</p>
       </div>`);
   }
@@ -16767,6 +16809,9 @@ function renderMethodology(){
         ${cite('Poole, D. C. & Jones, A. M.','2012','Oxygen uptake kinetics','Comprehensive Physiology, 2(2):933-996','The VO₂ response to a step in intensity has a time constant of roughly 20–30s in trained runners. This is why STRIDE presents a steady-state grade conversion as a floor, not a prescription, for reps shorter than 90 seconds: the rep ends before the aerobic cost the equation prices is ever reached.')}
         ${cite('Held, S., Rappelt, L. & Donath, L.','2023','Increased oxygen uptake in well-trained runners during uphill high intensity running intervals: a randomized crossover testing','Frontiers in Physiology, 14:1177828','Seventeen well-trained runners ran 4×5min at 1% and at 8% matched by perceived effort, free to choose their own speed (4.47 m/s flat, 3.17 m/s uphill). STRIDE uses this as the empirical check on its grade conversion: the cost-matched prediction for that pairing is within 1.2%. The same study found VO₂ and time above 90% VO₂max were HIGHER uphill at equal effort, heart rate and lactate — an argument for the hill session that is separate from the pace conversion.')}
         ${cite('Pringle, J. S. M., Carter, H., Doust, J. H. & Jones, A. M.','2002','Oxygen uptake kinetics during horizontal and uphill treadmill running in humans','European Journal of Applied Physiology, 88(1-2):163-169','Compared VO₂ kinetics at 0% and 10% gradient and found no significant difference at moderate intensity. STRIDE therefore does not apply a duration-dependent correction to graded pace: there is no measured basis for one, and an invented curve would be indistinguishable from a fudge factor.')}
+        ${cite('Delaney, J. A. et al.','2022','Uphill sprinting load- and force-velocity profiling: assessment and potential applications','Journal of Sports Sciences, 40(3):281-287','Twenty-four collegiate athletes sprinted maximally on flat ground and on 5.2%, 8.8% and 17.6% hills: maximal velocity fell 1.7% per DEGREE of angle (θ = atan(grade), not per grade-percent). STRIDE uses this only as the CEILING on a short rep — nothing about a 40-second rep is less metabolically constrained than a sprint, so it cannot retain more speed than one. It is not a metabolic-equivalence formula and is never shown as a target.')}
+        ${cite('Shahidi, S. H., Can, R., Paça, F. M. & Zengin, M. D.','2026','Overground running incurs a higher energetic cost than treadmill running at a 1% grade','PLOS One','Twelve trained runners, matched 3-minute stages on a 400m track and on a treadmill at 1%: oxygen cost of transport was 204.2 vs 197.1 mL/kg/km, so even the 1% convention under-corrected outdoor demand in this sample. Read against Miller et al. (2019), which found 0% and 1% broadly similar, the true belt-to-outdoor premium is uncertain across roughly 0-9%. STRIDE sits mid-range at ~5% of metabolic power at 5 m/s and scales it with v² rather than picking either edge.')}
+        ${cite('Willwacher, S. et al.','2021','A new method for measuring treadmill belt velocity fluctuations: effects of treadmill type, body mass and locomotion speed','Scientific Reports, 11:2244','Average belt speed ran 98-103% of the displayed target across four machines, and within-stance reduction exceeded 5% on three of them. A console reading is an instrument setting, not a measured speed — but at ±3% it is far too small to explain a 12-17% gap between a converted belt speed and what a coach settles on by feel.')}
         ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work','Journal of Physiology, 213(2):255-276','Original quantification of wind resistance in running. Basis for headwind/tailwind corrections.')}
       </ul>
     </div>

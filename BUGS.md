@@ -187,4 +187,18 @@ Verified: 13/13 probe suites + 16/16 browser checks after the pass; new executab
 
 **Rejected: a duration-dependent grade correction.** Proposed shape was `V(t) = 8.50 + 1.00·e^(−t/75)`. Declined on four grounds: (1) its asymptote is the ACSM value, the least accurate of the three models against the only effort-matched data there is; (2) the amplitude and time constant are fitted to a single coach's recollection, and do not reproduce even that (9.09 mph vs the 9.6–10.0 recalled); (3) τ=75s corresponds to no named physiological process — the VO₂ time constant invoked to justify it is 20–30s; (4) Pringle, Carter, Doust & Jones (2002, *EJAP* 88:163-169) compared VO₂ kinetics at 0% and 10% and found no significant difference at moderate intensity. Rep length changes the warning shown, never the number.
 
-**Verified:** 71 grade-model probes, 112 online-coach probes, 25/25 probe files green.
+**Resolved 2026-08-25 (second data drop): the short rep has a ceiling, and it is published.** Cost-matching is only the FLOOR. The other edge is the least metabolically constrained case there is — maximal sprint velocity, which Delaney et al. (2022, *J Sports Sci* 40(3):281-287, n=24, grades 5.2/8.8/17.6%) found falls **1.7% per DEGREE** of angle (θ = atan(G); applying it per grade-percent instead costs 5 points at +7%). Nothing about a 40-second rep is less metabolically constrained than a sprint, so it cannot retain more speed. For a 10:00 3K runner at +7% on a belt:
+
+| Edge | Belt speed | % of flat speed | Basis |
+|---|---|---|---|
+| Floor — steady cost-matched | 8.56 mph | 76% | RE3, validated to 1.2% at 5-min reps (Held 2023) |
+| **Alex's RPE-matched observation** | **9.6–10.0 mph** | **85–89%** | **inside the bracket, nearer the sprint edge** |
+| Ceiling — all-out sprint retention | 10.48 mph | 93% | Delaney 2022 |
+
+So his instinct was right and it was never a calculator error: a 40s rep sits between two regimes, and no one has measured where. The tool now prints both edges instead of one floor. Still no interpolating curve — the gap between the edges is exactly the thing his paired sessions would measure.
+
+**Belt miscalibration ruled out as the explanation.** Willwacher et al. (2021, *Sci Rep* 11:2244) measured average belt speed at 98–103% of display across four machines. ±3% cannot produce the 12–17% gap; the hypothesis is bounded and recorded as a probe so it is not re-litigated.
+
+**Drag credit left unchanged, deliberately.** Shahidi et al. (2026, *PLOS One*) found track running cost 204.2 vs 197.1 mL/kg/km against a 1% treadmill — even 1% under-corrected in that sample — while Miller et al. (2019) found 0% and 1% broadly similar. The true belt-to-outdoor premium is uncertain across roughly 0–9%. STRIDE stays mid-range (~5% of metabolic power at 5 m/s, scaled by v²) rather than moving the number on a single 12-person study.
+
+**Verified:** 87 grade-model probes, 112 online-coach probes, 25/25 probe files green.

@@ -37,6 +37,11 @@ const src = [
   extractScalarConst('RE3_DRAG_MAX_MPS'),
   extractScalarConst('RE3_STEADY_MIN_REP_SEC'),
   extractScalarConst('RE3_ISOEFFORT_VALIDATION'),
+  extractScalarConst('DELANEY_LOSS_PER_DEGREE'),
+  extractScalarConst('DELANEY_TESTED_MIN_PCT'),
+  extractScalarConst('DELANEY_TESTED_MAX_PCT'),
+  extractFn('sprintRetentionAtGrade'),
+  extractFn('sprintCeilingSpeedMps'),
   extractScalarConst('MPS_TO_MPH'),
   extractFn('re3MetabolicPower'),
   extractFn('re3LevelSpeedForPower'),
@@ -61,7 +66,8 @@ const src = [
     re3DragGradePct, re3SurfacePower, re3SurfaceSpeedForPower, gradeTargetSpeedMps,
     gradeFlatEquivalentPace, hillRepGeometry, minettiCostOfTransport,
     minettiTargetSpeedMps, parsePaceOrSpeed, mphToPaceSecPerMile,
-    paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, RE3_ISOEFFORT_VALIDATION, MPS_TO_MPH };`
+    paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, RE3_ISOEFFORT_VALIDATION, MPS_TO_MPH,
+    sprintRetentionAtGrade, sprintCeilingSpeedMps, DELANEY_TESTED_MAX_PCT };`
 ].join('\n');
 const E = new Function(src)();
 
@@ -243,5 +249,56 @@ ok(html.includes('Pringle, J. S. M.') && html.includes('Held, S., Rappelt, L. & 
   'both the validation and the no-duration-correction finding are cited');
 ok(html.includes('Nobody has run that experiment at 40 seconds'),
   'the tool states exactly where the evidence stops');
+
+
+// ══════════════════════════════════════════════════════════════════════
+// THE SHORT-REP BRACKET — Delaney et al. (2022), J Sports Sci 40(3):281-287
+// Cost-matching is only the FLOOR for a short rep. The ceiling is the least
+// metabolically constrained case there is: maximal sprint velocity, which
+// falls 1.7% per DEGREE of angle. A 40s rep cannot retain more speed than an
+// all-out sprint, so the honest answer is bounded on both sides by published
+// measurement and by nothing in between.
+// ══════════════════════════════════════════════════════════════════════
+close(E.sprintRetentionAtGrade(0), 1, 1e-9, 'zero grade retains all of flat max velocity');
+// The coefficient is per DEGREE. Applying it to grade-percent instead would
+// give 1 - 0.017*7 = 88.1% at +7% instead of 93.2% — a 5-point error that
+// would silently narrow the bracket.
+close(E.sprintRetentionAtGrade(7), 0.9319, 0.001, '+7% grade = 4.00 deg -> 93.2% max-velocity retention');
+close(E.sprintRetentionAtGrade(17.6), 0.8303, 0.002, 'top of the tested range (17.6% = 9.98 deg) -> 83.0%');
+ok(Math.abs(E.sprintRetentionAtGrade(7) - (1 - 0.017 * 7)) > 0.04,
+  'the per-degree conversion is actually applied — a per-percent reading differs by >4 points');
+ok(E.sprintRetentionAtGrade(20) === null, 'beyond the tested range the ceiling is refused, not extrapolated');
+ok(E.sprintRetentionAtGrade(-5) === null, 'the sprint relation is uphill-only');
+
+// The bracket must be a real bracket: ceiling strictly above floor, and both
+// below flat speed. If these ever cross, the tool is telling a coach a short
+// rep should be run faster than the flat anchor it came from.
+const anchorPace = 1609.344 / (11.25 / E.MPS_TO_MPH);   // 10:00 3K = 11.25 mph flat
+const floorV = E.gradeTargetSpeedMps(anchorPace, 7, 'belt');
+const ceilV = E.sprintCeilingSpeedMps(anchorPace, 7);
+ok(ceilV > floorV, 'ceiling sits above the cost-matched floor');
+ok(ceilV < 1609.344 / anchorPace, 'ceiling stays below flat speed — a hill never gives speed back');
+close(floorV * E.MPS_TO_MPH, 8.56, 0.1, 'floor for a 10:00 3K runner at +7% on a belt is 8.6 mph');
+close(ceilV * E.MPS_TO_MPH, 10.48, 0.1, 'ceiling for the same athlete is 10.5 mph');
+
+// Alex Muntefering's own RPE-matched observation (9.6-10.0 mph at 7% against
+// an 11.25 mph flat anchor) must land INSIDE the bracket. That is the whole
+// claim: his instinct was not a calculator error and not a duration curve —
+// it was a short rep sitting between two regimes.
+[9.6, 10.0].forEach(mph => {
+  const v = mph / E.MPS_TO_MPH;
+  ok(v > floorV && v < ceilV, `Alex's observed ${mph} mph falls inside the published bracket`);
+});
+ok((9.6 / E.MPS_TO_MPH) > (floorV + ceilV) / 2, "and nearer the sprint edge, as a 40s rep should be");
+
+// Belt calibration cannot be the explanation. Willwacher (2021) bounds belt
+// error at 98-103% of display; the gap between floor and what Alex settles on
+// is 12-17%. Recording this stops the hypothesis being re-litigated.
+const gapPct = (9.6 / (floorV * E.MPS_TO_MPH) - 1) * 100;
+ok(gapPct > 3 * 3, 'the observed gap is several times larger than the ±3% a miscalibrated belt can produce');
+
+ok(html.includes('Delaney, J. A. et al.') && html.includes('Shahidi, S. H.') && html.includes('Willwacher, S. et al.'),
+  'the bracket, the drag-band caveat and the belt-error bound are all cited');
+ok(html.includes('the answer is a range, and these are its edges'), 'the short-rep block presents a range, not a single number');
 
 console.log(`grade model probes ok — ${n} probes`);
