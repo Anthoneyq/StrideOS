@@ -479,7 +479,11 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
 .tier-banner-text strong{color:var(--text);font-weight:600}
 .tier-banner-cta{flex-shrink:0;padding:.5rem .9rem;font-size:.6875rem}
 @media(max-width:700px){.tier-banner{flex-direction:column;align-items:stretch;text-align:center;margin:1rem 1rem 0}.tier-banner-cta{width:100%}}
-.upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto}
+/* align-items:flex-start + margin:auto 0 on the child, NOT align-items:center.
+   Centering an over-tall child in a scroll container puts its top edge above
+   the content box, where scrollTop cannot reach — on a 667px phone the whole
+   top of the paywall (Monthly plan button AND the close X) was unreachable. */
+.upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem;overflow-y:auto;overscroll-behavior:contain}
 /* Basic-tier pace-matrix lead magnet: real taste on top, blurred + gated below */
 .matrix-lock-wrap{position:relative;user-select:none}
 .matrix-lock-overlay{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:center;padding:1.25rem;border-radius:.5rem;z-index:2;
@@ -488,8 +492,8 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opac
   -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,#000 9%);mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0%,#000 9%)}
 .matrix-lock-card{max-width:26rem;text-align:center;padding:1.25rem 1.25rem 1.5rem}
 .matrix-lock-card .btn{margin-top:.25rem}
-.upgrade-modal{position:relative;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:42rem;width:100%;padding:2rem 2rem 1.75rem;color:var(--text);font-family:inherit}
-.upgrade-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;padding:.25rem .5rem;border-radius:.25rem}
+.upgrade-modal{position:relative;margin:auto 0;background:var(--bg-el);border:1px solid var(--border);border-radius:1rem;max-width:42rem;width:100%;max-height:calc(100vh - 3rem);overflow-y:auto;padding:2rem 2rem 1.75rem;color:var(--text);font-family:inherit}
+.upgrade-close{position:sticky;top:0;float:right;margin:-.5rem -.5rem 0 0;z-index:1;background:var(--bg-el);border:none;color:var(--text-3);font-size:1.5rem;line-height:1;cursor:pointer;min-width:2.75rem;min-height:2.75rem;border-radius:.25rem}
 .upgrade-close:hover{color:var(--text);background:var(--bg-card)}
 .upgrade-eyebrow{font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.375rem}
 .upgrade-title{font-family:var(--font-display);font-size:2rem;font-weight:500;letter-spacing:-.0625rem;margin-bottom:.5rem}
@@ -2254,8 +2258,14 @@ function authStatusHtml(){
     const tierBadge = tier
       ? `<span class="auth-tier-badge auth-tier-${esc(tier)}">${esc(tier.toUpperCase())}</span>`
       : '';
-    const manageBtn = isPro
-      ? `<button class="btn" onclick="openCustomerPortal()">Manage Subscription</button>`
+    // A billing problem must never hide the billing portal that would fix it:
+    // past_due/unpaid/canceled coaches need "Manage Subscription" MORE than a
+    // paying one does. Gating this on isPro alone meant an expired card removed
+    // the only route to updating the card.
+    const billingStatus = (sbSubscription && sbSubscription.status) || null;
+    const needsBillingRepair = ['past_due', 'unpaid', 'canceled', 'incomplete'].includes(billingStatus);
+    const manageBtn = (isPro || needsBillingRepair)
+      ? `<button class="btn" onclick="openCustomerPortal()">${needsBillingRepair ? 'Update payment method' : 'Manage Subscription'}</button>`
       : `<button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>`;
     const retentionLink = isPro && tier !== 'athlete'
       ? ` &middot; <a onclick="showRetentionFlow()" style="cursor:pointer;text-decoration:underline">Pause, freeze or cancel</a>`
@@ -3323,6 +3333,9 @@ function workoutCard(w){
     : w.source === 'athlete_entry'
       ? '<span style="background:var(--bg-el);color:var(--accent);border:1px solid var(--accent-line);padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">ATHLETE</span>'
       : '';
+  const beltBadge = w.weather && w.weather.indoor
+    ? '<span style="background:var(--bg-raised);color:var(--yellow);border:1px solid rgba(234,179,8,.3);padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.0625rem;margin-left:.5rem">TREADMILL · BELT DISTANCE</span>'
+    : '';
   const completionSourceBadge=w.completion_source
     ?`<span style="background:var(--bg-raised);color:var(--green);border:1px solid rgba(74,222,128,.3);padding:.0625rem .375rem;border-radius:.1875rem;font-family:var(--font-mono);font-size:.5rem;letter-spacing:.04rem;margin-left:.5rem">COMPLETION · ${esc(activitySourceLabel(w.completion_source).toUpperCase())}</span>`:'';
   const actionButtons = canEditWorkoutEntry(w)
@@ -3349,7 +3362,7 @@ function workoutCard(w){
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.5rem">
         <div>
-          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase">${esc(date)}${sourceBadge}${completionSourceBadge}</p>
+          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase">${esc(date)}${sourceBadge}${beltBadge}${completionSourceBadge}</p>
           <p style="font-family:var(--font-display);font-size:1.125rem;margin-top:.125rem">${esc(typeLabel)}${rpeBadge}</p>
         </div>
         ${actionButtons}
@@ -4023,6 +4036,22 @@ function showUpgradeModal(){
 function closeUpgradeModal(){
   const el = document.getElementById('upgradeOverlay');
   if(el) el.remove();
+}
+
+// Escape closes whichever .upgrade-overlay dialog is on top. All eight dialogs
+// (auth, workout, paywall, privacy, retention, coach message, activity import,
+// group workout) share this backdrop class and each puts its own .upgrade-close
+// first inside .upgrade-modal — so clicking that button runs THAT dialog's real
+// close function and its cleanup, rather than blindly removing the node.
+// Before this, the close X was the only exit, and on a short phone viewport the
+// paywall's X sat off-screen: a force-quit was the only way out of checkout.
+function closeTopmostOverlay(){
+  const overlays = document.querySelectorAll('.upgrade-overlay');
+  if(!overlays.length) return false;
+  const top = overlays[overlays.length - 1];
+  const closeBtn = top.querySelector('.upgrade-close');
+  if(closeBtn) closeBtn.click(); else top.remove();
+  return true;
 }
 
 // --- Data & Privacy (GDPR/CCPA + minors' PII) -----------------------------
@@ -5030,9 +5059,23 @@ async function loadRemoteAthletes(){
   }catch(err){
     console.warn('Remote load failed', err);
     sbRosterState = 'unavailable';
+    // Re-render the roster too. Without this the coach keeps looking at whatever
+    // the screen already said — most often a stale "No athletes yet".
+    if(currentScreen === 'roster') renderRoster();
     if(currentScreen === 'brief') renderCoachBrief();
     return { ok: false, reason: 'remote_load_failed' };
   }
+}
+
+// Retry hook for the roster's "unavailable" state. Re-renders in the loading
+// state first so the button visibly does something, then reports the outcome.
+async function retryRosterLoad(){
+  sbRosterState = 'loading';
+  if(currentScreen === 'roster') renderRoster();
+  const result = await loadRemoteAthletes();
+  if(currentScreen === 'roster') renderRoster();
+  if(currentScreen === 'brief') renderCoachBrief();
+  if(!result || !result.ok) toast('Still cannot reach your roster. Your athletes are safe in your account.');
 }
 
 // Purge old storage versions
@@ -7389,14 +7432,20 @@ async function loadOnlineCoachState(force){
       sbClient.from('coach_messages').select('*').order('updated_at',{ascending:false}).limit(100)
     ]);
     if(checkResult.error) throw checkResult.error;
-    if(sessionResult.error) console.warn('session check-ins unavailable until migration is applied',sessionResult.error);
+    // A failed session-check-in read used to be swallowed into status:'ready'
+    // with an empty list, so the coach was shown an affirmative "Queue clear"
+    // while an athlete's pre-workout report — including one flagging pain or
+    // injury — sat unread. The stale "until migration is applied" note was also
+    // wrong: 20260818110000_session_checkins.sql ships the table and its select
+    // policy. Carry the failure into the state and say so on screen.
+    if(sessionResult.error) console.warn('session check-in read failed',sessionResult.error);
     if(workoutResult.error) throw workoutResult.error;
     if(raceResult.error) throw raceResult.error;
     if(messageResult.error) throw messageResult.error;
-    onlineCoachState = { status:'ready',ownerId:sbUser.id,checkIns:checkResult.data||[],sessionCheckIns:sessionResult.error?[]:(sessionResult.data||[]),workouts:workoutResult.data||[],racePlans:raceResult.data||[],messages:messageResult.data||[],error:'' };
+    onlineCoachState = { status:'ready',ownerId:sbUser.id,checkIns:checkResult.data||[],sessionCheckIns:sessionResult.error?[]:(sessionResult.data||[]),workouts:workoutResult.data||[],racePlans:raceResult.data||[],messages:messageResult.data||[],error:'',sessionError:sessionResult.error?(sessionResult.error.message||'Session reports could not be loaded'):'' };
   }catch(err){
     console.warn('loadOnlineCoachState failed',err);
-    onlineCoachState = { status:'unavailable',ownerId:sbUser.id,checkIns:[],sessionCheckIns:[],workouts:[],racePlans:[],messages:[],error:err.message||'Cloud coaching data unavailable' };
+    onlineCoachState = { status:'unavailable',ownerId:sbUser.id,checkIns:[],sessionCheckIns:[],workouts:[],racePlans:[],messages:[],error:err.message||'Cloud coaching data unavailable',sessionError:'' };
   }
   if(currentScreen === 'online') renderOnlineCoach();
 }
@@ -7640,10 +7689,13 @@ function renderOnlineCoach(){
   const raceCount=queue.filter(item=>item.kind==='Upcoming race').length;
   const queueHtml=queue.length?queue.map(item=>`
     <div class="queue-item"><span class="queue-kind">${esc(item.kind)}</span><div class="queue-copy"><strong>${esc(item.athleteName)} · ${esc(item.title)}</strong><span>${esc(item.detail)}${item.date?` · ${esc(item.date)}`:''}</span></div><button class="btn" onclick="openQueueItem('${esc(item.id)}','${esc(item.athleteId||'')}','${esc(item.checkInId||'')}')">${item.checkInId||item.sessionCheckInId?'Respond':'Review'} →</button></div>`).join('')
-    :`<div class="empty-state"><p class="empty-title">Queue clear</p><p class="empty-sub">No unanswered check-ins, athlete notes, recent completions, past prescriptions with unknown completion, or races inside 21 days are represented in STRIDE.</p></div>`;
+    :(onlineCoachState.sessionError
+      ?`<div class="empty-state"><p class="empty-title">Queue incomplete</p><p class="empty-sub">Session reports could not be loaded, so this queue is not complete. Do not read it as "nothing to answer" — an athlete report, including one flagging pain, may be waiting. Refresh to try again.</p></div>`
+      :`<div class="empty-state"><p class="empty-title">Queue clear</p><p class="empty-sub">No unanswered check-ins, athlete notes, recent completions, past prescriptions with unknown completion, or races inside 21 days are represented in STRIDE.</p></div>`);
   const cloudNote=onlineCoachState.status==='unavailable'
     ?`<p class="auth-feedback err">Cloud coaching data is unavailable. Showing device-local records only; this is not proof that the remote queue is empty.</p>`
-    :onlineCoachState.status==='loading'?`<p class="auth-feedback info">Refreshing account-scoped check-ins and workouts…</p>`:'';
+    :onlineCoachState.status==='loading'?`<p class="auth-feedback info">Refreshing account-scoped check-ins and workouts…</p>`
+    :onlineCoachState.sessionError?`<p class="auth-feedback err">Session reports could not be loaded, so this queue is incomplete. Athlete pre- and post-workout reports are missing from it — refresh before assuming nothing is waiting.</p>`:'';
   element.innerHTML=`
     ${cloudNote}
     ${teamCalendarHTML(DB.athletes||[],rows.workouts,rows.racePlans)}
@@ -7903,11 +7955,23 @@ function activityTypeFromLabel(value){
   const label=String(value||'').toLowerCase();
   if(/race/.test(label)) return 'race';
   if(/strength|weight/.test(label)) return 'strength';
+  // Treadmill and indoor-track runs are RUNS. They must be caught before the
+  // cross-training test, or "indoor cross country" style labels fall through
+  // to the /cross/ branch and stop counting as running at all.
+  if(/treadmill|indoor|virtual/.test(label)) return 'easy';
   if(/bike|cycl|swim|ellipt|cross/.test(label)) return 'cross_training';
   if(/long/.test(label)) return 'long';
   if(/tempo/.test(label)) return 'tempo';
   if(/interval|workout/.test(label)) return 'other';
   return 'easy';
+}
+
+// Belt distance is not GPS distance: treadmills and footpods are calibrated,
+// often badly, and a mis-calibrated belt silently moves a whole season of
+// mileage. Garmin exports "Treadmill Running", Strava "Virtual Run"; both used
+// to land in the log indistinguishable from a road run.
+function activityIsIndoorBelt(typeLabel, activityName){
+  return /treadmill|indoor|virtual/i.test(`${typeLabel||''} ${activityName||''}`);
 }
 
 function buildActivityImportRows(csvText,options){
@@ -7955,6 +8019,12 @@ function buildActivityImportRows(csvText,options){
       avg_hr_bpm:isFinite(avgHr)&&avgHr>0?Math.round(avgHr):null,
       max_hr_bpm:isFinite(maxHr)&&maxHr>0?Math.round(maxHr):null,
       athlete_notes:columns.notes>=0?String(cells[columns.notes]||'').slice(0,1000)||null:null,
+      // Same jsonb piggyback the indoor-race flag uses — no migration, and the
+      // flag travels with the row instead of being inferred later. The key is
+      // omitted rather than nulled for road runs: this is an upsert, and a
+      // null would wipe conditions a coach had already entered by hand.
+      ...(activityIsIndoorBelt(columns.type>=0?cells[columns.type]:'',name)
+        ? {weather:{indoor:true,surface:'treadmill'}} : {}),
       source:provider,source_ref:sourceRef
     });
   });
@@ -8841,49 +8911,263 @@ function roadGradeTargetPace(flatPaceSecPerMile, gradePct){
   return speed > 0 ? 1609.344 / speed : null;
 }
 
+// ── SURFACE & AIR RESISTANCE ──
+// RE3 is fit to treadmill running and carries no aerodynamic term, so the belt
+// and the road are not the same surface at the same speed. Outdoor running
+// additionally pays for still-air drag, whose metabolic cost rises with v²
+// (Pugh 1971: ~2% of total cost at 3.3 m/s, ~8% at 6 m/s). Jones & Doust
+// (1996) calibrate that to a 1% treadmill grade at 5.0 m/s. Both are satisfied
+// by carrying drag as an equivalent grade that scales with v² and passes
+// through 1% at 5.0 m/s; above 7 m/s the reference is held rather than
+// extrapolated past the data. Checked against Pugh across 2.7–6.0 m/s:
+// +1.5/2.4/3.5/4.2/5.3/7.2% of metabolic power.
+const RE3_DRAG_REF_MPS = 5.0;
+const RE3_DRAG_REF_GRADE_PCT = 1.0;
+const RE3_DRAG_MAX_MPS = 7;
+function re3DragGradePct(speedMps){
+  const v = Number(speedMps);
+  if(!isFinite(v) || v <= 0) return 0;
+  return RE3_DRAG_REF_GRADE_PCT * Math.pow(Math.min(v, RE3_DRAG_MAX_MPS) / RE3_DRAG_REF_MPS, 2);
+}
+
+// Metabolic power on a named surface. 'belt' pays grade only; 'outdoor' pays
+// grade plus its own drag at that speed.
+function re3SurfacePower(speedMps, gradePct, surface){
+  const v = Number(speedMps), g = Number(gradePct);
+  if(!isFinite(v) || v <= 0 || !isFinite(g)) return null;
+  return re3MetabolicPower(v, (g + (surface === 'belt' ? 0 : re3DragGradePct(v))) / 100);
+}
+
+function re3SurfaceSpeedForPower(powerWkg, gradePct, surface){
+  const p = Number(powerWkg), g = Number(gradePct);
+  if(!isFinite(p) || p <= 0 || !isFinite(g)) return null;
+  let lo = 0.35, hi = 12;
+  if(re3SurfacePower(lo, g, surface) > p || re3SurfacePower(hi, g, surface) < p) return null;
+  for(let i=0;i<70;i++){
+    const mid = (lo + hi) / 2;
+    if(re3SurfacePower(mid, g, surface) < p) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// A flat OUTDOOR anchor (a race or track pace) → the same-metabolic-cost speed
+// at `gradePct` on `surface`. Belt targets come out faster than the old
+// road-only math because the belt does not charge for air the athlete never
+// pushed through.
+function gradeTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface){
+  const pace = Number(anchorPaceSecPerMile), g = Number(gradePct);
+  if(!isFinite(pace) || pace <= 0 || !isFinite(g) ||
+     g < RE3_MIN_GRADE_PCT || g > RE3_MAX_GRADE_PCT) return null;
+  const anchorPower = re3SurfacePower(1609.344 / pace, 0, 'outdoor');
+  if(!anchorPower) return null;
+  const speed = re3SurfaceSpeedForPower(anchorPower, g, surface);
+  return speed && isFinite(speed) ? speed : null;
+}
+
+// Inverse: what a rep already run at `speedMps` on this grade/surface was
+// worth as a flat outdoor pace.
+function gradeFlatEquivalentPace(speedMps, gradePct, surface){
+  const v = Number(speedMps), g = Number(gradePct);
+  if(!isFinite(v) || v <= 0 || !isFinite(g) ||
+     g < RE3_MIN_GRADE_PCT || g > RE3_MAX_GRADE_PCT) return null;
+  const power = re3SurfacePower(v, g, surface);
+  if(!power) return null;
+  const flat = re3SurfaceSpeedForPower(power, 0, 'outdoor');
+  return flat && isFinite(flat) ? 1609.344 / flat : null;
+}
+
+// Reps shorter than this are not steady state. VO2 kinetics take ~20–30s to
+// ramp, so a 40s rep never reaches the cost this equation prices: the
+// steady-state answer is a FLOOR on belt speed, not the prescription.
+const RE3_STEADY_MIN_REP_SEC = 90;
+const MPS_TO_MPH = 2.2369362920544;
+
+function paceSecPerMileToMph(secPerMile){
+  const s = Number(secPerMile);
+  return isFinite(s) && s > 0 ? 3600 / s : null;
+}
+function mphToPaceSecPerMile(mph){
+  const m = Number(mph);
+  return isFinite(m) && m > 0 ? 3600 / m : null;
+}
+
+// The belt is dialed in mph; races are run in mm:ss. Accept either — an
+// explicit "mph" or a bare decimal reads as belt speed (8.6), anything with a
+// colon or a whole number reads as pace (7:01).
+function parsePaceOrSpeed(raw){
+  const text = String(raw == null ? '' : raw).trim();
+  if(!text) return null;
+  const explicit = text.match(/^(\d+(?:\.\d+)?)\s*mph$/i);
+  if(explicit) return mphToPaceSecPerMile(Number(explicit[1]));
+  if(/^\d+\.\d+$/.test(text)) return mphToPaceSecPerMile(Number(text));
+  return parseTime(text);
+}
+
+// Rep geometry: a hill rep is matched by the clock, not by the tape. Holding
+// the distance stretches the rep (a 200 at the converted pace takes ~55s, not
+// 40s) and quietly changes the stimulus.
+function hillRepGeometry(speedMps, anchorPaceSecPerMile, repValue, repUnit){
+  const v = Number(speedMps), anchor = Number(anchorPaceSecPerMile), rep = Number(repValue);
+  if(!isFinite(v) || v <= 0 || !isFinite(rep) || rep <= 0) return null;
+  const anchorSpeed = isFinite(anchor) && anchor > 0 ? 1609.344 / anchor : null;
+  if(repUnit === 'm'){
+    return { seconds: rep / v, meters: rep,
+      flatSeconds: anchorSpeed ? rep / anchorSpeed : null, held: 'distance' };
+  }
+  return { seconds: rep, meters: rep * v,
+    flatMeters: anchorSpeed ? rep * anchorSpeed : null, held: 'time' };
+}
+
+// Minetti et al. (2002) cost of transport (J/kg/m) — an independent, published
+// graded-running model held alongside RE3 as a cross-check on short reps. It
+// is never the prescription; it exists so a coach can see whether an answer
+// that feels wrong is a model artefact or a real cost.
+function minettiCostOfTransport(gradeDecimal){
+  const i = Number(gradeDecimal);
+  if(!isFinite(i) || i < -0.45 || i > 0.45) return null;
+  return 155.4*Math.pow(i,5) - 30.4*Math.pow(i,4) - 43.3*Math.pow(i,3) + 46.3*i*i + 19.5*i + 3.6;
+}
+// Carries air resistance the same way RE3 does — as an equivalent grade — so
+// the two models are compared like for like rather than one of them quietly
+// running the athlete through still air.
+function minettiTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface){
+  const pace = Number(anchorPaceSecPerMile), g = Number(gradePct);
+  if(!isFinite(pace) || pace <= 0 || !isFinite(g)) return null;
+  const anchorSpeed = 1609.344 / pace;
+  const anchorCost = minettiCostOfTransport(re3DragGradePct(anchorSpeed) / 100);
+  if(!anchorCost) return null;
+  // Outdoor targets pay drag at their own (slower) speed, so the grade the
+  // target runs against depends on the answer: settle it by fixed point.
+  let speed = anchorSpeed;
+  for(let i=0;i<8;i++){
+    const targetGrade = (g + (surface === 'belt' ? 0 : re3DragGradePct(speed))) / 100;
+    const targetCost = minettiCostOfTransport(targetGrade);
+    if(!targetCost || targetCost <= 0) return null;
+    speed = anchorSpeed * (anchorCost / targetCost);
+  }
+  return isFinite(speed) && speed > 0 ? speed : null;
+}
+
 function roadGradeToolHTML(prefix, initialPace, useCalculatorAnchor){
   const p = esc(initialPace == null ? '8:00' : initialPace);
-  const paceLabel = useCalculatorAnchor ? 'Race pace from above' : 'Pace per mile';
+  const paceLabel = useCalculatorAnchor ? 'Race pace from above' : 'Flat pace (road/track)';
   const paceAttrs = useCalculatorAnchor ? 'readonly aria-readonly="true"' : '';
+  const lbl = (id,text) => `<label for="${id}" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">${text}</label>`;
   return `
     <div style="background:var(--bg-el);border:1px solid var(--border);border-radius:.5rem;padding:1rem;margin-top:1rem">
       <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:.75rem">
         <div style="max-width:38rem">
-          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.25rem">Running hills?</p>
-          <p style="font-size:.75rem;color:var(--text-3);line-height:1.55">Find the uphill or downhill pace that matches the same effort on flat ground — or ask what a hill split was really worth.</p>
+          <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--accent);text-transform:uppercase;margin-bottom:.25rem">Hills &amp; treadmill</p>
+          <p style="font-size:.75rem;color:var(--text-3);line-height:1.55">Find the uphill pace — or the treadmill belt speed — that matches the same effort on flat ground, and what a hill split was really worth.</p>
         </div>
         <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4)">PEER-REVIEWED MODEL · ±15%</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.75rem;align-items:end">
-        <div><label for="${prefix}Mode" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">Coach question</label><select id="${prefix}Mode" onchange="updateRoadGradeTool('${prefix}')"><option value="observed">What effort was this?</option><option value="target">What pace should I run?</option></select></div>
-        <div><label for="${prefix}Pace" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">${paceLabel}</label><input id="${prefix}Pace" class="auth-input" value="${p}" placeholder="${useCalculatorAnchor?'Enter race time above':'8:00'}" ${paceAttrs} oninput="updateRoadGradeTool('${prefix}')"></div>
-        <div><label for="${prefix}Grade" style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:.35rem">Road grade (%)</label><input id="${prefix}Grade" class="auth-input" type="number" min="-15" max="15" step="0.1" value="3" oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div>${lbl(prefix+'Surface','Surface')}<select id="${prefix}Surface" onchange="updateRoadGradeTool('${prefix}')"><option value="outdoor">Outdoor road / trail</option><option value="belt">Treadmill belt</option></select></div>
+        <div>${lbl(prefix+'Mode','Coach question')}<select id="${prefix}Mode" onchange="updateRoadGradeTool('${prefix}')"><option value="target">What pace should I run?</option><option value="observed">What effort was this?</option></select></div>
+        <div>${lbl(prefix+'Pace',paceLabel)}<input id="${prefix}Pace" class="auth-input" value="${p}" placeholder="${useCalculatorAnchor?'Enter race time above':'8:00'}" ${paceAttrs} oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div>${lbl(prefix+'Grade','Grade (%)')}<input id="${prefix}Grade" class="auth-input" type="number" min="-15" max="15" step="0.1" value="3" oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div>${lbl(prefix+'Rep','Rep length (optional)')}<div style="display:flex;gap:.35rem"><input id="${prefix}Rep" class="auth-input" type="number" min="1" max="3600" step="1" value="" placeholder="40" style="min-width:0" oninput="updateRoadGradeTool('${prefix}')"><select id="${prefix}RepUnit" style="max-width:6rem" onchange="updateRoadGradeTool('${prefix}')"><option value="sec">sec</option><option value="m">meters</option></select></div></div>
         <div id="${prefix}Result" aria-live="polite" style="background:var(--bg-card);border:1px solid var(--border-s);border-radius:.4rem;padding:.65rem .8rem;min-height:3.25rem"></div>
       </div>
-      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.55;margin-top:.75rem">Metabolic estimate only. Enter the grade of the segment, not total elevation gain or a loop's net grade. Wind, surface, turns, technical terrain, drafting, tactics, and downhill muscle damage are not included.</p>
+      <div id="${prefix}Detail"></div>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.55;margin-top:.75rem">Metabolic estimate only. Enter the grade of the segment, not total elevation gain or a loop's net grade. The belt is not the road: outdoor paces carry air resistance the treadmill does not, and that difference is applied here. Wind, surface, turns, technical terrain, drafting, tactics, and downhill muscle damage are not.</p>
     </div>`;
 }
 
 function updateRoadGradeTool(prefix){
-  const modeEl = document.getElementById(prefix+'Mode');
-  const paceEl = document.getElementById(prefix+'Pace');
-  const gradeEl = document.getElementById(prefix+'Grade');
-  const out = document.getElementById(prefix+'Result');
+  const el = id => document.getElementById(prefix + id);
+  const modeEl = el('Mode'), paceEl = el('Pace'), gradeEl = el('Grade'), out = el('Result');
+  const surfaceEl = el('Surface'), repEl = el('Rep'), repUnitEl = el('RepUnit'), detail = el('Detail');
   if(!modeEl || !paceEl || !gradeEl || !out) return;
-  const pace = parseTime(paceEl.value || '');
+  const belt = Boolean(surfaceEl) && surfaceEl.value === 'belt';
+  const surface = belt ? 'belt' : 'outdoor';
+  // Treadmills do not decline: clamp the control, not just the answer.
+  const minGrade = belt ? 0 : RE3_MIN_GRADE_PCT;
+  gradeEl.min = String(minGrade);
+  if(Number(gradeEl.value) < minGrade) gradeEl.value = String(minGrade);
   const grade = Number(gradeEl.value);
-  if(!pace || pace < 180 || pace > 1800 || !isFinite(grade) || grade < RE3_MIN_GRADE_PCT || grade > RE3_MAX_GRADE_PCT){
-    out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">Enter a running pace from 3:00–30:00/mi and grade from −15% to +15%.</span>`;
+  const observed = modeEl.value === 'observed';
+  const pace = parsePaceOrSpeed(paceEl.value || '');
+  if(detail) detail.innerHTML = '';
+  if(!pace || pace < 180 || pace > 1800 || !isFinite(grade) || grade < minGrade || grade > RE3_MAX_GRADE_PCT){
+    out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">Enter a pace from 3:00–30:00/mi${belt?' (or belt speed, e.g. 8.6)':''} and a grade from ${minGrade}% to ${RE3_MAX_GRADE_PCT}%.</span>`;
     return;
   }
-  const observed = modeEl.value === 'observed';
-  const result = observed ? roadGradeEquivalentFlatPace(pace, grade) : roadGradeTargetPace(pace, grade);
-  if(!result || !isFinite(result)){
+  const gradeLabel = `${grade>0?'+':''}${grade}%`;
+  const cap = (label,value,sub) => `<span style="font-family:var(--font-mono);font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em">${esc(label)}</span><strong style="font-family:var(--font-stat);font-size:1.35rem;display:block;color:var(--text);margin-top:.1rem">${esc(value)}</strong>${sub?`<span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3)">${esc(sub)}</span>`:''}`;
+
+  if(observed){
+    const flat = gradeFlatEquivalentPace(1609.344/pace, grade, surface);
+    if(!flat || !isFinite(flat)){
+      out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
+      return;
+    }
+    out.innerHTML = cap(`Flat-road effort${belt?' (from belt)':''}`, `${_mmss(flat,0)}/mi`, belt ? `belt ${paceSecPerMileToMph(pace).toFixed(1)} mph at ${gradeLabel}` : '');
+    return;
+  }
+
+  const speed = gradeTargetSpeedMps(pace, grade, surface);
+  if(!speed || !isFinite(speed)){
     out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
     return;
   }
-  const label = observed ? 'Flat-equivalent effort' : `Same-effort pace at ${grade>0?'+':''}${grade}%`;
-  out.innerHTML = `<span style="font-family:var(--font-mono);font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em">${esc(label)}</span><strong style="font-family:var(--font-stat);font-size:1.35rem;display:block;color:var(--text);margin-top:.1rem">${esc(_mmss(result,0))}/mi</strong>`;
+  const targetPace = 1609.344 / speed;
+  const targetMph = speed * MPS_TO_MPH;
+  out.innerHTML = belt
+    ? cap(`Belt speed at ${gradeLabel}`, `${targetMph.toFixed(1)} mph`, `${_mmss(targetPace,0)}/mi`)
+    : cap(`Same-effort pace at ${gradeLabel}`, `${_mmss(targetPace,0)}/mi`, '');
+  if(!detail) return;
+
+  const repValue = repEl ? Number(repEl.value) : NaN;
+  const repUnit = repUnitEl && repUnitEl.value === 'm' ? 'm' : 'sec';
+  const geo = isFinite(repValue) && repValue > 0 ? hillRepGeometry(speed, pace, repValue, repUnit) : null;
+  const blocks = [];
+
+  if(geo){
+    const line = repUnit === 'm'
+      ? `${Math.round(geo.meters)}m at that ${belt?'belt speed':'pace'} takes <strong>${Math.round(geo.seconds)}s</strong> — the same ${Math.round(geo.meters)}m flat at ${_mmss(pace,0)}/mi takes ${Math.round(geo.flatSeconds)}s.`
+      : `${Math.round(geo.seconds)}s at that ${belt?'belt speed':'pace'} covers <strong>~${Math.round(geo.meters)}m</strong> — the same ${Math.round(geo.seconds)}s flat at ${_mmss(pace,0)}/mi covers ~${Math.round(geo.flatMeters)}m.`;
+    blocks.push(`<p style="font-size:.75rem;color:var(--text-2);line-height:1.55;margin-top:.75rem">${line} <span style="color:var(--text-3)">Match the clock, not the distance — holding the distance stretches the rep and changes the stimulus.</span></p>`);
+  }
+
+  if(geo && geo.seconds < RE3_STEADY_MIN_REP_SEC){
+    const cross = minettiTargetSpeedMps(pace, grade, surface);
+    const crossText = cross && isFinite(cross)
+      ? `${belt?'RE3':'RE3'} ${belt?targetMph.toFixed(1)+' mph':_mmss(targetPace,0)+'/mi'} · Minetti 2002 ${belt?(cross*MPS_TO_MPH).toFixed(1)+' mph':_mmss(1609.344/cross,0)+'/mi'}`
+      : '';
+    blocks.push(`
+      <div style="border:1px solid var(--yellow);border-radius:.45rem;padding:.7rem .8rem;margin-top:.75rem;background:rgba(234,179,8,.06)">
+        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s — this number is a floor, not the prescription</p>
+        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices. Two independent published models agree on the floor${crossText?` (${esc(crossText)})`:''} — so the answer is not a calculator error, it is a steady-state answer to a rep that is not steady state. Expect it to read easy.</p>
+        <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">If your athletes match RPE at a faster ${belt?'belt':'pace'}, they are running the rep at a harder <em>anchor</em> — not breaking the model. Move up the ladder, then log which row matched. No published model converts RPE for reps this short; your own paired sessions are the only evidence that will.</p>
+      </div>`);
+  }
+
+  const ladder = [-40,-20,0,20,40].map(offset => {
+    const anchor = pace + offset;
+    if(anchor < 180 || anchor > 1800) return null;
+    const v = gradeTargetSpeedMps(anchor, grade, surface);
+    if(!v || !isFinite(v)) return null;
+    const cells = [`${_mmss(anchor,0)}/mi`, belt ? `${(v*MPS_TO_MPH).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`];
+    if(geo) cells.push(repUnit === 'm' ? `${Math.round(repValue / v)}s` : `${Math.round(repValue * v)}m`);
+    return { offset, cells };
+  }).filter(Boolean);
+
+  if(ladder.length > 1){
+    const head = ['Flat anchor', belt ? 'Belt speed' : `Pace at ${gradeLabel}`];
+    if(geo) head.push(repUnit === 'm' ? `${Math.round(repValue)}m takes` : `${Math.round(repValue)}s covers`);
+    blocks.push(`
+      <div style="margin-top:.75rem;overflow-x:auto">
+        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4);margin-bottom:.35rem">Anchor ladder — pick the row your athletes' effort actually matches</p>
+        <table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.6875rem">
+          <thead><tr>${head.map(h=>`<th style="text-align:left;padding:.3rem .5rem;color:var(--text-4);font-weight:500;border-bottom:1px solid var(--border)">${esc(h)}</th>`).join('')}</tr></thead>
+          <tbody>${ladder.map(row=>`<tr style="${row.offset===0?'background:var(--accent-soft)':''}">${row.cells.map(c=>`<td style="padding:.3rem .5rem;color:${row.offset===0?'var(--text)':'var(--text-3)'};${row.offset===0?'font-weight:600;':''}border-bottom:1px solid var(--border-s)">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>`);
+  }
+
+  detail.innerHTML = blocks.join('');
 }
 
 document.addEventListener('wheel', () => {
@@ -10136,7 +10420,7 @@ function renderFreeTierCalculator(opts){
     </div>
 
     <details class="pc-grade-details">
-      <summary>Running hills? Grade conversion <span class="d-tgl" aria-hidden="true"></span></summary>
+      <summary>Running hills or treadmill? Grade &amp; belt-speed conversion <span class="d-tgl" aria-hidden="true"></span></summary>
       <div class="pc-grade-details-body">${roadGradeToolHTML('ftGrade', '', true)}</div>
     </details>
 
@@ -16467,6 +16751,9 @@ function renderMethodology(){
         ${cite('Looney, D. P., Hoogkamer, W. & Kram, R.','2026','Metabolic energy expenditure during level, uphill, and downhill running','European Journal of Applied Physiology, 126:1621-1633','Pooled original and prior-study data to update the RE3 graded-running equation. STRIDE uses it for smooth-road, steady metabolic-equivalence estimates from −15% to +15%; it is not a race guarantee or a downhill loading model.')}
         ${cite('Minetti, A. E., Moia, C., Roi, G. S., Susta, D. & Ferretti, G.','2002','Energy cost of walking and running at extreme uphill and downhill slopes','Journal of Applied Physiology, 93(3):1039-1046','Foundational measurement of graded running cost across uphill and downhill slopes. Supports the non-linear relationship between grade and metabolic cost.')}
         ${cite('Foreman, N. A. et al.','2022','Assessment of a treadmill speed incline conversion chart: a validation study','International Journal of Sports Physiology and Performance','The HillRunner chart was supported through 0–4% in trained runners but underestimated demand at 6% and above. STRIDE therefore uses RE3 rather than extending that chart.')}
+        ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work against horizontal or vertical forces','Journal of Physiology, 213(2):255-276','Measured the metabolic cost of still-air resistance in running: it rises with the square of speed and reaches roughly 8% of total cost at 6 m/s. RE3 is fit to treadmill running and carries no aerodynamic term, so STRIDE adds this cost when a pace is run outdoors and removes it when the same effort is run on a belt.')}
+        ${cite('Jones, A. M. & Doust, J. H.','1996','A 1% treadmill grade most accurately reflects the energetic cost of outdoor running','Journal of Sports Sciences, 14(4):321-327','Calibrates the treadmill-to-outdoor difference to a 1% grade at 5.0 m/s. STRIDE carries air resistance as an equivalent grade scaling with v² through that point, which reproduces Pugh across 2.7–6.0 m/s rather than applying a flat 1% that would over-correct slow running.')}
+        ${cite('Poole, D. C. & Jones, A. M.','2012','Oxygen uptake kinetics','Comprehensive Physiology, 2(2):933-996','The VO₂ response to a step in intensity has a time constant of roughly 20–30s in trained runners. This is why STRIDE presents a steady-state grade conversion as a floor, not a prescription, for reps shorter than 90 seconds: the rep ends before the aerobic cost the equation prices is ever reached.')}
         ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work','Journal of Physiology, 213(2):255-276','Original quantification of wind resistance in running. Basis for headwind/tailwind corrections.')}
       </ul>
     </div>
@@ -16511,6 +16798,30 @@ function renderRoster(){
     el.innerHTML = emptyStateCard('Coach-managed profile', 'Your athlete account is linked to one profile managed by your coach. Use Dashboard, Pace Calculator, Race Forecasts, and Training Log from the Athlete navigation.', 'Open dashboard', "goTo('overview',null)");
     return;
   }
+  // An unread roster is NOT an empty roster. renderCoachBrief has always made
+  // this distinction (sbRosterState is read at ~6014); renderRoster did not, so
+  // one failed cloud select rendered "No athletes yet · + Add First Athlete" to
+  // a coach with 40 athletes on file. The documented consequence is worse than
+  // the scare: the coach re-enters the roster, saveAthlete mints fresh ids, and
+  // Supabase ends up holding two of every runner.
+  if(sbRosterState === 'loading'){
+    el.innerHTML = `
+      ${simpleHelpHtml('roster')}
+      <div class="info-box" aria-busy="true"><strong>Loading your roster…</strong> STRIDE is opening this coach account's cloud roster.</div>`;
+    return;
+  }
+  if(sbRosterState === 'unavailable'){
+    el.innerHTML = `
+      ${simpleHelpHtml('roster')}
+      <div class="warn-box"><span class="warn-icon">!</span><div>
+        <strong>Roster unavailable.</strong> STRIDE could not reach your cloud roster, so it is not showing one.
+        <strong>This is not proof your roster is empty — do not re-enter athletes.</strong>
+        Check your connection and try again.
+        <div style="margin-top:.75rem"><button class="btn btn-primary" onclick="retryRosterLoad()">Try again</button></div>
+      </div></div>`;
+    return;
+  }
+
   const visible = athletesForCurrentTier();
   const totalCount = (DB.athletes || []).length;
   const hiddenCount = totalCount - visible.length;
@@ -18719,7 +19030,10 @@ window.addEventListener('load',()=>{
   refreshActiveAthlete();
   renderSimpleHelpToggle();
   document.addEventListener('keydown', event => {
-    if(event.key === 'Escape') toggleMobileNav(false);
+    if(event.key !== 'Escape') return;
+    // A dialog on top of the page owns Escape; only fall through to the nav.
+    if(closeTopmostOverlay()) return;
+    toggleMobileNav(false);
   });
   // Local-only visual fixture for browser QA. It cannot activate on the
   // deployed domain and performs no auth, network, or cloud writes.

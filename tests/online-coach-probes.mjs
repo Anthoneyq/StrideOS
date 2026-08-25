@@ -189,8 +189,9 @@ const activitySource = [
   extractFn('activityDurationSec'),
   extractFn('activityHash'),
   extractFn('activityTypeFromLabel'),
+  extractFn('activityIsIndoorBelt'),
   extractFn('buildActivityImportRows'),
-  `return {parseCsvGrid,activityDurationSec,activityTypeFromLabel,buildActivityImportRows};`
+  `return {parseCsvGrid,activityDurationSec,activityTypeFromLabel,activityIsIndoorBelt,buildActivityImportRows};`
 ].join('\n');
 const I = new Function(activitySource)();
 eq(I.activityDurationSec('1:02:03'),3723);
@@ -220,6 +221,28 @@ eq(imported.rows[0].prescribed_notes,null);
 ok(!('readiness' in imported.rows[0]),'activity import does not infer readiness');
 ok(!('reconciliation_status' in imported.rows[0]),'re-import does not reset a coach reconciliation decision');
 ok(I.buildActivityImportRows('Name,Distance\nRun,5',{provider:'strava_csv',distanceUnit:'km',athleteId:'a',coachId:'c'}).error,'required headers are enforced');
+
+// ── TREADMILL IMPORTS (2026-08-25) ──
+// Belt distance is calibrated, not measured. Garmin exports "Treadmill
+// Running" and Strava "Virtual Run"; both used to land in the log as an
+// ordinary easy run, so belt miles were read as road miles.
+eq(I.activityTypeFromLabel('Treadmill Running'),'easy','a treadmill run is still a run');
+eq(I.activityTypeFromLabel('Virtual Run'),'easy','a virtual run is still a run');
+eq(I.activityTypeFromLabel('Indoor Cross Country'),'easy','indoor running is not cross-training');
+eq(I.activityTypeFromLabel('Cross Training'),'cross_training','real cross-training still routes correctly');
+ok(I.activityIsIndoorBelt('Treadmill Running',''),'garmin treadmill label is detected');
+ok(I.activityIsIndoorBelt('Virtual Run',''),'strava virtual run is detected');
+ok(I.activityIsIndoorBelt('Running','Indoor hill reps'),'the activity name is checked too');
+ok(!I.activityIsIndoorBelt('Running','Morning Run'),'an ordinary road run is not flagged');
+const beltCsv = [
+  'Activity ID,Activity Date,Activity Name,Activity Type,Distance,Elapsed Time',
+  '201,2026-08-25,Hill reps,Treadmill Running,4.00,32:00',
+  '202,2026-08-25,Road,Running,4.00,32:00'
+].join('\n');
+const beltRows = I.buildActivityImportRows(beltCsv,{provider:'garmin_csv',distanceUnit:'mi',athleteId:'a',coachId:'c'}).rows;
+deep(beltRows[0].weather,{indoor:true,surface:'treadmill'},'treadmill import carries the belt flag');
+eq(beltRows[0].workout_type,'easy','treadmill import is logged as a run');
+ok(!('weather' in beltRows[1]),'a road run leaves the conditions column alone — an upsert must not wipe coach-entered weather');
 
 ok(/data-s="online"/.test(html),'online coaching route is in navigation');
 ok(/data-s="programs"/.test(html),'program builder route is in navigation');

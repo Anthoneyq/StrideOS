@@ -1,6 +1,6 @@
 # STRIDE OS — Bug Tracker
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-08-25
 Severity: **P0** breaks core flow · **P1** security/correctness · **P2** quality · **P3** cosmetic
 Status: ✅ fixed this pass · 🔧 fix specified, not applied · 📝 noted
 
@@ -155,3 +155,32 @@ Verified: 13/13 probe suites + 16/16 browser checks after the pass; new executab
 - **✅ BUG-040 · Pace Calculator vanished for signed-in coaches (P1).** The sidebar item was `public-only` (`display:none` once `workspace-locked` clears) — the free tool literally disappeared at the moment of sign-in. Fix: calculator always visible; probe pins it (`paces` must NOT be public-only).
 - **✅ BUG-041 · Slim-nav reorg (2026-07-30) hid Import Roster / Training Groups / Lineup Optimizer / Proof Ledger / Race Shape (P2).** They existed only behind Team IQ buttons or the athlete "More ▾" menu; the coach who owns the product could not find them. Fix: restored as sidebar items (coach scope); navigation probes updated to encode the new intent (per-athlete analysis stays contextual, roster-level tools are sidebar-findable).
 - **✅ BUG-042 · Athlete view tabs didn't read as clickable (P2).** Top context tabs were borderless text on dark; nothing said "click me to step through views." Fix: every tab is a visibly bordered, raised button with a numbered step chip (1–4, accent-filled when active), hover lift, and › separators; label now says "Open view".
+
+---
+
+## ✅ BUG-038 · Treadmill hill conversions read "overly slow" — belt charged for air resistance, and a 40s rep priced as steady state (P1, Alex-flagged)
+
+**Where:** `index.html` — the RE3 grade tool (`roadGradeToolHTML` / `updateRoadGradeTool`), `activityTypeFromLabel`, `buildActivityImportRows`.
+
+**Reported:** Alex Muntefering, 2026-08-25. Prescribing 200s on a 7% treadmill in place of 200s on the track at 3k pace, the converted belt speed "seemed really off to me (overly slow)." He asked whether the calculator was wrong or whether hill effort is non-linear in rep duration.
+
+**What was actually wrong — two things, one of them ours:**
+
+1. **The belt was charged for air it never pushed (real bug).** RE3 (Looney 2026) is fit to treadmill running and carries no aerodynamic term, yet the tool was labelled "Road grade" and applied the same equation to both surfaces. Outdoor running additionally pays still-air drag — ~2% of metabolic cost at 3.3 m/s rising to ~8% at 6 m/s (Pugh 1971), which Jones & Doust (1996) calibrate to a 1% treadmill grade at 5.0 m/s. Stripping that cost when the effort moves to a belt makes the target **~5% faster**: a 5:20/mi flat anchor at +7% goes from 8.15 mph to **8.56 mph**.
+
+2. **A 40-second rep is not steady state (not a bug — a category error in the question).** The tool answered "what pace costs the same per steady minute?" for a rep that ends before VO₂ has ramped (τ ≈ 20–30s, Poole & Jones 2012). The steady-state answer is a **floor** on belt speed, not the prescription. Cross-checked against an independent published model — Minetti et al. (2002) lands within 5% of RE3 at +7% — so the number itself was sound. Alex's own RPE-matched pairing (~6:00–6:15 on a 7% belt against a 5:20 flat anchor) resolves to a **sub-5:00 flat anchor**: his athletes are running those reps at 400/800 effort, not 3k effort. The anchor was wrong, not the model.
+
+**Fix (applied):**
+- Surface selector (outdoor road/trail · treadmill belt) drives an air-resistance term carried as an equivalent grade scaling with v² through Jones & Doust's 1% at 5.0 m/s — reproduces Pugh across 2.7–6.0 m/s, where a flat 1% would over-correct slow running by 3×.
+- Belt output in **mph** (the dial coaches actually turn) alongside pace; belt speed accepted as input (`8.6` or `8.6 mph`).
+- Treadmill grade floor of 0% — belts do not decline.
+- Optional **rep length** in seconds or metres, showing what the rep covers or takes on both surfaces: *match the clock, not the distance* (holding 200m at the converted speed stretches a 40s rep to 52s and changes the stimulus).
+- Under 90s, the answer is labelled a floor, shown beside the Minetti cross-check, with the reason stated and the RPE gap named as an anchor question.
+- **Anchor ladder** — five bracketing flat anchors with their belt speeds, so a coach picks the row their athletes' effort actually matches and logs it. No published model converts RPE for reps this short; paired sessions are the only evidence that will, and StrideOS already captures session RPE.
+- Legacy road-only path (`roadGradeTargetPace`) left untouched, so the XC race-command course signal is unchanged.
+
+**Also fixed in the same pass:** Garmin "Treadmill Running" and Strava "Virtual Run" imported as ordinary easy runs with no indoor flag, so calibrated belt distance (routinely 5–10% off) entered the log indistinguishable from GPS distance. Both are now detected, tagged on the workout (`weather.indoor` — the same jsonb piggyback the indoor-race flag uses, no migration), and badged **TREADMILL · BELT DISTANCE** in the log. The treadmill/indoor test also runs *before* the cross-training test, so "indoor cross country" no longer falls through to `cross_training` and stops counting as running.
+
+**Sources added:** Pugh (1971) J Physiol 213(2):255-276 · Jones & Doust (1996) J Sports Sci 14(4):321-327 · Poole & Jones (2012) Compr Physiol 2(2):933-996.
+
+**Verified:** 62 grade-model probes, 112 online-coach probes, 25/25 probe files green.
