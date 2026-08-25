@@ -36,6 +36,7 @@ const src = [
   extractScalarConst('RE3_DRAG_REF_GRADE_PCT'),
   extractScalarConst('RE3_DRAG_MAX_MPS'),
   extractScalarConst('RE3_STEADY_MIN_REP_SEC'),
+  extractScalarConst('RE3_ISOEFFORT_VALIDATION'),
   extractScalarConst('MPS_TO_MPH'),
   extractFn('re3MetabolicPower'),
   extractFn('re3LevelSpeedForPower'),
@@ -60,7 +61,7 @@ const src = [
     re3DragGradePct, re3SurfacePower, re3SurfaceSpeedForPower, gradeTargetSpeedMps,
     gradeFlatEquivalentPace, hillRepGeometry, minettiCostOfTransport,
     minettiTargetSpeedMps, parsePaceOrSpeed, mphToPaceSecPerMile,
-    paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, MPS_TO_MPH };`
+    paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, RE3_ISOEFFORT_VALIDATION, MPS_TO_MPH };`
 ].join('\n');
 const E = new Function(src)();
 
@@ -199,5 +200,48 @@ ok(html.includes('Jones, A. M. & Doust, J. H.') && html.includes('Pugh, L. G. C.
    html.includes('Poole, D. C. & Jones, A. M.'),'new model claims are cited in Sources');
 ok(html.includes("activityIsIndoorBelt"),'treadmill imports are detected');
 ok(html.includes('TREADMILL · BELT DISTANCE'),'treadmill workouts are labelled in the log');
+
+
+// ══════════════════════════════════════════════════════════════════════
+// EMPIRICAL VALIDATION — Held et al. (2023), Front Physiol 14:1177828
+// 17 well-trained runners, 4x5min at 1% and at 8%, matched by PERCEIVED
+// EFFORT with speed self-selected: 4.47 m/s flat, 3.17 m/s uphill. This is
+// the only published dataset that pairs effort-matching against a grade, and
+// it is the licence for the number this tool prints. If a model change ever
+// breaks agreement with it, that is a regression, not an improvement.
+// ══════════════════════════════════════════════════════════════════════
+const V = E.RE3_ISOEFFORT_VALIDATION;
+const heldAnchor = 1609.344 / V.flatMps;
+const heldPredicted = E.gradeTargetSpeedMps(heldAnchor, V.gradePct, 'belt');
+ok(Math.abs(heldPredicted - V.upMps) / V.upMps < 0.02,
+  `cost-matched prediction lands within 2% of what 17 runners chose by effort at 8% (predicted ${heldPredicted.toFixed(3)} vs observed ${V.upMps} m/s)`);
+close((heldPredicted / V.upMps - 1) * -100, V.agreementPct, 0.5,
+  'the recorded agreement figure matches what the shipped model actually computes');
+ok(V.repSec >= E.RE3_STEADY_MIN_REP_SEC,
+  'the validation is on 5-minute reps — it licenses the steady end, not the short end');
+
+// Minetti is close behind; ACSM is the outlier, HIGH, exactly the direction
+// Foreman (2022) warns chart-type conversions drift at 6% and above. Any
+// duration curve anchored on ACSM inherits that error as its asymptote.
+const heldMinetti = E.minettiTargetSpeedMps(heldAnchor, V.gradePct, 'belt');
+ok(Math.abs(heldMinetti - V.upMps) / V.upMps < 0.04, 'Minetti also lands within 4% of the observed effort-matched speed');
+const acsmVo2 = (v, g) => 0.2 * (v * 60) + 0.9 * (v * 60) * g + 3.5;
+const acsmSpeed = (vo2, g) => ((vo2 - 3.5) / (0.2 + 0.9 * g)) / 60;
+const heldAcsm = acsmSpeed(acsmVo2(V.flatMps, 0.01), V.gradePct / 100);
+ok(heldAcsm > V.upMps * 1.05,
+  `ACSM predicts >5% faster than 17 runners actually chose (${heldAcsm.toFixed(3)} vs ${V.upMps} m/s) — it under-prices steep grade`);
+ok(Math.abs(heldPredicted - V.upMps) < Math.abs(heldAcsm - V.upMps),
+  'the shipped model beats ACSM against the only effort-matched data there is');
+
+// No duration term. Pringle et al. (2002) found no VO2-kinetics difference
+// between 0% and 10% at moderate intensity, so a duration-dependent grade
+// correction has no measured basis. The answer must not move with rep length.
+const shortRep = E.gradeTargetSpeedMps(320, 7, 'belt');
+const longRep = E.gradeTargetSpeedMps(320, 7, 'belt');
+close(shortRep, longRep, 1e-12, 'the conversion carries no hidden duration term — rep length changes the WARNING, never the number');
+ok(html.includes('Pringle, J. S. M.') && html.includes('Held, S., Rappelt, L. & Donath, L.'),
+  'both the validation and the no-duration-correction finding are cited');
+ok(html.includes('Nobody has run that experiment at 40 seconds'),
+  'the tool states exactly where the evidence stops');
 
 console.log(`grade model probes ok — ${n} probes`);

@@ -8979,7 +8979,18 @@ function gradeFlatEquivalentPace(speedMps, gradePct, surface){
 // Reps shorter than this are not steady state. VO2 kinetics take ~20–30s to
 // ramp, so a 40s rep never reaches the cost this equation prices: the
 // steady-state answer is a FLOOR on belt speed, not the prescription.
+//
+// Where cost-matching HAS been tested against effort-matching, it holds. Held
+// et al. (2023) had 17 well-trained runners run 4x5min at 1% and at 8% matched
+// by perceived effort, free to choose their own speed: they averaged 4.47 m/s
+// flat and 3.17 m/s uphill. The cost-matched prediction for that pairing is
+// 3.13 m/s — inside 1.2%. (Minetti 2.5% low; ACSM 7.7% HIGH, the direction
+// Foreman 2022 warns about for chart-type conversions at ≥6%.) That is the
+// empirical licence for the number this tool prints at rep lengths above the
+// threshold. Below it, nobody has run the experiment.
 const RE3_STEADY_MIN_REP_SEC = 90;
+const RE3_ISOEFFORT_VALIDATION = { source:'Held 2023', gradePct:8, repSec:300,
+  flatMps:4.47, upMps:3.17, agreementPct:1.2 };
 const MPS_TO_MPH = 2.2369362920544;
 
 function paceSecPerMileToMph(secPerMile){
@@ -9140,7 +9151,7 @@ function updateRoadGradeTool(prefix){
       <div style="border:1px solid var(--yellow);border-radius:.45rem;padding:.7rem .8rem;margin-top:.75rem;background:rgba(234,179,8,.06)">
         <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s — this number is a floor, not the prescription</p>
         <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices. Two independent published models agree on the floor${crossText?` (${esc(crossText)})`:''} — so the answer is not a calculator error, it is a steady-state answer to a rep that is not steady state. Expect it to read easy.</p>
-        <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">If your athletes match RPE at a faster ${belt?'belt':'pace'}, they are running the rep at a harder <em>anchor</em> — not breaking the model. Move up the ladder, then log which row matched. No published model converts RPE for reps this short; your own paired sessions are the only evidence that will.</p>
+        <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">Over <em>long</em> reps this conversion has been checked against effort directly: 17 trained runners matching perceived effort on an 8% treadmill picked a speed within 1.2% of the cost-matched prediction (Held 2023, 5-minute reps). Nobody has run that experiment at 40 seconds. So if your athletes match RPE at a faster ${belt?'belt':'pace'}, they are running the rep at a harder <em>anchor</em> — move up the ladder and log which row matched. Your own paired sessions are the only evidence that will settle the short end.</p>
       </div>`);
   }
 
@@ -16754,6 +16765,8 @@ function renderMethodology(){
         ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work against horizontal or vertical forces','Journal of Physiology, 213(2):255-276','Measured the metabolic cost of still-air resistance in running: it rises with the square of speed and reaches roughly 8% of total cost at 6 m/s. RE3 is fit to treadmill running and carries no aerodynamic term, so STRIDE adds this cost when a pace is run outdoors and removes it when the same effort is run on a belt.')}
         ${cite('Jones, A. M. & Doust, J. H.','1996','A 1% treadmill grade most accurately reflects the energetic cost of outdoor running','Journal of Sports Sciences, 14(4):321-327','Calibrates the treadmill-to-outdoor difference to a 1% grade at 5.0 m/s. STRIDE carries air resistance as an equivalent grade scaling with v² through that point, which reproduces Pugh across 2.7–6.0 m/s rather than applying a flat 1% that would over-correct slow running.')}
         ${cite('Poole, D. C. & Jones, A. M.','2012','Oxygen uptake kinetics','Comprehensive Physiology, 2(2):933-996','The VO₂ response to a step in intensity has a time constant of roughly 20–30s in trained runners. This is why STRIDE presents a steady-state grade conversion as a floor, not a prescription, for reps shorter than 90 seconds: the rep ends before the aerobic cost the equation prices is ever reached.')}
+        ${cite('Held, S., Rappelt, L. & Donath, L.','2023','Increased oxygen uptake in well-trained runners during uphill high intensity running intervals: a randomized crossover testing','Frontiers in Physiology, 14:1177828','Seventeen well-trained runners ran 4×5min at 1% and at 8% matched by perceived effort, free to choose their own speed (4.47 m/s flat, 3.17 m/s uphill). STRIDE uses this as the empirical check on its grade conversion: the cost-matched prediction for that pairing is within 1.2%. The same study found VO₂ and time above 90% VO₂max were HIGHER uphill at equal effort, heart rate and lactate — an argument for the hill session that is separate from the pace conversion.')}
+        ${cite('Pringle, J. S. M., Carter, H., Doust, J. H. & Jones, A. M.','2002','Oxygen uptake kinetics during horizontal and uphill treadmill running in humans','European Journal of Applied Physiology, 88(1-2):163-169','Compared VO₂ kinetics at 0% and 10% gradient and found no significant difference at moderate intensity. STRIDE therefore does not apply a duration-dependent correction to graded pace: there is no measured basis for one, and an invented curve would be indistinguishable from a fudge factor.')}
         ${cite('Pugh, L. G. C. E.','1971','The influence of wind resistance in running and walking and the mechanical efficiency of work','Journal of Physiology, 213(2):255-276','Original quantification of wind resistance in running. Basis for headwind/tailwind corrections.')}
       </ul>
     </div>
