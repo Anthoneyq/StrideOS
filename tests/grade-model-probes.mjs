@@ -57,6 +57,17 @@ const src = [
   extractFn('hillRepGeometry'),
   extractFn('minettiCostOfTransport'),
   extractFn('minettiTargetSpeedMps'),
+  extractScalarConst('BELT_CALIBRATION_MIN_PCT'),
+  extractScalarConst('BELT_CALIBRATION_MAX_PCT'),
+  extractFn('beltCalibrationFactor'),
+  extractFn('beltDialSpeed'),
+  extractFn('beltActualSpeed'),
+  extractScalarConst('TRACK_LANE_WIDTH_M'),
+  extractScalarConst('TRACK_LANE_1_LAP_M'),
+  extractScalarConst('TRACK_LANE_2_STAGGER_M'),
+  extractScalarConst('TRACK_MAX_LANE'),
+  extractFn('trackLapDistanceM'),
+  extractFn('gradeFlatEquivalentMeters'),
   extractFn('parseTime'),
   extractFn('parsePaceOrSpeed'),
   extractFn('mphToPaceSecPerMile'),
@@ -67,7 +78,10 @@ const src = [
     gradeFlatEquivalentPace, hillRepGeometry, minettiCostOfTransport,
     minettiTargetSpeedMps, parsePaceOrSpeed, mphToPaceSecPerMile,
     paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, RE3_ISOEFFORT_VALIDATION, MPS_TO_MPH,
-    sprintRetentionAtGrade, sprintCeilingSpeedMps, DELANEY_TESTED_MAX_PCT };`
+    sprintRetentionAtGrade, sprintCeilingSpeedMps, DELANEY_TESTED_MAX_PCT,
+    beltCalibrationFactor, beltDialSpeed, beltActualSpeed, BELT_CALIBRATION_MIN_PCT,
+    BELT_CALIBRATION_MAX_PCT, trackLapDistanceM, TRACK_LANE_1_LAP_M, TRACK_MAX_LANE,
+    gradeFlatEquivalentMeters };`
 ].join('\n');
 const E = new Function(src)();
 
@@ -300,5 +314,112 @@ ok(gapPct > 3 * 3, 'the observed gap is several times larger than the ±3% a mis
 ok(html.includes('Delaney, J. A. et al.') && html.includes('Shahidi, S. H.') && html.includes('Willwacher, S. et al.'),
   'the bracket, the drag-band caveat and the belt-error bound are all cited');
 ok(html.includes('the answer is a range, and these are its edges'), 'the short-rep block presents a range, not a single number');
+
+
+// ══════════════════════════════════════════════════════════════════════
+// WIND, BELT CALIBRATION, TRACK GEOMETRY & ENERGY-EQUIVALENT DISTANCE
+// (2026-08-26) — harvested from the Surface Lab research build, archived
+// at research/surface-lab-2026-08-25/. Everything here either reuses an
+// already-calibrated term or is pure geometry; the research's own verdict
+// was that no NEW fitted coefficient set is defensible yet, and nothing
+// below adds one.
+// ══════════════════════════════════════════════════════════════════════
+
+// ── Wind rides the existing drag term, so it cannot double-count ──
+// There is exactly one aerodynamic model in the app. Wind swaps ground speed
+// for relative air speed inside it; it does not add a second correction on
+// top (the failure mode the research paper flags by name).
+close(E.re3DragGradePct(5.0, 0), E.re3DragGradePct(5.0), 1e-12, 'wind: omitting the argument is still calm air');
+close(E.re3DragGradePct(4.0, 0), 0.64, 1e-9, 'wind: calm 4.0 m/s is unchanged at (4/5)^2 = 0.64%');
+close(E.re3DragGradePct(4.0, 1.0), 1.0, 1e-9, 'wind: 4 m/s into a 1 m/s headwind meets 5 m/s of air — the 1% calibration point');
+ok(E.re3DragGradePct(4, 2) > E.re3DragGradePct(4, 0), 'wind: a headwind costs more than calm air');
+ok(E.re3DragGradePct(4, -2) < E.re3DragGradePct(4, 0), 'wind: a tailwind costs less than calm air');
+// Sign is kept rather than squared away: a tailwind faster than the runner is
+// a push, and the equivalent grade must be able to go negative to say so.
+ok(E.re3DragGradePct(3, -5) < 0, 'wind: a tailwind faster than the runner reads as assistance, not cost');
+close(E.re3DragGradePct(6, 5), 1.96, 1e-9, 'wind: relative air speed clamps at Pugh’s 7 m/s edge, not the ground speed');
+
+// The belt has no air to push through, so wind must not touch it.
+close(E.re3SurfacePower(4, 5, 'belt', 6), E.re3SurfacePower(4, 5, 'belt', 0), 1e-12, 'wind: a treadmill is unaffected by headwind');
+ok(E.re3SurfacePower(4, 5, 'outdoor', 6) > E.re3SurfacePower(4, 5, 'outdoor', 0), 'wind: the road is not');
+
+// The anchor is a flat-ability statement, not a weather report. Charging wind
+// to both sides would cancel and silently print no effect at all.
+close(E.gradeTargetSpeedMps(480, 0, 'outdoor', 0), 1609.344 / 480, 1e-6, 'wind: calm air at zero grade is the identity');
+ok(E.gradeTargetSpeedMps(480, 0, 'outdoor', 3) < E.gradeTargetSpeedMps(480, 0, 'outdoor', 0), 'wind: a headwind slows the same-effort target on flat ground');
+ok(E.gradeTargetSpeedMps(480, 5, 'outdoor', 3) < E.gradeTargetSpeedMps(480, 5, 'outdoor', 0), 'wind: and on a hill');
+// A rep run into a headwind was worth MORE than the same clock time in calm air.
+ok(E.gradeFlatEquivalentPace(3.5, 0, 'outdoor', 4) < E.gradeFlatEquivalentPace(3.5, 0, 'outdoor', 0), 'wind: holding pace into a headwind converts to a faster calm-air effort');
+
+// ── Belt calibration (Willwacher 2021: 98-103% of display) ──
+close(E.beltCalibrationFactor(100), 1, 1e-12, 'belt: 100% is the identity');
+close(E.beltCalibrationFactor(undefined), 1, 1e-12, 'belt: an unmeasured machine changes nothing');
+close(E.beltCalibrationFactor(140), 1, 1e-12, 'belt: an implausible calibration is refused, not applied');
+close(E.beltCalibrationFactor(E.BELT_CALIBRATION_MIN_PCT - 0.1), 1, 1e-12, 'belt: below the accepted band falls back to identity');
+// A belt that runs 3% fast must be dialed 3% LOW to run the prescribed speed.
+close(E.beltDialSpeed(4.0, 103), 4.0 / 1.03, 1e-9, 'belt: a fast belt is dialed down to hit the true target');
+close(E.beltActualSpeed(4.0, 103), 4.0 * 1.03, 1e-9, 'belt: a fast belt actually runs above what was dialed');
+close(E.beltActualSpeed(E.beltDialSpeed(4.2, 97.5), 97.5), 4.2, 1e-9, 'belt: dial and actual are exact inverses');
+close(E.beltDialSpeed(4.0, 100), 4.0, 1e-12, 'belt: an uncalibrated machine prints the model answer unchanged');
+// Willwacher's measured band is ±2-3%, which is real but small — it must not
+// be reachable as an explanation for the 12-17% short-rep gap Alex reported.
+ok(Math.abs(E.beltDialSpeed(4, 103) - 4) / 4 < 0.05, 'belt: the worst calibration in the literature moves the answer by <5%');
+
+// ── Track lane geometry (World Athletics) ──
+close(E.trackLapDistanceM(1), 400, 1e-9, 'track: lane 1 is 400m by definition');
+close(E.trackLapDistanceM(2), 407.038, 1e-9, 'track: the first stagger is the odd one (0.30m vs 0.20m measurement offset)');
+// Tolerance is 2mm because the archived table rounds each lane's 7.66549m to
+// 7.666 before summing; these values are the unrounded geometry.
+close(E.trackLapDistanceM(5), 430.034, 2e-3, 'track: lane 5 laps are 430m');
+close(E.trackLapDistanceM(8), 453.032, 2e-3, 'track: lane 8 laps are 453m — 13% longer than the written rep');
+ok(E.trackLapDistanceM(9) === null && E.trackLapDistanceM(0) === null, 'track: lanes outside 1-8 are refused');
+for(let lane = 2; lane <= E.TRACK_MAX_LANE; lane++){
+  ok(E.trackLapDistanceM(lane) > E.trackLapDistanceM(lane - 1), `track: lane ${lane} is longer than lane ${lane - 1}`);
+}
+// Every lane above 1 adds exactly one lane width of circumference.
+close(E.trackLapDistanceM(8) - E.trackLapDistanceM(7), 2 * Math.PI * 1.22, 1e-9, 'track: outer staggers are exactly 2*pi*lane width');
+
+// ── Energy-equivalent distance ──
+// Equal metabolic power for equal duration is equal energy, so the flat
+// distance covered in the same time IS the energy-equivalent distance. No
+// second model, no cost-of-transport table.
+close(E.gradeFlatEquivalentMeters(3.5, 0, 'outdoor', 1000, 0), 1000, 1e-3, 'flat-equivalent: level ground is the identity');
+ok(E.gradeFlatEquivalentMeters(3.0, 5, 'outdoor', 1000, 0) > 1000, 'flat-equivalent: 1000m uphill is worth more than 1000m flat');
+ok(E.gradeFlatEquivalentMeters(3.0, -5, 'outdoor', 1000, 0) < 1000, 'flat-equivalent: and a descent is worth less');
+ok(E.gradeFlatEquivalentMeters(3.0, 0, 'outdoor', 1000, 4) > 1000, 'flat-equivalent: a headwind adds equivalent distance too');
+ok(E.gradeFlatEquivalentMeters(0, 5, 'outdoor', 1000, 0) === null, 'flat-equivalent: a zero speed has no answer');
+ok(E.gradeFlatEquivalentMeters(3.0, 5, 'outdoor', 0, 0) === null, 'flat-equivalent: a zero distance has no answer');
+// Directionally this must land near the published Minetti ratio for +5%
+// (1.30x per the archived equivalency table) without being fitted to it.
+{
+  const ratio = E.gradeFlatEquivalentMeters(3.0, 5, 'outdoor', 1000, 0) / 1000;
+  ok(ratio > 1.15 && ratio < 1.45, `flat-equivalent: +5% lands near the published ~1.3x (got ${ratio.toFixed(3)})`);
+}
+
+// ── Regression pin against the independently computed equivalency table ──
+// research/surface-lab-2026-08-25/grade_equivalency_table.csv was produced by
+// a separate implementation from the RE3 paper's ROUNDED coefficients
+// (30.43 / 1.133 / 1.056 / 43); the app carries the unrounded ones. The two
+// must therefore agree in shape and to within that rounding, and be exactly
+// equal at zero grade. Any larger drift means someone changed the model.
+{
+  const csv = fs.readFileSync(path.join(root, 'research/surface-lab-2026-08-25/grade_equivalency_table.csv'), 'utf8')
+    .trim().split('\n');
+  const head = csv[0].split(',');
+  const gi = head.indexOf('grade_percent'), ri = head.indexOf('re3_rate_w_kg_at_3mps');
+  ok(gi >= 0 && ri >= 0, 'equivalency table: archived CSV still has the columns this pin reads');
+  let checked = 0;
+  for(const line of csv.slice(1)){
+    const cells = line.split(',');
+    const g = Number(cells[gi]), want = Number(cells[ri]);
+    if(!isFinite(g) || !isFinite(want) || g < E.RE3_MIN_GRADE_PCT || g > E.RE3_MAX_GRADE_PCT) continue;
+    close(E.re3MetabolicPower(3.0, g / 100), want, 0.2,
+      `equivalency table: RE3 at 3 m/s and ${g}% matches the archived table within coefficient rounding`);
+    checked++;
+  }
+  ok(checked >= 10, `equivalency table: the pin actually covered the shipped grade band (${checked} rows)`);
+  close(E.re3MetabolicPower(3.0, 0), 12.29, 1e-9, 'equivalency table: level rate at 3 m/s is exact — rounding cannot hide here');
+}
+
 
 console.log(`grade model probes ok — ${n} probes`);

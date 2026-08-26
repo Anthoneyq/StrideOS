@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/ubuntu/running-surface-equivalency-lab/research/analyze_context_correction.py", line 239, in <module>
+    main()
+  File "/home/ubuntu/running-surface-equivalency-lab/research/analyze_context_correction.py", line 202, in main
+    ax.set(
+  File "/usr/local/lib/python3.12/dist-packages/matplotlib/artist.py", line 140, in <lambda>
+    cls.set = lambda self, **kwargs: Artist.set(self, **kwargs)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/matplotlib/artist.py", line 1321, in set
+    return self._internal_update(cbook.normalize_kwargs(kwargs, self))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/matplotlib/artist.py", line 1313, in _internal_update
+    return self._update_props(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/matplotlib/artist.py", line 1271, in _update_props
+    raise AttributeError(
+AttributeError: Axes.set() got an unexpected keyword argument 'subtitle'

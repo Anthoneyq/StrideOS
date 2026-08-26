@@ -1,0 +1,70 @@
+# Composite Model Source Log
+
+## RE3 source inventory and public-data status
+
+The corrected peer-reviewed RE3 article is Looney, Hoogkamer, and Kram, “Metabolic energy expenditure during level, uphill, and downhill running,” *European Journal of Applied Physiology* 126, 1621–1633. DOI: [10.1007/s00421-025-05999-5](https://doi.org/10.1007/s00421-025-05999-5). The accessible manuscript states that the fit combined original individual data from 62 participants, individual data from 26 published studies representing 424 participants, and group means from 12 studies representing 187 participants.
+
+The manuscript’s Tables 1 and 2 list study-level sample sizes and speed/grade ranges, but not the underlying measured metabolic observations. The browser route to bioRxiv is currently rate-limited; the previously downloaded public manuscript was used instead. No public participant-level dataset or supplementary observation table has yet been located. This is a critical limitation for independent refitting and held-out validation.
+
+The individual-data source inventory spans Balducci et al. 2017 and 2023; Bertschy et al. 2022; Besson et al. 2023; Breiner et al. 2019; Brill and Kram 2021; Davies et al. 1974; Ehrström et al. 2018; Hoff et al. 2016; Hoogkamer et al. 2014; Lemire et al. 2022 and 2023; Lussiana et al. 2013; Margaria 1938; Ogueta-Alday et al. 2018; Perrin et al. 2023; Sabater Pastor et al. 2021 and 2023; Seki et al. 2020; Sundström et al. 2021; Vercruyssen et al. 2016 and 2017; Vernillo et al. 2015 and 2020; Whiting et al. 2022; and Willis et al. 2019. Group-mean sources include Balsalobre-Fernández et al. 2018; Barnes and Janecke 2017; Filardo et al. 2008; Gimenez et al. 2014; Giovanelli et al. 2016; Helgerud et al. 1990; Jones and Doust 1996; Lemire et al. 2021; Ortiz et al. 2017; Paes and Fernandez 2016; Snyder and Farley 2011; and Sundby and Gorelick 2014.
+
+The manuscript explicitly identifies unresolved model dimensions: individual running economy can vary by roughly 30%; economy does not always transfer from level to steep slope; downhill oxygen uptake can drift by about 8–10% over 40–45 minutes; and downhill familiarity may alter initial oxygen uptake. These are strong candidates for future corrections, but only if enough independent numerical data can be recovered.
+
+## Pinnington and Dawson (2001): grass versus soft dry sand
+
+- **Source:** H. C. Pinnington and B. Dawson, “The energy cost of running on grass compared to soft dry beach sand,” *Journal of Science and Medicine in Sport* 4(4), 416–430. DOI: [10.1016/S1440-2440(01)80051-7](https://doi.org/10.1016/S1440-2440(01)80051-7). PubMed: [PMID 11905936](https://pubmed.ncbi.nlm.nih.gov/11905936/).
+- **Design:** Seven men and five women completed steady-state grass trials at 8, 11, and 14 km·h⁻¹. Sand trials, barefoot and shod, were attempted at 8 and approximately 11 km·h⁻¹; one additional woman completed the 8 km·h⁻¹ conditions. Net aerobic cost used steady-state VO₂, VCO₂, and RER; net anaerobic cost used lactate accumulation.
+- **Quantitative result:** At 8 km·h⁻¹, the sand-to-grass ratios were 1.6 barefoot and 1.5 shod for net aerobic cost, 3.7 and 2.7 for net anaerobic cost, and 1.6 and 1.5 for net total cost. Across all combined trials, net total cost ratios were 1.5 for both barefoot and shod sand running.
+- **Model implication:** This strengthens a study-specific deformable-sand module and adds a speed/surface comparison beyond Lejeune et al. It does not identify a transferable physical substrate variable such as penetration depth, compliance, or energy return; therefore a universal surface equation still cannot be fit from the ratios alone.
+
+## Hatamoto et al. (2014): energy cost of 180-degree turns
+
+- **Source:** Yoichi Hatamoto et al., “The Relationship between Running Velocity and the Energy Cost of Turning during Running,” *PLOS ONE* 9(1), e81850. DOI: [10.1371/journal.pone.0081850](https://doi.org/10.1371/journal.pone.0081850).
+- **Design:** Nine trained male university lacrosse players performed shuttle-running trials at 3–8 km·h⁻¹. At each speed they completed three-minute stages with 13, 18, 24, and 30 turns per minute while oxygen consumption was measured.
+- **Published equation:** The energy cost per 180-degree change of direction was fitted as `C_turn = −0.012 + 0.066v + 0.008v²`, with the article’s velocity input expressed in km·h⁻¹ and correlation `r = 0.994`. A linear alternative was `C_turn = −0.228 + 0.152v` (`r = 0.991`). Unit interpretation must be taken from the article’s methods and tables before implementation.
+- **Model implication:** This is usable as a **turn-frequency correction** for shuttle-like 180-degree changes, not as a continuous track-curve or trail-meander correction. The narrow low-speed, male-only sample and repeated deceleration/acceleration distinguish it from constant-radius running.
+
+Full-text verification shows that `C_turn` is oxygen cost in **mL O₂·kg⁻¹ per 180-degree turn**. Observed mean costs at 3, 4, 5, 6, 7, and 8 km·h⁻¹ were 0.27, 0.35, 0.48, 0.68, 0.87, and 0.99 mL·kg⁻¹ per turn. The study estimated turn cost as the slope of gross oxygen uptake versus turn frequency, while the intercept closely approximated straight-running oxygen uptake (`r = 0.966`, no significant paired difference). For `f` turns per minute, the additive oxygen-rate correction is therefore `ΔV̇O₂ = f·C_turn` mL·kg⁻¹·min⁻¹ within the tested protocol. At the individual level, both linear and curved patterns occurred; the authors warned that technique, stature, training, and sport familiarity may change the cost.
+
+## Taboga et al. (2019) curve-performance model access note
+
+The peer-reviewed article “Modelling the effect of curves on distance running performance” is indexed at [PMC6927354](https://pmc.ncbi.nlm.nih.gov/articles/PMC6927354/), but the repository route returned a browser verification page during this session. No attempt was made to bypass it. An alternate journal or publisher route is required before using its equations. Its search description indicates a mechanics-based performance model; it must not be assumed to provide directly measured metabolic-rate data until the full methods are verified.
+
+## Gidley, Lankford, and Bailey (2020): treadmill construction and compliance
+
+- **Source:** Alexis D. Gidley, D. Eli Lankford, and Joshua P. Bailey, “The construction of common treadmills significantly affects biomechanical and metabolic variables,” *Journal of Sports Sciences* 38(19), 2236–2241. DOI: [10.1080/02640414.2020.1776929](https://doi.org/10.1080/02640414.2020.1776929). PubMed: [PMID 32552333](https://pubmed.ncbi.nlm.nih.gov/32552333/).
+- **Design:** Eleven runners completed matched, self-selected three-minute trials on one compliant-deck and one rigid-deck treadmill. Oxygen consumption and marker-based running mechanics were measured during the final minute.
+- **Quantitative result:** The compliant treadmill produced lower oxygen consumption than the rigid treadmill, 34.69 versus 36.86 mL·kg⁻¹·min⁻¹, a difference of approximately 5.9% relative to the rigid value. Leg stiffness also differed, 8.591 versus 9.063 kN·m⁻¹.
+- **Model implication:** Nominal speed and grade are insufficient descriptors of treadmill demand. However, the paper compares two commercial constructions and does not provide enough independent stiffness levels to estimate a continuous dose-response coefficient. A machine-specific calibration factor is defensible; a universal stiffness equation is not yet supported.
+
+## Bottura and Fletcher (2026): review beyond the one-percent rule
+
+- **Source:** Ricardo Muller Bottura and Jared R. Fletcher, “Beyond the 1% Treadmill Rule: Thirty Years of Evidence on Treadmill and Overground Running Economy,” *Applied Physiology, Nutrition, and Metabolism*, accepted manuscript online 6 August 2026. DOI: [10.1139/apnm-2026-0109](https://doi.org/10.1139/apnm-2026-0109).
+- **Verified abstract conclusion:** Three decades of evidence do not support a fixed 1% treadmill grade as universally equivalent to overground running. Equivalence varies with running speed, environmental conditions, methodological factors, and inter-individual variability. The authors advocate individualized and context-specific assessment.
+- **Access limitation:** The full article was behind a CAPTCHA/paywall in this session; only the abstract and publication metadata were extracted. No detailed coefficients or new dataset are assumed.
+- **Model implication:** This supports a context-vector approach—calibrated belt speed, air conditions, treadmill construction, and athlete-level adjustment—rather than replacing 1% with another universal fixed grade.
+
+## Lemire et al. (2021): speed-dependent grade shape and individual transfer
+
+- **Source:** Marcel Lemire et al., “Level, Uphill, and Downhill Running Economy Values Are Correlated Except on Steep Slopes,” *Frontiers in Physiology* 12, 697315. DOI: [10.3389/fphys.2021.697315](https://doi.org/10.3389/fphys.2021.697315).
+- **Design:** Twenty-nine healthy recreational runners completed randomized four-minute treadmill bouts at 8, 10, 12, and 14 km·h⁻¹ and grades from −20% to +20%, producing 25 feasible speed–grade conditions. Net oxygen and energy costs were calculated from steady-state gas exchange after subtracting measured standing oxygen uptake.
+- **Speed-specific oxygen-cost fits:** For oxygen cost `C` in mL O₂·kg⁻¹·km⁻¹ and grade `i` in percent, the study fitted `C = a + bi + ci² + di³`. Coefficients were `(199.44, 8.9189, 0.2657, −0.0024)` at 8 km·h⁻¹; `(190.56, 8.9130, 0.2686, 0.0007)` at 10 km·h⁻¹; `(187.80, 8.9383, 0.2639, 0.0005)` at 12 km·h⁻¹; and `(192.24, 8.9895, 0.2283, −0.00009)` at 14 km·h⁻¹. Within-study `r²` values were 0.996–0.998.
+- **Downhill optimum:** The estimated oxygen-cost minimum shifted with speed from −14.09% at 8 km·h⁻¹ to −19.46% at 14 km·h⁻¹, with intermediate minima of −17.84% at 10 and 12 km·h⁻¹. This supports a speed × grade interaction rather than a single grade-only curve.
+- **Individual effects:** Economy correlated across most moderate grades but correlations weakened on steep conditions. Knee-extensor strength explained a modest share of economy variation on level and several downhill conditions, but not uphill economy; reported `r²` values were generally 0.14–0.24 for those associations.
+- **Data status and independence:** The article states that raw data are available from the authors on request, but no direct downloadable dataset was exposed. The study’s group means were already included in the RE3 fitting database, so its published aggregates are not an independent hold-out against RE3.
+
+## Taylor et al. / Hunter group (2025): running grade aptitude
+
+- **Source:** “Can Level Ground Biomechanics Predict Uphill and Downhill Running Economy?” *Journal of Applied Biomechanics* 41(5), 463–468, first published 14 August 2025. DOI: [10.1123/jab.2024-0212](https://doi.org/10.1123/jab.2024-0212).
+- **Design:** Forty distance runners (32 men, 8 women) ran on level, +4%, and −4% grades while investigators measured oxygen uptake, stride variables, foot strike, and ground-reaction forces. “Running grade aptitude” was defined from the slope of oxygen uptake versus treadmill grade.
+- **Finding:** Active peak vertical ground-reaction force during level running explained 44% of the variance in downhill grade aptitude (`R² = 0.44`). No other tested variables significantly related to grade aptitude, and no sex difference was detected.
+- **Model implication:** A measurable biomechanical variable may improve **individualized downhill** estimates, but the abstract does not provide a regression coefficient or held-out validation. The full article is restricted, and direct PDF retrieval failed in this session. This post-RE3 study is promising as an external dataset if the authors share numeric observations.
+
+## Shahidi et al. (2026): open post-RE3 treadmill-versus-track dataset
+
+- **Source:** Seyed Houtan Shahidi et al., “Overground running incurs a higher energetic cost than treadmill running at a 1% grade,” *PLOS ONE* 21(8), e0355988. DOI: [10.1371/journal.pone.0355988](https://doi.org/10.1371/journal.pone.0355988).
+- **Open data:** The unrestricted CC BY 4.0 participant-level workbook is archived at [Zenodo 10.5281/zenodo.17671648](https://doi.org/10.5281/zenodo.17671648) and preserved locally as `shahidi_2026_overground_treadmill_raw.xlsx`.
+- **Design:** Twelve highly trained male endurance runners completed identical three-minute stages from 8 to 15 km·h⁻¹ on a calibrated TrackMaster TMX425C at +1% and on a 400 m outdoor track. Treadmill speed error was verified below 1%. Field pace was guided every 100 m and held within 2%. The same portable gas analyzer was used. Indoor conditions were 20–22 °C and 45–55% RH; field conditions were 18–22 °C, 40–60% RH, and wind below 3 m·s⁻¹.
+- **Measured differences:** At the common 12 km·h⁻¹ reference, overground minus treadmill oxygen uptake was +1.7 ± 1.9 mL·kg⁻¹·min⁻¹; oxygen cost of transport was +7.1 ± 9.8 mL·kg⁻¹·km⁻¹; and energy cost was 3.87 ± 0.21 versus 3.65 ± 0.22 J·kg⁻¹·m⁻¹. At 90–100% of VT2, energy cost reached 4.60 ± 0.27 overground versus 4.10 ± 0.18 J·kg⁻¹·m⁻¹.
+- **Published intensity regressions:** Energy cost versus percent VT2 was `EC_field = 3.6451 + 0.0354·I` and `EC_treadmill = 3.5418 + 0.0188·I` over the article’s plotted intensity scale; running-economy slopes were 0.4189 overground and 0.3446 treadmill mL·kg⁻¹·min⁻¹ per percentage-point VT2. Exact intercept interpretation requires preserving the article’s centering/plot scale.
+- **Model implication:** This is a genuine post-RE3 external dataset for a **track-versus-specific-treadmill context correction**. It cannot isolate air drag from turns, pacing variability, treadmill deck mechanics, visual flow, or other environmental differences because all changed together. The session order was not randomized and the sample included only trained young men. It should validate a context module, not alter the core speed × grade coefficients.

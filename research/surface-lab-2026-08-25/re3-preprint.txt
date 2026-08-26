@@ -1,0 +1,1050 @@
+ bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+    was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                             available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+1     Title: Metabolic energy expenditure during level, uphill, and downhill running
+2
+ 3    Authors: David P. Looney, PhD CSCS1,2, Wouter Hoogkamer, PhD3, Rodger Kram, PhD4
+ 4
+      1
+ 5        CoachMePlus, Buffalo, NY, USA.
+      2
+ 6        Maximize Human Performance, LLC, Framingham, MA, USA.
+      3
+ 7        Department of Kinesiology, University of Massachusetts, Amherst, MA, USA.
+      4
+ 8        Department of Integrative Physiology, University of Colorado Boulder, Boulder, CO, USA.
+ 9
+10    Corresponding Author
+11    David P. Looney
+12    david.looney.usa@gmail.com
+13
+14    ORCID iD
+15    David P. Looney                0000-0001-7878-0092
+16    Wouter Hoogkamer               0000-0003-0524-0196
+17    Rodger Kram                    0000-0002-2526-1608
+18
+19    Acknowledgments
+20    We thank Debanshi Jain for her support in developing the website-based metabolic rate
+21    estimation application.
+
+
+
+
+                                                                                                                                           1
+ bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+    was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                             available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+22    Abstract (150-250 words)
+23    Purpose: To extend the Running Energy Expenditure Estimation (RE3) model for predicting
+24    metabolic rates during uphill and downhill running as well as to enhance the Hoogkamer-
+25    Taboga-Kram (HTK) equation for estimating metabolic rates during level and uphill running.
+26    Methods: We combined running metabolic data from an original dataset (n=63) with individual
+27    subject data from 26 studies (n=424) and group mean data from 12 studies (n=187). Using this
+28    integrated dataset, we derived a new graded running term for the empirical RE3 model and
+29    updated the HTK equation coefficients for level and uphill running. We then compared the
+30    accuracy and precision of these new equations with the established American College of Sports
+31    Medicine (ACSM) and Minetti et al. equations based on the root-mean-square deviation
+32    (RMSD).
+33    Results: Accuracy and precision of estimating level Ṁ were high for the Minetti et al. (RMSD,
+34    1.44 W∙kg-1), HTK (1.30 W∙kg-1), and RE3 (1.27 W∙kg-1) equations but much worse for the
+35    ACSM equation (1.82 W∙kg-1). Agreement on uphill slopes was highest for the HTK (RMSD,
+36    1.45 W∙kg-1) and RE3 (1.41 W∙kg-1) equations with less precision noted for the ACSM (2.17
+37    W∙kg-1) and Minetti et al. (2.18 W∙kg-1) equations. When estimating Ṁ during downhill running,
+38    the RE3 equation performed marginally better (RMSD, 1.45 W∙kg-1) than the Minetti et al.
+39    equation (1.57 W∙kg-1).
+40    Conclusion: The improved RE3 and HTK equations estimate metabolic rates during level and
+41    graded running with improved accuracy and precision. We provide a publicly available web-
+42    based metabolic rate calculator that simplifies estimation for researchers, practitioners, and
+43    runners alike.
+44
+45    Keywords
+46    Energetics, locomotion, metabolic cost, running economy.
+47
+48    Abbreviations
+49    ACSM                 American College of Sports Medicine
+50    COM                  Center of mass
+51    CoT                  Metabolic cost of transport
+52    EffvCOM              Efficiency of producing mechanical work to lift the center of mass against gravity
+
+                                                                                                                                           2
+ bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+    was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                             available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+53    G                    Surface grade
+54    GRF                  Ground reaction force
+55    HTK                  Hoogkamer-Taboga-Kram
+56    iOS                  iPhone Operating System
+57    Ṁ                    Rate of metabolic energy expenditure
+58    RE3                  Running Energy Expenditure Estimation
+59    RER                  Respiratory exchange ratio
+60    RMSD                 Root-mean-square deviation
+61    S                    Running speed
+62    SD                   Standard deviation
+63    tc                   Time of foot-ground contact
+64    V̇CO2                Rate of carbon dioxide production
+65    V̇O2                 Rate of oxygen uptake
+66
+67    Statements and Declarations
+68    No funding was received for conducting this study.
+69
+70    Competing Interests: The authors have no relevant financial or non-financial interests to
+71    disclose.
+
+
+
+
+                                                                                                                                           3
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+ 72    Introduction
+ 73    Many people who run for health and fitness strive to maximize their rates of “burning calories” as
+ 74    an aid to weight management (Caudwell et al., 2014). In contrast, competitive runners seek to
+ 75    minimize their rate of metabolic energy expenditure (Ṁ) so that they can run faster at their
+ 76    physiological limits (Kipp et al., 2019). Military personnel and ultramarathon runners need to
+ 77    estimate their Ṁ so that they can consume adequate amounts of food for optimal performance
+ 78    during missions or races respectively. Many equations exist that can predict Ṁ during level
+ 79    running (Hall et al., 2004; Looney et al., 2023; Rubenson et al., 2007) and thus provide
+ 80    information relevant to these needs. Notably, we and our colleagues recently developed a
+ 81    generalized equation for estimating Ṁ during level running for the Running Energy Expenditure
+ 82    Estimation (RE3) model based on data compiled from over 50 studies (Looney et al., 2023).
+ 83    However, many runners also traverse a variety of uphill and downhill terrain. As any runner
+ 84    knows, uphill running is more strenuous, and downhill running is less so. But there are fewer
+ 85    equations that predict how much greater Ṁ is during uphill running and even fewer equations for
+ 86    how much Ṁ changes during downhill running.
+ 87              Since 1975, the American College of Sports Medicine (ACSM) has espoused a simple
+ 88    equation for predicting oxygen uptake (V̇O2) during level and uphill running (Ozemek et al.,
+ 89    2025). The ACSM equation assumes that V̇O2 during uphill running is equal to the sum of V̇O2
+ 90    for resting metabolism (3.5 mL∙kg-1∙min-1) plus the V̇O2 for running on the level and the V̇O2
+ 91    required to lift the body mass vertically against gravity. The third term in the equation (vertical
+ 92    lifting) essentially assumes an unphysiologically high efficiency value (> 50%) (see Appendix).
+93     Given that isolated muscle efficiency (Barclay & Curtin, 2023) and muscular efficiency during
+94     cycling exercise (Ettema & Lorås, 2009) are both about 25%, using a value > 50% is in conflict
+95     with established physiology.
+ 96              The pioneering efforts of Minetti et al. (2002) introduced a 5th order polynomial equation
+ 97    based on physiological measurements that predicts the amount of metabolic energy expended
+ 98    during running per unit distance (J∙kg-1∙m-1, aka metabolic cost of transport, CoT) on uphill,
+ 99    level, and downhill slopes (referred to as the Minetti equation henceforth). However, the Minetti
+100    equation neglects the costs of generating force to support body weight, brake and propel the
+101    center of mass (COM) (Arellano & Kram, 2014). Further, the predictions of the Minetti equation
+
+
+
+                                                                                                                                            4
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+102    diverge substantially from metabolic data measured during very steep uphill running (Giovanelli
+103    et al., 2016).
+104              Hoogkamer et al. (2014) addressed the ACSM efficiency issue by accounting for
+105    differences in the biomechanics between uphill and level running. The Hoogkamer et al. (2014)
+106    approach (which we refer to as HTK, based on the last name initials of the authors) breaks the
+107    metabolic cost of uphill running into several constituents: the cost of bouncing perpendicular to
+108    the running surface (including the cost of swinging the arms and legs), the cost of running
+109    parallel to the surface, and the cost of producing mechanical work to lift the center of mass
+110    against gravity. At a given running speed on the level, Ṁ is directly proportional to the average
+111    ground reaction force (GRF) perpendicular to the surface and inversely proportional to the time
+112    of foot-ground contact (tc) (Kipp et al., 2018b; Kram & Taylor, 1990; Roberts et al., 1998). Since
+113    Hoogkamer et al. (2014) found that neither the perpendicular force nor tc changed appreciably on
+114    moderate inclines, and since stride frequency changes little during uphill running, they assumed
+115    the combined cost of perpendicular bouncing plus limb swing remains nearly the same.
+116              However, the GRF parallel to the running surface changes dramatically during uphill
+117    running. The braking impulse diminishes to near zero when running up a 9° incline at which
+118    slope the propulsive impulse only acts to advance the center of mass up the slope. Thus,
+119    Hoogkamer et al. (2014) modelled the cost of parallel running as decreasing exponentially with
+120    incline. Having accounted for the costs of generating perpendicular and parallel forces,
+121    Hoogkamer et al. (2014) could then properly consider the metabolic cost of the mechanical work
+122    required to lift the center of mass vertically. Fitting their equation to the metabolic data revealed
+123    that a constant delta efficiency for doing vertical work (29%) was then an appropriate
+124    assumption. We note that the HTK model was only developed and tested on moderate inclines (<
+125    9°) and slow speeds (< 3 m∙s-1) and for a modest number of participants (n = 8). Further, the
+126    HTK model predicted the metabolic cost of transport (J∙kg-1∙m-1) whereas most runners are
+127    concerned with Ṁ.
+128              Recently, U.S. Army researchers derived a new empirical method to precisely estimate Ṁ
+129    during level, uphill, and downhill walking using a unique formula (Looney et al., 2019b). A
+130    graded walking factor was incorporated into an existing level walking equation (Looney et al.,
+131    2019a) and outperformed existing alternatives during cross-validation (Looney et al., 2019b).
+132    Given the similar “J-shape” relationships between grade and metabolic costs of transport for both
+
+                                                                                                                                            5
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+133    walking and running (Minetti et al., 2002), deriving an empirical, graded running factor with a
+134    similar formula for the RE3 model is a logical next step.
+135              Our primary goal was to extend the RE3 model as per Looney et al. (2019b) to predict Ṁ
+136    during level, uphill and downhill running across a range of speeds using a large database
+137    aggregated from multiple sources. A secondary goal was to first transform the HTK equation
+138    from CoT units to Ṁ units and then update the coefficients, using the same large database, to
+139    provide a generalized equation consistent with our present understanding of level and uphill
+140    running biomechanics and muscle physiology. Unfortunately, muscle function during downhill
+141    running remains poorly understood, and thus we presently cannot confidently develop a
+142    predictive equation for downhill running based on physiology. For ease of use, we aimed to
+143    provide readers with web-based Ṁ calculator that included the newly derived methods to support
+144    practical applications (University of Massachusetts Integrative Locomotion Lab., 2025).
+145
+146    Methods
+147    Experimental design
+148    Like our previous study (Looney et al., 2023), we combined running metabolic data from three
+149    types of sources: original individual subject data, published individual subject data (Table 1), and
+150    published group mean data (Table 2). We aggregated data from level, uphill, and downhill
+151    running trials to derive the new graded running term of the empirical RE3 model. Data from the
+152    level and uphill running trials was subsequently used to update the coefficients of the HTK
+153    equation. The accuracy and precision of Ṁ estimates were subsequently compared between these
+154    equations along with the existing equations from the ACSM (level and uphill running only) and
+155    Minetti et al. (2002).
+156
+157    Original individual subject data
+158    Original individual subject data were collected from 62 United States Army civilians and
+159    Soldiers (10 women, 52 men; age, 24 ± 7 y; height, 1.74 ± 0.08 m; body mass, 77 ± 15 kg).
+160    Level running data were previously analyzed from 45 participants from this group (Looney et al.,
+161    2023). After completing a ~ 20 min warm-up walk, participants ran for 3-4 min on a motorized
+162    treadmill while wearing standard physical training attire (i.e., shorts, t-shirt, socks, running
+163    shoes) on two separate visits. The treadmill was initially set to approximately 70.0-77.5% of the
+
+                                                                                                                                            6
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+164    individual’s self-reported two-mile (3.2 km) run pace at 0% incline for the first stage with
+165    incremental increases in grade (2.5%) or speed (7.5% two-mile run pace) every 2 min stage
+166    afterward (Figueiredo et al., 2022; Schafer et al., 2025). Oxygen uptake (V̇O2) and carbon
+167    dioxide production (V̇CO2) were measured over the final minute of the run with a metabolic
+168    measurement system (TrueOne 2400; ParvoMedics, Sandy, UT, USA). The study was approved
+169    by the governing Institutional Review Board. Participants gave their voluntary informed consent
+170    after a briefing on the purpose of the study and potential risks. Investigators adhered to
+171    Department of Defense Instruction 3216.02 and Title 32 Code of Federal Regulations 219 on the
+172    use of volunteers in research. The study was performed in line with the principles of the
+173    Declaration of Helsinki.
+174
+175    Published individual participant data
+176    We searched PubMed, Web of Science, and Google Scholar for published individual participant
+177    datasets from studies that measured steady-state treadmill running metabolic energetics in
+178    apparently healthy men and women (18–44 y) via indirect calorimetry. Search terms included
+179    “treadmill”, “running”, “grade OR uphill OR downhill”, “energy OR metabolic OR oxygen”, and
+180    “cost OR economy OR expenditure OR rate.” We reviewed the retrieved publications reference
+181    lists and contacted key authors in the field to find additional studies. Authors of the current study
+182    also contributed individual data they collected or had been shared with them previously. We
+183    excluded data from individuals who reported conditions that would contraindicate intense
+184    running exercise (cardiovascular defects, chronic obstructive pulmonary disease, diabetes
+185    mellitus, musculoskeletal defects or disorders, thyroid disorders, etc.). Additionally, trials were
+186    excluded if they involved external loading (e.g., backpacks, weighted vests), unusual equipment
+187    (e.g., biohazard protection suit, exoskeleton), environmental stressors with pronounced metabolic
+188    effects (e.g., cold, heat), reported respiratory exchange ratio (RER) values less than 0.7 or greater
+189    than 1.0, or reported blood lactate concentrations > 4 mmol·L-1. Table 1 displays characteristics
+190    of the 424 participants (58 women) from the 26 individual participant data studies.
+191
+192    Published group mean data
+193    Group mean datasets were aggregated using essentially the same procedures as outlined for the
+194    individual participant datasets. As additional inclusion criteria, the sample size (n), mean, and
+
+                                                                                                                                            7
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+195    standard deviation (SD) were required for group mean dataset trials to be included. Table 2
+196    shows characteristics of the 187 participants (66 women) from the 12 group mean data studies
+197    included in our analysis.
+198
+199    Running Energy Expenditure Estimation (RE3) Model
+200    The level running equation for the RE3 model can be written as:
+201    Ṁ = 4.43 + 1.51∙S + 0.37∙S2                                                                                                   Eq. 1
+202    where Ṁ is rate of metabolic energy expenditure (W∙kg-1) and S is running speed (m∙s-1). We
+203    sought to add an empirical graded term to Eq. 1 in order to model the “J-shaped” relationship
+204    between surface grade and Ṁ (Looney et al., 2019b). Critical characteristics of this “J-shaped”
+205    relationship include the increase Ṁ on positive slopes (Dill, 1965) that remains linear even at
+206    extreme uphill grades (Giovanelli et al., 2016); the decrease in Ṁ on gradual downhill grades as
+207    propulsive force requirements are supplied by gravity (Gottschall & Kram, 2005; Margaria et al.,
+208    1963); the minimization of running Ṁ between −10 to −20% grade (Lemire et al., 2023;
+209    Margaria, 1938; Minetti et al., 2002); and the eventual upturn in Ṁ at steeper negative grades
+210    presumably due to the additional eccentric braking forces required to maintain a constant running
+211    speed against the greater parallel component of gravitational force (Davies et al., 1974; Margaria,
+212    1938; Minetti et al., 2002). The RE3 Graded Running Equation for estimating Ṁ from running
+213    speed (S, m∙s-1) and grade (G, decimal rise/run) can be written as:
+                                                                              (100∙G + 𝛽𝛽4 )
+                                                         �1 - 𝛽𝛽3
+       Ṁ = 4.43 + 1.51∙S + 0.37∙S2 + 𝛽𝛽1 ∙S∙G∙ �1 - 𝛽𝛽2                                       �
+214                                                                                                �                                  Eq. 2
+
+215    where β1, sets the maximum rate of Ṁ increase for positive grades; β2, sets the maximum rate of
+216    Ṁ increase for negative grades; β3, sets the grade and value of the minimal Ṁ; and β4, sets the
+217    negative grade at which Ṁ returns to level running values.
+
+218
+219    Hoogkamer-Taboga-Kram (HTK) Model
+220    The original HTK equation (Hoogkamer et al., 2014) predicts the net metabolic cost of transport
+221    (Net CoT) and consists of three terms:
+                                                   g
+222    Net CoT = A + B∙e-λ∙ sin(θ) + EffvCOM ∙ sin(θ)                                                                                 Eq. 3
+
+223    where the first term represents the metabolic cost of bouncing perpendicular to the running
+224    surface (including the cost of swinging the arms and legs), the second term represents the cost of
+
+                                                                                                                                            8
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+225    running parallel to the surface, which decays exponentially with decay constant λ as a function of
+226    the sine of the incline (θ) in degrees, and third term represents the cost of producing mechanical
+227    work to lift the center of mass against gravity (g) with efficiency EffvCOM. Here, “net” refers to
+228    the subtraction of the standing Ṁ from the gross Ṁ prior to calculating CoT. In the original HTK
+229    equation, the decay constant of the cost of running parallel to the surface is based on the decay
+230    constant of the experimentally measured braking impulses and independent of the metabolic data
+231    the equation was fitted to. Therefore, we adopted that value of 18.24 here. We then multiplied the
+232    HTK equation for Net CoT by running speed (S, m∙s-1) to obtain net Ṁ, and added the
+233    generalized standing Ṁ determined by Looney et al. (2019a) (1.44 W∙kg-1) to obtain the gross Ṁ.
+234    Coefficients A, B and EffvCOM were recalculated by fitting this equation to the large compiled
+235    database of metabolic data.
+236
+237    Statistical analysis
+238    We used R Version 4.12; R Foundation for Statistical Computing; Vienna, Austria) (R Core
+239    Team, 2014) to analyze all data and create each figure. Data are reported as mean ± SD unless
+240    stated otherwise. Rates of metabolic energy expenditure were determined from measured V̇CO2
+241    and V̇O2 with an indirect calorimetry equation (Kipp et al., 2018a) derived from a previously
+242    developed nonprotein respiratory quotient table (Péronnet & Massicotte, 1991). Missing
+243    individual RER values were assumed to be equal to the trial mean if reported or 0.90 when no
+244    value was reported. Outliers were screened quantitatively using the 3 median absolute deviations
+245    from the median approach (Leys et al., 2013).
+246              Equation coefficients were determined using nonlinear mixed effects modeling with the
+247    “nlme” package (Pinheiro et al., 2017) with random effects of group within study to account for
+248    the dependence among repeated measures. Datapoints were weighted in the regression by n size,
+249    with each individual participant coded as n = 1. We used linear mixed effects models, derived
+250    using the “lme4” package (Bates et al., 2014), to assess as accuracy and precision of Ṁ estimates
+251    using similar statistical procedures as our previous study (Looney et al., 2023). Accuracy was
+252    assessed as the bias weighted by n size and calculated as the mean paired difference between
+253    estimated and measured Ṁ. Precision was assessed as the SD of paired differences weighted by n
+254    size and calculated as the root-sum of the mean squared difference between estimated Ṁ and the
+255    overall bias plus the within-group variance. The root-mean-square deviation (RMSD), as an
+
+                                                                                                                                            9
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+256    indicator of combined accuracy and precision as well as overall agreement, was calculated as the
+257    square root of the sum of the squared bias and SD of paired differences.
+258
+259    Results
+260    Fig1 shows the J-shaped relationship between grades within ± 0.45 (rise/run, i.e., 45%) and the
+261    net CoT using the compiled dataset of individual and group mean data. The RE3 Graded
+262    Running Equation was determined to be:
+                                                                                         (100∙G + 43)
+263    Ṁ = 4.43 + 1.51∙S + 0.37∙S2 + 30.43∙S∙G∙ �1 - 1.133�1 - 1.056                                   �
+                                                                                                            �                         Eq. 4
+
+264
+265    Fitting the HTK model coefficients to the aggregated dataset resulted in the following equation:
+                                                          g
+266    Ṁ = Ṁ stand + S∙ �2.01 + 1.74∙e-18.24∙ sin(θ) + 0.23 ∙ sin(θ)�                                                               Eq. 5
+
+267
+268              Table 3 displays the accuracy and precision of each of the equations when estimating Ṁ
+269    during level, uphill, and downhill running. Relative accuracy and precision of estimating level Ṁ
+270    were high for the Minetti, HTK, and RE3 equations while the ACSM equation tended to
+271    substantially overestimate Ṁ (Fig2 and Table 3). The HTK and RE3 equations had the highest
+272    agreement on uphill slopes with less precision noted for the ACSM and Minetti equations (Fig3).
+273    The RE3 equation performed marginally better than the Minetti equation when estimating Ṁ
+274    during downhill running (Fig4).
+275
+276    Discussion
+277    Using a large dataset compiled from 26 studies with individual participant data and 12 studies
+278    reporting group mean data, we fit a new graded running term for the RE3 model that enables Ṁ
+279    estimation for level, uphill, and downhill running. Using this same large, compiled dataset, we fit
+280    an updated formula for the physiologically-based HTK equation for level and uphill running.
+281    Both methods proved to be accurate and precise estimators of running energetics on various
+282    slopes with demonstrated improvements over two of the most used estimation equations.
+283    Consequently, we provide a publicly available web-based metabolic rate calculator that
+284    simplifies estimation for researchers, practitioners, and runners alike (University of
+285    Massachusetts Integrative Locomotion Lab., 2025).
+
+
+                                                                                                                                          10
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+286
+287              As can be seen in Fig3, on steeper inclines, the ACSM equation underestimates Ṁ
+288    whereas the Minetti equation overestimates Ṁ. Perhaps this point can be best illustrated by
+289    considering an athlete running in a vertical kilometer (VK) race. The official VK record for is 28
+290    min 53 s set in Fully, Switzerland (Vertical Kilometer World Circuit., 2025). That course ascends
+291    1,000 m over a distance of 1,920 m equating to an average grade of 0.52 and an average running
+292    speed of 1.11 m∙s-1. The ACSM equation predicts Ṁ to be 16.99 W∙kg-1 whereas the Minetti
+293    equation predicts 27.92 W∙kg-1, a nearly two-fold range. Whereas the RE3 model (25.51 W∙kg-1)
+294    and new HTK model (24.13 W∙kg-1) predict similar intermediate Ṁ values.
+295              The novel graded running term developed for the RE3 model allows for estimating Ṁ
+296    across an extreme range of downhill and uphill grades (−0.45 to 0.82), the largest range of
+297    surface grades that any equation has been developed on to date. This is useful not only for
+298    applications such as mountain running (Balducci et al., 2016; Vernillo et al., 2020) but also for
+299    team field sports where the energy cost of accelerated running has been estimated based on the
+300    energy cost of running of an “equivalent slope”, or a slope with a comparable angle of forward
+301    body lean (Osgnach et al., 2010). For the RE3 model to be most applicable to military
+302    populations, there is a need to characterize the metabolic effects of the loads added by body
+303    armor or utility vests (Looney et al., 2024), backpacks/rucksacks (Looney et al., 2022), military
+304    footwear such as combat boots (Lavoie et al., 2023), and other operationally-relevant equipment
+305    (Soucy et al., 2023) that servicemembers may be required to carry while running or sprinting.
+306              Hoogkamer et al. (2014) expanded the cost of generating force hypothesis for level
+307    running to uphill running and observed efficiency values for producing work to vertically lift the
+308    center of mass only slightly higher than physiologically realistic values. However, the accuracy
+309    of the original HTK model beyond the speeds (up to 3.0 m∙s-1) and the inclines (up to 8°, 0.14
+310    grade) measured to fit the equation had not been assessed. By fitting the HTK equation to a much
+311    larger data set including faster running speeds and steeper grades, we were able to update the
+312    equation within the original biomechanical framework. The best fit resulted in an efficiency
+313    value for producing work to vertically lift the center of mass of 23.0%, which is physiologically
+314    realistic, more so than the 29.4% of the original equation. Intriguingly, the accuracy and
+315    precision of this updated equation is similar to that of the phenomenological RE3 equation. As
+316    such the updated HTK model provides a framework linking running biomechanics and energetics
+
+                                                                                                                                          11
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+317    with many opportunities. It allows for personalized Ṁ estimates based on individual measures of
+318    standing Ṁ and efficiency, and it can be further expanded to include downhill running and load
+319    carriage, all based on biomechanical and muscle physiological theory.
+320              As they are designed for simple, generalized applications, the HTK and RE3 equations
+321    estimate Ṁ for an average individual and do not account for all the variability in mass-specific
+322    running economy across the spectrum of runners (Daniels, 1985). Thus, erring on the side of
+323    overconsuming calories for competitive, recreational, or tactical athletes during an event would
+324    be prudent. While running Ṁ can be individualized based on key aerobic fitness parameters,
+325    there are many to choose from and most can only be measured accurately using laboratory
+326    equipment that can be difficult for many runners to access. Additionally, these aerobic fitness
+327    parameters do not perfectly correlate with inter-individual variability in Ṁ as even trained
+328    runners with similar maximal oxygen uptake (V̇O2max) have been shown to vary in running
+329    economy by upwards of 30% (Barnes & Kilding, 2015; Daniels, 1985). Furthermore, running
+330    economy does not always translate between different conditions, such as running on the level
+331    versus steep slopes (Lemire et al., 2021), highlighting the importance of exercise familiarity and
+332    training experience. Developing an easy-to-use method for calculating individualized Ṁ
+333    estimates that can accommodate a variety of aerobic fitness parameters as well as account for
+334    experience and familiarity with specific types of running is a difficult but important aim for
+335    future research.
+336              While Vernillo et al. (2017) provide a concise summary of what is known about the
+337    biomechanics and physiology of downhill running, developing a mechanistic-based equation for
+338    downhill running will require a deeper understanding especially for grades steeper than 15%
+339    (−9°). Even just quantifying the relevant metabolic rate for downhill running is not
+340    straightforward because V̇O2 (and presumably Ṁ) gradually increases by as much as 10% over
+341    trial durations of 40-45 min down −10% grades (Dick & Cavanagh, 1987; Westerlind et al.,
+342    1994). Westerlind et al. (1994) found that in a second downhill running trial, initial V̇O2 was ~
+343    8.5% lower than the initial value in the first trial but then increased again (by ~ 8%) over the
+344    course of the second 40 min trial. Note that Dick and Cavanagh (1987) studied experienced
+345    runners whereas Westerlind et al. (1994) intentionally studied individuals who were not
+346    accustomed to downhill running. Future research is needed to determine how leg muscle
+347    fascicles actually behave during downhill running beyond the usual assumption of eccentric
+
+                                                                                                                                          12
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+348    action. Given that most road-racing courses have moderate inclines and declines, future studies
+349    should quantify the metabolic cost of downhill running at grades < 10% with finer resolution so
+350    that the shape of the grade vs. Ṁ relationship can be better characterized. A major hindrance to
+351    downhill running research is the scarcity of suitable commercial treadmills. Treadmill
+352    modifications are necessary to maintain belt speed post-foot contact, and potential motor damage
+353    is a concern. Adding an inertial flywheel can certainly help (Kram et al., 1998). Smart treadmill
+354    motor controllers that surge power at foot strike is another alternative.
+355
+356    Conclusion
+357    Our analysis provides researchers, practitioners, and runners with the capability to estimate Ṁ
+358    during running on level, uphill, and downhill slopes using the novel graded running term fit for
+359    the existing RE3 model. The newly developed web browser-based metabolic rate calculator
+360    (University of Massachusetts Integrative Locomotion Lab., 2025) provides users with a simple
+361    way to calculate Ṁ with the updated RE3 model. Additionally, the enhanced, generalized version
+362    of the HTK equation provides close estimates of Ṁ during level and uphill running that is
+363    consistent with present understanding of level and uphill running biomechanics and muscle
+364    physiology.
+
+
+
+
+                                                                                                                                          13
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+365    Appendix 1 Deriving the efficiency value assumed by the American College of Sports Medicine
+366    (ACSM) running equation.
+367
+368    The ACSM equation for estimating oxygen uptake (V̇O2) during running is:
+369    V̇O2 (mL∙kg-1∙min-1) = 3.5 + (0.2∙Speed) + (0.9∙Speed∙Grade)                                                                   Eq. 6
+370    where speed is in units of m/min and grade is expressed as a decimal percentage, i.e. 10% grade
+371    is 0.10. The vertical mechanical power (work rate) in watts (W) is equal to the product of body
+372    mass, gravitational acceleration (9.81 m/s2), treadmill belt velocity (in m/s) and the sin of the
+373    incline angle (θ). For example, the vertical mechanical power for a 70 kg person running at 180
+374    m/min up a 10% incline (θ = 5.7°) is equal to mg v sin θ or 70 kg∙9.81 m∙s-2∙3 m∙s-1∙sin 5.7°
+375    which is equal to 204 W. The corresponding V̇O2 from the third term in the ACSM equation for
+376    is 0.9∙180∙0.10 or 16.2 mL O2/kg/min. Multiplying 16.2 by body mass (70 kg) and dividing by 60
+377    s per min yields 18.9 mL O2∙s-1 which converts to a rate of metabolic energy expenditure (Ṁ) of
+378    395 W, assuming 20.9 J/mL O2 (Gill et al. 2023). Efficiency is the ratio of mechanical power and
+379    Ṁ which, in this example, is 204 W/395 W or 51.9%.
+
+
+
+
+                                                                                                                                          14
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+380    Figures
+381    Fig1 Net cost of transport, calculated as the difference between the measured metabolic rate and
+382    an assumed constant standing metabolic rate (1.44 W∙kg-1) (Looney et al., 2019a) divided by
+383    speed, during running on decimal grades between −0.45 and 0.45 for individual subject data
+384    (green circles) and group mean data (white squares) ± standard deviation. Dashed line, mean net
+385    cost of transport when grade = 0 (3.71 W∙kg-1).
+386
+
+
+
+
+387
+
+
+                                                                                                                                          15
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+388    Fig2 Paired differences between estimated and measured rates of metabolic rate energy
+389    expenditure (Ṁ) during level running across running speed for individual subject data (green
+390    circles) and group mean data (white squares) ± standard deviation. ACSM, American College of
+391    Sports Medicine running equation; Minetti, energy cost of running equation from Minetti et al.
+392    (2002); HTK, Hoogkamer-Taboga-Kram equation; RE3, Running Energy Expenditure
+393    Estimation graded running equation.
+
+
+
+
+394
+
+
+
+
+                                                                                                                                          16
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+395    Fig3 Paired differences between estimated and measured rates of metabolic rate energy
+396    expenditure (Ṁ) during uphill running across grade for individual subject data (green circles) and
+397    group mean data (white squares) ± standard deviation. ACSM, American College of Sports
+398    Medicine running equation; Minetti, energy cost of running equation from Minetti et al. (2002);
+399    HTK, Hoogkamer-Taboga-Kram equation; RE3, Running Energy Expenditure Estimation graded
+400    running equation.
+
+
+
+
+401
+
+402
+
+
+
+                                                                                                                                          17
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+403    Fig4 Paired differences between estimated and measured rates of metabolic rate energy
+404    expenditure (Ṁ) during downhill running across grade for individual subject data (green circles)
+405    and group mean data (white squares) ± standard deviation. Minetti, energy cost of running
+406    equation from Minetti et al. (2002); RE3, Running Energy Expenditure Estimation graded
+407    running equation.
+
+
+
+
+408
+
+
+
+
+                                                                                                                                          18
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+409    Tables
+410    Table 1. Participant characteristics (mean ± SD) plus treadmill grade and speed (min, max) for
+411    published individual participant datasets. f, number of female participants, n, number of
+412    participants.
+
+                                                           Age      Height    Mass                           Grade              Speed
+                     Reference                      n (f)
+                                                            (y)       (m)      (kg)                           (%)               (m∙s-1)
+        Balducci et al. (2017)                     26 (0) 42 ± 10 1.77 ± 0.04 72 ± 6                       [0.0, 10.0]       [1.66, 3.33]
+        Balducci et al. (2023)                     15 (0)      30 ± 9 1.78 ± 0.06 65 ± 8                   [0.0, 15.0]       [1.67, 3.33]
+        Bertschy et al. (2022)                     14 (5)      23 ± 5 1.72 ± 0.14 68 ± 10                  [−5.0, 0.0]            3.89
+        Besson et al. (2023)                      41 (20) 33 ± 7 1.70 ± 0.10 60 ± 10                       [0.0, 10.0]       [2.78, 3.89]
+        Breiner et al. (2019)                      19 (0)      29 ± 6 1.77 ± 0.07 68 ± 8                   [−5.0, 7.5]       [2.78, 4.85]
+        Brill and Kram (2021)                      10 (0)      29 ± 6 1.79 ± 0.06 68 ± 5                   [0.0, 26.8]       [1.20, 2.30]
+        Davies et al. (1974)                        1 (0)         31            1.78            61        [−45.0, 5.0] [1.58, 4.68]
+        Ehrström et al. (2018)                      9 (0)      39 ± 8 1.73 ± 0.06 68 ± 6                   [0.0, 10.0]       [2.50, 3.88]
+        Hoff et al. (2016)                          7 (0)      24 ± 6 1.81 ± 0.06 72 ± 6                        1.5          [2.78, 4.92]
+        Hoogkamer et al. (2014)                     8 (4)      26 ± 4 1.74 ± 0.12 67 ± 12                  [1.7, 14.1]       [2.00, 3.00]
+        Lemire et al. (2022)                        8 (0)      29 ± 10 1.74 ± 0.03 62 ± 5 [−15.0, 15.0] [1.42, 5.83]
+        Lemire et al. (2023)                       19 (6) 34 ± 10 1.75 ± 0.10 69 ± 12 [−10.0, 10.0]                               2.78
+        Lussiana et al. (2013)                     14 (0)      23 ± 4 1.78 ± 0.05 70 ± 5                   [−8.0, 8.0]            2.78
+        Margaria (1938)                             4 (0)      26 ± 6 1.78 ± 0.07 72 ± 4 [−35.0, 15.0] [0.73, 4.28]
+        Ogueta-Alday et al. (2018)                 48 (0)      32 ± 7 1.76 ± 0.05 70 ± 7                        1.0          [2.25, 5.78]
+        Perrin et al. (2023)                       20 (0)      28 ± 8 1.75 ± 0.05 65 ± 4                   [0.0, 15.0]       [2.22, 4.44]
+        Sabater Pastor et al. (2021)              46 (17) 36 ± 8 1.74 ± 0.09 65 ± 11                       [0.0, 15.0]       [1.33, 3.53]
+        Sabater Pastor et al. (2023)               17 (0)      29 ± 7 1.77 ± 0.06 64 ± 5                   [0.0, 10.0]       [2.78, 3.89]
+        Seki et al. (2020)                         12 (0)      22 ± 1 1.71 ± 0.05 60 ± 4                   [−6.0, 6.0]            3.61
+        Sundström et al. (2021)                     6 (0)         ―        1.78 ± 0.06 71 ± 8             [−17.6, 0.0]            3.33
+        Vercruyssen et al. (2016)                  13 (0)      38 ± 5 1.76 ± 0.05 68 ± 6                   [0.0, 10.0]       [2.50, 2.77]
+        Vercruyssen et al. (2017)                  12 (0)      40 ± 5 1.75 ± 0.05 68 ± 6                   [0.0, 10.0]       [2.50, 3.89]
+        Vernillo et al. (2015)                     14 (0)      40 ± 7 1.77 ± 0.07 73 ± 7                   [−5.0, 5.0]            2.78
+        Vernillo et al. (2020)                     14 (0)         ―              ―              ―          [−5.0, 5.0]            2.80
+        Whiting et al. (2022)                      16 (0)      27 ± 5 1.79 ± 0.05 67 ± 4                   [−5.2, 5.2]            3.61
+
+
+                                                                                                                                          19
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+        Willis et al. (2019)                       11 (6)      34 ± 4 1.70 ± 0.05 62 ± 7                   [0.0, 12.0]       [2.50, 4.17]
+413
+
+
+
+
+                                                                                                                                          20
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+414    Table 2. Participant characteristics (mean ± SD) plus treadmill grade and speed (min, max) for
+415    published group mean datasets. f, number of female participants, n, number of participants.
+
+                                                                         Age          Height          Mass           Grade               Speed
+                         Reference                           n (f)
+                                                                          (y)           (m)            (kg)            (%]              (m∙s-1)
+        Balsalobre-Fernández et al. (2018)                  12 (0)      26 ± 5 1.79 ± 0.05 67 ± 8                       1.0          [4.17, 5.56]
+        Barnes and Janecke (2017)                           15 (8)      22 ± 2 1.73 ± 0.08 61 ± 8                       1.0          [3.58, 4.92]
+        Filardo et al. (2008)                               36 (0)      24 ± 3 1.78 ± 0.06 73 ± 8                   [0.0, 5.0]       [2.00, 2.67]
+        Gimenez et al. (2014)                               11 (0)      37 ± 8 1.78 ± 0.06 69 ± 7                  [−8.0, 8.0]            2.50
+        Giovanelli et al. (2016)                           15 (10) 33 ± 8 1.75 ± 0.09 64 ± 9                      [16.6, 81.6] [0.55, 2.14]
+        Helgerud et al. (1990)                              12 (6)      26 ± 3 1.74 ± 0.08 67 ± 10                      1.7          [2.33, 4.33]
+        Jones and Doust (1996)                              9 (0)       25 ± 5           ―           72 ± 3         [0.0, 3.0]       [2.92, 5.00]
+        Lemire et al. (2021)                               29 (10) 34 ± 10 1.74 ± 0.09 68 ± 12 [−20.0, 20.0] [2.22, 3.89]
+        Ortiz et al. (2017)                                 11 (4)      31 ± 8 1.71 ± 0.08 67 ± 9                      57.7          [0.30, 0.90]
+        Paes and Fernandez (2016)                          10 (10) 29 ± 8 1.78 ± 0.07 78 ± 6                            1.0          [2.46, 3.16]
+        Snyder and Farley (2011)                            9 (0)       29 ± 4           ―           69 ± 5        [−5.2, 5.2]            2.80
+        Sundby and Gorelick (2014)                         18 (18) 28 ± 5 1.68 ± 0.08 61 ± 8                            1.0          [2.68, 3.35]
+416
+
+
+
+
+                                                                                                                                          21
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+417    Table 3. Accuracy and precision of graded running equations. ACSM, American College Sports
+418    Medicine running equation; Green circles, individual subject data; HTK, Hoogkamer-Taboga-
+419    Kram equation; Minetti, energy cost of running equation from Minetti et al. (2002); RE3,
+420    Running Energy Expenditure Estimation graded running equation; RMSD, root-mean-square
+421    deviation; SD, standard deviation of paired differences; White squares, group mean ± standard
+422    deviation.
+                                                              Difference (W∙kg-1)                     Percent Difference
+                 Grade           Equation                     Bias ± SD          RMSD                 Bias ± SD         RMSD
+                 Level           ACSM                           1.35 ± 1.22           1.82            11.6 ± 10.5            15.6
+                                 Minetti                      −0.53 ± 1.34            1.44              −2.4 ± 9.4             9.7
+                                 HTK                          −0.08 ± 1.30            1.30                1.0 ± 9.7            9.7
+                                 RE3                          −0.26 ± 1.24            1.27              −0.6 ± 9.2             9.2
+                 Uphill          ACSM                         −0.25 ± 2.16            2.17            −0.4 ± 13.1            13.1
+                                 Minetti                      −0.67 ± 2.07            2.18            −3.4 ± 11.7            12.2
+                                 HTK                            0.04 ± 1.45           1.45                0.8 ± 8.7            8.7
+                                 RE3                          −0.01 ± 1.41            1.41                0.5 ± 8.6            8.6
+                 Downhill Minetti                             −0.39 ± 1.52            1.57            −1.8 ± 15.0            15.1
+                                 RE3                            0.02 ± 1.45           1.45              1.4 ± 14.6           14.7
+423
+
+
+
+
+                                                                                                                                          22
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+424    References
+425    Arellano, C. J., & Kram, R. (2014). The metabolic cost of human running: is swinging the arms
+426             worth it? Journal of Experimental Biology, 217(14), 2456-2461.
+427             https://doi.org/10.1242/jeb.100420
+428    Balducci, P., Clabaut, M., Zhang, Q., & Hautier, C. (2023). Calculating level and uphill energy
+429             costs of running seems essential to assess performance capacities of trail runners. Sport
+430             Perf Sci Rep, 189(1), 1-4.
+431    Balducci, P., Clémençon, M., Morel, B., Quiniou, G., Saboul, D., & Hautier, C. A. (2016).
+432             Comparison of Level and Graded Treadmill Tests to Evaluate Endurance Mountain
+433             Runners. J Sports Sci Med, 15(2), 239-246.
+434    Balducci, P., Clémençon, M., Trama, R., Blache, Y., & Hautier, C. (2017). Performance Factors
+435             in a Mountain Ultramarathon. Int J Sports Med, 38(11), 819-826.
+436             https://doi.org/10.1055/s-0043-112342
+437    Balsalobre-Fernández, C., Romero-Moraleda, B., Cupeiro, R., Peinado, A. B., Butragueño, J., &
+438             Benito, P. J. (2018). The effects of beetroot juice supplementation on exercise economy,
+439             rating of perceived exertion and running mechanics in elite distance runners: A double-
+440             blinded, randomized study. PLoS One, 13(7), e0200517.
+441             https://doi.org/10.1371/journal.pone.0200517
+442    Barclay, C. J., & Curtin, N. A. (2023). Advances in understanding the energetics of muscle
+443             contraction. J Biomech, 156, 111669. https://doi.org/10.1016/j.jbiomech.2023.111669
+444    Barnes, K. R., & Janecke, J. N. (2017). Physiological and Biomechanical Responses of Highly
+445             Trained Distance Runners to Lower-Body Positive Pressure Treadmill Running. Sports
+446             Med Open, 3(1), 41. https://doi.org/10.1186/s40798-017-0108-x
+447    Barnes, K. R., & Kilding, A. E. (2015). Running economy: measurement, norms, and
+448             determining factors. Sports Med Open, 1(1), 8. https://doi.org/10.1186/s40798-015-0007-
+449             y
+450    Bates, D., Mächler, M., Bolker, B., & Walker, S. (2014). Fitting linear mixed-effects models
+451             using lme4. arXiv preprint arXiv:1406.5823.
+452    Bertschy, M., Hester, M., Diefenderfer, S., Snyder, K. L., & Hoogkamer, W. (2022). Effects of
+453             mild declines on the metabolic cost of running North American Congress on
+454             Biomechanics, Ottawa, ON, Canada.
+455    Besson, T., Sabater Pastor, F., Varesco, G., Berthet, M., Kennouche, D., Dandrieux, P. E., Rossi,
+456             J., & Millet, G. Y. (2023). Elite vs. Experienced Male and Female Trail Runners:
+457             Comparing Running Economy, Biomechanics, Strength, and Power. J Strength Cond Res,
+458             37(7), 1470-1478. https://doi.org/10.1519/jsc.0000000000004412
+459    Breiner, T. J., Ortiz, A. L. R., & Kram, R. (2019). Level, uphill and downhill running economy
+460             values are strongly inter-correlated. Eur J Appl Physiol, 119(1), 257-264.
+461             https://doi.org/10.1007/s00421-018-4021-x
+462    Brill, J. W., & Kram, R. (2021). Does the preferred walk-run transition speed on steep inclines
+463             minimize energetic cost, heart rate or neither? J Exp Biol, 224(Pt 3).
+464             https://doi.org/10.1242/jeb.233056
+465    Caudwell, P., Gibbons, C., Finlayson, G., Näslund, E., & Blundell, J. (2014). Exercise and
+466             weight loss: no sex differences in body weight response to exercise. Exerc Sport Sci Rev,
+467             42(3), 92-101. https://doi.org/10.1249/jes.0000000000000019
+468    Daniels, J. T. (1985). A physiologist's view of running economy. Med Sci Sports Exerc, 17(3),
+469             332-338.
+
+                                                                                                                                          23
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+470    Davies, C. T., Sargeant, A. J., & Smith, B. (1974). The physiological responses to running
+471            downhill. Eur J Appl Physiol Occup Physiol, 32(3), 187-194.
+472            https://doi.org/10.1007/bf00423214
+473    Dick, R. W., & Cavanagh, P. R. (1987). An explanation of the upward drift in oxygen uptake
+474            during prolonged sub-maximal downhill running. Med Sci Sports Exerc, 19(3), 310-317.
+475    Dill, D. B. (1965). Oxygen used in horizontal and grade walking and running on the treadmill. J
+476            Appl Physiol, 20, 19-22. https://doi.org/10.1152/jappl.1965.20.1.19
+477    Ehrström, S., Tartaruga, M. P., Easthope, C. S., Brisswalter, J., Morin, J. B., & Vercruyssen, F.
+478            (2018). Short Trail Running Race: Beyond the Classic Model for Endurance Running
+479            Performance. Med Sci Sports Exerc, 50(3), 580-588.
+480            https://doi.org/10.1249/mss.0000000000001467
+481    Ettema, G., & Lorås, H. W. (2009). Efficiency in cycling: a review. Eur J Appl Physiol, 106(1),
+482            1-14. https://doi.org/10.1007/s00421-009-1008-7
+483    Figueiredo, P. S., Looney, D. P., Pryor, J. L., Doughty, E. M., McClung, H. L., Vangala, S. V.,
+484            Santee, W. R., Beidleman, B. A., & Potter, A. W. (2022). Verification of Maximal Oxygen
+485            Uptake in Active Military Personnel During Treadmill Running. J Strength Cond Res,
+486            36(4), 1053-1058. https://doi.org/10.1519/jsc.0000000000004019
+487    Filardo, R. D., Silva, R. C., & Petroski, E. L. (2008). Validation of the ACSM walking and
+488            running metabolic equations among men aged 20 to 30 years. Revista brasileira de
+489            medicina do esporte, 14(6), 523-527.
+490    Gimenez, P., Arnal, P. J., Samozino, P., Millet, G. Y., & Morin, J. B. (2014). Simulation of
+491            uphill/downhill running on a level treadmill using additional horizontal force. J Biomech,
+492            47(10), 2517-2521. https://doi.org/10.1016/j.jbiomech.2014.04.012
+493    Giovanelli, N., Ortiz, A. L., Henninger, K., & Kram, R. (2016). Energetics of vertical kilometer
+494            foot races; is steeper cheaper? J Appl Physiol (1985), 120(3), 370-375.
+495            https://doi.org/10.1152/japplphysiol.00546.2015
+496    Gottschall, J. S., & Kram, R. (2005). Ground reaction forces during downhill and uphill running.
+497            J Biomech, 38(3), 445-452. https://doi.org/10.1016/j.jbiomech.2004.04.023
+498    Hall, C., Figueroa, A., Fernhall, B., & Kanaley, J. A. (2004). Energy expenditure of walking and
+499            running: comparison with prediction equations. Med Sci Sports Exerc, 36(12), 2128-
+500            2134. https://doi.org/10.1249/01.mss.0000147584.87788.0e
+501    Helgerud, J., Ingjer, F., & Strømme, S. B. (1990). Sex differences in performance-matched
+502            marathon runners. Eur J Appl Physiol Occup Physiol, 61(5-6), 433-439.
+503            https://doi.org/10.1007/bf00236064
+504    Hoff, J., Støren, Ø., Finstad, A., Wang, E., & Helgerud, J. (2016). Increased Blood Lactate Level
+505            Deteriorates Running Economy in World Class Endurance Athletes. J Strength Cond Res,
+506            30(5), 1373-1378. https://doi.org/10.1519/jsc.0000000000001349
+507    Hoogkamer, W., Taboga, P., & Kram, R. (2014). Applying the cost of generating force hypothesis
+508            to uphill running. PeerJ, 2, e482. https://doi.org/10.7717/peerj.482
+509    Jones, A. M., & Doust, J. H. (1996). A 1% treadmill grade most accurately reflects the energetic
+510            cost of outdoor running. J Sports Sci, 14(4), 321-327.
+511            https://doi.org/10.1080/02640419608727717
+512    Kipp, S., Byrnes, W. C., & Kram, R. (2018a). Calculating metabolic energy expenditure across a
+513            wide range of exercise intensities: the equation matters. Appl Physiol Nutr Metab, 43(6),
+514            639-642. https://doi.org/10.1139/apnm-2017-0781
+
+
+
+                                                                                                                                          24
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+515    Kipp, S., Grabowski, A. M., & Kram, R. (2018b). What determines the metabolic cost of human
+516           running across a wide range of velocities? J Exp Biol, 221(Pt 18).
+517           https://doi.org/10.1242/jeb.184218
+518    Kipp, S., Kram, R., & Hoogkamer, W. (2019). Extrapolating Metabolic Savings in Running:
+519           Implications for Performance Predictions [Mini Review]. Frontiers in Physiology, 10.
+520           https://doi.org/10.3389/fphys.2019.00079
+521    Kram, R., Griffin, T. M., Donelan, J. M., & Chang, Y. H. (1998). Force treadmill for measuring
+522           vertical and horizontal ground reaction forces. J Appl Physiol (1985), 85(2), 764-769.
+523           https://doi.org/10.1152/jappl.1998.85.2.764
+524    Kram, R., & Taylor, C. R. (1990). Energetics of running: a new perspective. Nature, 346(6281),
+525           265-267. https://doi.org/10.1038/346265a0
+526    Lavoie, E. M., Holden, L. D., Vangala, S. V., Santee, W. R., Pryor, R. R., Friedl, K. E., Potter, A.
+527           W., & Looney, D. P. (2023). Effects of modern military footwear on the oxygen costs of
+528           walking in US Army personnel. Footwear Science, 1-8.
+529           https://doi.org/10.1080/19424280.2022.2164622
+530    Lemire, M., Falbriard, M., Aminian, K., Millet, G. P., & Meyer, F. (2021). Level, Uphill, and
+531           Downhill Running Economy Values Are Correlated Except on Steep Slopes. Front
+532           Physiol, 12, 697315. https://doi.org/10.3389/fphys.2021.697315
+533    Lemire, M., Faricier, R., Dieterlen, A., Meyer, F., & Millet, G. P. (2023). Relationship between
+534           biomechanics and energy cost in graded treadmill running. Sci Rep, 13(1), 12244.
+535           https://doi.org/10.1038/s41598-023-38328-x
+536    Lemire, M., Remetter, R., Hureau, T. J., Geny, B., Lonsdorfer, E., Favret, F., & Dufour, S. P.
+537           (2022). Energy Cost of Running in Well-Trained Athletes: Toward Slope-Dependent
+538           Factors. Int J Sports Physiol Perform, 17(3), 423-431. https://doi.org/10.1123/ijspp.2021-
+539           0047
+540    Leys, C., Ley, C., Klein, O., Bernard, P., & Licata, L. (2013). Detecting outliers: Do not use
+541           standard deviation around the mean, use absolute deviation around the median. Journal of
+542           Experimental Social Psychology, 49(4), 764-766.
+543    Looney, D. P., Hoogkamer, W., Kram, R., Arellano, C. J., & Spiering, B. A. (2023). Estimating
+544           Metabolic Energy Expenditure During Level Running in Healthy, Military-Age Women
+545           and Men. J Strength Cond Res, 37(12), 2496-2503.
+546           https://doi.org/10.1519/jsc.0000000000004626
+547    Looney, D. P., Lavoie, E. M., Notley, S. R., Holden, L. D., Arcidiacono, D. M., Potter, A. W.,
+548           Silder, A., Pasiakos, S. M., Arellano, C. J., Karis, A. J., Pryor, J. L., Santee, W. R., &
+549           Friedl, K. E. (2024). Metabolic Costs of Walking with Weighted Vests. Med Sci Sports
+550           Exerc, 56(6), 1177-1185. https://doi.org/10.1249/mss.0000000000003400
+551    Looney, D. P., Lavoie, E. M., Vangala, S. V., Holden, L. D., Figueiredo, P. S., Friedl, K. E.,
+552           Frykman, P. N., Hancock, J. W., Montain, S. J., Pryor, J. L., Santee, W. R., & Potter, A.
+553           W. (2022). Modeling the Metabolic Costs of Heavy Military Backpacking. Med Sci
+554           Sports Exerc. https://doi.org/10.1249/mss.0000000000002833
+555    Looney, D. P., Potter, A. W., Pryor, J. L., Bremner, P. E., Chalmers, C. R., McClung, H. L.,
+556           Welles, A. P., & Santee, W. R. (2019a). Metabolic Costs of Standing and Walking in
+557           Healthy Military-Age Adults: A Meta-regression. Med Sci Sports Exerc, 51(2), 346-351.
+558           https://doi.org/10.1249/mss.0000000000001779
+
+
+
+
+                                                                                                                                          25
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+559    Looney, D. P., Santee, W. R., Hansen, E. O., Bonventre, P. J., Chalmers, C. R., & Potter, A. W.
+560            (2019b). Estimating Energy Expenditure during Level, Uphill, and Downhill Walking.
+561            Med Sci Sports Exerc, 51(9), 1954-1960. https://doi.org/10.1249/mss.0000000000002002
+562    Lussiana, T., Fabre, N., Hébert-Losier, K., & Mourot, L. (2013). Effect of slope and footwear on
+563            running economy and kinematics. Scand J Med Sci Sports, 23(4), e246-253.
+564            https://doi.org/10.1111/sms.12057
+565    Margaria, R. (1938). Sulla fisiologia e specialmente sul consumo energetico della marcia e della
+566            corsa a varie velocita ed inclinazioni del terreno. Dott. Giovanni Bardi.
+567    Margaria, R., Cerretelli, P., Aghemo, P., & Sassi, G. (1963). Energy cost of running. J Appl
+568            Physiol, 18, 367-370. https://doi.org/10.1152/jappl.1963.18.2.367
+569    Minetti, A. E., Moia, C., Roi, G. S., Susta, D., & Ferretti, G. (2002). Energy cost of walking and
+570            running at extreme uphill and downhill slopes. J Appl Physiol (1985), 93(3), 1039-1046.
+571            https://doi.org/10.1152/japplphysiol.01177.2001
+572    Ogueta-Alday, A., Morante, J. C., Gómez-Molina, J., & García-López, J. (2018). Similarities and
+573            differences among half-marathon runners according to their performance level. PLoS
+574            One, 13(1), e0191688. https://doi.org/10.1371/journal.pone.0191688
+575    Ortiz, A. L. R., Giovanelli, N., & Kram, R. (2017). The metabolic costs of walking and running
+576            up a 30-degree incline: implications for vertical kilometer foot races. Eur J Appl Physiol,
+577            117(9), 1869-1876. https://doi.org/10.1007/s00421-017-3677-y
+578    Osgnach, C., Poser, S., Bernardini, R., Rinaldo, R., & di Prampero, P. E. (2010). Energy cost and
+579            metabolic power in elite soccer: a new match analysis approach. Med Sci Sports Exerc,
+580            42(1), 170-178. https://doi.org/10.1249/MSS.0b013e3181ae5cfd
+581    Ozemek, C., Bonikowske, A., & Christle, J. G., P. . (2025). ACSM's Guidelines for Exercise
+582            Testing and Prescription. Lippincott Williams & Wilkins.
+583    Paes, M. R., & Fernandez, R. (2016). Evaluation of energy expenditure in forward and backward
+584            movements performed by soccer referees. Braz J Med Biol Res, 49(5), e5061.
+585            https://doi.org/10.1590/1414-431x20155061
+586    Péronnet, F., & Massicotte, D. (1991). Table of nonprotein respiratory quotient: an update. Can J
+587            Sport Sci, 16(1), 23-29.
+588    Perrin, T. P., Rossi, J., Kerhervé, H. A., & Millet, G. Y. (2023). Increasing Shoe Longitudinal
+589            Bending Stiffness Is Not Beneficial to Reduce Energy Cost During Graded Running. Int J
+590            Sports Physiol Perform, 18(2), 209-212. https://doi.org/10.1123/ijspp.2022-0163
+591    Pinheiro, J., Bates, D., DebRoy, S., Sarkar, D., Heisterkamp, S., Van Willigen, B., & Maintainer,
+592            R. (2017). Package ‘nlme’. Linear and nonlinear mixed effects models, version, 3(1),
+593            274.
+594    R Core Team. (2014). R: A language and environment for statistical computing. R Foundation
+595            for Statistical Computing.
+596    Roberts, T. J., Kram, R., Weyand, P. G., & Taylor, C. R. (1998). Energetics of bipedal running. I.
+597            Metabolic cost of generating force. J Exp Biol, 201(Pt 19), 2745-2751.
+598            https://doi.org/10.1242/jeb.201.19.2745
+599    Rubenson, J., Heliams, D. B., Maloney, S. K., Withers, P. C., Lloyd, D. G., & Fournier, P. A.
+600            (2007). Reappraisal of the comparative cost of human locomotion using gait-specific
+601            allometric analyses. J Exp Biol, 210(Pt 20), 3513-3524.
+602            https://doi.org/10.1242/jeb.000992
+603    Sabater Pastor, F., Besson, T., Berthet, M., Varesco, G., Kennouche, D., Dandrieux, P. E., Rossi,
+604            J., & Millet, G. Y. (2023). Elite Road vs. Trail Runners: Comparing Economy,
+
+                                                                                                                                          26
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+605            Biomechanics, Strength, and Power. J Strength Cond Res, 37(1), 181-186.
+606            https://doi.org/10.1519/jsc.0000000000004226
+607    Sabater Pastor, F., Varesco, G., Besson, T., Koral, J., Feasson, L., & Millet, G. Y. (2021).
+608            Degradation of energy cost with fatigue induced by trail running: effect of distance. Eur J
+609            Appl Physiol, 121(6), 1665-1675. https://doi.org/10.1007/s00421-021-04624-5
+610    Schafer, E., Chapman, C., Roberts, B., Stein, J., Jacques, J., Friedl, K., Pryor, J., Potter, A., &
+611            Looney, D. (2025). Validity and Test-Retest Reliability of a Speed-Based Maximal
+612            Oxygen Uptake (V̇O2max) Protocol in Military Personnel. J Sport Human Perf, 13(1),
+613            27-39. https://doi.org/10.12922/jshp.v13i1.203
+614    Seki, K., Kyröläinen, H., Sugimoto, K., & Enomoto, Y. (2020). Biomechanical factors affecting
+615            energy cost during running utilising different slopes. J Sports Sci, 38(1), 6-12.
+616            https://doi.org/10.1080/02640414.2019.1676527
+617    Snyder, K. L., & Farley, C. T. (2011). Energetically optimal stride frequency in running: the
+618            effects of incline and decline. J Exp Biol, 214(Pt 12), 2089-2095.
+619            https://doi.org/10.1242/jeb.053157
+620    Soucy, H. Y., Arcidiacono, D. M., Sutton, A. L., Potter, A. W., Pitts, K. P., Santee, W. R., &
+621            Looney, D. P. (2023). Physiological considerations for modern military rifle carriage. J
+622            Sport Hum Perf, 11(1), 1-12.
+623    Sundby, O. H., & Gorelick, M. L. (2014). Relationship between functional hamstring: quadriceps
+624            ratios and running economy in highly trained and recreational female runners. J Strength
+625            Cond Res, 28(8), 2214-2227. https://doi.org/10.1519/jsc.0000000000000376
+626    Sundström, D., Kurz, M., & Björklund, G. (2021). Runners Adapt Different Lower-Limb
+627            Movement Patterns With Respect to Different Speeds and Downhill Slopes. Front Sports
+628            Act Living, 3, 682401. https://doi.org/10.3389/fspor.2021.682401
+629    University of Massachusetts Integrative Locomotion Lab. (2025). Metabolic Rate Calculator.
+630            Retrieved 5/19/2025 from https://sites.google.com/umass.edu/umill/calculator
+631    Vercruyssen, F., Gruet, M., Colson, S. S., Ehrstrom, S., & Brisswalter, J. (2017). Compression
+632            Garments, Muscle Contractile Function, and Economy in Trail Runners. Int J Sports
+633            Physiol Perform, 12(1), 62-68. https://doi.org/10.1123/ijspp.2016-0035
+634    Vercruyssen, F., Tartaruga, M., Horvais, N., & Brisswalter, J. (2016). Effects of Footwear and
+635            Fatigue on Running Economy and Biomechanics in Trail Runners. Med Sci Sports Exerc,
+636            48(10), 1976-1984. https://doi.org/10.1249/mss.0000000000000981
+637    Vernillo, G., Aguiar, M., Savoldelli, A., Martinez, A., Giandolini, M., Horvais, N., Edwards, W.
+638            B., & Millet, G. Y. (2020). Regular changes in foot strike pattern during prolonged
+639            downhill running do not influence neuromuscular, energetics, or biomechanical
+640            parameters. Eur J Sport Sci, 20(4), 495-504.
+641            https://doi.org/10.1080/17461391.2019.1645212
+642    Vernillo, G., Giandolini, M., Edwards, W. B., Morin, J. B., Samozino, P., Horvais, N., & Millet,
+643            G. Y. (2017). Biomechanics and Physiology of Uphill and Downhill Running. Sports
+644            Med, 47(4), 615-629. https://doi.org/10.1007/s40279-016-0605-y
+645    Vernillo, G., Savoldelli, A., Zignoli, A., Skafidas, S., Fornasiero, A., La Torre, A., Bortolan, L.,
+646            Pellegrini, B., & Schena, F. (2015). Energy cost and kinematics of level, uphill and
+647            downhill running: fatigue-induced changes after a mountain ultramarathon. J Sports Sci,
+648            33(19), 1998-2005. https://doi.org/10.1080/02640414.2015.1022870
+
+
+
+
+                                                                                                                                          27
+  bioRxiv preprint doi: https://doi.org/10.1101/2025.06.05.658094; this version posted June 9, 2025. The copyright holder for this preprint (which
+     was not certified by peer review) is the author/funder, who has granted bioRxiv a license to display the preprint in perpetuity. It is made
+                                              available under a CC-BY-NC-ND 4.0 International license.
+
+
+
+
+649    Vertical Kilometer World Circuit. (2025). Kilomètre Vertical® de Fully – Switzerland. Retrieved
+650            05/07/2025 from https://vkworldcircuit.com/kilometre-verticale-fully-
+651            2017/#1481629414097-81458190-e012
+652    Westerlind, K. C., Byrnes, W. C., Harris, C., & Wilcox, A. R. (1994). Alterations in oxygen
+653            consumption during and between bouts of level and downhill running. Med Sci Sports
+654            Exerc, 26(9), 1144-1152.
+655    Whiting, C. S., Hoogkamer, W., & Kram, R. (2022). Metabolic cost of level, uphill, and downhill
+656            running in highly cushioned shoes with carbon-fiber plates. J Sport Health Sci, 11(3),
+657            303-308. https://doi.org/10.1016/j.jshs.2021.10.004
+658    Willis, S. J., Gellaerts, J., Mariani, B., Basset, P., Borrani, F., & Millet, G. P. (2019). Level Versus
+659            Uphill Economy and Mechanical Responses in Elite Ultra-Trail Runners. Int J Sports
+660            Physiol Perform, 14(7), 1001-1005. https://doi.org/10.1123/ijspp.2018-0365
+661
+
+
+
+
+                                                                                                                                          28
+

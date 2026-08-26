@@ -8924,28 +8924,41 @@ function roadGradeTargetPace(flatPaceSecPerMile, gradePct){
 const RE3_DRAG_REF_MPS = 5.0;
 const RE3_DRAG_REF_GRADE_PCT = 1.0;
 const RE3_DRAG_MAX_MPS = 7;
-function re3DragGradePct(speedMps){
+// Wind enters HERE and nowhere else. Drag force goes as the square of the air
+// speed the runner meets, not their ground speed: F ∝ (v+w)|v+w| for headwind
+// w. Since the still-air case is already carried as a grade ∝ v², the honest
+// generalisation is to swap v for the relative air speed and keep the sign —
+// so a tailwind subtracts and a tailwind faster than the runner reads as a
+// push. Routing wind through the SAME calibrated term is what stops it being
+// double-counted: there is no second aerodynamic model to disagree with this
+// one. The ±7 m/s clamp is the edge of Pugh's data, now applied to the air
+// speed rather than the ground speed.
+function re3DragGradePct(speedMps, headwindMps){
   const v = Number(speedMps);
   if(!isFinite(v) || v <= 0) return 0;
-  return RE3_DRAG_REF_GRADE_PCT * Math.pow(Math.min(v, RE3_DRAG_MAX_MPS) / RE3_DRAG_REF_MPS, 2);
+  const w = isFinite(Number(headwindMps)) ? Number(headwindMps) : 0;
+  const rel = Math.max(-RE3_DRAG_MAX_MPS, Math.min(v + w, RE3_DRAG_MAX_MPS));
+  return RE3_DRAG_REF_GRADE_PCT * rel * Math.abs(rel) /
+    (RE3_DRAG_REF_MPS * RE3_DRAG_REF_MPS);
 }
 
 // Metabolic power on a named surface. 'belt' pays grade only; 'outdoor' pays
-// grade plus its own drag at that speed.
-function re3SurfacePower(speedMps, gradePct, surface){
+// grade plus its own drag at that speed, into whatever wind it is running.
+function re3SurfacePower(speedMps, gradePct, surface, headwindMps){
   const v = Number(speedMps), g = Number(gradePct);
   if(!isFinite(v) || v <= 0 || !isFinite(g)) return null;
-  return re3MetabolicPower(v, (g + (surface === 'belt' ? 0 : re3DragGradePct(v))) / 100);
+  return re3MetabolicPower(v, (g + (surface === 'belt' ? 0 : re3DragGradePct(v, headwindMps))) / 100);
 }
 
-function re3SurfaceSpeedForPower(powerWkg, gradePct, surface){
+function re3SurfaceSpeedForPower(powerWkg, gradePct, surface, headwindMps){
   const p = Number(powerWkg), g = Number(gradePct);
   if(!isFinite(p) || p <= 0 || !isFinite(g)) return null;
   let lo = 0.35, hi = 12;
-  if(re3SurfacePower(lo, g, surface) > p || re3SurfacePower(hi, g, surface) < p) return null;
+  if(re3SurfacePower(lo, g, surface, headwindMps) > p ||
+     re3SurfacePower(hi, g, surface, headwindMps) < p) return null;
   for(let i=0;i<70;i++){
     const mid = (lo + hi) / 2;
-    if(re3SurfacePower(mid, g, surface) < p) lo = mid; else hi = mid;
+    if(re3SurfacePower(mid, g, surface, headwindMps) < p) lo = mid; else hi = mid;
   }
   return (lo + hi) / 2;
 }
@@ -8954,25 +8967,30 @@ function re3SurfaceSpeedForPower(powerWkg, gradePct, surface){
 // at `gradePct` on `surface`. Belt targets come out faster than the old
 // road-only math because the belt does not charge for air the athlete never
 // pushed through.
-function gradeTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface){
+//
+// The anchor is always priced in STILL AIR: it stands for what the athlete can
+// do on a flat road, and a race pace is not a wind measurement. `headwindMps`
+// is a condition of the session being prescribed, so it is charged to the
+// target side only. Charging both sides would cancel and print no effect.
+function gradeTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface, headwindMps){
   const pace = Number(anchorPaceSecPerMile), g = Number(gradePct);
   if(!isFinite(pace) || pace <= 0 || !isFinite(g) ||
      g < RE3_MIN_GRADE_PCT || g > RE3_MAX_GRADE_PCT) return null;
-  const anchorPower = re3SurfacePower(1609.344 / pace, 0, 'outdoor');
+  const anchorPower = re3SurfacePower(1609.344 / pace, 0, 'outdoor', 0);
   if(!anchorPower) return null;
-  const speed = re3SurfaceSpeedForPower(anchorPower, g, surface);
+  const speed = re3SurfaceSpeedForPower(anchorPower, g, surface, headwindMps);
   return speed && isFinite(speed) ? speed : null;
 }
 
-// Inverse: what a rep already run at `speedMps` on this grade/surface was
-// worth as a flat outdoor pace.
-function gradeFlatEquivalentPace(speedMps, gradePct, surface){
+// Inverse: what a rep already run at `speedMps` on this grade/surface — into
+// this wind — was worth as a flat, calm-air outdoor pace.
+function gradeFlatEquivalentPace(speedMps, gradePct, surface, headwindMps){
   const v = Number(speedMps), g = Number(gradePct);
   if(!isFinite(v) || v <= 0 || !isFinite(g) ||
      g < RE3_MIN_GRADE_PCT || g > RE3_MAX_GRADE_PCT) return null;
-  const power = re3SurfacePower(v, g, surface);
+  const power = re3SurfacePower(v, g, surface, headwindMps);
   if(!power) return null;
-  const flat = re3SurfaceSpeedForPower(power, 0, 'outdoor');
+  const flat = re3SurfaceSpeedForPower(power, 0, 'outdoor', 0);
   return flat && isFinite(flat) ? 1609.344 / flat : null;
 }
 
@@ -9074,22 +9092,89 @@ function minettiCostOfTransport(gradeDecimal){
 // Carries air resistance the same way RE3 does — as an equivalent grade — so
 // the two models are compared like for like rather than one of them quietly
 // running the athlete through still air.
-function minettiTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface){
+function minettiTargetSpeedMps(anchorPaceSecPerMile, gradePct, surface, headwindMps){
   const pace = Number(anchorPaceSecPerMile), g = Number(gradePct);
   if(!isFinite(pace) || pace <= 0 || !isFinite(g)) return null;
   const anchorSpeed = 1609.344 / pace;
-  const anchorCost = minettiCostOfTransport(re3DragGradePct(anchorSpeed) / 100);
+  const anchorCost = minettiCostOfTransport(re3DragGradePct(anchorSpeed, 0) / 100);
   if(!anchorCost) return null;
   // Outdoor targets pay drag at their own (slower) speed, so the grade the
   // target runs against depends on the answer: settle it by fixed point.
   let speed = anchorSpeed;
   for(let i=0;i<8;i++){
-    const targetGrade = (g + (surface === 'belt' ? 0 : re3DragGradePct(speed))) / 100;
+    const targetGrade = (g + (surface === 'belt' ? 0 : re3DragGradePct(speed, headwindMps))) / 100;
     const targetCost = minettiCostOfTransport(targetGrade);
     if(!targetCost || targetCost <= 0) return null;
     speed = anchorSpeed * (anchorCost / targetCost);
   }
   return isFinite(speed) && speed > 0 ? speed : null;
+}
+
+// ── BELT CALIBRATION (Willwacher et al. 2021) ──
+// A console reading is a request, not a measurement. Across four machines,
+// average belt speed ran roughly 98–103% of the displayed target, and three of
+// the four lost more than 5% of belt speed within each stance phase. So the
+// grade conversion can be exactly right and the session still wrong, because
+// the belt never ran the speed the console claimed.
+//
+// `calibrationPct` is what the coach MEASURED: belt travel over a timed
+// interval as a percentage of the displayed speed (103 = the belt truly runs
+// 3% fast). Two conversions, opposite directions:
+//   dial()  — a true speed the athlete should run → the number to dial in
+//   actual() — a number that WAS dialed in → the speed actually run
+// The default 100 is the identity, so an uncalibrated machine changes nothing.
+const BELT_CALIBRATION_MIN_PCT = 90;
+const BELT_CALIBRATION_MAX_PCT = 110;
+function beltCalibrationFactor(calibrationPct){
+  const k = Number(calibrationPct);
+  if(!isFinite(k) || k < BELT_CALIBRATION_MIN_PCT || k > BELT_CALIBRATION_MAX_PCT) return 1;
+  return k / 100;
+}
+function beltDialSpeed(trueSpeed, calibrationPct){
+  const v = Number(trueSpeed);
+  return isFinite(v) && v > 0 ? v / beltCalibrationFactor(calibrationPct) : null;
+}
+function beltActualSpeed(dialedSpeed, calibrationPct){
+  const v = Number(dialedSpeed);
+  return isFinite(v) && v > 0 ? v * beltCalibrationFactor(calibrationPct) : null;
+}
+
+// ── TRACK LANE GEOMETRY (World Athletics) ──
+// Reps written as "400s" are only 400m in lane 1. The measurement line sits
+// 0.30m from the kerb in lane 1 but 0.20m from the inner line in lanes 2–8,
+// so the first stagger is the odd one (7.038m) and every lane after it adds a
+// full lane width of circumference (2*pi*1.22 = 7.665m). A squad rotated out
+// to lane 5 to stay off a wet inside is running 430m laps and getting slower
+// splits for it. This is geometry, not a model — no grade, no metabolism.
+const TRACK_LANE_WIDTH_M = 1.22;
+const TRACK_LANE_1_LAP_M = 400;
+const TRACK_LANE_2_STAGGER_M = 7.038;
+const TRACK_MAX_LANE = 8;
+function trackLapDistanceM(lane){
+  const n = Math.round(Number(lane));
+  if(!isFinite(n) || n < 1 || n > TRACK_MAX_LANE) return null;
+  if(n === 1) return TRACK_LANE_1_LAP_M;
+  return TRACK_LANE_1_LAP_M + TRACK_LANE_2_STAGGER_M +
+    (n - 2) * 2 * Math.PI * TRACK_LANE_WIDTH_M;
+}
+
+// ── FLAT-EQUIVALENT DISTANCE ──
+// The other half of "what was that worth?". A pace answer tells a coach how
+// hard the rep was; this tells them how much of it there was. Because the
+// conversion matches metabolic POWER, an equal-power rep of equal duration is
+// also an equal-ENERGY rep — so the flat distance covered in the same time at
+// the equivalent flat pace is the energy-equivalent distance, with no second
+// model needed. Reported for the segment given, never for a whole route: the
+// cost curve is non-linear, so averaging grade first and converting after is
+// wrong (C of mean G is not mean of C(G)).
+function gradeFlatEquivalentMeters(speedMps, gradePct, surface, meters, headwindMps){
+  const v = Number(speedMps), d = Number(meters);
+  if(!isFinite(v) || v <= 0 || !isFinite(d) || d <= 0) return null;
+  const flatPace = gradeFlatEquivalentPace(v, gradePct, surface, headwindMps);
+  if(!flatPace || !isFinite(flatPace)) return null;
+  const flatSpeed = 1609.344 / flatPace;
+  const meters2 = flatSpeed * (d / v);
+  return isFinite(meters2) && meters2 > 0 ? meters2 : null;
 }
 
 function roadGradeToolHTML(prefix, initialPace, useCalculatorAnchor){
@@ -9112,10 +9197,25 @@ function roadGradeToolHTML(prefix, initialPace, useCalculatorAnchor){
         <div>${lbl(prefix+'Pace',paceLabel)}<input id="${prefix}Pace" class="auth-input" value="${p}" placeholder="${useCalculatorAnchor?'Enter race time above':'8:00'}" ${paceAttrs} oninput="updateRoadGradeTool('${prefix}')"></div>
         <div>${lbl(prefix+'Grade','Grade (%)')}<input id="${prefix}Grade" class="auth-input" type="number" min="-15" max="15" step="0.1" value="3" oninput="updateRoadGradeTool('${prefix}')"></div>
         <div>${lbl(prefix+'Rep','Rep length (optional)')}<div style="display:flex;gap:.35rem"><input id="${prefix}Rep" class="auth-input" type="number" min="1" max="3600" step="1" value="" placeholder="40" style="min-width:0" oninput="updateRoadGradeTool('${prefix}')"><select id="${prefix}RepUnit" style="max-width:6rem" onchange="updateRoadGradeTool('${prefix}')"><option value="sec">sec</option><option value="m">meters</option></select></div></div>
+        <div id="${prefix}WindField">${lbl(prefix+'Wind','Headwind (mph, optional)')}<input id="${prefix}Wind" class="auth-input" type="number" min="-25" max="25" step="1" value="" placeholder="0" oninput="updateRoadGradeTool('${prefix}')"></div>
+        <div id="${prefix}CalField" style="display:none">${lbl(prefix+'Cal','Belt calibration (%)')}<input id="${prefix}Cal" class="auth-input" type="number" min="${BELT_CALIBRATION_MIN_PCT}" max="${BELT_CALIBRATION_MAX_PCT}" step="0.1" value="" placeholder="100" oninput="updateRoadGradeTool('${prefix}')"></div>
         <div id="${prefix}Result" aria-live="polite" style="background:var(--bg-card);border:1px solid var(--border-s);border-radius:.4rem;padding:.65rem .8rem;min-height:3.25rem"></div>
       </div>
       <div id="${prefix}Detail"></div>
-      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.55;margin-top:.75rem">Metabolic estimate only. Enter the grade of the segment, not total elevation gain or a loop's net grade. The belt is not the road: outdoor paces carry air resistance the treadmill does not, and that difference is applied here. Wind, surface, turns, technical terrain, drafting, tactics, and downhill muscle damage are not.</p>
+      <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.55;margin-top:.75rem">Metabolic estimate only. Enter the grade of the segment, not total elevation gain or a loop's net grade. The belt is not the road: outdoor paces carry air resistance the treadmill does not, and that difference is applied here. Headwind is charged to the session, not to the flat anchor — a race pace is not a wind measurement. Surface, turns, technical terrain, drafting, tactics, and downhill muscle damage are still not modeled.</p>
+      <details style="margin-top:.6rem">
+        <summary style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);cursor:pointer;letter-spacing:.06em;text-transform:uppercase">Track lane geometry — a "400" is only 400m in lane 1</summary>
+        <div style="overflow-x:auto;margin-top:.5rem">
+          <table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:.6875rem">
+            <thead><tr>${['Lane','One lap','vs lane 1'].map(h=>`<th style="text-align:left;padding:.3rem .5rem;color:var(--text-4);font-weight:500;border-bottom:1px solid var(--border)">${h}</th>`).join('')}</tr></thead>
+            <tbody>${Array.from({length:TRACK_MAX_LANE},(_,i)=>i+1).map(n=>{
+              const lap = trackLapDistanceM(n);
+              return `<tr><td style="padding:.3rem .5rem;color:${n===1?'var(--text)':'var(--text-3)'};border-bottom:1px solid var(--border-s)">${n}</td><td style="padding:.3rem .5rem;color:${n===1?'var(--text)':'var(--text-3)'};border-bottom:1px solid var(--border-s)">${lap.toFixed(1)}m</td><td style="padding:.3rem .5rem;color:var(--text-4);border-bottom:1px solid var(--border-s)">${n===1?'—':'+'+(lap-TRACK_LANE_1_LAP_M).toFixed(1)+'m'}</td></tr>`;
+            }).join('')}</tbody>
+          </table>
+          <p style="font-family:var(--font-mono);font-size:.5625rem;color:var(--text-4);line-height:1.5;margin-top:.4rem">Unstaggered full laps, World Athletics geometry (1.22m lanes; the lane-1 measurement line sits 0.30m off the kerb, lanes 2–8 sit 0.20m off the inner line, which is why the first stagger is the odd one). Race staggers cancel this for a properly marked start — a workout in an outer lane does not.</p>
+        </div>
+      </details>
     </div>`;
 }
 
@@ -9123,15 +9223,26 @@ function updateRoadGradeTool(prefix){
   const el = id => document.getElementById(prefix + id);
   const modeEl = el('Mode'), paceEl = el('Pace'), gradeEl = el('Grade'), out = el('Result');
   const surfaceEl = el('Surface'), repEl = el('Rep'), repUnitEl = el('RepUnit'), detail = el('Detail');
+  const windEl = el('Wind'), calEl = el('Cal');
+  const windField = el('WindField'), calField = el('CalField');
   if(!modeEl || !paceEl || !gradeEl || !out) return;
   const belt = Boolean(surfaceEl) && surfaceEl.value === 'belt';
   const surface = belt ? 'belt' : 'outdoor';
+  // Each surface gets only the condition it can actually have: a belt has no
+  // wind, and a road has no console to be out of calibration.
+  if(windField) windField.style.display = belt ? 'none' : '';
+  if(calField) calField.style.display = belt ? '' : 'none';
   // Treadmills do not decline: clamp the control, not just the answer.
   const minGrade = belt ? 0 : RE3_MIN_GRADE_PCT;
   gradeEl.min = String(minGrade);
   if(Number(gradeEl.value) < minGrade) gradeEl.value = String(minGrade);
   const grade = Number(gradeEl.value);
   const observed = modeEl.value === 'observed';
+  const windMph = belt || !windEl ? 0 : Number(windEl.value);
+  const windMps = isFinite(windMph) && windMph !== 0 ? windMph / MPS_TO_MPH : 0;
+  const calPct = belt && calEl && calEl.value !== '' ? Number(calEl.value) : 100;
+  const calibrated = belt && isFinite(calPct) && Math.abs(calPct - 100) > 1e-9 &&
+    calPct >= BELT_CALIBRATION_MIN_PCT && calPct <= BELT_CALIBRATION_MAX_PCT;
   const pace = parsePaceOrSpeed(paceEl.value || '');
   if(detail) detail.innerHTML = '';
   if(!pace || pace < 180 || pace > 1800 || !isFinite(grade) || grade < minGrade || grade > RE3_MAX_GRADE_PCT){
@@ -9141,30 +9252,59 @@ function updateRoadGradeTool(prefix){
   const gradeLabel = `${grade>0?'+':''}${grade}%`;
   const cap = (label,value,sub) => `<span style="font-family:var(--font-mono);font-size:.5625rem;color:var(--text-4);text-transform:uppercase;letter-spacing:.08em">${esc(label)}</span><strong style="font-family:var(--font-stat);font-size:1.35rem;display:block;color:var(--text);margin-top:.1rem">${esc(value)}</strong>${sub?`<span style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3)">${esc(sub)}</span>`:''}`;
 
+  const repValue = repEl ? Number(repEl.value) : NaN;
+  const repUnit = repUnitEl && repUnitEl.value === 'm' ? 'm' : 'sec';
+
   if(observed){
-    const flat = gradeFlatEquivalentPace(1609.344/pace, grade, surface);
+    // What was dialed in is not always what the belt ran.
+    const dialed = 1609.344 / pace;
+    const ran = belt ? beltActualSpeed(dialed, calPct) : dialed;
+    const flat = gradeFlatEquivalentPace(ran, grade, surface, windMps);
     if(!flat || !isFinite(flat)){
       out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
       return;
     }
-    out.innerHTML = cap(`Flat-road effort${belt?' (from belt)':''}`, `${_mmss(flat,0)}/mi`, belt ? `belt ${paceSecPerMileToMph(pace).toFixed(1)} mph at ${gradeLabel}` : '');
+    const subs = [];
+    if(belt) subs.push(`belt ${(ran*MPS_TO_MPH).toFixed(1)} mph at ${gradeLabel}`);
+    if(calibrated) subs.push(`console read ${paceSecPerMileToMph(pace).toFixed(1)}`);
+    if(windMps) subs.push(`${Math.abs(windMph)} mph ${windMph > 0 ? 'headwind' : 'tailwind'}`);
+    out.innerHTML = cap(`Flat-road effort${belt?' (from belt)':''}`, `${_mmss(flat,0)}/mi`, subs.join(' · '));
+    if(!detail) return;
+    // The pace answer says how hard; this says how much. Equal power for equal
+    // time is equal energy, so the flat distance covered in the same time is
+    // the energy-equivalent distance.
+    const geoObs = isFinite(repValue) && repValue > 0
+      ? hillRepGeometry(ran, flat, repValue, repUnit) : null;
+    if(geoObs){
+      const eqM = gradeFlatEquivalentMeters(ran, grade, surface, geoObs.meters, windMps);
+      if(eqM){
+        const ratio = eqM / geoObs.meters;
+        detail.innerHTML = `<p style="font-size:.75rem;color:var(--text-2);line-height:1.55;margin-top:.75rem">That ${Math.round(geoObs.meters)}m at ${gradeLabel} cost about what <strong>${Math.round(eqM)}m</strong> of flat road costs — <strong>${ratio.toFixed(2)}×</strong> the distance in energy terms. <span style="color:var(--text-3)">Energy only. It is not ${Math.round(eqM)}m of pounding, and it does not convert to ${Math.round(eqM)}m of anyone's weekly mileage.</span></p>`;
+      }
+    }
     return;
   }
 
-  const speed = gradeTargetSpeedMps(pace, grade, surface);
+  const speed = gradeTargetSpeedMps(pace, grade, surface, windMps);
   if(!speed || !isFinite(speed)){
     out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
     return;
   }
   const targetPace = 1609.344 / speed;
   const targetMph = speed * MPS_TO_MPH;
+  // On a calibrated belt the number to DIAL differs from the speed to RUN.
+  const dialMph = belt ? beltDialSpeed(speed, calPct) * MPS_TO_MPH : targetMph;
+  const windNote = windMps ? ` · into ${Math.abs(windMph)} mph ${windMph > 0 ? 'headwind' : 'tailwind'}` : '';
+  // Every belt number printed below is a CONSOLE number, so a coach never has
+  // to convert one of them by hand. True speed is what the model reasons in;
+  // the dial is what the athlete touches.
+  const beltMph = trueMps => beltDialSpeed(trueMps, calPct) * MPS_TO_MPH;
   out.innerHTML = belt
-    ? cap(`Belt speed at ${gradeLabel}`, `${targetMph.toFixed(1)} mph`, `${_mmss(targetPace,0)}/mi`)
-    : cap(`Same-effort pace at ${gradeLabel}`, `${_mmss(targetPace,0)}/mi`, '');
+    ? cap(`${calibrated ? 'Dial the belt to' : 'Belt speed at'} ${gradeLabel}`, `${dialMph.toFixed(1)} mph`,
+        calibrated ? `runs ${targetMph.toFixed(1)} mph true · ${_mmss(targetPace,0)}/mi` : `${_mmss(targetPace,0)}/mi`)
+    : cap(`Same-effort pace at ${gradeLabel}`, `${_mmss(targetPace,0)}/mi`, windNote ? windNote.replace(' · ','') : '');
   if(!detail) return;
 
-  const repValue = repEl ? Number(repEl.value) : NaN;
-  const repUnit = repUnitEl && repUnitEl.value === 'm' ? 'm' : 'sec';
   const geo = isFinite(repValue) && repValue > 0 ? hillRepGeometry(speed, pace, repValue, repUnit) : null;
   const blocks = [];
 
@@ -9176,12 +9316,12 @@ function updateRoadGradeTool(prefix){
   }
 
   if(geo && geo.seconds < RE3_STEADY_MIN_REP_SEC){
-    const cross = minettiTargetSpeedMps(pace, grade, surface);
+    const cross = minettiTargetSpeedMps(pace, grade, surface, windMps);
     const crossText = cross && isFinite(cross)
-      ? `${belt?'RE3':'RE3'} ${belt?targetMph.toFixed(1)+' mph':_mmss(targetPace,0)+'/mi'} · Minetti 2002 ${belt?(cross*MPS_TO_MPH).toFixed(1)+' mph':_mmss(1609.344/cross,0)+'/mi'}`
+      ? `RE3 ${belt?dialMph.toFixed(1)+' mph':_mmss(targetPace,0)+'/mi'} · Minetti 2002 ${belt?beltMph(cross).toFixed(1)+' mph':_mmss(1609.344/cross,0)+'/mi'}`
       : '';
     const ceiling = sprintCeilingSpeedMps(pace, grade);
-    const fmtSpeed = v => belt ? `${(v*MPS_TO_MPH).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`;
+    const fmtSpeed = v => belt ? `${beltMph(v).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`;
     const bracket = ceiling && ceiling > speed ? `
         <div style="display:grid;grid-template-columns:auto 1fr;gap:.25rem .7rem;margin:.55rem 0;font-family:var(--font-mono);font-size:.6875rem">
           <span style="color:var(--text-4)">FLOOR</span><span style="color:var(--text-2)"><strong>${esc(fmtSpeed(speed))}</strong> — steady cost-matched · ${Math.round(speed/(1609.344/pace)*100)}% of flat speed</span>
@@ -9200,9 +9340,9 @@ function updateRoadGradeTool(prefix){
   const ladder = [-40,-20,0,20,40].map(offset => {
     const anchor = pace + offset;
     if(anchor < 180 || anchor > 1800) return null;
-    const v = gradeTargetSpeedMps(anchor, grade, surface);
+    const v = gradeTargetSpeedMps(anchor, grade, surface, windMps);
     if(!v || !isFinite(v)) return null;
-    const cells = [`${_mmss(anchor,0)}/mi`, belt ? `${(v*MPS_TO_MPH).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`];
+    const cells = [`${_mmss(anchor,0)}/mi`, belt ? `${beltMph(v).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`];
     if(geo) cells.push(repUnit === 'm' ? `${Math.round(repValue / v)}s` : `${Math.round(repValue * v)}m`);
     return { offset, cells };
   }).filter(Boolean);

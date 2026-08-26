@@ -1,0 +1,22 @@
+{
+  "expected_brand_count": 20,
+  "observed_brand_count": 20,
+  "missing_brands": [],
+  "brands_with_numeric_circumference": 17,
+  "brands_without_numeric_circumference": [
+    "Assault Fitness",
+    "BowFlex",
+    "Woodway"
+  ],
+  "model_family_records": 73,
+  "numeric_records": 49,
+  "unavailable_records": 24,
+  "manual_confirmation_records": 8,
+  "max_circumference_conversion_error_mm": 0.01139999999986685,
+  "max_width_conversion_error_mm": 0.011799999999936972,
+  "all_numeric_circumferences_within_90_to_150_in": true,
+  "all_loops_exceed_twice_reported_running_surface": true,
+  "shared_simple_part_number_conflicts": [],
+  "official_manufacturer_numeric_records": 0,
+  "warning": "No retained numeric record is hosted on an official manufacturer domain; values are dimensioned compatible/OEM replacement records or mirrored documentation."
+}

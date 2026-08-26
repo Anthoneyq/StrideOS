@@ -209,6 +209,107 @@ probe('fitness override: 5K override on an 800m-PR athlete unlocks the mile view
   const relocked = buildLadderRows();
   assert(/data-allowed="0"/.test(relocked), 'aerobic ladder rows should re-block on a raw 800m anchor');
 });
+// ── 5. Hills & treadmill: wind, belt calibration, lane geometry ────────────
+// (2026-08-26) These drive updateRoadGradeTool through the real DOM path
+// rather than the pure functions, because the failure modes here are all in
+// the wiring: a field shown on the wrong surface, a belt number that is true
+// speed where the coach expects a console number, or a condition read from an
+// input that does not exist.
+const gradeUI = (inputs) => {
+  const set = (id, v) => { document.getElementById('probeGrade' + id).value = v; };
+  ['Surface','Mode','Pace','Grade','Rep','RepUnit','Wind','Cal'].forEach(k => set(k, ''));
+  set('Surface', 'outdoor'); set('Mode', 'target'); set('RepUnit', 'sec');
+  Object.keys(inputs).forEach(k => set(k, inputs[k]));
+  updateRoadGradeTool('probeGrade');
+  return {
+    result: document.getElementById('probeGradeResult').innerHTML,
+    detail: document.getElementById('probeGradeDetail').innerHTML,
+    windShown: document.getElementById('probeGradeWindField').style.display !== 'none',
+    calShown: document.getElementById('probeGradeCalField').style.display !== 'none'
+  };
+};
+const mphIn = (s) => { const m = s.match(/([\\d.]+)\\s*mph/); return m ? Number(m[1]) : null; };
+const paceIn = (s) => { const m = s.match(/(\\d+):(\\d\\d)\\/mi/); return m ? Number(m[1]) * 60 + Number(m[2]) : null; };
+
+probe('grade tool: each surface shows only the condition it can have', () => {
+  const road = gradeUI({ Pace: '8:00', Grade: '5' });
+  assert(road.windShown && !road.calShown, 'road should offer wind, not belt calibration');
+  const belt = gradeUI({ Surface: 'belt', Pace: '8:00', Grade: '5' });
+  assert(belt.calShown && !belt.windShown, 'belt should offer calibration, not wind');
+});
+
+probe('grade tool: a headwind slows the prescribed pace, a tailwind quickens it', () => {
+  const calm = paceIn(gradeUI({ Pace: '8:00', Grade: '0' }).result);
+  const head = paceIn(gradeUI({ Pace: '8:00', Grade: '0', Wind: '15' }).result);
+  const tail = paceIn(gradeUI({ Pace: '8:00', Grade: '0', Wind: '-15' }).result);
+  assert(calm && head && tail, 'all three should produce a pace');
+  assert(head > calm, 'headwind should slow the target (calm ' + calm + 's, head ' + head + 's)');
+  assert(tail < calm, 'tailwind should quicken it (calm ' + calm + 's, tail ' + tail + 's)');
+});
+
+probe('grade tool: wind is named in the answer, so it is never applied silently', () => {
+  const r = gradeUI({ Pace: '8:00', Grade: '3', Wind: '12' }).result;
+  assert(/12 mph headwind/.test(r), 'headwind should be stated on the result, got: ' + r);
+  const t = gradeUI({ Pace: '8:00', Grade: '3', Wind: '-12' }).result;
+  assert(/12 mph tailwind/.test(t), 'tailwind should be named as a tailwind, got: ' + t);
+});
+
+probe('grade tool: an uncalibrated belt is unchanged; a fast belt is dialed down', () => {
+  const plain = gradeUI({ Surface: 'belt', Pace: '8:00', Grade: '5' });
+  const fast = gradeUI({ Surface: 'belt', Pace: '8:00', Grade: '5', Cal: '103' });
+  const a = mphIn(plain.result), b = mphIn(fast.result);
+  assert(a && b, 'both should print an mph');
+  assert(!/Dial the belt/.test(plain.result), 'no calibration means no dial language');
+  assert(/Dial the belt/.test(fast.result), 'a calibrated belt should tell the coach what to dial');
+  assert(b < a, 'a belt running 3% fast must be dialed BELOW the true target (plain ' + a + ', calibrated ' + b + ')');
+  assert(Math.abs(b - a / 1.03) < 0.06, 'dial speed should be ~true/1.03 (got ' + b + ')');
+  assert(/runs .* mph true/.test(fast.result), 'the true speed should still be shown alongside the dial number');
+});
+
+probe('grade tool: every belt number in the detail is a console number too', () => {
+  // A 40s rep opens the short-rep bracket and the anchor ladder. If those
+  // printed TRUE speed while the headline printed DIAL speed, a coach reading
+  // down the panel would get two different numbers for the same prescription.
+  const plain = gradeUI({ Surface: 'belt', Pace: '8:00', Grade: '7', Rep: '40' });
+  const fast = gradeUI({ Surface: 'belt', Pace: '8:00', Grade: '7', Rep: '40', Cal: '103' });
+  assert(/FLOOR/.test(plain.detail), 'a 40s rep should open the bracket');
+  const floorOf = (s) => { const m = s.match(/FLOOR<\\/span>[\\s\\S]*?([\\d.]+)\\s*mph/); return m ? Number(m[1]) : null; };
+  const p = floorOf(plain.detail), f = floorOf(fast.detail);
+  assert(p && f, 'both brackets should print a floor in mph');
+  assert(f < p, 'the calibrated bracket must also be in console units (plain ' + p + ', calibrated ' + f + ')');
+  assert(Math.abs(f - p / 1.03) < 0.06, 'the bracket floor should scale by the same calibration factor');
+});
+
+probe('grade tool: "what effort was this" now reports energy-equivalent distance', () => {
+  const up = gradeUI({ Mode: 'observed', Pace: '9:00', Grade: '6', Rep: '1000', RepUnit: 'm' });
+  assert(/cost about what/.test(up.detail), 'observed mode should report equivalent distance, got: ' + up.detail);
+  const m = up.detail.match(/<strong>(\\d+)m<\\/strong>/);
+  assert(m && Number(m[1]) > 1000, 'an uphill km should be worth more than 1000m flat, got: ' + (m && m[1]));
+  const down = gradeUI({ Mode: 'observed', Pace: '9:00', Grade: '-6', Rep: '1000', RepUnit: 'm' });
+  const dm = down.detail.match(/<strong>(\\d+)m<\\/strong>/);
+  assert(dm && Number(dm[1]) < 1000, 'a downhill km should be worth less, got: ' + (dm && dm[1]));
+});
+
+probe('grade tool: equivalent distance is fenced off from mileage and impact', () => {
+  const d = gradeUI({ Mode: 'observed', Pace: '9:00', Grade: '6', Rep: '1000', RepUnit: 'm' }).detail;
+  assert(/Energy only/.test(d) && /mileage/.test(d),
+    'the equivalent-distance line must refuse the mileage reading, got: ' + d);
+});
+
+probe('grade tool: observed mode reads a calibrated belt as the speed it actually ran', () => {
+  const plain = paceIn(gradeUI({ Surface: 'belt', Mode: 'observed', Pace: '8.0', Grade: '5' }).result);
+  const fast = paceIn(gradeUI({ Surface: 'belt', Mode: 'observed', Pace: '8.0', Grade: '5', Cal: '103' }).result);
+  assert(plain && fast, 'both should convert to a flat pace');
+  assert(fast < plain, 'a belt that runs fast means the athlete did MORE work (plain ' + plain + 's, calibrated ' + fast + 's)');
+});
+
+probe('grade tool: the lane table ships with the tool and names the lane-1 trap', () => {
+  const markup = roadGradeToolHTML('laneProbe', '8:00');
+  assert(/only 400m in lane 1/.test(markup), 'the lane table should be discoverable by its claim');
+  assert(/453\\.0m/.test(markup), 'lane 8 should be printed');
+  assert(/Race staggers cancel this/.test(markup), 'the table must say when the stagger does NOT matter');
+});
+
 `;
 ctx.html_src = main;
 ctx.full_html = html;
