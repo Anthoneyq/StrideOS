@@ -9042,6 +9042,43 @@ function sprintCeilingSpeedMps(anchorPaceSecPerMile, gradePct){
   if(!isFinite(pace) || pace <= 0 || !retained) return null;
   return (1609.344 / pace) * retained;
 }
+
+// ── SHORT-REP TARGET — the rep length moves the number, not just the caveat ──
+// Below the steady threshold the energy system changes with duration, so the
+// same printed floor cannot serve a 15s rep and an 80s rep. The target is a
+// linear weighting between the bracket's two published limits: all-out sprint
+// retention at 0s (Delaney 2022 — the T→0 case by definition) and the steady
+// cost-matched floor at 90s (Held 2023 validates it at 5min; VO2 is fully
+// ramped well before 90s). Linear is the no-free-parameter choice between two
+// anchored ends — and the one paired field observation on record agrees with
+// it: Alex's 40s reps at +7% settled at 9.6–10.0 mph, 54–75% up the bracket,
+// where this line says 56% (9.63 mph). One observation is not a fit, so no
+// curve is tuned to it; it is the check, not the calibration.
+function shortRepBracketWeight(repSeconds){
+  const t = Number(repSeconds);
+  if(!isFinite(t) || t <= 0) return null;
+  if(t >= RE3_STEADY_MIN_REP_SEC) return 0;
+  return (RE3_STEADY_MIN_REP_SEC - t) / RE3_STEADY_MIN_REP_SEC;
+}
+function shortRepTargetSpeedMps(floorSpeedMps, ceilingSpeedMps, repSeconds){
+  const f = Number(floorSpeedMps), c = Number(ceilingSpeedMps);
+  const w = shortRepBracketWeight(repSeconds);
+  if(!isFinite(f) || f <= 0 || w == null) return null;
+  // No ceiling (downhill, or beyond Delaney's tested grades) or an inverted
+  // bracket (a tailwind can push the floor past it): the floor stands alone.
+  if(!isFinite(c) || c <= f || w === 0) return f;
+  return f + w * (c - f);
+}
+// Dominant energy system by rep duration (Gastin 2001 review). A coaching
+// label for WHY the target moves — never an input to the number.
+function energySystemForRep(repSeconds){
+  const t = Number(repSeconds);
+  if(!isFinite(t) || t <= 0) return null;
+  if(t < 15) return { name:'alactic–glycolytic', note:'ATP-PCr and fast glycolysis carry most of the rep' };
+  if(t < 60) return { name:'glycolytic-dominant', note:'VO₂ covers only part of the cost at this length' };
+  if(t < RE3_STEADY_MIN_REP_SEC) return { name:'glycolytic–aerobic transition', note:'VO₂ is nearly ramped but not yet steady' };
+  return { name:'aerobic steady state', note:'the steady cost-matched answer applies as printed' };
+}
 const MPS_TO_MPH = 2.2369362920544;
 
 function paceSecPerMileToMph(secPerMile){
@@ -9290,10 +9327,21 @@ function updateRoadGradeTool(prefix){
     out.innerHTML = `<span style="font-size:.75rem;color:var(--yellow)">That combination is outside the model's useful running range.</span>`;
     return;
   }
-  const targetPace = 1609.344 / speed;
-  const targetMph = speed * MPS_TO_MPH;
+  // A rep length is an input to the answer, not just a caveat: below 90s the
+  // target lifts off the steady floor toward the sprint ceiling. In meters
+  // mode the duration depends on the answer, so settle it by fixed point.
+  const ceiling = sprintCeilingSpeedMps(pace, grade);
+  let rxSpeed = speed;
+  if(isFinite(repValue) && repValue > 0){
+    for(let i=0;i<4;i++){
+      const dur = repUnit === 'm' ? repValue / rxSpeed : repValue;
+      rxSpeed = shortRepTargetSpeedMps(speed, ceiling, dur) || speed;
+    }
+  }
+  const targetPace = 1609.344 / rxSpeed;
+  const targetMph = rxSpeed * MPS_TO_MPH;
   // On a calibrated belt the number to DIAL differs from the speed to RUN.
-  const dialMph = belt ? beltDialSpeed(speed, calPct) * MPS_TO_MPH : targetMph;
+  const dialMph = belt ? beltDialSpeed(rxSpeed, calPct) * MPS_TO_MPH : targetMph;
   const windNote = windMps ? ` · into ${Math.abs(windMph)} mph ${windMph > 0 ? 'headwind' : 'tailwind'}` : '';
   // Every belt number printed below is a CONSOLE number, so a coach never has
   // to convert one of them by hand. True speed is what the model reasons in;
@@ -9305,7 +9353,7 @@ function updateRoadGradeTool(prefix){
     : cap(`Same-effort pace at ${gradeLabel}`, `${_mmss(targetPace,0)}/mi`, windNote ? windNote.replace(' · ','') : '');
   if(!detail) return;
 
-  const geo = isFinite(repValue) && repValue > 0 ? hillRepGeometry(speed, pace, repValue, repUnit) : null;
+  const geo = isFinite(repValue) && repValue > 0 ? hillRepGeometry(rxSpeed, pace, repValue, repUnit) : null;
   const blocks = [];
 
   if(geo){
@@ -9317,23 +9365,26 @@ function updateRoadGradeTool(prefix){
 
   if(geo && geo.seconds < RE3_STEADY_MIN_REP_SEC){
     const cross = minettiTargetSpeedMps(pace, grade, surface, windMps);
-    const crossText = cross && isFinite(cross)
-      ? `RE3 ${belt?dialMph.toFixed(1)+' mph':_mmss(targetPace,0)+'/mi'} · Minetti 2002 ${belt?beltMph(cross).toFixed(1)+' mph':_mmss(1609.344/cross,0)+'/mi'}`
-      : '';
-    const ceiling = sprintCeilingSpeedMps(pace, grade);
     const fmtSpeed = v => belt ? `${beltMph(v).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`;
+    const crossText = cross && isFinite(cross)
+      ? `RE3 ${fmtSpeed(speed)} · Minetti 2002 ${fmtSpeed(cross)}`
+      : '';
+    const weight = shortRepBracketWeight(geo.seconds);
+    const sys = energySystemForRep(geo.seconds);
+    const adjusted = rxSpeed > speed;
     const bracket = ceiling && ceiling > speed ? `
         <div style="display:grid;grid-template-columns:auto 1fr;gap:.25rem .7rem;margin:.55rem 0;font-family:var(--font-mono);font-size:.6875rem">
           <span style="color:var(--text-4)">FLOOR</span><span style="color:var(--text-2)"><strong>${esc(fmtSpeed(speed))}</strong> — steady cost-matched · ${Math.round(speed/(1609.344/pace)*100)}% of flat speed</span>
+          ${adjusted?`<span style="color:var(--yellow)">TARGET</span><span style="color:var(--text)"><strong>${esc(fmtSpeed(rxSpeed))}</strong> — ${Math.round(geo.seconds)}s weighted · ${Math.round(weight*100)}% up the bracket</span>`:''}
           <span style="color:var(--text-4)">CEILING</span><span style="color:var(--text-2)"><strong>${esc(fmtSpeed(ceiling))}</strong> — all-out sprint retention at ${esc(gradeLabel)} · ${Math.round(sprintRetentionAtGrade(grade)*100)}% of flat speed</span>
         </div>` : '';
     blocks.push(`
       <div style="border:1px solid var(--yellow);border-radius:.45rem;padding:.7rem .8rem;margin-top:.75rem;background:rgba(234,179,8,.06)">
-        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s — the answer is a range, and these are its edges</p>
-        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices. Two independent published models agree on the floor${crossText?` (${esc(crossText)})`:''} — the number is not wrong, it is a steady-state answer to a rep that is not steady state. Expect it to read easy.</p>
+        <p style="font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.08em;text-transform:uppercase;color:var(--yellow);margin-bottom:.35rem">Short rep · ${Math.round(geo.seconds)}s · ${sys?esc(sys.name):''} — the target is a weighted point inside a measured bracket</p>
+        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">VO₂ takes 20–30s to ramp, so a rep this short never reaches the steady cost this equation prices${sys?` — at ${Math.round(geo.seconds)}s the rep is ${esc(sys.name)}: ${esc(sys.note)}`:''}. The steady cost-matched answer is only the bracket's floor${crossText?` (two independent published models agree on it: ${esc(crossText)})`:''}; the ceiling is all-out sprint retention — maximal velocity falls 1.7% per degree of angle (Delaney 2022, n=24), and nothing about a rep this short is less constrained than a sprint.</p>
         ${bracket}
-        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">The ceiling is the least metabolically constrained case there is: maximal sprint velocity falls 1.7% per degree of angle (Delaney 2022, n=24). A rep this short cannot keep <em>more</em> speed than an all-out sprint does. So the honest answer sits between those two lines, and no one has measured where.</p>
-        <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">Over <em>long</em> reps this conversion has been checked against effort directly: 17 trained runners matching perceived effort on an 8% treadmill picked a speed within 1.2% of the cost-matched prediction (Held 2023, 5-minute reps). Nobody has run that experiment at 40 seconds. So if your athletes match RPE at a faster ${belt?'belt':'pace'}, they are running the rep at a harder <em>anchor</em> — move up the ladder and log which row matched. Your own paired sessions are the only evidence that will settle the short end.</p>
+        <p style="font-size:.75rem;color:var(--text-2);line-height:1.6">${adjusted?`The headline weights between those edges by rep duration — sprint at 0s, steady at ${RE3_STEADY_MIN_REP_SEC}s, linear between. Both ends are published limits; in between, the one paired field session on record (40s reps that settled 54–75% up the bracket) sits within 3% of this line. It is a weighting, not a measurement — treat it as the starting dial, not gospel.`:`No ceiling is published for this grade, so the floor stands alone — expect it to read easy on a rep this short.`}</p>
+        <p style="font-size:.75rem;color:var(--text-3);line-height:1.6;margin-top:.4rem">Over <em>long</em> reps the floor itself has been checked against effort directly: 17 trained runners matching perceived effort on an 8% treadmill picked a speed within 1.2% of the cost-matched prediction (Held 2023, 5-minute reps). The short end rests on far less. If your athletes' RPE settles on a different ${belt?'belt speed':'pace'}, log which anchor row matched — your own paired sessions are the evidence that will tighten this line.</p>
       </div>`);
   }
 
@@ -9342,8 +9393,18 @@ function updateRoadGradeTool(prefix){
     if(anchor < 180 || anchor > 1800) return null;
     const v = gradeTargetSpeedMps(anchor, grade, surface, windMps);
     if(!v || !isFinite(v)) return null;
-    const cells = [`${_mmss(anchor,0)}/mi`, belt ? `${beltMph(v).toFixed(1)} mph` : `${_mmss(1609.344/v,0)}/mi`];
-    if(geo) cells.push(repUnit === 'm' ? `${Math.round(repValue / v)}s` : `${Math.round(repValue * v)}m`);
+    // Every row gets the same rep-duration weighting as the headline, so the
+    // highlighted row IS the headline and the others are honest alternatives.
+    let rowV = v;
+    if(geo){
+      const rowCeil = sprintCeilingSpeedMps(anchor, grade);
+      for(let i=0;i<4;i++){
+        const dur = repUnit === 'm' ? repValue / rowV : repValue;
+        rowV = shortRepTargetSpeedMps(v, rowCeil, dur) || v;
+      }
+    }
+    const cells = [`${_mmss(anchor,0)}/mi`, belt ? `${beltMph(rowV).toFixed(1)} mph` : `${_mmss(1609.344/rowV,0)}/mi`];
+    if(geo) cells.push(repUnit === 'm' ? `${Math.round(repValue / rowV)}s` : `${Math.round(repValue * rowV)}m`);
     return { offset, cells };
   }).filter(Boolean);
 

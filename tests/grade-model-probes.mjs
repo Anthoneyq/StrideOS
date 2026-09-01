@@ -42,6 +42,9 @@ const src = [
   extractScalarConst('DELANEY_TESTED_MAX_PCT'),
   extractFn('sprintRetentionAtGrade'),
   extractFn('sprintCeilingSpeedMps'),
+  extractFn('shortRepBracketWeight'),
+  extractFn('shortRepTargetSpeedMps'),
+  extractFn('energySystemForRep'),
   extractScalarConst('MPS_TO_MPH'),
   extractFn('re3MetabolicPower'),
   extractFn('re3LevelSpeedForPower'),
@@ -79,6 +82,7 @@ const src = [
     minettiTargetSpeedMps, parsePaceOrSpeed, mphToPaceSecPerMile,
     paceSecPerMileToMph, RE3_STEADY_MIN_REP_SEC, RE3_ISOEFFORT_VALIDATION, MPS_TO_MPH,
     sprintRetentionAtGrade, sprintCeilingSpeedMps, DELANEY_TESTED_MAX_PCT,
+    shortRepBracketWeight, shortRepTargetSpeedMps, energySystemForRep,
     beltCalibrationFactor, beltDialSpeed, beltActualSpeed, BELT_CALIBRATION_MIN_PCT,
     BELT_CALIBRATION_MAX_PCT, trackLapDistanceM, TRACK_LANE_1_LAP_M, TRACK_MAX_LANE,
     gradeFlatEquivalentMeters };`
@@ -253,16 +257,18 @@ ok(heldAcsm > V.upMps * 1.05,
 ok(Math.abs(heldPredicted - V.upMps) < Math.abs(heldAcsm - V.upMps),
   'the shipped model beats ACSM against the only effort-matched data there is');
 
-// No duration term. Pringle et al. (2002) found no VO2-kinetics difference
-// between 0% and 10% at moderate intensity, so a duration-dependent grade
-// correction has no measured basis. The answer must not move with rep length.
+// No duration term INSIDE the metabolic model. Pringle et al. (2002) found no
+// VO2-kinetics difference between 0% and 10% at moderate intensity, so the
+// grade conversion itself must not bend with rep length. Duration lives in a
+// separate, explicit layer (shortRepTargetSpeedMps) that only interpolates
+// between this floor and the published sprint ceiling — never inside RE3.
 const shortRep = E.gradeTargetSpeedMps(320, 7, 'belt');
 const longRep = E.gradeTargetSpeedMps(320, 7, 'belt');
-close(shortRep, longRep, 1e-12, 'the conversion carries no hidden duration term — rep length changes the WARNING, never the number');
+close(shortRep, longRep, 1e-12, 'the core conversion carries no hidden duration term — weighting is a separate, named layer');
 ok(html.includes('Pringle, J. S. M.') && html.includes('Held, S., Rappelt, L. & Donath, L.'),
   'both the validation and the no-duration-correction finding are cited');
-ok(html.includes('Nobody has run that experiment at 40 seconds'),
-  'the tool states exactly where the evidence stops');
+ok(html.includes('The short end rests on far less'),
+  'the tool states exactly where the evidence thins');
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -313,7 +319,48 @@ ok(gapPct > 3 * 3, 'the observed gap is several times larger than the ±3% a mis
 
 ok(html.includes('Delaney, J. A. et al.') && html.includes('Shahidi, S. H.') && html.includes('Willwacher, S. et al.'),
   'the bracket, the drag-band caveat and the belt-error bound are all cited');
-ok(html.includes('the answer is a range, and these are its edges'), 'the short-rep block presents a range, not a single number');
+ok(html.includes('the target is a weighted point inside a measured bracket'), 'the short-rep block names the headline as a weighted point inside the bracket');
+
+// ══════════════════════════════════════════════════════════════════════
+// THE SHORT-REP TARGET — duration weighting between the bracket's edges
+// (2026-09-01). The rep length now moves the number: linear from sprint
+// retention at 0s to the steady floor at 90s. Both ends are published
+// limits; Alex's paired 40s observation is the CHECK, not the calibration.
+// ══════════════════════════════════════════════════════════════════════
+ok(E.shortRepBracketWeight(90) === 0, 'weight: at the steady threshold the weighting vanishes');
+ok(E.shortRepBracketWeight(300) === 0, 'weight: a 5-minute rep is pure steady state');
+close(E.shortRepBracketWeight(40), 50/90, 1e-9, 'weight: a 40s rep sits 56% up the bracket');
+close(E.shortRepBracketWeight(1), 89/90, 1e-9, 'weight: the T->0 limit approaches the sprint ceiling');
+ok(E.shortRepBracketWeight(0) === null && E.shortRepBracketWeight(-5) === null, 'weight: a non-duration has no weight');
+
+// Alex's field check: floor 8.56 mph, ceiling 10.48 mph at +7% off an 11.25
+// mph flat anchor; his 40s reps settled at 9.6-10.0 mph. The weighted target
+// must land at the bottom of that observed band, not outside it.
+{
+  const t40 = E.shortRepTargetSpeedMps(floorV, ceilV, 40);
+  close(t40 * E.MPS_TO_MPH, 9.63, 0.05, "target: 40s weighted target reproduces Alex's observed 9.6 mph");
+  ok(t40 > floorV && t40 < ceilV, 'target: the weighted point stays strictly inside the bracket');
+  // Shorter rep -> different energy system -> faster target, monotonically.
+  const t15 = E.shortRepTargetSpeedMps(floorV, ceilV, 15);
+  const t59 = E.shortRepTargetSpeedMps(floorV, ceilV, 59);
+  const t90 = E.shortRepTargetSpeedMps(floorV, ceilV, 90);
+  ok(t15 > t40 && t40 > t59 && t59 > t90, 'target: shorter reps get strictly faster targets');
+  close(t90, floorV, 1e-12, 'target: at 90s the target IS the steady floor');
+}
+// Where no ceiling is published the floor stands alone — never extrapolated.
+ok(E.shortRepTargetSpeedMps(3.0, null, 40) === 3.0, 'target: no ceiling means the floor stands alone');
+ok(E.shortRepTargetSpeedMps(3.0, 2.5, 40) === 3.0, 'target: an inverted bracket (tailwind) falls back to the floor');
+
+// Energy-system labels are coaching context, not model inputs.
+ok(E.energySystemForRep(10).name === 'alactic–glycolytic', 'energy system: 10s is alactic-glycolytic');
+ok(E.energySystemForRep(40).name === 'glycolytic-dominant', 'energy system: 40s is glycolytic-dominant');
+ok(E.energySystemForRep(75).name === 'glycolytic–aerobic transition', 'energy system: 75s is the transition zone');
+ok(E.energySystemForRep(120).name === 'aerobic steady state', 'energy system: 2min reps are steady state');
+ok(E.energySystemForRep(0) === null, 'energy system: a non-duration has no label');
+
+// The UI actually applies the weighting to the headline and the ladder.
+ok(html.includes('shortRepTargetSpeedMps(speed, ceiling, dur)'), 'UI: the headline speed is the weighted target');
+ok(html.includes('shortRepTargetSpeedMps(v, rowCeil, dur)'), 'UI: ladder rows carry the same weighting');
 
 
 // ══════════════════════════════════════════════════════════════════════

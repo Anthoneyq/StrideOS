@@ -10,7 +10,7 @@ Lab") archived verbatim at `research/surface-lab-2026-08-25/`. That build ran it
 literature sweep and attempted to fit a *new* universal surface formula. It failed, on
 purpose, and the failure is the most useful thing in it.
 
-Oracle for everything below: `node tests/grade-model-probes.mjs` (151 probes) and
+Oracle for everything below: `node tests/grade-model-probes.mjs` (169 probes) and
 `node tests/pace-ui-probes.mjs` (27 probes).
 
 ---
@@ -107,9 +107,32 @@ coefficient rounding.
 0.2 W·kg⁻¹ tolerance, with an exact check at level. If anyone edits an RE3 coefficient, this
 breaks. That is the point: it is an outside check on our own arithmetic, not a self-test.
 
-## 5. Standing limits (unchanged)
+## 5. Short-rep target — duration weighting (added 2026-09-01)
 
-±15% grade. Steady state only — below 90s the tool prints a bracket, not a number. Metabolic
+Below 90s the tool no longer prints only the steady floor with a warning; the rep length now
+moves the number. The target is a **linear interpolation in rep duration between the
+bracket's two published limits**: all-out sprint retention at 0s (Delaney 2022 — the T→0
+case by definition) and the steady cost-matched floor at 90s (VO₂ fully ramped; Held 2023
+validates the floor at 5 min). Linear is the no-free-parameter choice between two anchored
+ends.
+
+The check, not the calibration: Alex's paired 40s reps at +7% (11.25 mph flat anchor)
+settled at 9.6–10.0 mph — 54–75% up the bracket. The line predicts 56% (9.63 mph), within
+3% of the bottom of the observed band. One observation is not a fit, so nothing is tuned
+to it.
+
+Architecture rule (probed): the duration term lives ONLY in `shortRepTargetSpeedMps`, a
+named layer on top of the model. `gradeTargetSpeedMps` itself still carries no duration
+term — Pringle 2002 found no VO₂-kinetics difference between 0% and 10%, so the metabolic
+conversion must not bend with rep length. The UI shows FLOOR / TARGET / CEILING, tags the
+dominant energy system by duration (Gastin 2001: alactic–glycolytic <15s, glycolytic 15–60s,
+transition 60–90s, aerobic ≥90s — a label, never an input), and the anchor ladder carries the
+same weighting so the highlighted row is the headline.
+
+## 6. Standing limits
+
+±15% grade. Below 90s the target is a weighted point inside a measured bracket — a starting
+dial, not a measurement; paired RPE sessions are the evidence that tightens it. Metabolic
 cost is not tissue load, and lower downhill oxygen cost is not lower impact. Equivalent
 distance is energy, not mileage and not pounding. Surface, turns, technical terrain, drafting,
 tactics, and downhill muscle damage remain unmodeled and are stated as such in the tool.
