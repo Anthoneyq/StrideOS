@@ -64,3 +64,10 @@ console.log('PASS sync: durable retries, empty/stale reload, concurrent edits, a
  assert.equal(await h3.run('hydrateLinkedAthleteWorkspace()'),true);assert.equal(h3.run('DB.athletes[0].name'),'Linked athlete');
 }
 console.log('PASS hydration: linked athlete and account-switch isolation');
+{
+ const h4=appHarness();
+ h4.run(`sbUser={id:'old-delete'};DB=newDB();DB.athletes=[{id:'same',name:'Old'}];requireCoachWorkspace=()=>true;drainAthleteSync=async()=>{};softDeleteRemoteAthlete=async()=>{sbUser={id:'new-delete'};DB=newDB();DB.athletes=[{id:'same',name:'New'}];return {ok:true};};`);
+ await h4.run(`deleteAthlete('same')`);
+ assert.equal(h4.run('DB.athletes[0].name'),'New');
+}
+console.log('PASS deletion: account switch preserves other coach local data');

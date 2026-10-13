@@ -4592,6 +4592,7 @@ async function handlePostCheckoutReturn(){
       if(delay) await new Promise(resolve => setTimeout(resolve, delay));
       if(!sbUser || sbUser.id !== ownerId) return;
       await loadSubscription();
+      if(!sbUser || sbUser.id !== ownerId) return;
       // A trial already has Pro features: only a confirmed PAID tier resolves checkout.
       if(sbSubscription.known && ['pro','team'].includes(sbSubscription.tier) && hasProAccess()){
         clearCheckoutPending();
@@ -18755,8 +18756,11 @@ async function deleteAthlete(id){
   if(!ath) return;
   if(!confirm(`Permanently delete "${ath.name}" and all their workouts? This cannot be undone.`)) return;
   if(sbUser){
+    const ownerId = sbUser.id;
     await drainAthleteSync();
+    if(!sbUser || sbUser.id !== ownerId) return;
     const result = await softDeleteRemoteAthlete(id);
+    if(!sbUser || sbUser.id !== ownerId) return;
     if(!result || !result.ok){ toast('Could not delete from your account. Nothing was removed; reconnect and try again.', 'error'); return; }
     if(DB.pendingAthleteSync) delete DB.pendingAthleteSync[String(id)];
   }

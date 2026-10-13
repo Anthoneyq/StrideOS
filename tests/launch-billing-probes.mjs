@@ -35,3 +35,11 @@ run(`sbClient={auth:{getSession:async()=>({data:{session:{access_token:'syntheti
 ctx.fetch=async()=>({ok:false,status:409,json:async()=>({error:'already_subscribed'})});
 await run(`startCheckout('annual')`);assert.equal(ctx.__out.portal,1);
 console.log('PASS billing: delayed activation, trial distinction, persistent recovery, duplicate click prevention, read failures and portal repair');
+// A subscription response returning after an account switch cannot resolve
+// the other coach's pending purchase or clear either account's recovery state.
+run(`sbUser={id:'old-purchase'};window.location.search='?upgrade=success';
+loadSubscription=async()=>{sbUser={id:'new-purchase'};checkoutPending={ownerId:'new-purchase'};localStorage.setItem(checkoutPendingKey(),JSON.stringify(checkoutPending));sbSubscription={known:true,tier:'pro',hasProAccess:true};};`);
+await run('handlePostCheckoutReturn()');
+assert.ok(ls.getItem('strideos_pending_upgrade_old-purchase'));
+assert.ok(ls.getItem('strideos_pending_upgrade_new-purchase'));
+console.log('PASS billing: account switch cannot resolve another account purchase');
