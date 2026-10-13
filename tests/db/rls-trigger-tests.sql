@@ -12,8 +12,11 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000a0a1', 'athlete1@test.local'),
   ('00000000-0000-0000-0000-00000000a0a2', 'athlete2@test.local');
 
-insert into public.coaches (id, email, display_name, terms_accepted_at, privacy_accepted_at)
-values ('00000000-0000-0000-0000-00000000c0a0', 'coach@test.local', 'Test Coach', now(), now());
+-- subscription_tier defaults to 'trial', and coaches_trial_requires_end_date
+-- (20260819120000) forbids a trial with no end date — so the fixture states one,
+-- exactly as a real signup through upsert_coach_profile does.
+insert into public.coaches (id, email, display_name, terms_accepted_at, privacy_accepted_at, trial_ends_at)
+values ('00000000-0000-0000-0000-00000000c0a0', 'coach@test.local', 'Test Coach', now(), now(), now() + interval '30 days');
 
 insert into public.athletes (id, coach_id, display_name, athlete_user_id) values
   ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000c0a0', 'Athlete One', '00000000-0000-0000-0000-00000000a0a1'),
@@ -322,5 +325,115 @@ begin
   end if;
 end $$;
 \echo PASS 14: sanctioned RPC transitions pass the provenance guard
+
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 15. A brand-new coach signing up actually receives the 30-day Pro trial
+-- ════════════════════════════════════════════════════════════════════════════
+-- Regression for the 2026-08-19 audit: 20260701150000 re-declared
+-- upsert_coach_profile with the SAME signature as 20260629181500, so
+-- `create or replace` replaced it — and the new body's INSERT column list
+-- omitted subscription_tier / trial_ends_at. Every coach who signed up after
+-- 2026-07-01 landed on tier 'trial' (the table default) with trial_ends_at
+-- NULL, so my_subscription.has_pro_access was false and expire_trials() (which
+-- requires trial_ends_at is not null) never released them. The signup page
+-- promises "30-day Pro trial included"; the product delivered nothing.
+reset role;
+insert into auth.users (id, email)
+values ('00000000-0000-0000-0000-00000000c0b1', 'newcoach@test.local');
+
+select set_config('test.uid', '00000000-0000-0000-0000-00000000c0b1', false);
+select set_config('test.jwt', '{"email":"newcoach@test.local"}', false);
+set role authenticated;
+
+select public.upsert_coach_profile('New Coach', 'Test HS', '#ff4500', true, true, false);
+
+do $$
+declare s public.my_subscription%rowtype;
+begin
+  select * into s from public.my_subscription;
+  if s.trial_ends_at is null then
+    raise exception 'FAIL 15a: new coach has no trial_ends_at — the 30-day trial was never granted';
+  end if;
+  if not s.has_pro_access then
+    raise exception 'FAIL 15b: new coach has_pro_access is false on day one of a promised Pro trial';
+  end if;
+  if s.trial_seconds_remaining is null or s.trial_seconds_remaining < 29 * 86400 then
+    raise exception 'FAIL 15c: trial is shorter than the promised 30 days (% seconds)', s.trial_seconds_remaining;
+  end if;
+end $$;
+\echo PASS 15: a new signup receives a live 30-day Pro trial
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 16. Re-running upsert_coach_profile never re-grants or downgrades the plan
+-- ════════════════════════════════════════════════════════════════════════════
+-- Two failure modes in one test. (a) A paying coach who edits their team name
+-- must not be knocked back to a trial. (b) A coach must not be able to farm a
+-- fresh 30-day trial by calling the profile upsert again.
+reset role;
+update public.coaches
+set subscription_tier = 'pro', trial_ends_at = null
+where id = '00000000-0000-0000-0000-00000000c0b1';
+
+select set_config('test.uid', '00000000-0000-0000-0000-00000000c0b1', false);
+set role authenticated;
+select public.upsert_coach_profile('New Coach', 'Renamed HS', '#00aaff', true, true, true);
+
+do $$
+declare s public.my_subscription%rowtype; nm text;
+begin
+  select * into s from public.my_subscription;
+  if s.subscription_tier <> 'pro' then
+    raise exception 'FAIL 16a: a profile edit downgraded a paying coach to %', s.subscription_tier;
+  end if;
+  if s.trial_ends_at is not null then
+    raise exception 'FAIL 16b: a repeat upsert minted a fresh trial for an existing coach';
+  end if;
+  reset role;
+  select team_name into nm from public.coaches where id = '00000000-0000-0000-0000-00000000c0b1';
+  if nm <> 'Renamed HS' then
+    raise exception 'FAIL 16c: the profile edit itself did not apply (team_name = %)', nm;
+  end if;
+end $$;
+\echo PASS 16: profile edits preserve the plan and never re-grant a trial
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- 17. The privacy hardening from 20260701150000 is still enforced
+-- ════════════════════════════════════════════════════════════════════════════
+-- The trial fix re-declares the same function, so it must not regress the
+-- terms/privacy gate, the research_opt_in_at stamp, or the deleted_at revival.
+reset role;
+insert into auth.users (id, email)
+values ('00000000-0000-0000-0000-00000000c0b2', 'nogate@test.local');
+select set_config('test.uid', '00000000-0000-0000-0000-00000000c0b2', false);
+select set_config('test.jwt', '{"email":"nogate@test.local"}', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    perform public.upsert_coach_profile('No Consent', null, null, false, false, false);
+    raise exception 'FAIL 17a: profile created without accepting terms and privacy';
+  exception when others then
+    if sqlerrm like 'FAIL 17a%' then raise; end if;
+  end;
+end $$;
+
+select public.upsert_coach_profile('Consenting', null, null, true, true, true);
+do $$
+declare c public.coaches%rowtype;
+begin
+  reset role;
+  select * into c from public.coaches where id = '00000000-0000-0000-0000-00000000c0b2';
+  if c.terms_accepted_at is null or c.privacy_accepted_at is null then
+    raise exception 'FAIL 17b: consent timestamps were not stamped';
+  end if;
+  if c.research_opt_in_at is null then
+    raise exception 'FAIL 17c: research_opt_in_at was not stamped on opt-in';
+  end if;
+end $$;
+\echo PASS 17: consent gate, consent stamps and research opt-in stamp all survive
+
+reset role;
 
 \echo ALL DATABASE TESTS PASSED

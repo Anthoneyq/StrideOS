@@ -229,7 +229,7 @@ const ttSrc = [
     `let DB = { athletes: [{ id: 'kid-1', name: 'A' }, { id: 'kid-2', name: 'B' }],
        workouts: [{ athleteId: 'kid-1' }, { athleteId: 'kid-2' }], activeAthleteId: 'kid-1' };`,
     `const requireCoachWorkspace = () => true; const confirm = () => true;`,
-    `const saveDB = () => {}; const softDeleteRemoteAthlete = () => {};`,
+    `const sbUser = null; const saveDB = () => {}; const softDeleteRemoteAthlete = () => {};`,
     `const refreshActiveAthlete = () => {}; const updateChip = () => {};`,
     `const currentScreen = 'roster'; const renderRoster = () => {};`,
     `const goTo = () => {}; const toast = () => {};`,
@@ -240,7 +240,7 @@ const ttSrc = [
     `return { del: id => deleteAthlete(id), db: () => DB };`
   ].join('\n');
   const H = new Function('localStorage', src)(ls);
-  H.del('kid-1');
+  await H.del('kid-1');
   ok(H.db().athletes.length === 1 && H.db().athletes[0].id === 'kid-2', "deleteAthlete removes the athlete (executed)");
   ok(H.db().workouts.every(w => w.athleteId !== 'kid-1'), "deleteAthlete removes the athlete's workouts (executed)");
   const after = JSON.parse(store.get('strideos_tested_thresholds'));

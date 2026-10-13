@@ -9,6 +9,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+# macOS + Homebrew Postgres 17 aborts at startup with "postmaster became
+# multithreaded during startup" unless a valid locale is set — the OS locale
+# APIs spawn a thread before postmaster forks. Without this the whole suite
+# exits 1 at pg_ctl and NOTHING below ever runs. Found 2026-08-19, after a
+# migration regression that these tests would have caught reached production.
+export LC_ALL="${LC_ALL:-C}"
+export LANG="${LANG:-C}"
+
 PG_BIN=""
 for candidate in "$(command -v initdb >/dev/null 2>&1 && dirname "$(command -v initdb)")" \
                  /opt/homebrew/opt/postgresql@17/bin /opt/homebrew/opt/postgresql@16/bin \
@@ -51,3 +59,4 @@ done
 
 echo "Running database tests…"
 "${PSQL[@]}" -d stride_test -f tests/db/rls-trigger-tests.sql
+"${PSQL[@]}" -d stride_test -f tests/db/launch-security-tests.sql

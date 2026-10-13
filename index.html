@@ -1420,6 +1420,7 @@ details[open]>summary .d-tgl::before{content:'−'}
     <button class="top-signin" onclick="showAuthModal('signin')">Sign in</button>
 
     <!-- TIER BANNER (trial countdown / free-plan upgrade CTA) -->
+    <div id="syncStatus" aria-live="polite"></div>
     <div id="tierBanner" aria-live="polite"></div>
 
     <div class="athlete-context" id="athleteContextNav" data-auth-scope="workspace" aria-label="Selected athlete tools">
@@ -1923,6 +1924,7 @@ const esc = s => s == null ? '' : String(s)
 // Storage layer with in-memory fallback
 let _mem = null;
 let _memKey = null;
+let storageUnavailable = false;
 function accountStorageKey(userId){
   return userId ? `${ACCOUNT_KEY_PREFIX}${String(userId)}` : KEY;
 }
@@ -1931,11 +1933,13 @@ function activeStorageKey(){
 }
 function saveDB(d, storageKey){
   const key = storageKey || activeStorageKey();
-  try{ localStorage.setItem(key,JSON.stringify(d)); }
-  catch(e){ _mem=d; _memKey=key; }
+  _mem = d; _memKey = key;
+  try{ localStorage.setItem(key,JSON.stringify(d)); storageUnavailable = false; return true; }
+  catch(e){ storageUnavailable = true; renderSyncStatus(); return false; }
 }
 function loadDB(storageKey){
   const key = storageKey || activeStorageKey();
+  if(storageUnavailable && _memKey === key) return _mem;
   try{
     const s=localStorage.getItem(key);
     if(s) return JSON.parse(s);
@@ -1946,6 +1950,7 @@ function clearDB(){
   const prefix = typeof ACCOUNT_KEY_PREFIX !== 'undefined' ? ACCOUNT_KEY_PREFIX : 'strideOS_v5_account_';
   const target = (typeof sbUser !== 'undefined' && sbUser && sbUser.id) ? `${prefix}${String(sbUser.id)}` : KEY;
   try{ localStorage.removeItem(target); }catch(e){}
+  if(typeof checkoutPending !== 'undefined') clearCheckoutPending();
   // Coach-entered lab thresholds are athlete data too — "clear local data" /
   // "delete account" must not leave them behind on the device.
   try{ localStorage.removeItem('strideos_tested_thresholds'); }catch(e){}
@@ -1985,6 +1990,7 @@ let coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summa
 function emptySubscription(){
   return {
     tier: null,
+    known: false,
     trialEndsAt: null,
     status: null,
     interval: null,
@@ -2479,6 +2485,7 @@ function isPasswordRecoveryReturn(){
 
 async function hydrateLinkedAthleteWorkspace(){
   if(!sbClient || !sbUser || !sbLinkedAthlete) return false;
+  const ownerId = sbUser.id;
   try{
     let athleteRow = sbLinkedAthlete;
     const { data: freshAthlete, error: athleteError } = await sbClient
@@ -2487,6 +2494,7 @@ async function hydrateLinkedAthleteWorkspace(){
       .eq('id', sbLinkedAthlete.id)
       .is('deleted_at', null)
       .maybeSingle();
+    if(!sbUser || sbUser.id !== ownerId) return false;
     if(athleteError) throw athleteError;
     if(freshAthlete) athleteRow = freshAthlete;
 
@@ -2504,6 +2512,7 @@ async function hydrateLinkedAthleteWorkspace(){
       console.warn('linked athlete race load failed', raceErr);
     }
 
+    if(!sbUser || sbUser.id !== ownerId) return false;
     const linked = remoteAthleteToLocal(athleteRow, raceRows);
     DB = newDB();
     DB.accountUserId = sbUser.id;
@@ -2573,6 +2582,7 @@ async function bootstrapAuthenticatedSession(){
     else refreshCurrentScreen();
     return;
   }
+  await drainAthleteSync();
   await loadRemoteAthletes();
   applyWorkspaceMode();
   renderAuthPanel();
@@ -2888,14 +2898,18 @@ async function loadSubscription(){
     resetSubscriptionState();
     return;
   }
+  const ownerId = sbUser.id;
   try{
     const { data, error } = await sbClient
       .from('my_subscription')
       .select('*')
       .maybeSingle();
     if(error) throw error;
+    if(!sbUser || sbUser.id !== ownerId) return;
+    if(!data) throw new Error('Subscription state unavailable');
     if(data){
       sbSubscription = {
+        known: true,
         tier: data.subscription_tier,
         trialEndsAt: data.trial_ends_at,
         status: data.subscription_status,
@@ -2905,6 +2919,7 @@ async function loadSubscription(){
       };
     }
   }catch(err){
+    if(sbUser && sbUser.id === ownerId) sbSubscription.known = false;
     console.warn('loadSubscription failed', err);
   }
   renderTierBanner();
@@ -3915,6 +3930,18 @@ function renderTierBanner(){
     host.innerHTML = '';
     return;
   }
+  if(sbUser && checkoutPendingForUser()){
+    host.innerHTML = `<div class="tier-banner" role="status"><span>Confirming your payment and Pro access. Please do not purchase again.</span><button class="btn" onclick="handlePostCheckoutReturn()">Check again</button><button class="btn" onclick="openCustomerPortal()">Manage billing</button></div>`;
+    return;
+  }
+  if(sbUser && sbSubscription.known === false){
+    host.innerHTML = `<div class="tier-banner" role="status"><span>Plan status unavailable. Your roster has not been removed.</span><button class="btn" onclick="loadSubscription()">Retry</button><button class="btn" onclick="openCustomerPortal()">Manage billing</button></div>`;
+    return;
+  }
+  if(sbSubscription && ['past_due','unpaid'].includes(sbSubscription.status)){
+    host.innerHTML = `<div class="tier-banner" role="status"><span>Payment needs attention. Update your payment method in billing.</span><button class="btn" onclick="openCustomerPortal()">Update payment method</button></div>`;
+    return;
+  }
   if(!sbSubscription || !sbSubscription.tier){
     host.innerHTML = '';
     return;
@@ -3928,6 +3955,7 @@ function renderTierBanner(){
     const days = trialDaysRemaining();
     // A missing subscription countdown must never leak into the UI as
     // "null days left". The trial still has access; only its expiry is unknown.
+    if(!hasProAccess()){ host.innerHTML = '<div class="tier-banner">Your Pro trial has ended. <button class="btn" onclick="showUpgradeModal()">See Pro plans</button></div>'; return; }
     const label = days == null ? 'full STRIDE OS access' : (days === 0 ? 'last day' : (days === 1 ? '1 day left' : `${days} days left`));
     host.innerHTML = `
       <div class="tier-banner tier-banner-trial">
@@ -3968,6 +3996,7 @@ function renderTierBanner(){
 
 // Pricing card — shown inside the upgrade modal.
 function showUpgradeModal(){
+  if(checkoutPendingForUser()){ toast('Your payment is still being confirmed. Use Check again or Manage billing.'); renderTierBanner(); return; }
   if(isAthleteOnly()){
     toast('Athlete accounts are managed by their coach');
     return;
@@ -4015,8 +4044,8 @@ function showUpgradeModal(){
         <li><strong style="color:var(--text)">Team IQ</strong> — drag in a CSV/Excel roster, get instant training-load bias, event-coverage skew &amp; highest-ROI fixes</li>
         <li>Race predictions across every distance, with planning ranges</li>
         <li>Longitudinal performance curve &amp; year-over-year trends</li>
-        <li>Event fit analysis, environmental corrections, Speed Reserve Ratio</li>
-        <li>All future Phase 3 features (Athlete Profile Engine, etc.)</li>
+        <li>Event fit analysis and environmental corrections</li>
+        <li>Coaching Queue, training groups and printable reports</li>
       </ul>
 
       <div style="border-top:1px solid var(--border-s);margin-top:.25rem;margin-bottom:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
@@ -4152,8 +4181,12 @@ async function requestAccountDeletion(){
 }
 
 // Kicks off Stripe Checkout for the chosen plan.
+let checkoutStarting = false;
 async function startCheckout(plan){
+  if(checkoutStarting) return;
+  if(checkoutPendingForUser()){ renderTierBanner(); toast('Confirming your previous payment — please do not purchase again.'); return; }
   if(plan !== 'monthly' && plan !== 'annual' && plan !== 'founding' && plan !== 'team_annual') return;
+  checkoutStarting = true;
   const btnId = plan === 'monthly' ? 'planMonthlyBtn' : plan === 'annual' ? 'planAnnualBtn' : plan === 'founding' ? 'planFoundingBtn' : 'planTeamBtn';
   const btn = document.getElementById(btnId);
   const prev = btn ? btn.innerHTML : null;
@@ -4187,8 +4220,9 @@ async function startCheckout(plan){
       body: JSON.stringify({ plan })
     });
     if(!res.ok){
-      const errBody = await res.text();
-      throw new Error(errBody || `Checkout failed (${res.status})`);
+      const errBody = await res.json().catch(() => ({}));
+      if(errBody.error === 'already_subscribed'){ closeUpgradeModal(); await openCustomerPortal(); return; }
+      throw new Error(errBody.message || 'Could not open checkout. Please try again.');
     }
     const data = await res.json();
     if(!data.url) throw new Error('No checkout URL returned');
@@ -4199,7 +4233,7 @@ async function startCheckout(plan){
     const networkish = /load failed|failed to fetch|networkerror|fetch/i.test(raw);
     toast(networkish ? "Couldn't reach checkout right now — please try again in a moment." : (raw || 'Could not start checkout'), 'error');
     if(btn){ btn.disabled = false; if(prev !== null) btn.innerHTML = prev; }
-  }
+  }finally{ checkoutStarting = false; }
 }
 
 // Opens the Stripe Customer Portal (manage subscription, change plan, cancel).
@@ -4521,25 +4555,52 @@ function renderRetentionFlow(){
 // On page load, check if we just came back from a successful Stripe Checkout
 // (success_url includes ?upgrade=success). If so, show a confirmation toast
 // and re-load subscription state to pick up the new tier.
+let checkoutPending = null;
+let checkoutPolling = false;
+function checkoutPendingKey(){ return sbUser ? `strideos_pending_upgrade_${sbUser.id}` : null; }
+function checkoutPendingForUser(){
+  const key = checkoutPendingKey();
+  if(!key) return null;
+  if(checkoutPending && checkoutPending.ownerId === sbUser.id) return checkoutPending;
+  try{ const saved = JSON.parse(localStorage.getItem(key) || 'null');
+    if(saved && saved.ownerId === sbUser.id) checkoutPending = saved;
+  }catch(_e){}
+  return checkoutPending && checkoutPending.ownerId === sbUser.id ? checkoutPending : null;
+}
+function clearCheckoutPending(){
+  const key = checkoutPendingKey();
+  if(key){ try{ localStorage.removeItem(key); }catch(_e){} }
+  checkoutPending = null;
+}
 async function handlePostCheckoutReturn(){
+  if(!sbUser || checkoutPolling) return;
   const params = new URLSearchParams(window.location.search);
-  if(params.get('upgrade') === 'success'){
-    toast('Welcome to Pro! Loading your subscription…');
-    // Strip the query so refreshes don't re-trigger.
-    history.replaceState(null, '', window.location.pathname);
-    // The webhook may take a second or two to land — poll twice.
-    setTimeout(async () => {
-      await loadSubscription();
-      refreshCurrentScreen();
-    }, 1500);
-    setTimeout(async () => {
-      await loadSubscription();
-      refreshCurrentScreen();
-    }, 4000);
-  } else if(params.get('upgrade') === 'cancelled'){
-    toast('Checkout cancelled. No charge was made.');
-    history.replaceState(null, '', window.location.pathname);
+  if(params.get('upgrade') === 'cancelled'){
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+    toast('Checkout cancelled.'); return;
   }
+  if(params.get('upgrade') === 'success'){
+    checkoutPending = {ownerId:sbUser.id, sessionId:params.get('session_id'), startedAt:Date.now()};
+    try{ localStorage.setItem(checkoutPendingKey(), JSON.stringify(checkoutPending)); }catch(_e){}
+  }
+  if(!checkoutPendingForUser()) return;
+  const ownerId = sbUser.id;
+  checkoutPolling = true;
+  closeUpgradeModal(); renderTierBanner();
+  try{
+    for(const delay of [0, 1000, 2000, 4000, 8000, 15000, 30000]){
+      if(delay) await new Promise(resolve => setTimeout(resolve, delay));
+      if(!sbUser || sbUser.id !== ownerId) return;
+      await loadSubscription();
+      // A trial already has Pro features: only a confirmed PAID tier resolves checkout.
+      if(sbSubscription.known && ['pro','team'].includes(sbSubscription.tier) && hasProAccess()){
+        clearCheckoutPending();
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+        renderTierBanner(); refreshCurrentScreen(); toast('Your Pro subscription is active.'); return;
+      }
+    }
+    toast('Still confirming Pro access. Your payment has not been retried. Use Check again or Manage billing.', 'info');
+  }finally{ checkoutPolling = false; renderTierBanner(); }
 }
 
 // Filter a list of athletes to what the current tier is allowed to see.
@@ -4547,6 +4608,7 @@ async function handlePostCheckoutReturn(){
 // the rest stay safely in the DB and reappear on upgrade.
 function athletesForCurrentTier(){
   const list = (DB && DB.athletes) ? DB.athletes : [];
+  if(sbUser && sbSubscription.known === false) return list;
   const lim = athleteLimit();
   if(lim === null) return list;
   return list.slice(0, lim);
@@ -4577,22 +4639,94 @@ async function syncLocalToSupabase(){
   }
 }
 
+// Durable per-account outbox. A cloud read may never discard an unacknowledged
+// local edit. Snapshots are persisted before the first network await.
+const athleteSyncRuns = new Map();
+function syncAccountDB(ownerId){
+  return sbUser && sbUser.id === ownerId ? DB : (loadDB(accountStorageKey(ownerId)) || newDB());
+}
+function persistSyncAccount(ownerId, db){
+  return saveDB(db, accountStorageKey(ownerId));
+}
+function queueAthleteSync(athlete){
+  if(!sbUser || isAthleteOnly() || !athlete) return null;
+  DB.pendingAthleteSync = DB.pendingAthleteSync || {};
+  const item = { revision: uid(), athlete: JSON.parse(JSON.stringify(athlete)) };
+  DB.pendingAthleteSync[String(athlete.id)] = item;
+  persistSyncAccount(sbUser.id, DB);
+  renderSyncStatus();
+  return item;
+}
+function renderSyncStatus(){
+  const host = document.getElementById('syncStatus');
+  if(!host) return;
+  const count = typeof DB !== 'undefined' && sbUser && !isAthleteOnly()
+    ? Object.keys(DB.pendingAthleteSync || {}).length : 0;
+  host.innerHTML = storageUnavailable
+    ? '<div class="tier-banner" role="alert">This browser cannot save changes on this device. Keep this page open until cloud sync succeeds, or export your data.</div>'
+    : count ? `<div class="tier-banner" role="status"><span>${count} athlete change${count===1?'':'s'} saved on this device · waiting to sync</span><button class="btn" onclick="retryAthleteSync()">Retry sync</button></div>` : '';
+}
+async function retryAthleteSync(){
+  await drainAthleteSync();
+  renderSyncStatus();
+}
+async function drainAthleteSync(){
+  if(!sbClient || !sbUser || !sbCoachReady || isAthleteOnly()) return;
+  const ownerId = sbUser.id;
+  if(athleteSyncRuns.has(ownerId)) return athleteSyncRuns.get(ownerId);
+  const run = (async () => {
+    const attempted = new Set();
+    while(sbUser && sbUser.id === ownerId){
+      const db = syncAccountDB(ownerId);
+      const next = Object.entries(db.pendingAthleteSync || {}).find(([id, item]) => !attempted.has(item.revision));
+      if(!next) break;
+      const [id, item] = next;
+      attempted.add(item.revision);
+      const result = await writeAthleteToSupabase(item.athlete);
+      const latest = syncAccountDB(ownerId);
+      if(result && result.ok && latest.pendingAthleteSync && latest.pendingAthleteSync[id]?.revision === item.revision){
+        delete latest.pendingAthleteSync[id];
+        persistSyncAccount(ownerId, latest);
+      }
+      // Failures remain in the durable queue. One failed athlete does not stop others.
+    }
+  })();
+  athleteSyncRuns.set(ownerId, run);
+  try{ await run; }finally{ athleteSyncRuns.delete(ownerId); renderSyncStatus(); }
+}
 async function syncAthleteToSupabase(athlete){
+  if(!sbUser || isAthleteOnly() || !athlete) return {ok:false, skipped:true};
+  const ownerId = sbUser.id;
+  queueAthleteSync(athlete);
+  await drainAthleteSync();
+  const pending = syncAccountDB(ownerId).pendingAthleteSync || {};
+  return { ok: !pending[String(athlete.id)], pending: Boolean(pending[String(athlete.id)]), durable: !storageUnavailable };
+}
+function mergePendingAthletes(remote, db){
+  const map = new Map(remote.map(a => [String(a.id), a]));
+  Object.values(db.pendingAthleteSync || {}).forEach(item => map.set(String(item.athlete.id), item.athlete));
+  return [...map.values()];
+}
+window.addEventListener('online', () => { retryAthleteSync(); handlePostCheckoutReturn(); });
+
+async function writeAthleteToSupabase(athlete){
   if(!sbClient || !sbUser || !sbCoachReady || !athlete || isAthleteOnly()){
     return { ok: false, skipped: true, reason: 'cloud_not_ready' };
   }
+  const ownerId = sbUser.id;
+  const client = sbClient;
   try{
-    const { error } = await sbClient.rpc('import_local_athlete', { local_athlete: athlete });
+    const { error } = await client.rpc('import_local_athlete', { local_athlete: athlete });
     if(error) throw error;
     // After the main upsert, persist the invite_email separately (the
     // RPC predates Phase 2 and doesn't know about that column).
     if(athlete.inviteEmail !== undefined){
-      const { error: e2 } = await sbClient
+      const { error: e2 } = await client
         .from('athletes')
         .update({ invite_email: athlete.inviteEmail || null })
         .eq('client_ref', athlete.id)
-        .eq('coach_id', sbUser.id);
-      if(e2) console.warn('invite_email update failed', e2);
+        .eq('coach_id', ownerId);
+      if(e2) throw e2;
     }
     // Reconcile stale PR rows: import_local_athlete is upsert-only, so a changed
     // primary event or a cleared additional PR leaves orphan 'primary:<old>' /
@@ -4600,24 +4734,27 @@ async function syncAthleteToSupabase(athlete){
     // next cloud reload. Remove any local-import race not in the current PR set.
     let prDateError = null;
     try{
-      const { data: aRow } = await sbClient
+      const { data: aRow, error: lookupError } = await client
         .from('athletes').select('id')
-        .eq('client_ref', athlete.id).eq('coach_id', sbUser.id).maybeSingle();
+        .eq('client_ref', athlete.id).eq('coach_id', ownerId).maybeSingle();
+      if(lookupError) throw lookupError;
+      if(!aRow || !aRow.id) throw new Error('Saved athlete could not be verified');
       if(aRow && aRow.id){
         const validRefs = new Set();
         if(athlete.raceDistance) validRefs.add('primary:' + athlete.raceDistance);
         Object.keys(athlete.additionalPRs || {}).forEach(k => validRefs.add('additional:' + k));
-        const { data: existing } = await sbClient
+        const { data: existing, error: racesError } = await client
           .from('races').select('id, source_ref')
           .eq('athlete_id', aRow.id)
           .eq('source', 'local_storage_import')
           .is('deleted_at', null);
+        if(racesError) throw racesError;
         const stale = (existing || [])
           .filter(r => r.source_ref && !validRefs.has(r.source_ref))
           .map(r => r.id);
         if(stale.length){
-          const { error: e3 } = await sbClient.from('races').delete().in('id', stale);
-          if(e3) console.warn('stale race cleanup failed', e3);
+          const { error: e3 } = await client.from('races').delete().in('id', stale);
+          if(e3) throw e3;
         }
         // Persist per-event PR dates: import_local_athlete predates them (it
         // writes additional-PR race rows with no race_date), so patch the date
@@ -4627,7 +4764,7 @@ async function syncAthleteToSupabase(athlete){
         // holds a different date than the coach entered is a silent lie).
         const prDates = athlete.additionalPRDates || {};
         const dateResults = await Promise.all(Object.keys(athlete.additionalPRs || {}).map(ev =>
-          sbClient.from('races')
+          client.from('races')
             .update({ race_date: prDates[ev] || null })
             .eq('athlete_id', aRow.id)
             .eq('source', 'local_storage_import')
@@ -4645,7 +4782,7 @@ async function syncAthleteToSupabase(athlete){
         ));
         prDateError = dateResults.find(Boolean) || null;
       }
-    }catch(reconErr){ console.warn('race reconciliation skipped', reconErr); }
+    }catch(reconErr){ return {ok:false, error:reconErr}; }
     if(prDateError) return { ok: false, error: prDateError };
     return { ok: true };
   }catch(err){
@@ -4742,16 +4879,17 @@ async function logPredictionSnapshot(athlete){
 }
 
 async function softDeleteRemoteAthlete(clientRef){
-  if(!sbClient || !sbUser || !clientRef) return;
+  if(!sbClient || !sbUser || !clientRef) return {ok:false};
+  const ownerId = sbUser.id;
   try{
-    const { error } = await sbClient
-      .from('athletes')
+    const remoteId = await resolveRemoteAthleteIdFresh(clientRef);
+    if(!remoteId || !sbUser || sbUser.id !== ownerId) return {ok:false};
+    const { data, error } = await sbClient.from('athletes')
       .update({ deleted_at: new Date().toISOString() })
-      .eq('client_ref', clientRef);
+      .eq('id', remoteId).eq('coach_id', ownerId).select('id');
     if(error) throw error;
-  }catch(err){
-    console.warn('Remote athlete delete failed', err);
-  }
+    return {ok:Boolean(data && data.length === 1)};
+  }catch(err){ return {ok:false, error:err}; }
 }
 
 // Resolve a local athlete id to its cloud row id WITHOUT trusting a cached
@@ -5012,6 +5150,7 @@ async function loadRemoteAthletes(){
       .select('*')
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
+    if(!sbUser || sbUser.id !== ownerId) return {ok:false, reason:'account_changed'};
     if(athleteError) throw athleteError;
     if(!athletes || athletes.length === 0){
       if(anonymous && !anonymous.accountUserId && Array.isArray(anonymous.athletes) && anonymous.athletes.length){
@@ -5019,8 +5158,8 @@ async function loadRemoteAthletes(){
       }
       DB = loadDB(accountKey) || newDB();
       DB.accountUserId = ownerId;
-      DB.athletes = [];
-      DB.activeAthleteId = null;
+      DB.athletes = mergePendingAthletes([], DB);
+      if(!DB.athletes.some(a => a.id === DB.activeAthleteId)) DB.activeAthleteId = DB.athletes[0]?.id || null;
       if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
       saveDB(DB, accountKey);
       sbRosterState = 'empty';
@@ -5040,11 +5179,12 @@ async function loadRemoteAthletes(){
       .is('deleted_at', null)
       .order('created_at', { ascending: true });
     if(raceError) throw raceError;
+    if(!sbUser || sbUser.id !== ownerId) return {ok:false, reason:'account_changed'};
 
     DB = loadDB(accountKey) || newDB();
     DB.accountUserId = ownerId;
     if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
-    DB.athletes = athletes.map(a => remoteAthleteToLocal(a, races || []));
+    DB.athletes = mergePendingAthletes(athletes.map(a => remoteAthleteToLocal(a, races || [])), DB);
     if(!DB.activeAthleteId || !DB.athletes.some(a => a.id === DB.activeAthleteId)){
       DB.activeAthleteId = DB.athletes[0] ? DB.athletes[0].id : null;
     }
@@ -8487,7 +8627,7 @@ function prFreshness(raceDateISO){
 function freshnessLabel(state, raceDateISO){
   const days = _daysSinceRace(raceDateISO);
   switch(state){
-    case 'fresh':   return { color:'var(--green)',  icon:'●', label:'CURRENT',   text:`Race result is ${days} days old — paces are reliable.` };
+    case 'fresh':   return { color:'var(--green)',  icon:'●', label:'CURRENT',   text:`Race result is ${days} days old. Review conditions and athlete context before prescribing paces.` };
     case 'stale':   return { color:'var(--yellow)', icon:'▲', label:'STALE',     text:`Race result is ${days} days old (>90 days). Paces may be off — recommend a fresh time trial.` };
     case 'expired': return { color:'var(--red)',    icon:'✕', label:'OUTDATED',  text:`Race result is ${days} days old (>1 year). Predictions based on outdated information — log a recent race before training to these paces.` };
     case 'future':  return { color:'var(--red)',    icon:'✕', label:'INVALID',   text:'Race date is in the future. Use completed races only for forecasts and training paces.' };
@@ -10189,7 +10329,7 @@ function renderPaces(){
         <span id="build-time" class="hero-edit" role="button" tabindex="0" onclick="heroTimeEdit()" onkeydown="if(event.key==='Enter'){event.preventDefault();heroTimeEdit();}" title="Click to type a target time — the intensity % adjusts to match">—</span>
       </p>
       <p style="font-family:var(--font-mono);font-size:.875rem;color:var(--text-3);margin-bottom:.75rem">
-        <span id="build-pct" style="color:var(--text);font-weight:600">100%</span> of race speed · <span id="build-offset">—</span>
+        <span id="build-pct" style="color:var(--text);font-weight:600">100%</span> STRIDE intensity · <span id="build-offset">—</span>
       </p>
       <p class="hero-hint">Tap the distance or the time to change them — everything on this page updates instantly.</p>
       ${isAthleteOnly() ? `<p style="font-size:.8125rem;color:var(--text-2);margin-top:.5rem">This is your rep target at the shown effort. Everything below is extra detail — you don't need it to run today's workout.</p>` : ''}
@@ -10207,7 +10347,7 @@ function renderPaces(){
           <label for="pcPct" style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:var(--text-3);text-transform:uppercase;margin:0">Training Intensity</label>
           <span id="pcPctVal" style="color:var(--text);font-family:var(--font-mono);font-size:1.125rem;font-weight:700">100%</span>
         </div>
-        <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="Percentage of race speed">
+        <input type="range" id="pcPct" min="60" max="130" step="1" value="100" style="width:100%;accent-color:var(--accent);cursor:pointer" oninput="updateBuilder()" aria-label="STRIDE intensity percentage">
         <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);margin-top:.375rem">
           <span>60%</span><span>RACE</span><span>130%</span>
         </div>
@@ -10222,6 +10362,7 @@ function renderPaces(){
 
     ${pacesProvenance(anchor)}
     ${youthGuardrailBanner(A)}
+    ${paceSourceWarning(A, true)}
     ${aerobicPaceAnchorWarning(anchor)}
     ${fitnessOverrideCard(A)}
 
@@ -10463,7 +10604,7 @@ function buildDanielsTable(ath){
 
   const header = `
     <tr style="border-bottom:1px solid var(--border-s)">
-      <th class="pc-zone-col" style="padding:.625rem .75rem;text-align:left;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600;position:sticky;left:0;background:var(--bg-card);min-width:10rem">Zone · % of race pace</th>
+      <th class="pc-zone-col" style="padding:.625rem .75rem;text-align:left;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600;position:sticky;left:0;background:var(--bg-card);min-width:10rem">Zone · STRIDE intensity</th>
       <th class="pc-mile-col" style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--text-4);text-transform:uppercase;font-weight:600">Per Mile</th>
       ${allReps.map(d => `<th class="pc-rep-col ${Math.abs(d - selRep) < 2 ? 'is-selected' : ''}" style="${colBg(d)}padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:${Math.abs(d - selRep) < 2 ? 'var(--text-2)' : 'var(--text-4)'};text-transform:uppercase;font-weight:600">${esc(repLabel(d))}</th>`).join('')}
     </tr>`;
@@ -10473,7 +10614,7 @@ function buildDanielsTable(ath){
     z.cells.forEach(c => cellsByDist[c.dist] = c);
     const isGuardrailAdjusted = z.pct < 100 && guardrail.shift !== 0;
     const subLabel = z.allowed
-      ? `${z.displayPct}% of race pace <span style="color:var(--text-4)">· ${z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
+      ? `${z.displayPct}% STRIDE intensity <span style="color:var(--text-4)">· ${z.range}${isGuardrailAdjusted ? ` · ${guardrail.label}` : ''}</span>`
       : 'Needs 1500m+';
     const zoneColor = z.allowed ? 'var(--text)' : 'var(--text-4)';
 
@@ -10559,7 +10700,7 @@ function buildDanielsTable(ath){
       </table>
     </div>
     <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:.75rem">
-      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · Even-split workout targets at each zone's % of the anchor's race speed — a pace reference, not race predictions. For custom percentages, use the slider above.
+      <strong style="color:var(--text-3)">COACH SPLIT TABLE</strong> · Even-split workout targets use the STRIDE intensity scale: target time = race-pace time × (2 − intensity / 100). These percentages are not percentages of running speed. Targets are pace references, not race predictions.
     </p>${prNote}${unlockNote}`;
 }
 
@@ -10627,7 +10768,7 @@ function renderFreeTierCalculator(opts){
         <span id="ft-time">—</span>
       </p>
       <p style="font-family:var(--font-mono);font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">
-        <span id="ft-pct" style="color:var(--text);font-weight:600">100%</span> of race speed · <span id="ft-offset">—</span>
+        <span id="ft-pct" style="color:var(--text);font-weight:600">100%</span> STRIDE intensity · <span id="ft-offset">—</span>
       </p>
       <div class="pc-hero-splits">
         <span><strong style="color:var(--text-2);font-size:1rem" id="ft-100">—</strong> <span style="font-size:.625rem;letter-spacing:.0625rem;display:block;margin-top:.125rem">PER 100M</span></span>
@@ -11222,12 +11363,9 @@ function renderPredict(){
     </div>
 
     <div class="card">
-      <p class="card-title"><span>Improvement Projection</span><span class="card-accent">SCENARIO MODELING — NOT GUARANTEED</span></p>
-      <p style="font-family:var(--font-mono);font-size:.75rem;color:var(--dim);line-height:1.7;margin-bottom:1.25rem">
-        The improvement rates below are <strong style="color:var(--text)">scenario estimates</strong>, not predictions. They are based on training age bands from published reviews of training adaptations (Jones &amp; Carter 2000; Daniels 2014; Bompa &amp; Buzzichelli 2019). Actual improvement varies widely by individual response, training adherence, injury history, biological maturation (especially in athletes under 18), and life context.
-      </p>
+      <p class="card-title"><span>Goal planning</span><span class="card-accent">COACH REVIEW</span></p>
       ${buildScenarios(sec, A.trainingAge)}
-      <div class="warn-box" style="margin-top:1.5rem"><span class="warn-icon" aria-hidden="true">▲</span><p><strong>Honesty note:</strong> No coaching software can predict your athlete's improvement curve with high confidence. These scenarios are tools for goal-setting conversations, not commitments. Re-test every 8–12 weeks and recalibrate.</p></div>
+
     </div>`;
 }
 
@@ -12588,15 +12726,15 @@ function computeSquadAnalytics(athletes){
   const distLow = groups.distance.filter(a => { const m = mileageOf(a); return m != null && m < 20; });
   if(distLow.length){
     flags.push({ sev:'warn',
-      title:`${distLow.length} distance runner${distLow.length===1?'':'s'} below aerobic-rewarding volume`,
-      detail:`Logged under 20 mi/wk while racing 3K+. Endurance events reward aerobic volume — a controlled, gradual mileage build is usually the single highest-ROI change you can make.`,
+      title:`${distLow.length} distance runner${distLow.length===1?'':'s'} with low logged mileage to review`,
+      detail:`Logged under 20 mi/wk while racing 3K+. Check whether the log is complete and appropriate for the athlete’s age, experience, season and recovery before considering a change.`,
       who: distLow.slice(0,6).map(a=>a.name) });
   }
   const sprintHigh = groups.sprint.filter(a => { const m = mileageOf(a); return m != null && m > 35; });
   if(sprintHigh.length){
     flags.push({ sev:'warn',
       title:`${sprintHigh.length} sprinter${sprintHigh.length===1?'':'s'} carrying endurance-style mileage`,
-      detail:`Over 35 mi/wk on a ≤400m athlete often signals aerobic "junk miles" displacing speed, power and recovery. Audit whether the volume is actually serving the event.`,
+      detail:`Logged over 35 mi/wk while racing 400m or shorter. Review event demands and the full training context; mileage alone cannot determine whether the load is appropriate.`,
       who: sprintHigh.slice(0,6).map(a=>a.name) });
   }
   const sp = groups.sprint.length, di = groups.distance.length, mi = groups.mid.length, known = sp+di+mi;
@@ -12611,7 +12749,7 @@ function computeSquadAnalytics(athletes){
   const singlePR = list.filter(a => validPR(a) && (!a.additionalPRs || Object.keys(a.additionalPRs).length===0));
   if(singlePR.length) opps.push(`Add one more race distance for ${singlePR.length} athlete${singlePR.length===1?'':'s'} → unlocks each athlete's *own* fatigue curve and sharper predictions instead of a generic table.`);
   if(missingMileage) opps.push(`Log weekly mileage for ${missingMileage} athlete${missingMileage===1?'':'s'} → switches on training-load bias detection across the whole roster.`);
-  if(distLow.length) opps.push(`Build aerobic base for ${distLow.length} under-mileage distance runner${distLow.length===1?'':'s'} → typically the biggest, safest PR lever in high-school distance.`);
+  if(distLow.length) opps.push(`Review mileage and training context for ${distLow.length} distance runner${distLow.length===1?'':'s'} before changing their plan.`);
   if(missingDate) opps.push(`Add PR dates for ${missingDate} athlete${missingDate===1?'':'s'} → STRIDE can then flag stale fitness and re-test windows.`);
 
   return {
@@ -12750,7 +12888,7 @@ function squadAnalyticsLocked(n){
     <div class="card" style="text-align:center;padding:2.5rem 1.5rem">
       <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.125rem;text-transform:uppercase;margin-bottom:.5rem">Pro feature</p>
       <h2 style="font-family:var(--font-display);font-size:1.75rem;font-weight:400;margin-bottom:.75rem">Team IQ</h2>
-      <p style="font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole roster — no other calculator reads your roster at once.</p>
+      <p style="font-family:var(--font-mono);font-size:.8125rem;color:var(--text-2);line-height:1.6;max-width:34rem;margin:0 auto 1.5rem">You have <strong style="color:var(--text)">${n}</strong> athletes loaded. Unlock training-load bias, event-coverage skew, and the highest-ROI fixes across your whole roster — with source data you can review.</p>
       <button class="btn btn-primary" onclick="showUpgradeModal()">Upgrade to Pro</button>
     </div>`;
 }
@@ -12769,13 +12907,13 @@ function renderSquadAnalytics(stats){
       <p class="sq-flag-detail">${f.detail}</p>
       ${f.who && f.who.length ? `<p class="sq-flag-who">${f.who.map(esc).join(' · ')}</p>` : ''}
     </div>`).join('')
-    : `<div class="sq-flag sq-flag-clear"><p class="sq-flag-detail">No training-load red flags across the roster. Add weekly mileage and a second race distance to deepen the analysis.</p></div>`;
+    : `<div class="sq-flag sq-flag-clear"><p class="sq-flag-detail">${stats.completeness.missingMileage ? `Training-load assessment incomplete: ${stats.completeness.missingMileage} athlete${stats.completeness.missingMileage===1?' has':'s have'} no weekly mileage logged. Missing data cannot rule out a load concern.` : 'No flags from the mileage values entered. This is not a readiness or health assessment.'}</p></div>`;
   const oppsHtml = stats.opps.length ? `<ol class="sq-opps">${stats.opps.map(o=>`<li>${o.replace(/\*([^*]+)\*/g,'<em>$1</em>')}</li>`).join('')}</ol>` : '';
   return `
     <div class="card sq-card">
       <p class="sq-kicker">Team IQ</p>
       <h2 class="sq-h">What your roster is telling you</h2>
-      <p class="sq-sub">Across ${stats.n} athlete${stats.n===1?'':'s'} — no other calculator reads your whole roster at once.</p>
+      <p class="sq-sub">Across ${stats.n} athlete${stats.n===1?'':'s'} — review the evidence before changing a plan.</p>
       <div class="sq-tiles">
         ${tile('Athletes', stats.n, `${stats.sex.M||0}M · ${stats.sex.F||0}F`)}
         ${tile('Avg mileage', miAvg, stats.mileage.count?`${stats.mileage.count} logged`:'none logged')}
@@ -12831,7 +12969,7 @@ function squadUpgradeNudge(hiddenCount, opts){
   return `
     <div class="card squad-nudge" style="text-align:center;padding:1.5rem;margin-top:1rem;border-style:dashed">
       <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:38rem;margin:0 auto .35rem">${lead} <strong style="color:var(--text)">Pro</strong> adds unlimited athletes, rosters saved across devices, heat / altitude / XC-course adjustment, printable team reports, and the lineup optimizer.</p>
-      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem">No other free tool reads your whole roster at once</p>
+      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem">Try the roster workflow before signing up</p>
       ${cta}
     </div>`;
 }
@@ -13136,7 +13274,7 @@ function paceCardPrintHTML(athlete){
   return `<div class="ps-page">
     ${_psHead('Pace Card', athlete.name || 'Athlete', sub, meta)}
     <div class="ps-section">Training paces — seconds per rep (per-mile at left)</div>
-    <table><thead><tr><th>Zone · % of race pace</th><th class="num">Per mile</th>${repHdr}</tr></thead><tbody>${bodyRows}</tbody></table>
+    <table><thead><tr><th>Zone · STRIDE intensity</th><th class="num">Per mile</th>${repHdr}</tr></thead><tbody>${bodyRows}</tbody></table>
     <div class="ps-section">${ovm ? `Even-splits at coach-entered current fitness · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}` : `Goal race even-splits · ${esc(athlete.raceDistance)} ${esc(athlete.raceTime)}`}</div>
     <table><thead><tr>${segHdr.join('')}</tr></thead><tbody><tr>${segCells.join('')}</tr></tbody></table>
     <div class="ps-note">Even-effort splits at goal pace; the second (grey) line is elapsed time at that point.${rd < 1500 ? ' Aerobic zones are intentionally blank — a sub-1500m PR can’t prescribe easy mileage or threshold work.' : ''}</div>
@@ -13175,15 +13313,16 @@ function computeTrainingGroups(athletes, opts){
     const prs = collectAllPRs(a);
     const distanceCapable = a.raceDistanceM >= 1500 || prs.some(p => p.distM >= 1500);
     if(!distanceCapable){ excluded.push({ athlete:a, reason:'sprint anchor' }); return; }
-    let refSec;
+    let refSec, sourceDate = null;
     const obs = prs.find(p => sameDistanceM(p.distM, refDistM));
-    if(obs){ refSec = obs.sec; }
+    if(obs){ refSec = obs.sec; sourceDate = obs.raceDate; }
     else {
       const f = raceForecastForTarget(a, { distM:refDistM, label:'5K' }, { fixedAnchor: nearestAnchorForTarget(a, refDistM) });
       if(!f || !isFinite(f.likely)){ excluded.push({ athlete:a, reason:'no 5K projection' }); return; }
-      refSec = f.likely;
+      refSec = f.likely; sourceDate = f.anchor && f.anchor.raceDate;
     }
-    scored.push({ athlete:a, refSec, paceMileSec: refSec / (refDistM / 1609.34) });
+    if(prFreshness(sourceDate) === 'future'){ excluded.push({athlete:a, reason:'future source date'}); return; }
+    scored.push({ athlete:a, sourceDate, refSec, paceMileSec: refSec / (refDistM / 1609.34) });
   });
   if(!scored.length) return { groups:[], excluded, refDistM };
   scored.sort((x, y) => x.paceMileSec - y.paceMileSec); // fastest first
@@ -13224,6 +13363,22 @@ function _distanceAthleteView(a){
   prs.sort((x, y) => Math.abs(Math.log10(x.distM) - tLog) - Math.abs(Math.log10(y.distM) - tLog));
   const p = prs[0];
   return { ...a, primaryEvent: p.event, raceDistance: p.event, raceDistanceM: p.distM, raceTime: fmtT(p.sec), raceDate: p.raceDate || null };
+}
+
+function groupSourceWarnings(group){
+  const items = group.members.map(m => {
+    const state = prFreshness(m.sourceDate);
+    if(state === 'fresh') return '';
+    const reason = state === 'expired' ? 'grouping mark over a year old' : state === 'stale' ? 'grouping mark over 90 days old' : 'grouping mark date unknown';
+    return `${m.athlete.name}: ${reason}`;
+  }).filter(Boolean);
+  return items.length ? `<div class="warn-box"><p><strong>Review source marks before assigning:</strong> ${esc(items.join('; '))}. These groups do not establish current fitness.</p></div>` : '';
+}
+function paceSourceWarning(athlete, usesOverride){
+  if(!athlete || (usesOverride && getFitnessOverride(athlete))) return '';
+  const state = prFreshness(athlete.raceDate);
+  if(state === 'fresh') return '';
+  return `<div class="warn-box"><p><strong>Review the pace source:</strong> ${esc(freshnessLabel(state, athlete.raceDate).text)}</p></div>`;
 }
 
 // Session target table for a group's median fitness (5K-equivalent yardstick).
@@ -13442,7 +13597,7 @@ function renderSquads(){
   if(!el) return;
   const roster = DB.athletes || [];
   if(roster.length < 2){
-    el.innerHTML = emptyStateCard('Training groups need a roster', 'Import or add at least 2 distance athletes (a 1500m+ PR) and STRIDE will cluster them into pace groups with today’s rep targets.', 'Import roster', "goTo('import',null)");
+    el.innerHTML = emptyStateCard('Training groups need a roster', 'Import or add at least 2 distance athletes (a 1500m+ PR) and STRIDE will cluster them into pace groups with planning targets to review.', 'Import roster', "goTo('import',null)");
     return;
   }
   const pro = hasProAccess();
@@ -13469,7 +13624,8 @@ function renderSquads(){
           <button class="btn btn-primary" onclick="openGroupWorkoutForm('${esc(g.id)}')">Assign workout</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem">${chips}</div>
-        <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Today’s rep targets · group median</p>
+        ${groupSourceWarnings(g)}
+        <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Planning targets · group median</p>
         <div style="overflow-x:auto;border:1px solid var(--border);border-radius:.5rem">
           <table style="width:100%;border-collapse:collapse;min-width:34rem">
             <thead><tr style="border-bottom:1px solid var(--border-s)"><th style="text-align:left;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">Zone</th><th style="text-align:right;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">/mi</th>${repCols.map(d=>`<th style="text-align:right;padding:.4rem .6rem;font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);text-transform:uppercase">${d===1600?'1600':d}</th>`).join('')}</tr></thead>
@@ -13480,7 +13636,7 @@ function renderSquads(){
   }).join('');
 
   const excludedNote = res.excluded.length
-    ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${res.excluded.length} athlete${res.excluded.length===1?'':'s'} not grouped (sprint anchor or no distance PR): ${esc(res.excluded.slice(0,8).map(e=>e.athlete.name).join(', '))}${res.excluded.length>8?'…':''}</p>`
+    ? `<p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.5rem">${res.excluded.length} athlete${res.excluded.length===1?'':'s'} not grouped (missing, invalid or unsupported distance marks): ${esc(res.excluded.slice(0,8).map(e=>e.athlete.name).join(', '))}${res.excluded.length>8?'…':''}</p>`
     : '';
   const capNote = (!pro && roster.length > FREE_SQUAD_CAP)
     ? `<div class="card squad-nudge" style="text-align:center;padding:1.25rem;border-style:dashed;margin-top:1rem"><p style="font-size:.875rem;color:var(--text-2);margin-bottom:.75rem">Grouping the first ${FREE_SQUAD_CAP} of ${roster.length} athletes. <strong style="color:var(--text)">Pro</strong> clusters your whole roster and prints a practice sheet per group.</p><button class="btn btn-primary" onclick="showUpgradeModal()">Unlock full roster →</button></div>`
@@ -13490,7 +13646,7 @@ function renderSquads(){
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem">
       <div>
         <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.3rem">Training Groups</p>
-        <p style="font-size:.875rem;color:var(--text-2);line-height:1.5;max-width:40rem">STRIDE clustered your distance athletes into pace groups by current fitness (projected 5K-equivalent pace), splitting at the biggest natural gaps. Each group’s median rep targets are ready for today’s workout.</p>
+        <p style="font-size:.875rem;color:var(--text-2);line-height:1.5;max-width:40rem">STRIDE clustered your distance athletes into pace groups from recorded marks (projected 5K-equivalent pace), splitting at the biggest natural gaps. Review source dates and each athlete’s current condition before assigning targets.</p>
       </div>
       <button class="btn btn-print" onclick="printGroupSheets()">Print group sheets</button>
     </div>
@@ -13511,12 +13667,13 @@ function groupSheetPrintHTML(group, opts){
     const z = cs ? cs.zones.find(x => x.label === zoneLabel && x.allowed) : null;
     const cells = repCols.map(d => `<td class="num">${z && z.reps[d] != null ? esc(fmtRepTime(z.reps[d])) : '—'}</td>`).join('');
     const mile = z && z.mile != null ? _mmss(z.mile, 0) : '—';
-    return `<tr><td>${esc(m.athlete.name)}</td><td class="num">${esc(m.athlete.raceDistance||'')} ${esc(m.athlete.raceTime||'')}</td><td class="num">${esc(mile)}</td>${cells}</tr>`;
+    return `<tr><td>${esc(m.athlete.name)}${paceSourceWarning(_distanceAthleteView(m.athlete))}</td><td class="num">${esc(m.athlete.raceDistance||'')} ${esc(m.athlete.raceTime||'')}</td><td class="num">${esc(mile)}</td>${cells}</tr>`;
   }).join('');
   const repHdr = repCols.map(d => `<th class="num">${d===1600?'1600m':d+'m'}</th>`).join('');
   const sub = `${group.members.length} athletes · ~${_mmss(group.paceLo,0)}–${_mmss(group.paceHi,0)}/mi at 5K effort`;
   return `<div class="ps-page">
     ${_psHead('Practice Sheet', `${group.label} — ${zoneLabel} reps`, sub, [_psStamp()])}
+    ${groupSourceWarnings(group)}
     <div class="ps-callout"><strong>Session:</strong> ${esc(zoneLabel)} intervals. Columns are the target time for each rep distance, computed from each athlete’s own PR.</div>
     <table><thead><tr><th>Athlete</th><th class="num">PR</th><th class="num">/mile</th>${repHdr}</tr></thead><tbody>${rows}</tbody></table>
     <div class="ps-foot">STRIDE OS training groups · grouped by projected 5K-equivalent pace. Targets are starting points — adjust by HR / RPE / interval length. Each athlete’s guardrail is applied to their own row.</div>
@@ -13918,7 +14075,7 @@ function renderProof(){
       ${bar('STRIDE ensemble', p.strideMape, 'var(--green)', strideBest)}
       ${bar('Riegel (1977)', p.riegelMape, 'var(--yellow)', V.riegel && V.riegel.tone === 'loss')}
       ${bar('Daniels-Gilbert VDOT', p.vdotMape, 'var(--text-3)', V.vdot && V.vdot.tone === 'loss')}
-      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.75rem">STRIDE was closest in ${p.wins} of ${p.n} test${p.n===1?'':'s'}. Lower is better (mean absolute % error vs the athlete’s real time).${smallSample ? ` A ${p.n}-test sample is a sanity check, not a verdict — the bars will move a lot as you log more races. STRIDE’s published accuracy comes from a 292-prediction held-out backtest on 23 athletes, not from this card.` : ''}</p>
+      <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);margin-top:.75rem">Against Riegel and VDOT, STRIDE was closest in ${p.wins} of ${p.n} test${p.n===1?'':'s'}. Lower is better (mean absolute % error vs the athlete’s real time).${smallSample ? ` A ${p.n}-test sample is a sanity check, not a verdict — the bars will move a lot as you log more races. STRIDE’s published accuracy comes from a 292-prediction held-out backtest on 23 athletes, not from this card.` : ''}</p>
     </div>
     ${arbCard}
     ${panelCard}
@@ -14983,9 +15140,10 @@ async function applyMeetResults(){
   updates.forEach(u => {
     const ath = u.ath; if(!ath) return;
     if(u.where === 'primary'){ ath.raceTime = u.res.timeText; if(u.res.date) ath.raceDate = u.res.date; }
-    else { ath.additionalPRs = ath.additionalPRs || {}; ath.additionalPRs[u.res.event] = u.res.timeText; }
+    else { ath.additionalPRs = ath.additionalPRs || {}; ath.additionalPRs[u.res.event] = u.res.timeText; ath.additionalPRDates = ath.additionalPRDates || {}; ath.additionalPRDates[u.res.event] = u.res.date || null; }
     ath.updatedAt = new Date().toISOString();
     changed.add(ath);
+    queueAthleteSync(ath);
   });
   saveDB(DB);
   refreshActiveAthlete();
@@ -15520,11 +15678,11 @@ function renderHome(){
       <div class="lp-inner lp-proof reveal">
         <div>
           <div class="lp-bignum" data-count="33" data-suffix="%">33%</div>
-          <p class="lp-bignum-sub">Closer than the standard formula</p>
+          <p class="lp-bignum-sub">Lower error in this backtest</p>
         </div>
         <div class="lp-proof-body">
           <p class="lp-kicker">The engine</p>
-          <p>Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing across 23 real athletes&rsquo; careers &mdash; 292 held-out race predictions over 146 event pairs &mdash; it landed <strong>~33% closer</strong> than the formula most free calculators use. Track-native from 800m to 10K, with honest confidence ranges.</p>
+          <p>Built on an energy-system engine that reads each athlete's <strong>full event range</strong> — not one one-size formula. In back-testing across 23 real athletes&rsquo; careers &mdash; 292 held-out race predictions over 146 event pairs &mdash; it produced <strong>~33% lower mean absolute percentage error</strong> than Riegel on that dataset. The sample is small and elite-skewed, covers 800m to 10K, and does not establish accuracy for your roster.</p>
           <div class="lp-proof-facts">
             <span class="lp-fact">23 athlete careers</span>
             <span class="lp-fact">292 held-out predictions</span>
@@ -16121,6 +16279,7 @@ function setAllEnrichTrainingAge(years){
 async function finishImportEnrich(skipped){
   const ids = importState.enrichIds || [];
   if(!skipped){
+    ids.forEach(id => { const a = DB.athletes.find(x => x.id === id); if(a) queueAthleteSync(a); });
     saveDB(DB);
     refreshActiveAthlete();
     // Mirror to the cloud so the value survives a device switch. A failure here
@@ -16764,71 +16923,12 @@ function buildPreds(distM, sec, primary){
 }
 
 function buildScenarios(sec, tAge){
-  // Training-age-based improvement bands from published reviews
-  // Conservative bounds — these are scenarios, not predictions
-  // Sources: Jones & Carter (2000) Sports Medicine; Bompa & Buzzichelli (2019)
-  const y = tAge || 0;
-
-  // Annual improvement % bands [conservative, realistic, aggressive]
-  // Drawn from training adaptation literature
-  let bands;
-  if(y < 1)      bands = { c: 5, r: 12, a: 20, ceiling: '3–5 yrs', basis: 'Beginner adaptations are large in year 1 but vary widely (Jones & Carter 2000)' };
-  else if(y < 3) bands = { c: 3, r:  7, a: 12, ceiling: '5–7 yrs', basis: 'Developing athletes show 5–15% annual gains depending on training load progression' };
-  else if(y < 5) bands = { c: 2, r:  4, a:  7, ceiling: '7–10 yrs', basis: 'Trained athletes plateau as VO₂max ceiling approaches; gains come from economy and threshold' };
-  else if(y < 8) bands = { c: 1, r:  2, a:  4, ceiling: '10+ yrs', basis: 'Advanced athletes — small gains, often event-specific refinement' };
-  else           bands = { c: 0.5, r: 1, a: 2, ceiling: 'Maintenance', basis: 'Elite/long-trained — improvement marginal; focus shifts to durability and periodization' };
-
-  const month3 = m => sec * Math.pow(1 - m/100, 0.25);  // 3 months = 1/4 year
-  const month6 = m => sec * Math.pow(1 - m/100, 0.5);
-  const year1  = m => sec * Math.pow(1 - m/100, 1);
-
-  return `
-    <div style="overflow-x:auto;margin-top:1rem">
-      <table style="width:100%;border-collapse:collapse;font-family:inherit">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border-s)">
-            <th style="padding:.625rem .75rem;text-align:left;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-weight:600">Scenario</th>
-            <th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-weight:600">Annual %</th>
-            <th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-weight:600">3 Months</th>
-            <th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-weight:600">6 Months</th>
-            <th style="padding:.625rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.625rem;letter-spacing:.125rem;color:var(--faint);text-transform:uppercase;font-weight:600">12 Months</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem">Conservative</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--dim)">${bands.c}%</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(month3(bands.c)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(month6(bands.c)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(year1(bands.c)))}</td>
-          </tr>
-          <tr style="border-bottom:1px solid var(--border);background:var(--accent-soft)">
-            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem;color:var(--accent)">Realistic</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--accent)">${bands.r}%</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--accent)">${esc(fmtT(month3(bands.r)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--accent)">${esc(fmtT(month6(bands.r)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--accent)">${esc(fmtT(year1(bands.r)))}</td>
-          </tr>
-          <tr>
-            <td style="padding:.875rem .75rem;font-family:var(--font-display);font-size:1rem">Aggressive</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem;color:var(--dim)">${bands.a}%</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(month3(bands.a)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(month6(bands.a)))}</td>
-            <td style="padding:.875rem .75rem;text-align:right;font-family:var(--font-mono);font-size:.875rem">${esc(fmtT(year1(bands.a)))}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--dim);line-height:1.6;margin-top:1rem">
-      <strong style="color:var(--text)">Plateau timeline:</strong> ${esc(bands.ceiling)} of consistent training before significant diminishing returns. <br>
-      <strong style="color:var(--text)">Basis:</strong> ${esc(bands.basis)}
-    </p>`;
+  const experience = Number(tAge) > 0
+    ? 'Years training alone cannot establish an individual improvement rate.'
+    : 'Years training is unknown. Missing experience is not treated as beginner experience.';
+  return `<p>${esc(experience)} STRIDE does not generate annual improvement percentages or label future personal bests “realistic.” Set goals with the athlete using recent comparable performances, then review them as new results arrive.</p>`;
 }
 
-// ══════════════════════════════════════
-// METHODOLOGY & CITATIONS SCREEN
-// Citations visible. Weights and ensemble math hidden (proprietary).
-// ══════════════════════════════════════
 function renderMethodology(){
   const el = document.getElementById('mt-body');
 
@@ -18606,8 +18706,8 @@ async function saveAthlete(){
     predictionStatus = await logPredictionSnapshot(athleteData);
   }
   if(sbClient && sbUser && (!cloudStatus || !cloudStatus.ok)){
-    toast('Athlete saved locally — cloud sync failed');
-    setAuthFeedback('err', 'Saved locally, but cloud sync failed. Check Supabase reachability before relying on cross-device data.', false);
+    toast(storageUnavailable ? 'Cloud sync failed and device storage is unavailable — keep this page open' : 'Athlete saved on this device — waiting to sync', 'error');
+    setAuthFeedback('err', 'Waiting to sync. Keep using this device; pending athlete changes retry when the connection returns.', false);
   } else if(sbClient && sbUser && predictionStatus && !predictionStatus.ok && !predictionStatus.skipped){
     toast('Athlete saved — forecast log failed');
   } else {
@@ -18649,11 +18749,17 @@ function startNewAthlete(){
 }
 
 // ── DELETE ATHLETE ──
-function deleteAthlete(id){
+async function deleteAthlete(id){
   if(!requireCoachWorkspace('delete coach-managed athlete profiles')) return;
   const ath = DB.athletes.find(a => a.id === id);
   if(!ath) return;
   if(!confirm(`Permanently delete "${ath.name}" and all their workouts? This cannot be undone.`)) return;
+  if(sbUser){
+    await drainAthleteSync();
+    const result = await softDeleteRemoteAthlete(id);
+    if(!result || !result.ok){ toast('Could not delete from your account. Nothing was removed; reconnect and try again.', 'error'); return; }
+    if(DB.pendingAthleteSync) delete DB.pendingAthleteSync[String(id)];
+  }
   DB.athletes = DB.athletes.filter(a => a.id !== id);
   DB.workouts = DB.workouts.filter(w => w.athleteId !== id);
   if(DB.lastMeetSummary && Array.isArray(DB.lastMeetSummary.rows)){
@@ -18667,7 +18773,6 @@ function deleteAthlete(id){
   }
   saveDB(DB);
   if(typeof invalidateCoachBriefWorkouts === 'function') invalidateCoachBriefWorkouts();
-  softDeleteRemoteAthlete(id);
   refreshActiveAthlete();
   updateChip();
   if(currentScreen === 'roster') renderRoster();
@@ -18912,6 +19017,7 @@ async function applyTrainingAgeRepair(){
     if(p.grade && !a.grade) a.grade = p.grade;
     a.updatedAt = new Date().toISOString();
   });
+  plan.forEach(p => { const a = DB.athletes.find(x => x.id === p.id); if(a) queueAthleteSync(a); });
   saveDB(DB);
   refreshActiveAthlete();
   updateChip();
@@ -18928,7 +19034,7 @@ async function applyTrainingAgeRepair(){
   trainingAgeRepair = { stage:'idle', plan:[], error:'' };
   renderRoster();
   toast(failed
-    ? `Years training set — ${failed} did not save to your account and may revert at next sign-in`
+    ? `Years training set — ${failed} are saved on this device and waiting to sync`
     : `Years training set for ${plan.length} athlete${plan.length===1?'':'s'}`);
 }
 
@@ -19242,6 +19348,7 @@ function resetForm(){
 
 // ── CHIP ──
 function updateChip(){
+  renderSyncStatus();
   const n=document.getElementById('chipName'), m=document.getElementById('chipMeta'), chip=document.getElementById('activeAthleteChip');
   const count = DB.athletes.length;
   if(!A||!A.name){

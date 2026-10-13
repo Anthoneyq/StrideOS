@@ -240,6 +240,70 @@ probe('context bar: names the selected athlete', ()=>{
   if(__store['athleteContextName'].textContent !== 'No athlete selected') throw new Error('stale name left on screen');
   A = keep;
 });
+
+// ── Honest empty states (2026-08-19 audit) ─────────────────────────────────
+// An unread roster is not an empty roster. renderRoster used to jump straight
+// to "No athletes yet · + Add First Athlete" whenever DB.athletes was empty,
+// regardless of WHY. A coach who saw that after one failed cloud select
+// re-entered the roster by hand; saveAthlete minted fresh ids, and Supabase
+// ended up holding two of every runner. These probes drive the real renderer.
+probe('roster: a failed cloud read is NOT reported as an empty roster', ()=>{
+  const keepDB = DB.athletes, keepState = sbRosterState, keepUser = sbUser;
+  sbUser = {id:'c1'}; DB.athletes = []; sbRosterState = 'unavailable';
+  renderRoster(); const h = out('ro-body');
+  DB.athletes = keepDB; sbRosterState = keepState; sbUser = keepUser;
+  if(/No athletes yet/.test(h)) throw new Error('a failed read still claims the roster is empty');
+  if(/Add First Athlete/.test(h)) throw new Error('still invites re-entry, which is what creates the duplicates');
+  if(!/do not re-enter athletes/i.test(h)) throw new Error('does not warn against re-entry');
+  if(!/Try again/.test(h)) throw new Error('no retry affordance');
+});
+probe('roster: a genuinely empty roster still gets the onboarding empty state', ()=>{
+  const keepDB = DB.athletes, keepState = sbRosterState, keepUser = sbUser;
+  sbUser = {id:'c1'}; DB.athletes = []; sbRosterState = 'empty';
+  renderRoster(); const h = out('ro-body');
+  DB.athletes = keepDB; sbRosterState = keepState; sbUser = keepUser;
+  if(!/No athletes yet/.test(h)) throw new Error('the real empty state was broken by the unavailable branch');
+  if(!/Add First Athlete/.test(h)) throw new Error('a brand-new coach lost their first-athlete CTA');
+});
+probe('roster: a loading roster says so rather than showing either end state', ()=>{
+  const keepDB = DB.athletes, keepState = sbRosterState, keepUser = sbUser;
+  sbUser = {id:'c1'}; DB.athletes = []; sbRosterState = 'loading';
+  renderRoster(); const h = out('ro-body');
+  DB.athletes = keepDB; sbRosterState = keepState; sbUser = keepUser;
+  if(/No athletes yet/.test(h)) throw new Error('claims empty while still loading');
+  if(!/Loading your roster/i.test(h)) throw new Error('no loading state');
+});
+probe('roster: a populated roster is unaffected by the new branches', ()=>{
+  const keepState = sbRosterState, keepUser = sbUser;
+  sbUser = {id:'c1'}; sbRosterState = 'ready';
+  renderRoster(); const h = out('ro-body');
+  sbRosterState = keepState; sbUser = keepUser;
+  if(!/Riley Chen/.test(h)) throw new Error('athletes stopped rendering');
+});
+
+// A failed session-check-in read used to be swallowed into status:'ready', so
+// the coach saw "Queue clear · 0 reports awaiting response" while an athlete's
+// pre-workout report — possibly flagging pain — sat unread.
+probe('online coach: a failed session-report read never reads as "Queue clear"', ()=>{
+  const keepState = onlineCoachState, keepUser = sbUser, keepScreen = currentScreen;
+  sbUser = {id:'c1'}; currentScreen = 'online';
+  onlineCoachState = { status:'ready', ownerId:'c1', checkIns:[], sessionCheckIns:[],
+    workouts:[], racePlans:[], messages:[], error:'', sessionError:'boom' };
+  renderOnlineCoach(); const h = out('on-body');
+  onlineCoachState = keepState; sbUser = keepUser; currentScreen = keepScreen;
+  if(/Queue clear/.test(h)) throw new Error('affirmative "Queue clear" shown despite a failed report read');
+  if(!/incomplete/i.test(h)) throw new Error('does not tell the coach the queue is incomplete');
+});
+probe('online coach: a genuinely clear queue still says Queue clear', ()=>{
+  const keepState = onlineCoachState, keepUser = sbUser, keepScreen = currentScreen;
+  sbUser = {id:'c1'}; currentScreen = 'online';
+  onlineCoachState = { status:'ready', ownerId:'c1', checkIns:[], sessionCheckIns:[],
+    workouts:[], racePlans:[], messages:[], error:'', sessionError:'' };
+  renderOnlineCoach(); const h = out('on-body');
+  onlineCoachState = keepState; sbUser = keepUser; currentScreen = keepScreen;
+  if(!/Queue clear/.test(h)) throw new Error('the real clear-queue state was broken');
+});
+
 __res;
 `;
 try{ vm.runInContext(probeSrc, ctx, {filename:'probe'}); }catch(e){ console.log('PROBE SCRIPT ERROR:', e.message); }

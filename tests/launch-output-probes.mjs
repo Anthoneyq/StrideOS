@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {appHarness} from './launch-harness.mjs';
+const {run,store}=appHarness();
+run(`DB=newDB(); sbUser=null; const stale={id:'stale',name:'Old mark',raceDistance:'5K',primaryEvent:'5K',raceDistanceM:5000,raceTime:'15:25.27',raceDate:'2024-03-29'}; DB.athletes=[stale]; A=stale;`);
+const scenarios=run('buildScenarios(925.27,null)');
+assert.match(scenarios,/unknown/);assert.doesNotMatch(scenarios,/12:20|13:34|<table|Beginner/);
+assert.match(run('buildScenarios(925.27,8)'),/cannot establish an individual improvement rate/);
+const groups=run('computeTrainingGroups(DB.athletes)');
+assert.equal(groups.groups.length,1);
+assert.match(run('groupSourceWarnings(computeTrainingGroups(DB.athletes).groups[0])'),/over a year old/);
+assert.match(run('groupSheetPrintHTML(computeTrainingGroups(DB.athletes).groups[0])'),/Review source marks before assigning/);
+assert.match(run('paceSourceWarning(A)'),/Review the pace source/);
+assert.equal(run(`computeTrainingGroups([{...A,raceDate:'2099-01-01'}]).groups.length`),0);
+assert.match(run(`groupSourceWarnings(computeTrainingGroups([{...A,raceDate:null}]).groups[0])`),/date unknown/);
+run("DB.athletes.push({...A,id:'two',name:'Second athlete'});renderSquads();");
+assert.match(store['sq-body']?.innerHTML || Object.values(store).map(x=>x.innerHTML).join(''),/recorded marks/);
+console.log('PASS output trust: no invented improvement rates, dated grouping sources, stale print warnings, future exclusion, unknown dates');

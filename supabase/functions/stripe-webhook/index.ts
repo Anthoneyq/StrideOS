@@ -239,11 +239,22 @@ async function applySubscriptionState(
   }
 
   // Map Stripe subscription status → our coach tier.
-  // active, trialing → pro. anything else (canceled, unpaid, paused) → free.
+  // active, trialing, past_due → pro. anything else (canceled, unpaid,
+  // incomplete_expired) → free.
   // Note: a pause (pause_collection) keeps status 'active' — a paused coach
   // deliberately keeps Pro for the free month; that's the retention gift.
+  //
+  // past_due deliberately KEEPS Pro. Stripe sets it the moment one charge fails
+  // and then runs smart retries for days, firing BOTH invoice.payment_failed
+  // and customer.subscription.updated. Demoting here contradicted
+  // onInvoicePaymentFailed's own \"don't kick them off pro on first failure\"
+  // and locked a mid-season coach out of their roster over an expired card,
+  // while hiding the billing portal that would have fixed it. 'unpaid' is
+  // Stripe's terminal state after dunning is exhausted, and
+  // customer.subscription.deleted already revokes on cancellation — those are
+  // the two that should cost access.
   const status = subscription.status;
-  const isPaying = status === 'active' || status === 'trialing';
+  const isPaying = status === 'active' || status === 'trialing' || status === 'past_due';
   const tier = isPaying ? 'pro' : 'free';
 
   // Derive interval from the price.

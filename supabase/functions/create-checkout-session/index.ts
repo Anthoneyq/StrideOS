@@ -25,13 +25,19 @@ import { corsHeaders, handleCorsPreflight } from '../_shared/cors.ts';
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2024-06-20',
   httpClient: Stripe.createFetchHttpClient(),
+  timeout: 15000,
+  maxNetworkRetries: 1,
 });
 
 Deno.serve(async (req) => {
   const preflight = handleCorsPreflight(req);
   if (preflight) return preflight;
 
+  let admin: ReturnType<typeof createClient> | null = null;
+  let lockedOwner: string | null = null;
+  const lockToken = crypto.randomUUID();
   try {
+    if(req.method !== 'POST') return json({error:'method_not_allowed'}, 405);
     // 1. Authenticate the coach from their JWT.
     const authHeader = req.headers.get('Authorization') ?? '';
     if (!authHeader.startsWith('Bearer ')) {
@@ -83,15 +89,26 @@ Deno.serve(async (req) => {
     // 3. Look up the coach row (need stripe_customer_id if present).
     // We use the service-role client here because the coaches table has RLS
     // and we want a clean read regardless of the user's RLS state.
-    const admin = createClient(
+    admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
-    const { data: coach } = await admin
+    const { data: coach, error: coachError } = await admin
       .from('coaches')
-      .select('id, email, stripe_customer_id')
+      .select('id, email, stripe_customer_id, deleted_at')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if(coachError || !coach || coach.deleted_at) return json({error:'profile_not_ready', message:'Your coach account is not ready. Sign in again before purchasing.'}, 409);
+    const {data: acquired, error: lockError} = await admin.rpc('acquire_checkout_lock', {owner_id:user.id, lock_token:lockToken});
+    if(lockError) throw new Error('Checkout is temporarily unavailable. Please try again.');
+    if(!acquired) return json({error:'checkout_busy', message:'Checkout is already opening. Please wait a moment and try again.'}, 409);
+    lockedOwner = user.id;
+
+    // Re-read inside the lease: another request may just have created the customer.
+    const {data: currentCoach, error: currentError} = await admin.from('coaches').select('stripe_customer_id').eq('id',user.id).single();
+    if(currentError || !currentCoach) throw new Error('Could not verify your billing profile.');
+    coach.stripe_customer_id = currentCoach.stripe_customer_id;
 
     // 4. Create or reuse a Stripe Customer so future invoices, the
     // Customer Portal, etc. all hang off the same customer record.
@@ -100,19 +117,40 @@ Deno.serve(async (req) => {
       const customer = await stripe.customers.create({
         email: user.email ?? coach?.email ?? undefined,
         metadata: { supabase_coach_id: user.id },
-      });
+      }, {idempotencyKey: `stride_customer_${user.id}`});
       customerId = customer.id;
-      await admin
+      const {error: customerSaveError} = await admin
         .from('coaches')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id);
+      if(customerSaveError) throw new Error('Could not save your billing profile. Please retry.');
     }
+
+    // The lease covers every plan and tab. Reuse an open session for the same
+    // plan; expire a different one before creating a replacement. Check Stripe
+    // itself rather than potentially delayed webhook-derived account state.
+    const hasSubscription = async () => {
+      for await (const sub of stripe.subscriptions.list({customer:customerId, status:'all', limit:100})) {
+        if(!['canceled','incomplete_expired'].includes(sub.status)) return true;
+      }
+      return false;
+    };
+    if(await hasSubscription()) return json({error:'already_subscribed', message:'You already have a subscription. Manage it in billing.'}, 409);
+    for await (const open of stripe.checkout.sessions.list({customer:customerId, status:'open', limit:100})) {
+      if(open.mode !== 'subscription') continue;
+      if(open.metadata?.stride_plan === plan && open.url) return json({url:open.url});
+      try{ await stripe.checkout.sessions.expire(open.id); }
+      catch(_err){ return json({error:'checkout_busy', message:'An existing checkout changed. Wait a moment, then retry.'}, 409); }
+    }
+    if(await hasSubscription()) return json({error:'already_subscribed'}, 409);
 
     // 5. Create the Checkout session.
     const appUrl =
       Deno.env.get('APP_BASE_URL') ?? 'https://strideos.thecoachlab.app';
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      metadata: {stride_plan:plan},
+      expires_at: Math.floor(Date.now()/1000) + 2100,
       customer: customerId,
       client_reference_id: user.id,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -127,12 +165,17 @@ Deno.serve(async (req) => {
       subscription_data: {
         metadata: { supabase_coach_id: user.id, plan },
       },
-    });
+    }, {idempotencyKey:`stride_checkout_${lockToken}`});
 
     return json({ url: session.url });
   } catch (err) {
     console.error('create-checkout-session error', err);
-    return json({ error: (err as Error).message ?? 'unknown error' }, 500);
+    return json({ error:'checkout_unavailable', message:'Could not open checkout. Please try again in a moment.' }, 500);
+  } finally {
+    if(admin && lockedOwner){
+      try{ await admin.from('checkout_locks').delete().eq('coach_id',lockedOwner).eq('token',lockToken); }
+      catch(_err){ console.warn('Checkout lease cleanup deferred to expiry'); }
+    }
   }
 });
 
