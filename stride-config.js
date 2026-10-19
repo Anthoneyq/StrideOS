@@ -30,6 +30,9 @@ window.STRIDE_BILLING = {
   monthlyLabel: '$19.99/mo',
   annualLabel: '$199/yr',
   foundingLabel: '$149/yr',
+  // Set to false to hide the Founding Coach seat in the upgrade dialog
+  // (e.g. until the founding coupon and its renewal are verified).
+  foundingOffer: true,
   monthlyPaymentLink: null,
   annualPaymentLink: null,
 };

@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <!-- Bulk-import parsers (Pro feature). PapaParse for CSV, SheetJS for XLSX. -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1334,6 +1334,7 @@ details[open]>summary .d-tgl::before{content:'−'}
       <button class="lp-nav-link" type="button" onclick="document.getElementById('home-squad').scrollIntoView({block:'start'})">Live demo</button>
       <button class="lp-nav-link" type="button" onclick="goTo('paces',null)">Pace calculator</button>
       <button class="lp-nav-link" type="button" onclick="goTo('eventfit',null)">Event finder</button>
+      <button class="lp-nav-link" type="button" onclick="(document.getElementById('home-plans')||{scrollIntoView(){goTo('paces',null)}}).scrollIntoView({block:'start'})">Pricing</button>
     </nav>
     <div class="lp-nav-cta">
       <button class="btn btn-quiet" type="button" onclick="showAuthModal('signin')">Sign in</button>
@@ -2530,7 +2531,28 @@ async function hydrateLinkedAthleteWorkspace(){
   }
 }
 
+// A signed-in coach on a slow or failing connection used to see an empty
+// roster for 30+ seconds while the client retried role/profile/subscription
+// requests. The account cache is this user's own last-known roster (the same
+// cache loadRemoteAthletes() starts from), so show it immediately; the cloud
+// read still replaces it, and pending outbox edits stay merged on top.
+function showCachedAccountRoster(){
+  if(!sbUser) return false;
+  const ownerId = sbUser.id;
+  if(DB && DB.accountUserId === ownerId) return false;
+  const cached = loadDB(accountStorageKey(ownerId));
+  if(!cached) return false;
+  DB = cached;
+  DB.accountUserId = ownerId;
+  if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
+  refreshActiveAthlete();
+  updateChip();
+  renderSyncStatus();
+  return true;
+}
+
 async function bootstrapAuthenticatedSession(){
+  if(sbUser && !pendingAthleteInviteId()) showCachedAccountRoster();
   if(!sbUser){
     sbRole = null;
     sbLinkedAthlete = null;
@@ -4032,20 +4054,19 @@ function showUpgradeModal(){
         </button>
       </div>
 
-      <div style="border:1px dashed var(--accent-line);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      ${(window.STRIDE_BILLING && window.STRIDE_BILLING.foundingOffer === false) ? '' : `<div style="border:1px dashed var(--accent-line);border-radius:.5rem;padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div style="font-family:var(--font-mono);font-size:.75rem;line-height:1.5;color:var(--text-2)">
           <strong style="color:var(--accent)">Founding Coach</strong> · first 25 seats · <span style="color:var(--text)">${BILLING_FOUNDING_LABEL}</span>, price locked for life while active.
         </div>
         <button class="btn" id="planFoundingBtn" onclick="sbUser?startCheckout('founding'):(closeUpgradeModal(),window.showAuthModal?showAuthModal('signup'):goTo('paces'))" style="white-space:nowrap">Claim a founding seat &rarr;</button>
-      </div>
+      </div>`}
 
       <ul class="upgrade-perks">
-        <li>Unlimited athletes</li>
-        <li><strong style="color:var(--text)">Team IQ</strong> — drag in a CSV/Excel roster, get instant training-load bias, event-coverage skew &amp; highest-ROI fixes</li>
-        <li>Race predictions across every distance, with planning ranges</li>
-        <li>Longitudinal performance curve &amp; year-over-year trends</li>
-        <li>Event fit analysis and environmental corrections</li>
-        <li>Coaching Queue, training groups and printable reports</li>
+        <li>Unlimited athletes (Free shows ${FREE_ATHLETE_LIMIT})</li>
+        <li>Roster import from CSV/Excel, pasted lists or meet results</li>
+        <li><strong style="color:var(--text)">Team IQ</strong> and Training Groups across your whole roster (Free previews ${FREE_SQUAD_CAP})</li>
+        <li>Race forecasts across every distance, with planning ranges</li>
+        <li>Coach Brief, XC Race Command, Conference Scorer and Lineup Optimizer, with printable sheets</li>
       </ul>
 
       <div style="border-top:1px solid var(--border-s);margin-top:.25rem;margin-bottom:1rem;padding-top:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
@@ -10847,7 +10868,7 @@ function publicCalculatorCta(){
 // Prices come from the shared BILLING_* config so they stay in one place.
 function renderPricingTiers(){
   const proPrice = BILLING_MONTHLY_LABEL.replace('/mo','');
-  const card = (name, price, priceSub, tagline, feats, note, btnLabel, featured) => `
+  const card = (name, price, priceSub, tagline, feats, note, btnLabel, featured, btnAction) => `
     <div style="position:relative;background:var(--bg-card);border:1px solid ${featured?'var(--accent)':'var(--border)'};border-radius:.75rem;padding:1.6rem 1.25rem 1.25rem;display:flex;flex-direction:column;gap:.85rem${featured?';box-shadow:0 0 0 1px var(--accent) inset':''}">
       ${featured?`<div style="position:absolute;top:-.7rem;left:50%;transform:translateX(-50%);background:var(--accent);color:#0B0D0F;font-family:var(--font-mono);font-size:.5625rem;letter-spacing:.1rem;text-transform:uppercase;font-weight:700;padding:.2rem .65rem;border-radius:999px;white-space:nowrap">Most popular</div>`:''}
       <div>
@@ -10859,7 +10880,7 @@ function renderPricingTiers(){
         ${feats.map(f=>`<li style="display:flex;gap:.5rem;align-items:flex-start;font-size:.8125rem;color:var(--text-2);line-height:1.4"><span style="color:${featured?'var(--accent)':'#4ade80'};flex-shrink:0">✓</span><span>${f}</span></li>`).join('')}
       </ul>
       ${note?`<p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.05rem;color:var(--text-4);line-height:1.5">${esc(note)}</p>`:''}
-      <button class="btn ${featured?'btn-primary':''}" onclick="publicCalculatorCta()" style="width:100%${featured?'':';border:1px solid var(--border)'}">${esc(btnLabel)}</button>
+      <button class="btn ${featured?'btn-primary':''}" onclick="${btnAction || 'publicCalculatorCta()'}" style="width:100%${featured?'':';border:1px solid var(--border)'}">${esc(btnLabel)}</button>
     </div>`;
   return `
     <div style="margin-bottom:1rem">
@@ -10870,7 +10891,7 @@ function renderPricingTiers(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(14.5rem,1fr));gap:1rem">
       ${card('Free','$0','forever','Everything you need to prescribe paces.',[
         '<strong style="color:var(--text)">Full pace table</strong> — all 9 training zones',
-        'Save athletes &amp; sync across devices',
+        'Save up to ${FREE_ATHLETE_LIMIT} athletes &amp; sync across devices',
         'Every training pace, zone &amp; split'
       ], null, 'Create free account →', false)}
       ${card('Pro',proPrice,'/mo','Everything in Free, plus:',[
@@ -10883,7 +10904,7 @@ function renderPricingTiers(){
         'Everything in Pro',
         'Whole-program license',
         'Lineup optimizer &amp; team reports'
-      ], 'Annual school/team license · quote, PO & invoice supported', 'Get started →', false)}
+      ], 'Annual school/team license · quote, PO & invoice supported', 'Ask for a quote →', false, "window.location.href='mailto:thelabstrength@gmail.com?subject=STRIDE%20OS%20Team%20license'")}
     </div>`;
 }
 
@@ -15699,7 +15720,7 @@ function renderHome(){
       <div class="lp-inner-narrow reveal">
         <h2 class="lp-close-q">Like what your roster <em>just showed you</em>?</h2>
         <ul class="lp-close-pts">
-          <li>Save your whole roster once — it syncs on every device, free</li>
+          <li>Save up to ${FREE_ATHLETE_LIMIT} athletes free, synced on every device — the 30-day Pro trial covers your whole roster</li>
           <li>Review race marks, dates, pace groups, forecasts, and model evidence in one place</li>
           <li>Turn each result import into an explicit, coach-reviewed weekly workflow</li>
         </ul>
@@ -15767,6 +15788,7 @@ function renderHome(){
     </section>
 
     ${dataPromise}
+    ${signedIn ? '' : `<section class="lp-section" id="home-plans"><hr class="lp-rule" style="margin-bottom:var(--s8)"><div class="lp-inner reveal">${renderPricingTiers()}<p style="font-size:.8125rem;color:var(--text-3);margin-top:1rem">Pro trial: 30 days, no card. When it ends you keep every saved athlete; the Free plan shows the first ${FREE_ATHLETE_LIMIT}. Cancel Pro any time from Manage subscription.</p></div></section>`}
     ${closeCta}`;
   applyLandingMode();
   initReveals(el);
