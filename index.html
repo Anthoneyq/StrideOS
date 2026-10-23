@@ -5,19 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STRIDE OS — Pace Calculator for Running Coaches</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f4f5f7'/%3E%3Cpath d='M18 19h31v9H30v5h16v9H30v5h19v9H18z' fill='%2308090b'/%3E%3C/svg%3E">
-<meta name="description" content="Training paces, race forecasts, and event-fit analysis from real race times — built for track &amp; XC coaches. Free calculator, no signup.">
+<meta name="description" content="Training paces, race forecasts, and event-fit analysis from real race times, built for track &amp; XC coaches. Free calculator, no signup.">
 <link rel="canonical" href="https://strideos.thecoachlab.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="STRIDE OS">
 <meta property="og:title" content="Which event should your runner actually race?">
-<meta property="og:description" content="Enter two race times, get the event your body is built for — free, no signup. Coaches: run it across your whole roster.">
+<meta property="og:description" content="Enter two race times, get the event your body is built for. Free, no signup. Coaches: run it across your whole roster.">
 <meta property="og:url" content="https://strideos.thecoachlab.app/">
 <meta property="og:image" content="https://strideos.thecoachlab.app/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Which event should your runner actually race?">
-<meta name="twitter:description" content="Enter two race times, get the event your body is built for — free, no signup. Built for track &amp; XC coaches.">
+<meta name="twitter:description" content="Enter two race times, get the event your body is built for. Free, no signup. Built for track &amp; XC coaches.">
 <meta name="twitter:image" content="https://strideos.thecoachlab.app/og-card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1639,7 +1639,7 @@ details[open]>summary .d-tgl::before{content:'−'}
     <!-- LINEUP OPTIMIZER -->
     <section id="lineup" class="screen" aria-labelledby="ln-h">
       <header class="screen-header">
-        <div><p class="eyebrow">Points-maximizing entries</p><h1 class="screen-title" id="ln-h">Lineup <em>Optimizer</em></h1></div>
+        <div><p class="eyebrow">Suggested meet entries</p><h1 class="screen-title" id="ln-h">Lineup <em>Optimizer</em></h1></div>
       </header>
       <div id="ln-body"></div>
     </section>
@@ -4079,7 +4079,7 @@ function showUpgradeModal(){
         <li>Unlimited athletes (Free shows ${FREE_ATHLETE_LIMIT})</li>
         <li>Roster import from CSV/Excel, pasted lists or meet results</li>
         <li><strong style="color:var(--text)">Team IQ</strong> and Training Groups across your whole roster (Free previews ${FREE_SQUAD_CAP})</li>
-        <li>Race forecasts across every distance, with planning ranges</li>
+        <li>Predictive Race Times table: forecasts for every standard distance, with planning ranges</li>
         <li>Coach Brief, XC Race Command, Conference Scorer and Lineup Optimizer, with printable sheets</li>
       </ul>
 
@@ -10776,9 +10776,9 @@ function renderFreeTierCalculator(opts){
   const ctaText   = tier==='basic' ? 'Sign in to save athletes →' : 'Create an athlete →';
   const ctaAction = tier==='basic' ? 'publicCalculatorCta()' : "goTo('edit',null)";
   const subhead = tier==='basic'
-      ? 'Free, no signup. Create a free account to save athletes, sync everywhere, and unlock race forecasts for every event.'
+      ? `Free, no signup. Create a free account to save up to ${FREE_ATHLETE_LIMIT} athletes, sync everywhere, and open Race Forecasts and the Performance Curve for each one.`
     : tier==='pro'
-      ? 'Pro is unlocked. Add an athlete to run Race Forecasts, the Performance Curve, and Team IQ across your roster.'
+      ? 'Pro is unlocked. Add an athlete to run Race Forecasts and the Performance Curve for them, and Team IQ across your roster.'
       : 'You are signed in. Add an athlete to unlock Multi-Event Analysis, race forecasts, and the Performance Curve.';
   // Quick-paces mode (inside the coach workspace): the athlete-independent
   // group tool. No tier pitch — just say what it is and that nothing saves.
@@ -10920,25 +10920,25 @@ function renderPricingTiers(){
     <div style="margin-bottom:1rem">
       <p style="font-family:var(--font-mono);font-size:.625rem;letter-spacing:.15rem;text-transform:uppercase;color:var(--text-3);margin-bottom:.4rem">Plans</p>
       <p style="font-family:var(--font-display);font-weight:700;font-size:1.4rem;letter-spacing:-.01em;line-height:1.2">Start free. Upgrade when your roster grows.</p>
-      <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-top:.4rem;max-width:40rem">A free account unlocks the full pace table. Pro adds race forecasts, Team IQ, and the performance curve across your whole roster.</p>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.55;margin-top:.4rem;max-width:40rem">A free account unlocks the full pace table, plus Race Forecasts and the Performance Curve for each saved athlete. Pro adds unlimited athletes, the all-distance Predictive Race Times table, and roster tools like Team IQ across your whole roster.</p>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(14.5rem,1fr));gap:1rem">
       ${card('Free','$0','forever','Everything you need to prescribe paces.',[
-        '<strong style="color:var(--text)">Full pace table</strong> — all 9 training zones',
+        '<strong style="color:var(--text)">Full pace table</strong>: all 9 training zones',
         `Save up to ${FREE_ATHLETE_LIMIT} athletes &amp; sync across devices`,
         'Every training pace, zone &amp; split'
       ], null, 'Create free account →', false)}
       ${card('Pro',proPrice,'/mo','Everything in Free, plus:',[
-        'Race forecasts — <strong style="color:var(--text)">every distance</strong>',
-        'Team IQ — instant roster analysis',
-        'Performance curve &amp; year-over-year trends',
-        'Unlimited athletes'
+        'Unlimited athletes',
+        'Predictive Race Times table: <strong style="color:var(--text)">every standard distance</strong> with planning ranges',
+        'Team IQ and Training Groups across your whole roster',
+        'Roster import, Coach Brief, XC Race Command, Conference Scorer and Lineup Optimizer, with printable sheets'
       ], `or ${BILLING_ANNUAL_LABEL} · 30-day free trial, no card`, 'Start 30-day Pro trial →', true)}
       ${card('Team','from $399','/yr','For staffs & programs.',[
         'Everything in Pro',
         'Whole-program license',
-        'Lineup optimizer &amp; team reports'
-      ], 'Annual school/team license · quote, PO & invoice supported', 'Ask for a quote →', false, "window.location.href='mailto:thelabstrength@gmail.com?subject=STRIDE%20OS%20Team%20license'")}
+        'Quote, PO and invoice supported'
+      ], 'Annual school/team license, priced by quote', 'Ask for a quote →', false, "window.location.href='mailto:thelabstrength@gmail.com?subject=STRIDE%20OS%20Team%20license'")}
     </div>`;
 }
 
@@ -11375,7 +11375,7 @@ function renderPredict(){
       <span style="color:${f.color};font-size:1.25rem;font-weight:700">${f.icon}</span>
       <div>
         <p style="font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.125rem;color:${f.color};text-transform:uppercase;margin-bottom:.25rem">PREDICTION CONFIDENCE REDUCED</p>
-        <p style="font-size:.875rem;line-height:1.5">${esc(f.text)} Confidence intervals shown below already widen automatically to account for PR age, but a fresher time trial would tighten predictions significantly.</p>
+        <p style="font-size:.875rem;line-height:1.5">${esc(f.text)} The forecast ranges shown below already widen automatically to account for PR age, but a fresher time trial would tighten predictions significantly.</p>
       </div>
     </div>` : ''}
 
@@ -13024,7 +13024,7 @@ function squadUpgradeNudge(hiddenCount, opts){
     : `<button class="btn btn-primary" onclick="showUpgradeModal()">Unlock the full roster →</button>`;
   return `
     <div class="card squad-nudge" style="text-align:center;padding:1.5rem;margin-top:1rem;border-style:dashed">
-      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:38rem;margin:0 auto .35rem">${lead} <strong style="color:var(--text)">Pro</strong> adds unlimited athletes, rosters saved across devices, heat / altitude / XC-course adjustment, printable team reports, and the lineup optimizer.</p>
+      <p style="font-size:.875rem;color:var(--text-2);line-height:1.6;max-width:38rem;margin:0 auto .35rem">${lead} <strong style="color:var(--text)">Pro</strong> adds unlimited athletes, Team IQ and Training Groups across the whole roster, Coach Brief, XC Race Command, Conference Scorer, and the Lineup Optimizer, with printable sheets.</p>
       <p style="font-family:var(--font-mono);font-size:.6875rem;color:var(--text-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem">Try the roster workflow before signing up</p>
       ${cta}
     </div>`;
@@ -14713,7 +14713,7 @@ function renderLineup(){
   if(!el) return;
   if(!hasProAccess()){
     el.innerHTML = proGateCard('Meet Lineup Optimizer',
-      'Enter your strongest athletes in the right events automatically. STRIDE projects every athlete across the running events, then fills the lineup to maximize team strength under your entry caps — the Monday-before-the-meet ritual, in one click.');
+      'Get a starting lineup for the meet. STRIDE uses each athlete\u2019s PRs, or a forecast when there is no PR, for the 100m to 3200m, scores each time against a varsity benchmark, and fills your entry caps with the highest scores. It does not score meet points, model opponents, relays or field events, so treat it as a first draft to adjust.');
     return;
   }
   const roster = (DB.athletes || []).filter(a => a && a.raceDistanceM && a.raceTime);
@@ -14752,7 +14752,7 @@ function renderLineup(){
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem">${eventBlocks}</div>
     ${unassignedNote}
-    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:1rem">Heuristic assignment: each athlete’s projected time is scored against a solid-varsity benchmark (higher = stronger), then the strongest athlete-event slots are filled first under your caps. Forecast entries below 40% confidence are excluded; observed PRs always qualify. Benchmarks are sex-specific — set each athlete’s sex for accurate scoring (unset defaults to male benchmarks). This is a starting lineup — you know your athletes, meet format, and relays; adjust freely.</p>`;
+    <p style="font-family:var(--font-mono);font-size:.625rem;color:var(--text-4);line-height:1.6;margin-top:1rem">Heuristic assignment: each athlete’s projected time is scored against a solid-varsity benchmark (higher = stronger), then the strongest athlete-event slots are filled first under your caps. Forecast entries below 40% confidence are excluded; observed PRs always qualify. Benchmarks are sex-specific, so set each athlete’s sex for accurate scoring (unset defaults to male benchmarks). This is a starting lineup, not a points or relay optimizer. It does not model opponents, meet scoring, relays or field events, so adjust it using what you know about your athletes and the meet.</p>`;
 }
 
 function printLineup(){
@@ -14762,7 +14762,7 @@ function printLineup(){
     const rows = r.lineup[ev.label].map((c, i) => `<tr><td>${i+1}. ${esc(c.name)}</td><td class="num">${esc(fmtT(c.sec))}</td></tr>`).join('') || '<tr><td colspan="2">—</td></tr>';
     return `<div style="break-inside:avoid;margin-bottom:10px"><div class="ps-section">${esc(ev.label)}</div><table><tbody>${rows}</tbody></table></div>`;
   }).join('');
-  printSheet(`<div class="ps-page">${_psHead('Meet Lineup', DB.coach && DB.coach.team ? DB.coach.team : 'Meet Lineup', `${r.count} entries · ${r.covered}/${LINEUP_EVENTS.length} events · strength ${r.totalStrength}`, [_psStamp()])}${blocks}<div class="ps-foot">STRIDE OS projected lineup · entries chosen to maximize team strength under your caps. Adjust for relays, meet format, and athlete availability.</div></div>`);
+  printSheet(`<div class="ps-page">${_psHead('Meet Lineup', DB.coach && DB.coach.team ? DB.coach.team : 'Meet Lineup', `${r.count} entries · ${r.covered}/${LINEUP_EVENTS.length} events · strength ${r.totalStrength}`, [_psStamp()])}${blocks}<div class="ps-foot">STRIDE OS suggested lineup · entries filled by benchmark strength score under your caps. Not a points or relay optimizer; adjust for opponents, relays, field events, meet format, and athlete availability.</div></div>`);
 }
 
 // ── FEATURE 6 · FREE "WHICH EVENT SHOULD YOU RUN?" CALCULATOR ────────────────
@@ -15754,7 +15754,7 @@ function renderHome(){
       <div class="lp-inner-narrow reveal">
         <h2 class="lp-close-q">Like what your roster <em>just showed you</em>?</h2>
         <ul class="lp-close-pts">
-          <li>Save up to ${FREE_ATHLETE_LIMIT} athletes free, synced on every device — the 30-day Pro trial covers your whole roster</li>
+          <li>Save up to ${FREE_ATHLETE_LIMIT} athletes free, synced on every device. The 30-day Pro trial covers your whole roster</li>
           <li>Review race marks, dates, pace groups, forecasts, and model evidence in one place</li>
           <li>Turn each result import into an explicit, coach-reviewed weekly workflow</li>
         </ul>
