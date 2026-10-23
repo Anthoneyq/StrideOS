@@ -151,6 +151,15 @@ const offState = await pageA.evaluate(() => ({ user: !!sbUser, ready: typeof sbC
 await pageA.screenshot({ path: `${OUT}/07-offline-reload.png` });
 await sleep(0);
 check('pending athlete survives reload while still offline', (await names(pageA)).includes('Emery Offline'), JSON.stringify(offState));
+// The cached roster must be DRAWN, not just sitting in DB: the coach lands in the
+// workspace (not the landing page), the roster screen lists the athletes, and the
+// roster is not replaced by the "Loading" / "unavailable" states.
+const offScreen = await pageA.evaluate(() => ({ screen: currentScreen, state: sbRosterState, status: (document.getElementById('syncStatus') || {}).textContent || '' }));
+await pageA.evaluate(() => goTo('roster', null));
+await sleep(500);
+const offRoster = await pageA.evaluate(() => (document.getElementById('ro-body') || {}).innerText || '');
+await pageA.screenshot({ path: `${OUT}/07b-offline-reload-roster.png` });
+check('cached roster is drawn on screen while the cloud read is failing', offScreen.screen !== 'home' && /^cached/.test(offScreen.state) && /Emery Offline/.test(offRoster) && /Avery Lane/.test(offRoster) && !/Roster unavailable|Loading your roster/.test(offRoster), JSON.stringify(offScreen) + ' roster=' + offRoster.replace(/\s+/g, ' ').slice(0, 120));
 await ctxA.unroute(`${API}/rest/v1/**`);
 await pageA.reload({ waitUntil: 'networkidle' });
 await sleep(5000);

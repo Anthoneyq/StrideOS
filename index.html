@@ -1983,7 +1983,9 @@ let sbBackendReachable = null;
 let sbHealthCheckedAt = null;
 // Roster hydration is explicit so a failed/empty account never masquerades as
 // the previous browser user's roster.
-let sbRosterState = 'idle'; // idle | loading | unavailable | empty | ready
+let sbRosterState = 'idle'; // idle | loading | cached | cached_stale | unavailable | empty | ready
+// cached       = this account's own saved roster is on screen while the cloud read runs
+// cached_stale = the cloud read failed; the saved roster stays on screen, flagged
 let pendingLocalRosterSnapshot = null;
 let coachBriefWorkoutState = { status:'idle', ownerId:null, rangeKey:null, summary:null, items:[], error:'' };
 // Subscription state, populated from the my_subscription view after sign-in.
@@ -2545,9 +2547,21 @@ function showCachedAccountRoster(){
   DB = cached;
   DB.accountUserId = ownerId;
   if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
+  DB.athletes = Array.isArray(DB.athletes) ? DB.athletes : [];
   refreshActiveAthlete();
   updateChip();
+  // An empty cache says nothing about the cloud roster, so it must not be
+  // drawn as "No athletes yet". Only a cache with athletes in it goes on screen.
+  if(!DB.athletes.length){ renderSyncStatus(); return false; }
+  // Setting DB is not enough: nothing re-rendered, the app sat on the landing
+  // page, and loadRemoteAthletes() then swapped in "Loading your roster..." or
+  // "Roster unavailable" (it set 'loading'/'unavailable' unconditionally), so the
+  // cached roster never reached the screen. Mark it as cached, open the
+  // workspace the way a finished load would, and draw it.
+  sbRosterState = 'cached';
   renderSyncStatus();
+  if(currentScreen === 'home') goTo('overview', null);
+  else refreshCurrentScreen();
   return true;
 }
 
@@ -4684,9 +4698,14 @@ function renderSyncStatus(){
   if(!host) return;
   const count = typeof DB !== 'undefined' && sbUser && !isAthleteOnly()
     ? Object.keys(DB.pendingAthleteSync || {}).length : 0;
+  const cacheNote = sbUser && !isAthleteOnly() && sbRosterState === 'cached'
+    ? '<div class="tier-banner" role="status">Showing the roster last saved on this device while your account loads.</div>'
+    : sbUser && !isAthleteOnly() && sbRosterState === 'cached_stale'
+    ? '<div class="tier-banner" role="alert"><span>Could not reach your account. This is the roster last saved on this device and may be out of date.</span><button class="btn" onclick="retryRosterLoad()">Try again</button></div>'
+    : '';
   host.innerHTML = storageUnavailable
     ? '<div class="tier-banner" role="alert">This browser cannot save changes on this device. Keep this page open until cloud sync succeeds, or export your data.</div>'
-    : count ? `<div class="tier-banner" role="status"><span>${count} athlete change${count===1?'':'s'} saved on this device · waiting to sync</span><button class="btn" onclick="retryAthleteSync()">Retry sync</button></div>` : '';
+    : cacheNote + (count ? `<div class="tier-banner" role="status"><span>${count} athlete change${count===1?'':'s'} saved on this device · waiting to sync</span><button class="btn" onclick="retryAthleteSync()">Retry sync</button></div>` : '');
 }
 async function retryAthleteSync(){
   await drainAthleteSync();
@@ -5163,7 +5182,12 @@ async function loadRemoteAthletes(){
   if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
   refreshActiveAthlete();
   updateChip();
-  sbRosterState = 'loading';
+  // Keep a cached roster on screen while the cloud read runs; only a coach with
+  // nothing to show gets the "Loading your roster" state.
+  const showingCache = (sbRosterState === 'cached' || sbRosterState === 'cached_stale') && DB.athletes.length > 0;
+  sbRosterState = showingCache ? 'cached' : 'loading';
+  renderSyncStatus();
+  if(currentScreen === 'roster' && showingCache) renderRoster();
   if(currentScreen === 'brief') renderCoachBrief();
 
   try{
@@ -5185,6 +5209,7 @@ async function loadRemoteAthletes(){
       if(DB.lastMeetSummary && DB.lastMeetSummary.ownerId !== ownerId) DB.lastMeetSummary = null;
       saveDB(DB, accountKey);
       sbRosterState = 'empty';
+      renderSyncStatus();
       coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, items:[], error:'' };
       refreshActiveAthlete();
       updateChip();
@@ -5212,6 +5237,7 @@ async function loadRemoteAthletes(){
     }
     saveDB(DB, accountKey);
     sbRosterState = 'ready';
+    renderSyncStatus();
     coachBriefWorkoutState = { status:'idle', ownerId, rangeKey:null, summary:null, items:[], error:'' };
     refreshActiveAthlete();
     updateChip();
@@ -5220,7 +5246,9 @@ async function loadRemoteAthletes(){
     return { ok: true, reason: '' };
   }catch(err){
     console.warn('Remote load failed', err);
-    sbRosterState = 'unavailable';
+    // A cached roster that is already on screen stays there, flagged as unverified.
+    sbRosterState = (sbRosterState === 'cached' && DB.athletes && DB.athletes.length) ? 'cached_stale' : 'unavailable';
+    renderSyncStatus();
     // Re-render the roster too. Without this the coach keeps looking at whatever
     // the screen already said — most often a stale "No athletes yet".
     if(currentScreen === 'roster') renderRoster();
@@ -5232,7 +5260,10 @@ async function loadRemoteAthletes(){
 // Retry hook for the roster's "unavailable" state. Re-renders in the loading
 // state first so the button visibly does something, then reports the outcome.
 async function retryRosterLoad(){
-  sbRosterState = 'loading';
+  // Keep a cached roster visible while retrying; loadRemoteAthletes() decides.
+  if(sbRosterState === 'cached_stale') sbRosterState = 'cached';
+  else sbRosterState = 'loading';
+  renderSyncStatus();
   if(currentScreen === 'roster') renderRoster();
   const result = await loadRemoteAthletes();
   if(currentScreen === 'roster') renderRoster();
@@ -6190,16 +6221,19 @@ function renderCoachBrief(){
     el.innerHTML = emptyStateCard('Coach sign-in required', 'Sign in to open the account-scoped roster briefing.', 'Sign in', "showAuthModal('signin')");
     return;
   }
-  if(sbRosterState === 'loading'){
+  // A cached roster is shown on the roster and Team IQ screens, but the
+  // roster-wide brief still waits for the verified cloud roster.
+  const briefRosterState = sbRosterState === 'cached' ? 'loading' : sbRosterState === 'cached_stale' ? 'unavailable' : sbRosterState;
+  if(briefRosterState === 'loading'){
     el.innerHTML = `<div class="info-box"><strong>Roster loading.</strong> STRIDE is opening this coach account’s cloud roster before it builds the snapshot.</div>`;
     return;
   }
-  if(sbRosterState === 'unavailable'){
+  if(briefRosterState === 'unavailable'){
     el.innerHTML = `<div class="warn-box"><span class="warn-icon">!</span><div><strong>Roster unavailable.</strong> STRIDE could not verify this coach account’s cloud roster, so it will not build a roster-wide brief from cached browser data. Check the connection and try again.</div></div>`;
     return;
   }
   const roster = DB.athletes || [];
-  if(sbRosterState === 'empty' || !roster.length){
+  if(briefRosterState === 'empty' || !roster.length){
     const localCount = pendingLocalRosterSnapshot && Array.isArray(pendingLocalRosterSnapshot.athletes)
       ? pendingLocalRosterSnapshot.athletes.length
       : 0;
