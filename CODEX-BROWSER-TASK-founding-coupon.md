@@ -45,7 +45,7 @@ fix.
 ## [YOU] Anthoney — wire it (terminal, after Codex verifies)
 
 ```
-bash "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/finish-founding.sh"
+bash "/Users/anthoney/AnthoneyOS/Products/StrideOS/finish-founding.sh"
 ```
 
 (From a Claude Code prompt, prefix the line with `!` to run it in-session;

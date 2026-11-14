@@ -7,7 +7,7 @@
 #   webhook secrets, or billing function code.
 #
 # RUN FROM TERMINAL:
-#   cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
+#   cd "/Users/anthoney/AnthoneyOS/Products/StrideOS"
 #   bash deploy-stripe-functions.sh
 #
 # ⚠️ The launch price is $19.99/mo · $199/yr (stride-config.js). The current

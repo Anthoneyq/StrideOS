@@ -1,7 +1,7 @@
 # AGENTS.md — StrideOS
 
 **First:** you are inside AnthoneyOS. Read the vault-root **`../../AI_INSTRUCTIONS.md`**
-(`~/Documents/AnthoneyOS/AI_INSTRUCTIONS.md`) and follow it as your full instruction set —
+(`~/AnthoneyOS/AI_INSTRUCTIONS.md`) and follow it as your full instruction set —
 hard limits, permission model, learning loop, auto-review. This file only adds the
 StrideOS-specific mission below.
 

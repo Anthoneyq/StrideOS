@@ -5,7 +5,7 @@ Last updated: 2026-06-22
 These steps assume the active repo is:
 
 ```bash
-cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
+cd "/Users/anthoney/AnthoneyOS/Products/StrideOS"
 ```
 
 ## 1. Preflight
