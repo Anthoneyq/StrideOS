@@ -2,7 +2,7 @@
 # STRIDE OS — one-shot: create the live Founding Coach coupon and store it so
 # founding checkout opens.
 #
-# RUN (Anthoney): bash "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/finish-founding.sh"
+# RUN (Anthoney): bash "/Users/anthoney/AnthoneyOS/Products/StrideOS/finish-founding.sh"
 #
 # Spec (PRICING_STRATEGY.md §0/§8): $199 → $149/yr = $50 off, duration=forever
 # (discount recurs every year while the subscription stays active),

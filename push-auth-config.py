@@ -6,7 +6,7 @@ Deliberately does NOT touch smtp_* (SUPABASE_SMTP_PASSWORD is not on disk;
 a blank would break all auth mail) or rate_limit_* fields (config push CLI
 default would drop email_sent 30/hr -> 2/hr).
 
-RUN (Anthoney): python3 "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS/push-auth-config.py"
+RUN (Anthoney): python3 "/Users/anthoney/AnthoneyOS/Products/StrideOS/push-auth-config.py"
 
 Snapshots the pre-change values of ONLY the fields being changed (sanitized —
 no SMTP or other secret material) to gitignored tmp/auth-config-pre.json,
@@ -15,7 +15,7 @@ took exactly and (b) every OTHER hosted field is unchanged before vs after —
 exits nonzero with a diff if either check fails."""
 import json, subprocess, sys, tomllib, urllib.request
 
-REPO = "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
+REPO = "/Users/anthoney/AnthoneyOS/Products/StrideOS"
 REF = "njadrabgodqpzpbgkkbs"
 API = f"https://api.supabase.com/v1/projects/{REF}/config/auth"
 

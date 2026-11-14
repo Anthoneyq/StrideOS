@@ -7,7 +7,7 @@ This repo now has the backend foundation under `supabase/`.
 Recommended path:
 
 ```bash
-cd "/Users/anthoney/Documents/AnthoneyOS/Products/StrideOS"
+cd "/Users/anthoney/AnthoneyOS/Products/StrideOS"
 supabase login
 supabase link --project-ref njadrabgodqpzpbgkkbs
 supabase db push

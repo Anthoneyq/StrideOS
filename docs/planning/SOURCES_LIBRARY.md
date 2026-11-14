@@ -114,10 +114,10 @@ Original VDOT tables.
 The lactate-controlled, double-threshold approach pioneered by Marius Bakken (Norway, early 2000s) is a major contemporary influence on elite distance training. STRIDE OS uses this material to constrain threshold pace prescriptions, readiness guardrails, and coaching language. It is not used as a direct race-time equivalence formula.
 
 **Bakken, M.** (2026). *The Norwegian Method Applied.* Local Source Library scans:
-- `/Users/anthoney/Documents/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.1-102.pdf`
-- `/Users/anthoney/Documents/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.103-204.pdf`
-- `/Users/anthoney/Documents/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.205-307.pdf`
-- `/Users/anthoney/Documents/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.307-327.pdf`
+- `/Users/anthoney/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.1-102.pdf`
+- `/Users/anthoney/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.103-204.pdf`
+- `/Users/anthoney/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.205-307.pdf`
+- `/Users/anthoney/AnthoneyOS/Library/Source Library/01_Source_Files/Training/the norwegian method p.307-327.pdf`
 
 Practical application of lactate-controlled threshold training. Key implementation points for STRIDE OS: threshold pace is a starting estimate, not the prescription itself; interval length changes the correct pace; easy days must remain easy; readiness and lactate/HR/RPE drift should override target pace; future continuous-lactate ideas are roadmap direction, not current measured capability.
 
