@@ -4257,16 +4257,19 @@ async function startCheckout(plan){
     if(!res.ok){
       const errBody = await res.json().catch(() => ({}));
       if(errBody.error === 'already_subscribed'){ closeUpgradeModal(); await openCustomerPortal(); return; }
-      throw new Error(errBody.message || 'Could not open checkout. Please try again.');
+      console.error('create-checkout-session failed', res.status, errBody);
+      throw new Error('checkout_unavailable');
     }
     const data = await res.json();
     if(!data.url) throw new Error('No checkout URL returned');
     window.location.href = data.url;
   }catch(err){
+    // Raw server/network text ("name resolution failed") goes to the console only.
     console.error('startCheckout failed', err);
     const raw = (err && err.message) || '';
-    const networkish = /load failed|failed to fetch|networkerror|fetch/i.test(raw);
-    toast(networkish ? "Couldn't reach checkout right now — please try again in a moment." : (raw || 'Could not start checkout'), 'error');
+    toast(raw === 'Not signed in'
+      ? 'Sign in again to start checkout.'
+      : "Couldn't open checkout right now. You have not been charged — please try again in a moment.", 'error');
     if(btn){ btn.disabled = false; if(prev !== null) btn.innerHTML = prev; }
   }finally{ checkoutStarting = false; }
 }
@@ -4292,14 +4295,15 @@ async function openCustomerPortal(){
     });
     if(!res.ok){
       const errBody = await res.text();
-      throw new Error(errBody || `Portal failed (${res.status})`);
+      console.error('create-portal-session failed', res.status, errBody);
+      throw new Error('portal_unavailable');
     }
     const data = await res.json();
     if(!data.url) throw new Error('No portal URL returned');
     window.location.href = data.url;
   }catch(err){
     console.error('openCustomerPortal failed', err);
-    toast(err.message || 'Could not open subscription portal');
+    toast("Couldn't open your subscription page right now — please try again in a moment.", 'error');
   }
 }
 
@@ -5646,7 +5650,7 @@ function goTo(id,btn){
   if(id==='methodology') renderMethodology();
   if(id==='eventfit') renderEventFinder();
   if(id==='raceshape') renderRaceShape();
-  if(id==='squads')   renderSquads();
+  if(id==='squads'){  renderSquads(); if((DB.athletes||[]).length) firstWeekMark('groups'); }
   if(id==='meetscorer') renderMeetScorer();
   if(id==='lineup')   renderLineup();
   if(id==='proof')    renderProof();
@@ -8328,6 +8332,76 @@ function printXcCommand(){
 }
 
 // ── RENDER OVERVIEW ──
+// ── FIRST-WEEK GUIDE ───────────────────────────────────────────────────────
+// A new coach's first session should end with one printed practice sheet:
+// roster in → gaps fixed → groups reviewed → sheets printed. Steps 1–2 are read
+// from the roster itself; 3–4 are remembered per account on this device.
+const FIRST_WEEK_MIN_ATHLETES = 3;
+function firstWeekKey(){
+  return 'stride_first_week_v1:' + ((typeof sbUser !== 'undefined' && sbUser && sbUser.id) ? String(sbUser.id) : 'signed-out');
+}
+function firstWeekState(){
+  try{ return JSON.parse(localStorage.getItem(firstWeekKey()) || '{}') || {}; }catch(_e){ return {}; }
+}
+function firstWeekMark(flag){
+  try{
+    const st = firstWeekState();
+    if(st[flag]) return;
+    st[flag] = true;
+    localStorage.setItem(firstWeekKey(), JSON.stringify(st));
+  }catch(_e){}
+}
+function firstWeekModel(athletes, state){
+  const roster = athletes || [];
+  const st = state || {};
+  const gaps = roster.filter(a => !a.raceDate || !(a.trainingAge > 0)).length;
+  const hasRoster = roster.length >= FIRST_WEEK_MIN_ATHLETES;
+  const steps = [
+    { key:'roster', done: hasRoster, title:'Add your roster',
+      detail: hasRoster ? `${roster.length} athletes saved.` : `Import a spreadsheet or paste a list. ${roster.length} of ${FIRST_WEEK_MIN_ATHLETES} athletes so far.`,
+      cta:'Import roster', screen:'import' },
+    { key:'gaps', done: hasRoster && gaps === 0, title:'Fill in race dates and years of training',
+      detail: !roster.length ? 'Paces and groups are only as good as the marks behind them.'
+        : gaps ? `${gaps} ${gaps === 1 ? 'athlete is' : 'athletes are'} missing a race date or years of training.`
+        : 'Every athlete has a dated mark and years of training.',
+      cta:'Open roster', screen:'roster' },
+    { key:'groups', done: !!st.groups, title:'Review this week’s training groups',
+      detail:'Check who is grouped together and any “review source marks” warnings.',
+      cta:'Open Training Groups', screen:'squads' },
+    { key:'printed', done: !!st.printed, title:'Print the group sheets for practice',
+      detail:'One page per group with each athlete’s target times.',
+      cta:'Open Training Groups', screen:'squads' }
+  ];
+  const doneCount = steps.filter(x => x.done).length;
+  return { steps, doneCount, complete: doneCount === steps.length, hidden: !!st.dismissed };
+}
+function firstWeekGuideHTML(){
+  if(typeof hasWorkspaceAccess !== 'function' || !hasWorkspaceAccess() || isAthleteOnly()) return '';
+  const m = firstWeekModel(DB.athletes || [], firstWeekState());
+  if(m.hidden || m.complete) return '';
+  return firstWeekCardHTML(m);
+}
+function firstWeekCardHTML(m){
+  const next = m.steps.find(x => !x.done);
+  const rows = m.steps.map((x, i) => `
+      <li style="display:flex;flex-wrap:wrap;gap:.6rem .75rem;align-items:flex-start;padding:.6rem 0;border-top:1px solid var(--border)">
+        <span aria-hidden="true" style="flex:0 0 1.5rem;height:1.5rem;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:.75rem;${x.done ? 'background:var(--accent);color:var(--bg)' : 'border:1px solid var(--border);color:var(--text-3)'}">${x.done ? '✓' : i + 1}</span>
+        <span style="flex:1 1 14rem;min-width:0">
+          <strong style="display:block;font-size:.9rem;${x.done ? 'color:var(--text-3);text-decoration:line-through' : ''}">${esc(x.title)}</strong>
+          <span style="font-size:.8125rem;color:var(--text-3);line-height:1.5">${esc(x.detail)}</span>
+        </span>
+        ${x === next ? `<button class="btn btn-primary" style="flex:0 0 auto" onclick="goTo('${x.screen}',null)">${esc(x.cta)} →</button>` : ''}
+      </li>`).join('');
+  return `
+    <div class="card first-week-guide" data-first-week="${m.doneCount}">
+      <p class="card-title"><span>First week · get to one printed practice sheet</span><span class="card-accent">${m.doneCount} of ${m.steps.length} done</span></p>
+      <ol style="list-style:none;margin:0;padding:0">${rows}</ol>
+      <div class="btn-row" style="margin-top:.75rem;justify-content:flex-end">
+        <button class="btn" onclick="firstWeekMark('dismissed');renderOverview()">Hide this guide</button>
+      </div>
+    </div>`;
+}
+
 function renderOverview(){
   const el=document.getElementById('ov-body');
   // Team IQ leads Coach Tools whenever the coach has a real roster.
@@ -8336,7 +8410,7 @@ function renderOverview(){
   let squadHtml = '';
   const athleteOnly = isAthleteOnly();
   const rosterMapHtml = athleteOnly ? '' : renderRosterMap(DB.athletes || []);
-  const teamCommandHtml = athleteOnly ? '' : `
+  const teamCommandHtml = athleteOnly ? '' : firstWeekGuideHTML() + `
     <div class="team-command-bar" aria-label="Coach actions">
       <div class="team-command-intro">
         <strong>Start with the roster. Act on one athlete.</strong>
@@ -13744,6 +13818,7 @@ function printGroupSheets(){
   const source = hasProAccess() ? roster : roster.slice(0, FREE_SQUAD_CAP);
   const res = computeTrainingGroups(source);
   if(!res.groups.length){ toast('No distance groups to print'); return; }
+  firstWeekMark('printed');
   printSheet(res.groups.map(g => groupSheetPrintHTML(g)).join(''));
 }
 

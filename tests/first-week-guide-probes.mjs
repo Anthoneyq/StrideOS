@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {appHarness} from './launch-harness.mjs';
+const {run}=appHarness();
+const mk=(n,o={})=>({id:'a'+n,name:'Athlete '+n,raceDate:'2026-10-01',trainingAge:3,...o});
+const model=(athletes,state={})=>run(`firstWeekModel(${JSON.stringify(athletes)},${JSON.stringify(state)})`);
+let m=model([]);
+assert.equal(m.doneCount,0);assert.equal(m.complete,false);
+assert.match(m.steps[0].detail,/0 of 3/);
+m=model([mk(1),mk(2)]);
+assert.equal(m.steps[0].done,false,'two athletes is not a roster yet');
+assert.equal(m.steps[1].done,false,'gaps cannot be done before the roster is');
+m=model([mk(1),mk(2),mk(3,{raceDate:''}),mk(4,{trainingAge:0})]);
+assert.equal(m.steps[0].done,true);assert.equal(m.steps[1].done,false);
+assert.match(m.steps[1].detail,/2 athletes are missing/);
+m=model([mk(1),mk(2),mk(3,{trainingAge:0})]);
+assert.match(m.steps[1].detail,/1 athlete is missing/);
+m=model([mk(1),mk(2),mk(3)],{groups:true});
+assert.equal(m.doneCount,3);assert.equal(m.complete,false);
+m=model([mk(1),mk(2),mk(3)],{groups:true,printed:true});
+assert.equal(m.complete,true);
+assert.equal(model([mk(1)],{dismissed:true}).hidden,true);
+// Signed-out visitors and finished/dismissed coaches never see the card.
+run('sbUser=null; DB=newDB();');
+assert.equal(run('firstWeekGuideHTML()'),'');
+console.log('PASS first-week guide: roster threshold, gap counts, remembered steps, completion, dismissal, signed-out hidden');
